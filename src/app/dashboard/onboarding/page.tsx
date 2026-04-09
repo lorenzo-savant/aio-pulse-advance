@@ -341,7 +341,7 @@ export default function OnboardingPage() {
                 Brand Name <span className="text-red-400">*</span>
               </label>
               <input
-                className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="e.g. Ekonomirådgivarna"
                 value={brand.name}
                 onChange={(e) => setBrand({ ...brand, name: e.target.value })}
@@ -354,7 +354,7 @@ export default function OnboardingPage() {
                 Website Domain
               </label>
               <input
-                className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="e.g. ekonomiradgivarna.se"
                 value={brand.domain}
                 onChange={(e) => setBrand({ ...brand, domain: e.target.value })}
@@ -367,7 +367,7 @@ export default function OnboardingPage() {
                 Industry
               </label>
               <select
-                className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+                className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
                 value={brand.industry}
                 onChange={(e) => setBrand({ ...brand, industry: e.target.value })}
               >
@@ -386,7 +386,7 @@ export default function OnboardingPage() {
                 Description
               </label>
               <textarea
-                className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="Brief description of what your brand does..."
                 rows={2}
                 value={brand.description}
@@ -401,7 +401,7 @@ export default function OnboardingPage() {
                   Aliases / Variants
                 </label>
                 <input
-                  className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                   placeholder="e.g. ERG, Ekonomi AB"
                   value={brand.aliases}
                   onChange={(e) => setBrand({ ...brand, aliases: e.target.value })}
@@ -413,7 +413,7 @@ export default function OnboardingPage() {
                   Competitors
                 </label>
                 <input
-                  className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                   placeholder="e.g. Fortnox, Visma"
                   value={brand.competitors}
                   onChange={(e) => setBrand({ ...brand, competitors: e.target.value })}
@@ -488,7 +488,7 @@ export default function OnboardingPage() {
             {/* Add custom prompt */}
             <div className="flex gap-2">
               <input
-                className="flex-1 rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+                className="flex-1 rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                 placeholder="Add a custom prompt..."
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}

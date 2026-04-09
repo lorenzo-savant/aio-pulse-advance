@@ -316,7 +316,7 @@ function CreateRuleForm({
             Brand *
           </label>
           <select
-            className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+            className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
             value={form.brand_id}
             onChange={(e) => setForm((f) => ({ ...f, brand_id: e.target.value }))}
           >
@@ -334,7 +334,7 @@ function CreateRuleForm({
             Rule Name *
           </label>
           <input
-            className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+            className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
             placeholder="e.g. New mention alert"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -371,7 +371,7 @@ function CreateRuleForm({
               Competitor Name
             </label>
             <input
-              className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+              className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
               placeholder="e.g. GetCito"
               value={form.competitor}
               onChange={(e) => setForm((f) => ({ ...f, competitor: e.target.value }))}
@@ -388,7 +388,7 @@ function CreateRuleForm({
                 : '(score points, e.g. 10 for 10%)'}
             </label>
             <input
-              className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+              className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
               placeholder={form.type === 'sentiment_drop' ? '0.3' : '10'}
               type="number"
               value={form.threshold}
@@ -402,7 +402,7 @@ function CreateRuleForm({
             Email *
           </label>
           <input
-            className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+            className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
             placeholder="alerts@yourdomain.com"
             type="email"
             value={form.email}

@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { HomeContent } from './HomeContent'
 
 function AcceptContent() {
   const router = useRouter()
@@ -18,9 +19,6 @@ function AcceptContent() {
 
   useEffect(() => {
     if (!token && typeof window !== 'undefined') {
-      // TODO(M-4): Use httpOnly cookie instead of localStorage for invite token.
-      // localStorage is vulnerable to XSS theft. Cookie with httpOnly;Secure;SameSite=Lax
-      // should be set by the server when generating the invitation link.
       const saved = localStorage.getItem('pending_invite_token')
       if (saved) {
         localStorage.removeItem('pending_invite_token')
@@ -49,7 +47,6 @@ function AcceptContent() {
       } = await supabase.auth.getSession()
 
       if (!session) {
-        // TODO(M-4): Store in httpOnly cookie instead of localStorage for XSS protection
         if (typeof window !== 'undefined') {
           localStorage.setItem('pending_invite_token', token || '')
         }
@@ -118,7 +115,7 @@ function AcceptContent() {
                 <Button variant="outline" onClick={() => router.push('/login')}>
                   Sign In
                 </Button>
-                <Button onClick={() => router.push('/dashboard')}>Go to Dashboard</Button>
+                <Button onClick={() => router.push('/')}>Go to Homepage</Button>
               </div>
             </>
           )}
@@ -128,7 +125,29 @@ function AcceptContent() {
   )
 }
 
-export default function AcceptInvitationPage() {
+function HomePage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token')
+
+  if (token) {
+    return (
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center bg-page-bg">
+            <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+          </div>
+        }
+      >
+        <AcceptContent />
+      </Suspense>
+    )
+  }
+
+  return <HomeContent />
+}
+
+export default function HomePageWrapper() {
   return (
     <Suspense
       fallback={
@@ -137,7 +156,7 @@ export default function AcceptInvitationPage() {
         </div>
       }
     >
-      <AcceptContent />
+      <HomePage />
     </Suspense>
   )
 }

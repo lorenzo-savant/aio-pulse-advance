@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://*.vercel.com https://*.vercel.app https://*.openrouter.ai https://*.groq.com https://*.cerebras.ai; img-src 'self' data: https:; font-src 'self' data:; frame-ancestors 'none';",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://*.vercel.com https://*.vercel.app https://*.openrouter.ai https://*.groq.com https://*.cerebras.ai; img-src 'self' data: https:; font-src 'self' data:; frame-ancestors 'none';",
           },
           {
             key: 'X-Frame-Options',

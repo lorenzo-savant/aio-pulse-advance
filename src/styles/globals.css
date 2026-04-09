@@ -1,7 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
    AIO Pulse Design System v2.0
    Unified Light & Dark Theme with OKLCH Colors
+   Horizon UI-inspired Design
    ═══════════════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,27 +15,27 @@
 
 @layer base {
   :root {
-    /* ═══ BRAND ACCENT (Indigo/Violet) ════════════════════════════════════════ */
-    /* Primary interaction color - vibrant indigo with high chroma */
-    --color-accent: 0.55 0.22 280; /* #6366F1 - Indigo 500 */
-    --color-accent-hover: 0.6 0.24 280; /* Hover state */
-    --color-accent-muted: 0.55 0.12 280; /* Subdued accent */
-    --color-accent-foreground: 0.98 0.01 280; /* White text on accent */
+    /* ═══ BRAND ACCENT (Horizon Purple/Indigo) ════════════════════════════════ */
+    /* Primary interaction color - vibrant purple #422AFB */
+    --color-accent: 0.52 0.24 275; /* #422AFB - Horizon Brand */
+    --color-accent-hover: 0.55 0.26 275; /* Hover state */
+    --color-accent-muted: 0.48 0.15 275; /* Subdued accent */
+    --color-accent-foreground: 0.98 0.01 0; /* White text on accent */
 
-    /* ═══ SURFACE SCALE (Light Mode) ══════════════════════════════════════════ */
-    /* Uses L (lightness) for semantic meaning: higher = lighter surfaces */
+    /* ═══ HORIZON LIGHT GRAY SCALE ═══════════════════════════════════════════ */
+    /* Horizon's signature light blue-gray palette */
     --surface-0: 1 0 0; /* Pure white */
-    --surface-50: 0.99 0.01 260; /* Almost white */
-    --surface-100: 0.97 0.01 260; /* Card backgrounds */
-    --surface-200: 0.94 0.015 260; /* Elevated surfaces */
-    --surface-300: 0.88 0.02 260; /* Borders, dividers */
-    --surface-400: 0.75 0.03 260; /* Muted elements */
-    --surface-500: 0.62 0.04 260; /* Secondary text */
-    --surface-600: 0.5 0.05 260; /* Tertiary text */
-    --surface-700: 0.38 0.06 260; /* Disabled text */
-    --surface-800: 0.25 0.08 260; /* Dark text */
-    --surface-900: 0.12 0.1 260; /* Headings */
-    --surface-950: 0.06 0.08 260; /* Near black */
+    --surface-50: 0.99 0.005 240; /* Almost white with blue tint */
+    --surface-100: 0.98 0.008 240; /* #F4F7FE - Horizon background */
+    --surface-200: 0.96 0.01 240; /* #E9EDF7 - Cards */
+    --surface-300: 0.91 0.015 240; /* #E1E9F8 - Borders */
+    --surface-400: 0.85 0.02 240; /* #E0E5F2 - Muted elements */
+    --surface-500: 0.65 0.03 240; /* #8F9BBA - Secondary text */
+    --surface-600: 0.55 0.035 240; /* #A3AED0 - Tertiary text */
+    --surface-700: 0.45 0.04 240; /* #707EAE - Disabled text */
+    --surface-800: 0.25 0.06 240; /* #1B2559 - Dark text */
+    --surface-900: 0.12 0.08 240; /* #1B2559 - Headings */
+    --surface-950: 0.06 0.06 240; /* Near black */
 
     /* ═══ SEMANTIC SURFACES ══════════════════════════════════════════════════ */
     --background: var(--surface-100);
@@ -60,12 +63,12 @@
     --nav-border: var(--surface-300);
     --nav-text: var(--surface-600);
     --nav-text-hover: var(--surface-900);
-    --nav-active-bg: 0.93 0.06 280; /* Light indigo tint */
+    --nav-active-bg: 0.93 0.08 275; /* Light purple tint */
     --nav-active-text: var(--color-accent);
 
     --auth-bg: var(--surface-100);
     --auth-card: var(--surface-0);
-    --auth-input: var(--surface-100);
+    --auth-input: var(--surface-0);
     --auth-input-border: var(--surface-300);
     --auth-label: var(--surface-500);
 
@@ -80,22 +83,22 @@
     --dashboard-text: var(--surface-900);
     --dashboard-muted: var(--surface-500);
 
-    /* ═══ STATUS COLORS (with dark mode support) ════════════════════════════ */
-    --success: 0.72 0.18 145; /* Emerald green */
-    --success-foreground: 0.98 0.02 145;
-    --success-muted: 0.92 0.08 145;
+    /* ═══ STATUS COLORS (Horizon variants) ══════════════════════════════════ */
+    --success: 0.72 0.18 145; /* Emerald green #01B574 */
+    --success-foreground: 0.98 0.02 0;
+    --success-muted: 0.93 0.08 145;
 
-    --warning: 0.75 0.18 65; /* Amber */
-    --warning-foreground: 0.15 0.1 65;
-    --warning-muted: 0.95 0.06 65;
+    --warning: 0.78 0.16 65; /* Amber #FFB547 */
+    --warning-foreground: 0.15 0.08 0;
+    --warning-muted: 0.96 0.06 65;
 
-    --error: 0.55 0.2 25; /* Red */
-    --error-foreground: 0.98 0.01 25;
-    --error-muted: 0.95 0.06 25;
+    --error: 0.55 0.2 25; /* Red #EE5D50 */
+    --error-foreground: 0.98 0.01 0;
+    --error-muted: 0.96 0.06 25;
 
-    --info: 0.6 0.15 240; /* Blue */
-    --info-foreground: 0.98 0.01 240;
-    --info-muted: 0.93 0.06 240;
+    --info: 0.62 0.14 240; /* Blue #3965FF */
+    --info-foreground: 0.98 0.01 0;
+    --info-muted: 0.94 0.06 240;
 
     /* ═══ RADII & SHADOWS ════════════════════════════════════════════════════ */
     --radius-sm: 0.25rem;
@@ -118,31 +121,32 @@
   }
 
   /* ════════════════════════════════════════════════════════════════════════════ */
-  /* DARK MODE - Inverted L values for proper contrast                         */
+  /* DARK MODE - Horizon-inspired Navy Palette                                 */
+  /* Deep navy backgrounds with blue tints for a premium dark theme            */
   /* ════════════════════════════════════════════════════════════════════════════ */
 
   .dark {
     /* ═══ BRAND ACCENT (Dark Mode) ════════════════════════════════════════════ */
-    /* Slightly lighter accent for dark backgrounds */
-    --color-accent: 0.7 0.18 280; /* #818CF8 - Indigo 400 */
-    --color-accent-hover: 0.75 0.2 280; /* Hover state */
-    --color-accent-muted: 0.65 0.12 280; /* Subdued accent */
-    --color-accent-foreground: 0.12 0.08 280; /* Dark text on accent */
+    /* Brighter purple for dark backgrounds - #7551FF */
+    --color-accent: 0.55 0.22 275; /* Brand purple */
+    --color-accent-hover: 0.62 0.25 275; /* Brighter on hover */
+    --color-accent-muted: 0.45 0.15 275; /* Muted variant */
+    --color-accent-foreground: 0.98 0.01 0; /* White text */
 
-    /* ═══ SURFACE SCALE (Dark Mode) ═══════════════════════════════════════════ */
-    /* Inverted: 0 = dark, 100 = light */
-    --surface-0: 0.04 0.02 260; /* Near black */
-    --surface-50: 0.08 0.03 260; /* Darkest gray */
-    --surface-100: 0.12 0.04 260; /* Card backgrounds */
-    --surface-200: 0.18 0.05 260; /* Elevated surfaces */
-    --surface-300: 0.28 0.06 260; /* Borders */
-    --surface-400: 0.45 0.06 260; /* Muted elements */
-    --surface-500: 0.58 0.05 260; /* Secondary text */
-    --surface-600: 0.68 0.04 260; /* Tertiary text */
-    --surface-700: 0.78 0.03 260; /* Disabled text */
-    --surface-800: 0.88 0.02 260; /* Light text */
-    --surface-900: 0.94 0.01 260; /* Headings */
-    --surface-950: 0.98 0.01 260; /* Near white */
+    /* ═══ NAVY SCALE (Horizon-inspired) ══════════════════════════════════════ */
+    /* Deep navy blues for premium dark theme */
+    --surface-0: 0.04 0.015 250; /* #0b1437 - Deepest navy (background) */
+    --surface-50: 0.06 0.02 250; /* Slightly lighter navy */
+    --surface-100: 0.08 0.025 250; /* #111c44 - Cards */
+    --surface-200: 0.11 0.03 250; /* #1B254B - Elevated surfaces */
+    --surface-300: 0.18 0.04 250; /* #24388a - Borders */
+    --surface-400: 0.3 0.05 250; /* #3652ba - Muted elements */
+    --surface-500: 0.45 0.06 250; /* Secondary text */
+    --surface-600: 0.58 0.05 250; /* Tertiary text */
+    --surface-700: 0.7 0.04 250; /* Disabled text */
+    --surface-800: 0.85 0.03 250; /* Light text */
+    --surface-900: 0.92 0.02 250; /* Headings */
+    --surface-950: 0.96 0.01 250; /* Brightest text */
 
     /* ═══ SEMANTIC SURFACES (Dark Mode) ════════════════════════════════════ */
     --background: var(--surface-0);
@@ -159,7 +163,7 @@
     --muted-foreground: var(--surface-400);
     --accent: var(--surface-300);
     --accent-foreground: var(--surface-800);
-    --destructive: 0.6 0.18 25;
+    --destructive: 0.58 0.2 25;
     --destructive-foreground: 0.98 0.01 0;
     --border: var(--surface-300);
     --input: var(--surface-200);
@@ -168,15 +172,15 @@
     /* ═══ EXTENDED UI SURFACES (Dark Mode) ══════════════════════════════════ */
     --nav-bg: var(--surface-100);
     --nav-border: var(--surface-300);
-    --nav-text: var(--surface-400);
+    --nav-text: var(--surface-500);
     --nav-text-hover: var(--surface-800);
-    --nav-active-bg: 0.25 0.08 280; /* Dark indigo tint */
-    --nav-active-text: 0.75 0.12 280;
+    --nav-active-bg: 0.22 0.12 275; /* Purple tint for active nav */
+    --nav-active-text: 0.65 0.18 275;
 
     --auth-bg: var(--surface-0);
     --auth-card: var(--surface-100);
     --auth-input: var(--surface-200);
-    --auth-input-border: var(--surface-400);
+    --auth-input-border: var(--surface-300);
     --auth-label: var(--surface-400);
 
     --search-bg: var(--surface-200);
@@ -191,28 +195,29 @@
     --dashboard-muted: var(--surface-400);
 
     /* ═══ STATUS COLORS (Dark Mode) ═════════════════════════════════════════ */
-    /* Adjusted for dark backgrounds */
-    --success: 0.8 0.14 145;
-    --success-foreground: 0.1 0.08 145;
-    --success-muted: 0.2 0.08 145;
+    /* Brighter variants for dark backgrounds */
+    --success: 0.72 0.18 145; /* Emerald green */
+    --success-foreground: 0.98 0.01 0;
+    --success-muted: 0.25 0.08 145;
 
-    --warning: 0.85 0.14 65;
-    --warning-foreground: 0.1 0.08 65;
-    --warning-muted: 0.2 0.08 65;
+    --warning: 0.78 0.16 65; /* Amber */
+    --warning-foreground: 0.15 0.08 0;
+    --warning-muted: 0.25 0.08 65;
 
-    --error: 0.65 0.16 25;
-    --error-foreground: 0.98 0.01 25;
-    --error-muted: 0.2 0.08 25;
+    --error: 0.62 0.18 25; /* Red */
+    --error-foreground: 0.98 0.01 0;
+    --error-muted: 0.25 0.08 25;
 
-    --info: 0.7 0.12 240;
-    --info-foreground: 0.1 0.08 240;
-    --info-muted: 0.2 0.08 240;
+    --info: 0.68 0.14 240; /* Blue */
+    --info-foreground: 0.98 0.01 0;
+    --info-muted: 0.25 0.08 240;
 
     /* ═══ SHADOWS (Dark Mode) ═══════════════════════════════════════════════ */
-    --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.3);
-    --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.4), 0 2px 4px -2px oklch(0 0 0 / 0.3);
-    --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.5), 0 4px 6px -4px oklch(0 0 0 / 0.4);
-    --shadow-glow: 0 0 30px -5px oklch(var(--color-accent) / 0.3);
+    /* Subtle blue-tinted shadows for depth */
+    --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.4);
+    --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.45), 0 2px 4px -2px oklch(0 0 0 / 0.35);
+    --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.55), 0 4px 6px -4px oklch(0 0 0 / 0.45);
+    --shadow-glow: 0 0 30px -5px oklch(var(--color-accent) / 0.35);
 
     color-scheme: dark;
   }

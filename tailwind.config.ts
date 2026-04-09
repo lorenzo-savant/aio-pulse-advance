@@ -11,7 +11,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'var(--font-geist-sans)', ...fontFamily.sans],
+        sans: ['DM Sans', 'var(--font-geist-sans)', ...fontFamily.sans],
         mono: ['Fira Code', 'var(--font-geist-mono)', ...fontFamily.mono],
         display: ['var(--font-display)', ...fontFamily.serif],
       },
@@ -137,6 +137,20 @@ const config: Config = {
           800: 'oklch(var(--surface-800))',
           900: 'oklch(var(--surface-900))',
           950: 'oklch(var(--surface-950))',
+        },
+
+        /* ═══ Horizon Navy Scale (for dark mode backgrounds) ══════════════════ */
+        navy: {
+          50: 'oklch(0.82 0.03 250)' /* #d0dcfb */,
+          100: 'oklch(0.68 0.05 250)' /* #aac0fe */,
+          200: 'oklch(0.65 0.06 250)' /* #a3b9f8 */,
+          300: 'oklch(0.55 0.08 250)' /* #728fea */,
+          400: 'oklch(0.40 0.10 250)' /* #3652ba */,
+          500: 'oklch(0.32 0.12 250)' /* #1b3bbb */,
+          600: 'oklch(0.25 0.10 250)' /* #24388a */,
+          700: 'oklch(0.18 0.08 250)' /* #1B254B */,
+          800: 'oklch(0.11 0.06 250)' /* #111c44 */,
+          900: 'oklch(0.07 0.04 250)' /* #0b1437 */,
         },
       },
       borderRadius: {

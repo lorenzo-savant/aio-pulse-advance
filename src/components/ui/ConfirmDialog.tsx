@@ -38,7 +38,7 @@ export function ConfirmDialog({
           {cancelLabel}
         </Button>
         <Button
-          variant={destructive ? 'outline' : 'default'}
+          variant={destructive ? 'outline' : 'primary'}
           onClick={() => {
             onConfirm()
             onOpenChange(false)
@@ -66,7 +66,9 @@ interface ConfirmDialogOptions {
 }
 
 export function useConfirmDialog() {
-  const [dialog, setDialog] = useState<ConfirmDialogOptions & { resolve?: (value: boolean) => void } | null>(null)
+  const [dialog, setDialog] = useState<
+    (ConfirmDialogOptions & { resolve?: (value: boolean) => void }) | null
+  >(null)
 
   const confirm = useCallback((options: ConfirmDialogOptions): Promise<boolean> => {
     return new Promise((resolve) => {

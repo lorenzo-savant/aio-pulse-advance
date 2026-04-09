@@ -119,7 +119,7 @@ export function TopBar() {
             <Search className="h-5 w-5 shrink-0 text-nav-text" />
             <input
               ref={mobileSearchRef}
-              className="flex-1 bg-transparent text-lg text-text-on-surface outline-none placeholder-text-muted-surface"
+              className="flex-1 bg-transparent text-lg text-text-on-surface placeholder-text-muted-surface outline-none"
               placeholder="Search brands, prompts..."
               type="text"
               value={searchQuery}
@@ -127,9 +127,18 @@ export function TopBar() {
                 setSearchQuery(e.target.value)
                 setShowResults(true)
               }}
-              onKeyDown={(e) => e.key === 'Enter' && searchResults.length > 0 && handleResultClick(searchResults[0])}
+              onKeyDown={(e) =>
+                e.key === 'Enter' &&
+                searchResults.length > 0 &&
+                handleResultClick(searchResults[0]!)
+              }
             />
-            <Button size="icon" variant="ghost" onClick={() => setMobileSearchOpen(false)} aria-label="Close search">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setMobileSearchOpen(false)}
+              aria-label="Close search"
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>

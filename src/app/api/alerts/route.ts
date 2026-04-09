@@ -8,6 +8,7 @@ function isPrivateIp(ip: string): boolean {
   const parts = ip.split('.').map(Number)
   if (parts.length === 4) {
     const [a, b] = parts
+    if (a === undefined || b === undefined) return false
     // 127.0.0.0/8 (loopback)
     if (a === 127) return true
     // 0.0.0.0/8 (current network)

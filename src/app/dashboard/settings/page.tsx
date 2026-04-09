@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { User, Key, Bell, Shield, Save, Loader2, Eye, EyeOff, Check, X, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -187,104 +187,106 @@ function ApiKeysSection() {
   }
 
   return (
-    <Card className="border border-surface-input-border bg-card p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
-            <Key className="text-text-muted-ui h-5 w-5" />
-            API Keys
-          </h2>
-          <p className="text-text-muted-ui mt-1 text-sm">
-            Configure your AI provider API keys. Keys are stored securely.
-          </p>
+    <>
+      <Card className="border border-surface-input-border bg-card p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
+              <Key className="text-text-muted-ui h-5 w-5" />
+              API Keys
+            </h2>
+            <p className="text-text-muted-ui mt-1 text-sm">
+              Configure your AI provider API keys. Keys are stored securely.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-brand-400" />
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {(Object.keys(PROVIDER_INFO) as Provider[]).map((provider) => {
-            const existing = getExistingKey(provider)
-            const info = PROVIDER_INFO[provider]
-            const isSaving = saving === provider
-            const isShowing = showKey === provider
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-brand-400" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {(Object.keys(PROVIDER_INFO) as Provider[]).map((provider) => {
+              const existing = getExistingKey(provider)
+              const info = PROVIDER_INFO[provider]
+              const isSaving = saving === provider
+              const isShowing = showKey === provider
 
-            return (
-              <div
-                key={provider}
-                className="rounded-xl border border-surface-input-border bg-surface-row p-4"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={cn('rounded-lg border px-2 py-1 text-xs font-bold', info.color)}
-                    >
-                      {info.label}
-                    </span>
+              return (
+                <div
+                  key={provider}
+                  className="rounded-xl border border-surface-input-border bg-surface-row p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={cn('rounded-lg border px-2 py-1 text-xs font-bold', info.color)}
+                      >
+                        {info.label}
+                      </span>
+                      {existing && (
+                        <Badge variant={existing.is_active ? 'success' : 'default'}>
+                          {existing.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      )}
+                    </div>
                     {existing && (
-                      <Badge variant={existing.is_active ? 'success' : 'default'}>
-                        {existing.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <Button size="sm" variant="ghost" onClick={() => handleToggle(provider)}>
+                        {existing.is_active ? 'Disable' : 'Enable'}
+                      </Button>
                     )}
                   </div>
-                  {existing && (
-                    <Button size="sm" variant="ghost" onClick={() => handleToggle(provider)}>
-                      {existing.is_active ? 'Disable' : 'Enable'}
-                    </Button>
-                  )}
-                </div>
 
-                {existing ? (
-                  <div className="flex items-center gap-2">
-                    <div className="text-text-primary-ui flex-1 rounded-lg bg-surface-input px-3 py-2 font-mono text-sm">
-                      {isShowing ? existing.encrypted_key : '••••••••••••••••••••••••••••••'}
+                  {existing ? (
+                    <div className="flex items-center gap-2">
+                      <div className="text-text-primary-ui flex-1 rounded-lg bg-surface-input px-3 py-2 font-mono text-sm">
+                        {isShowing ? existing.encrypted_key : '••••••••••••••••••••••••••••••'}
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setShowKey(isShowing ? null : provider)}
+                      >
+                        {isShowing ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => handleDelete(provider)}>
+                        <Trash2 className="h-4 w-4 text-red-400" />
+                      </Button>
                     </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setShowKey(isShowing ? null : provider)}
-                    >
-                      {isShowing ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(provider)}>
-                      <Trash2 className="h-4 w-4 text-red-400" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="password"
-                      className="text-text-primary-ui placeholder-text-muted-ui flex-1 rounded-xl border border-surface-input-border bg-surface-input px-4 py-2 text-sm outline-none focus:border-brand-500"
-                      placeholder={info.placeholder}
-                      value={newKeys[provider]}
-                      onChange={(e) =>
-                        setNewKeys((prev) => ({ ...prev, [provider]: e.target.value }))
-                      }
-                    />
-                    <Button loading={isSaving} onClick={() => handleSave(provider)}>
-                      <Save className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        className="text-text-primary-ui placeholder-text-muted-ui flex-1 rounded-xl border border-surface-input-border bg-surface-input px-4 py-2 text-sm outline-none focus:border-brand-500"
+                        placeholder={info.placeholder}
+                        value={newKeys[provider]}
+                        onChange={(e) =>
+                          setNewKeys((prev) => ({ ...prev, [provider]: e.target.value }))
+                        }
+                      />
+                      <Button loading={isSaving} onClick={() => handleSave(provider)}>
+                        <Save className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
 
-                <a
-                  href={info.docs}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-block text-xs text-brand-400 hover:underline"
-                >
-                  Get {info.label} API key →
-                </a>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </Card>
-    <ConfirmDialog />
+                  <a
+                    href={info.docs}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block text-xs text-brand-400 hover:underline"
+                  >
+                    Get {info.label} API key →
+                  </a>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Card>
+      <ConfirmDialog />
+    </>
   )
 }
 

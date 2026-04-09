@@ -5,6 +5,12 @@ import type { WorkflowExecution, WorkflowStatus, WorkflowType } from '@/types'
 export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
+    if (!supabase) {
+      return NextResponse.json(
+        { success: false, message: 'Database not configured', data: [] },
+        { status: 503 },
+      )
+    }
     const searchParams = request.nextUrl.searchParams
     const brandId = searchParams.get('brand_id')
     const limit = parseInt(searchParams.get('limit') || '50', 10)

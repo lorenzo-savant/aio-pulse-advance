@@ -114,8 +114,78 @@ export interface BrandCreateInput {
   color?: string
 }
 
+// ─── QUERY CATEGORIES (User Journey) ──────────────────────────────────────────
+export type QueryCategory =
+  | 'awareness' // Top of funnel: User is discovering a problem/solution
+  | 'interest' // Learning more, comparing options
+  | 'consideration' // Evaluating specific solutions
+  | 'purchase' // Ready to buy, looking for pricing/buy links
+  | 'comparison' // Comparing alternatives
+  | 'alternative' // Looking for alternatives to a solution
+
+export interface QueryCategoryInfo {
+  id: QueryCategory
+  name: string
+  description: string
+  color: string
+  position: number
+}
+
+export const QUERY_CATEGORIES: QueryCategoryInfo[] = [
+  {
+    id: 'awareness',
+    name: 'Awareness',
+    description: 'Top of funnel: Discovery and problem recognition',
+    color: '#8b5cf6',
+    position: 1,
+  },
+  {
+    id: 'interest',
+    name: 'Interest',
+    description: 'Learning phase: Research and information gathering',
+    color: '#3b82f6',
+    position: 2,
+  },
+  {
+    id: 'consideration',
+    name: 'Consideration',
+    description: 'Evaluation phase: Comparing specific solutions',
+    color: '#10b981',
+    position: 3,
+  },
+  {
+    id: 'purchase',
+    name: 'Purchase',
+    description: 'Bottom of funnel: Pricing, reviews, buying intent',
+    color: '#f59e0b',
+    position: 4,
+  },
+  {
+    id: 'comparison',
+    name: 'Comparison',
+    description: 'Side-by-side product or service comparisons',
+    color: '#ec4899',
+    position: 5,
+  },
+  {
+    id: 'alternative',
+    name: 'Alternative',
+    description: 'Finding alternatives to existing solutions',
+    color: '#6366f1',
+    position: 6,
+  },
+]
+
+export function getCategoryById(id: QueryCategory): QueryCategoryInfo | undefined {
+  return QUERY_CATEGORIES.find((c) => c.id === id)
+}
+
+export function getCategoryColor(id: QueryCategory): string {
+  return getCategoryById(id)?.color ?? '#6b7280'
+}
+
 // ─── PROMPTS ──────────────────────────────────────────────────────────────────
-export type PromptCategory = 'awareness' | 'comparison' | 'alternative' | 'features' | 'custom'
+export type PromptCategory = QueryCategory | 'custom'
 export type RunFrequency = 'hourly' | 'daily' | 'weekly'
 
 export interface Prompt {

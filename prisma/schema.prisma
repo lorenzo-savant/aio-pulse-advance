@@ -1,0 +1,371 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Brand {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  name         String
+  slug         String    @unique
+  description  String?
+  domain       String?
+  aliases      String[]  @default([])
+  domains      String[]  @default([])
+  competitors  String[]  @default([])
+  industry     String?
+  color        String    @default("#6366f1")
+  logoUrl      String?   @map("logo_url")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  
+  // White-label report settings
+  reportLogoUrl     String?  @map("report_logo_url")
+  reportBrandName   String?  @map("report_brand_name")
+  reportPrimaryColor String?  @map("report_primary_color")
+
+  prompts            Prompt[]
+  alertRules         AlertRule[]
+  monitoringResults  MonitoringResult[]
+  alertEvents        AlertEvent[]
+  healthScores       BrandHealthScore[]
+  analysisResults    AnalysisResult[]
+  competitorAnalyses CompetitorAnalysis[]
+  recommendationHistories RecommendationHistory[]
+  citationSnapshots CitationSnapshot[]
+  teamMembers        TeamMember[]
+  brandInvitations   BrandInvitation[]
+
+  @@map("brands")
+  @@index([userId])
+  @@index([slug])
+  @@index([deletedAt])
+}
+
+model Prompt {
+  id           String    @id @default(uuid())
+  brandId      String    @map("brand_id")
+  userId       String    @map("user_id")
+  text         String
+  language     String    @default("en")
+  market       String    @default("global")
+  category     String?
+  engines      String[]  @default(["chatgpt", "gemini", "perplexity"])
+  isActive     Boolean   @default(true) @map("is_active")
+  runFrequency String    @default("daily") @map("run_frequency")
+  lastRunAt    DateTime? @map("last_run_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  brand             Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  monitoringResults MonitoringResult[]
+
+  @@map("prompts")
+  @@index([brandId])
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model MonitoringResult {
+  id                String   @id @default(uuid())
+  promptId          String   @map("prompt_id")
+  brandId           String   @map("brand_id")
+  userId            String   @map("user_id")
+  engine            String
+  promptText        String   @map("prompt_text")
+  responseText     String   @map("response_text")
+  brandMentioned   Boolean  @default(false) @map("brand_mentioned")
+  mentionPosition  Int?     @map("mention_position")
+  mentionCount     Int      @default(0) @map("mention_count")
+  mentionType      String?  @map("mention_type")
+  visibilityScore  Int      @default(0) @map("visibility_score")
+  sentiment        String?
+  sentimentScore   Float?   @map("sentiment_score")
+  citedUrls        String[] @default([]) @map("cited_urls")
+  competitorMentions Json   @default("[]") @map("competitor_mentions")
+  hasHallucination Boolean  @default(false) @map("has_hallucination")
+  hallucinationFlags Json   @default("[]") @map("hallucination_flags")
+  rawResponse      Json?    @map("raw_response")
+  
+  // Execution tracking (Phase 1)
+  executionTimeMs    Int?     @map("execution_time_ms")
+  costCredits        Float?   @map("cost_credits")
+  primaryProvider   String?  @map("primary_provider")
+  allProviders      String[] @default([]) @map("all_providers")
+  failedProviders   String[] @default([]) @map("failed_providers")
+  responseComparison Json?   @map("response_comparison")
+  
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  brand  Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@map("monitoring_results")
+  @@index([brandId])
+  @@index([promptId])
+  @@index([engine])
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([primaryProvider])
+}
+
+model AlertRule {
+  id           String    @id @default(uuid())
+  brandId      String    @map("brand_id")
+  userId       String    @map("user_id")
+  name         String
+  type         String
+  condition    Json
+  channels     String[]  @default(["email"])
+  email        String?
+  webhookUrl   String?   @map("webhook_url")
+  isActive     Boolean   @default(true) @map("is_active")
+  lastFiredAt DateTime? @map("last_fired_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  brand        Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  alertEvents  AlertEvent[]
+
+  @@map("alert_rules")
+  @@index([brandId])
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model AlertEvent {
+  id            String    @id @default(uuid())
+  alertRuleId   String    @map("alert_rule_id")
+  brandId       String    @map("brand_id")
+  userId        String    @map("user_id")
+  type          String
+  title         String
+  message       String
+  data          Json      @default("{}")
+  channelsSent  String[]  @default([]) @map("channels_sent")
+  isRead        Boolean   @default(false) @map("is_read")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  alertRule     AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+  brand         Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@map("alert_events")
+  @@index([userId])
+  @@index([brandId])
+  @@index([createdAt(sort: Desc)])
+  @@index([isRead])
+}
+
+model BrandHealthScore {
+  id                String   @id @default(uuid())
+  brandId           String   @map("brand_id")
+  userId            String   @map("user_id")
+  date              DateTime @db.Date @default(now())
+  visibilityScore   Float    @default(0) @map("visibility_score")
+  sentimentScore    Float    @default(0) @map("sentiment_score")
+  hallucinationRate Float    @default(0) @map("hallucination_rate")
+  mentionCount      Int      @default(0) @map("mention_count")
+  citationCount     Int      @default(0) @map("citation_count")
+  healthScore       Float    @default(0) @map("health_score")
+  engineBreakdown   Json     @default("{}") @map("engine_breakdown")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, date])
+  @@map("brand_health_scores")
+  @@index([brandId])
+  @@index([date(sort: Desc)])
+}
+
+model Subscription {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  stripeCustomerId String?  @map("stripe_customer_id")
+  stripeSubId     String?  @map("stripe_sub_id")
+  plan            String   @default("free")
+  status           String   @default("active")
+  currentPeriodEnd DateTime? @map("current_period_end")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
+model Credit {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  amount        Int      // Credits purchased (positive) or used (negative)
+  source        String   // 'stripe_purchase', 'promo', 'bonus', 'refund', 'subscription'
+  stripePaymentId String? @map("stripe_payment_id")
+  description   String?
+  expiresAt     DateTime? @map("expires_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("credits")
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@index([expiresAt])
+}
+
+model CreditUsage {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  queryId       String?  @map("query_id")
+  creditsUsed   Int      // Always positive number
+  provider      String?  // Which AI provider used
+  engine        String?  // Which engine (chatgpt, gemini, etc)
+  brandId       String?  @map("brand_id")
+  description   String?
+  costCredits   Float?   @map("cost_credits") // Calculated cost in credits
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("credit_usage")
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@index([brandId])
+}
+
+model TeamMember {
+  id         String   @id @default(uuid())
+  brandId    String   @map("brand_id")
+  userId     String?  @map("user_id")
+  email      String
+  role       String   @default("viewer")
+  invitedBy  String   @map("invited_by")
+  status     String   @default("pending")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  brand      Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, email])
+  @@map("team_members")
+  @@index([brandId])
+  @@index([userId])
+}
+
+model BrandInvitation {
+  id         String   @id @default(uuid())
+  brandId    String   @map("brand_id")
+  email      String
+  role       String   @default("viewer")
+  invitedBy  String   @map("invited_by")
+  token      String   @unique
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  brand      Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, email])
+  @@map("brand_invitations")
+  @@index([token])
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  key         String   @unique
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("api_keys")
+  @@index([userId])
+  @@index([key])
+}
+
+model AnalysisResult {
+  id              String    @id @default(uuid())
+  brandId         String?   @map("brand_id")
+  userId          String    @map("user_id")
+  input           String
+  inputMode       String    @map("input_mode")
+  engine          String
+  provider        String
+  model           String
+  visibilityScore Int?      @map("visibility_score")
+  sentiment       String?
+  sentimentScore  Float?    @map("sentiment_score")
+  summary         String?
+  recommendations Json?     @default("[]")
+  rawResponse     Json?     @map("raw_response")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  brand Brand? @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@map("analysis_results")
+  @@index([brandId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@index([deletedAt])
+}
+
+model CompetitorAnalysis {
+  id              String   @id @default(uuid())
+  brandId         String?  @map("brand_id")
+  userId          String   @map("user_id")
+  primaryUrl      String   @map("primary_url")
+  competitors     Json     @default("[]")
+  summary         String?
+  rawResponse     Json?    @map("raw_response")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  brand Brand? @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@map("competitor_analyses")
+  @@index([brandId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model RecommendationHistory {
+  id            String   @id @default(uuid())
+  brandId       String   @map("brand_id")
+  userId        String   @map("user_id")
+  recommendations Json   @default("[]")
+  summary       String?
+  basedOnCount  Int      @default(0) @map("based_on_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@map("recommendation_history")
+  @@index([brandId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model CitationSnapshot {
+  id              String   @id @default(uuid())
+  projectId       String   @map("project_id")
+  scanDate        DateTime @db.Date @map("scan_date")
+  engine          String   @default("all")
+  category        String   @default("all")
+  language        String   @default("all")
+  totalPrompts    Int      @default(0) @map("total_prompts")
+  brandCitations  Int      @default(0) @map("brand_citations")
+  citationRate    Float    @default(0) @map("citation_rate")
+  avgPosition     Float?   @map("avg_position")
+  avgVisibility   Float    @default(0) @map("avg_visibility")
+  avgSentiment    Float    @default(0) @map("avg_sentiment")
+  competitorRates Json     @default("{}") @map("competitor_rates")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  brand Brand? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, scanDate, engine, category, language])
+  @@map("citation_snapshots")
+  @@index([projectId])
+  @@index([scanDate(sort: Desc)])
+  @@index([engine])
+}

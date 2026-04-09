@@ -1,0 +1,128 @@
+// PATH: src/app/api/archive/overview/route.ts
+// GET /api/archive/overview?brand_id=xxx
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { verifyBrandAccess } from '@/lib/authorize'
+
+export async function GET(req: NextRequest) {
+  let userId: string
+  try {
+    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
+  } catch (e) {
+    if (e instanceof AuthError)
+      return NextResponse.json({ success: false, message: e.message }, { status: 401 })
+    return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(req.url)
+  const brandId = searchParams.get('brand_id')
+
+  if (!brandId) {
+    return NextResponse.json({ success: false, message: 'brand_id is required' }, { status: 400 })
+  }
+
+  const db = createServerClient()
+  if (!db) {
+    return NextResponse.json(
+      { success: false, message: 'Database not configured' },
+      { status: 503 },
+    )
+  }
+
+  const brand = await verifyBrandAccess(brandId, userId)
+  if (!brand) {
+    return NextResponse.json(
+      { success: false, message: 'Brand not found or access denied' },
+      { status: 403 },
+    )
+  }
+
+  try {
+    // Get total queries count
+    const { count: totalQueries } = (await db
+      .from('research_archives' as any)
+      .select('*', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .eq('status', 'active')) as any
+
+    // Get query breakdown by type
+    const { data: toolBreakdown } = (await db
+      .from('research_archives' as any)
+      .select('query_type')
+      .eq('brand_id', brandId)
+      .eq('status', 'active')) as any
+
+    const breakdown = (toolBreakdown || []).reduce((acc: Record<string, number>, item: any) => {
+      acc[item.query_type] = (acc[item.query_type] || 0) + 1
+      return acc
+    }, {})
+
+    // Get total active recommendations
+    const { count: totalRecs } = (await db
+      .from('recommendation_tracking' as any)
+      .select('*', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .eq('status', 'active')) as any
+
+    // Get date range
+    const { data: dateRange } = (await db
+      .from('research_archives' as any)
+      .select('created_at')
+      .eq('brand_id', brandId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single()) as any
+
+    // Get last query
+    const { data: lastQuery } = (await db
+      .from('research_archives' as any)
+      .select('created_at, query_type')
+      .eq('brand_id', brandId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()) as any
+
+    // Get latest health score
+    const { data: latestSnapshot } = (await db
+      .from('brand_snapshots' as any)
+      .select('health_score, sentiment_score, snapshot_date')
+      .eq('brand_id', brandId)
+      .order('snapshot_date', { ascending: false })
+      .limit(1)
+      .single()) as any
+
+    // Get top recommendations
+    const { data: topRecs } = (await db
+      .from('recommendation_tracking' as any)
+      .select(
+        'id, recommendation_text, priority, last_seen_date, occurrence_count, consistency_score',
+      )
+      .eq('brand_id', brandId)
+      .eq('status', 'active')
+      .order('consistency_score', { ascending: false })
+      .limit(5)) as any
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        brandId,
+        totalQueries: totalQueries || 0,
+        totalRecommendations: totalRecs || 0,
+        dateRange: dateRange ? { start: dateRange.created_at } : null,
+        lastQuery: lastQuery?.created_at || null,
+        currentHealthScore: latestSnapshot?.health_score || 0,
+        currentSentiment: latestSnapshot?.sentiment_score || 0,
+        tools: breakdown,
+        topRecommendations: topRecs || [],
+      },
+    })
+  } catch (error) {
+    console.error('[archive/overview] Error:', error)
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch overview' },
+      { status: 500 },
+    )
+  }
+}

@@ -1,0 +1,2 @@
+-- Security fixes migration (applied directly to remote)
+-- Fixes already applied via direct SQL

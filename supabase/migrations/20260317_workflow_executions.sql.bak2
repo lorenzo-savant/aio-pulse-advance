@@ -1,0 +1,37 @@
+-- Workflow Executions Table
+-- For tracking workflow status and history
+
+CREATE TABLE IF NOT EXISTS workflow_executions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_type TEXT NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE SET NULL,
+  prompt_id UUID REFERENCES prompts(id) ON DELETE SET NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled', 'retrying')),
+  steps JSONB DEFAULT '[]',
+  error TEXT,
+  metadata JSONB DEFAULT '{}',
+  started_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE workflow_executions ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+CREATE POLICY "workflow_executions_select" ON workflow_executions
+  FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "workflow_executions_insert" ON workflow_executions
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "workflow_executions_update" ON workflow_executions
+  FOR UPDATE USING (auth.uid() = user_id OR user_id IS NULL);
+
+-- Indexes
+CREATE INDEX idx_workflow_executions_user_id ON workflow_executions(user_id);
+CREATE INDEX idx_workflow_executions_brand_id ON workflow_executions(brand_id);
+CREATE INDEX idx_workflow_executions_type ON workflow_executions(workflow_type);
+CREATE INDEX idx_workflow_executions_status ON workflow_executions(status);
+CREATE INDEX idx_workflow_executions_started_at ON workflow_executions(started_at DESC);

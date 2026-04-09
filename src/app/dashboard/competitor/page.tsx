@@ -1,0 +1,890 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import {
+  GitCompare,
+  Plus,
+  X,
+  Trophy,
+  AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  BarChart3,
+  RefreshCw,
+} from 'lucide-react'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+} from 'recharts'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/index'
+import { exportToJson } from '@/lib/export'
+import { cn } from '@/lib/utils'
+import type { CompetitorResult } from '@/lib/services/gemini'
+
+interface Snapshot {
+  id: string
+  project_id: string
+  scan_date: string
+  engine: string
+  category: string
+  total_prompts: number
+  brand_citations: number
+  citation_rate: number
+  avg_position: number | null
+  avg_visibility: number
+  avg_sentiment: number
+  competitor_rates: Record<string, number>
+}
+
+interface Brand {
+  id: string
+  name: string
+  color: string
+}
+
+interface CompetitorStats {
+  name: string
+  currentRate: number
+  avgRate: number
+  trend: 'up' | 'down' | 'stable'
+  trendPercent: number
+  bestEngine: string
+  color: string
+}
+
+const COMPETITOR_COLORS = ['#6366f1', '#10b981', '#f97316', '#a855f7', '#ec4899', '#14b8a6']
+const RANK_BADGES = ['🥇', '🥈', '🥉', '4️⃣']
+
+const DATE_RANGES = [
+  { label: '7 days', days: 7 },
+  { label: '15 days', days: 15 },
+  { label: '30 days', days: 30 },
+  { label: '90 days', days: 90 },
+]
+
+const tooltipStyle = () => ({
+  contentStyle: {
+    background: '#0f172a',
+    border: '1px solid #1f2937',
+    borderRadius: 8,
+    fontSize: 12,
+    color: '#e2e8f0',
+  },
+  labelStyle: { color: '#e2e8f0', fontWeight: 700 as const },
+})
+
+function HistoricalSection() {
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([])
+  const [loading, setLoading] = useState(true)
+  const [days, setDays] = useState(30)
+
+  useEffect(() => {
+    async function loadBrands() {
+      try {
+        const res = await fetch('/api/brands')
+        const data = await res.json()
+        const list = data.data || data || []
+        setBrands(list)
+        if (list.length > 0) setSelectedBrand(list[0])
+      } catch {
+        console.error('Failed to load brands')
+      }
+    }
+    loadBrands()
+  }, [])
+
+  const fetchSnapshots = useCallback(async () => {
+    if (!selectedBrand) return
+    setLoading(true)
+    try {
+      const from = new Date()
+      from.setDate(from.getDate() - days)
+      const fromStr = from.toISOString().split('T')[0]
+      const res = await fetch(
+        `/api/snapshots?brand_id=${selectedBrand.id}&engine=all&category=all&from=${fromStr}`,
+      )
+      const data = await res.json()
+      setSnapshots(data.data?.snapshots || [])
+    } catch {
+      console.error('Failed to load snapshots')
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedBrand, days])
+
+  useEffect(() => {
+    fetchSnapshots()
+  }, [fetchSnapshots])
+
+  const allCompetitors = Array.from(
+    new Set(snapshots.flatMap((s) => Object.keys(s.competitor_rates))),
+  )
+
+  const chartData = snapshots.map((s) => ({
+    date: new Date(s.scan_date).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }),
+    brand: s.citation_rate,
+    ...s.competitor_rates,
+  }))
+
+  const competitorStats: CompetitorStats[] = allCompetitors.map((compName, idx) => {
+    const rates = snapshots.map((s) => s.competitor_rates[compName] ?? 0).filter((r) => r > 0)
+    const currentRate =
+      snapshots.length > 0 ? (snapshots[snapshots.length - 1]?.competitor_rates[compName] ?? 0) : 0
+    const avgRate = rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : 0
+
+    let trend: 'up' | 'down' | 'stable' = 'stable'
+    let trendPercent = 0
+    if (snapshots.length >= 2) {
+      const first = snapshots[0]?.competitor_rates[compName] ?? 0
+      const last = snapshots[snapshots.length - 1]?.competitor_rates[compName] ?? 0
+      if (first > 0) {
+        trendPercent = ((last - first) / first) * 100
+        if (trendPercent > 5) trend = 'up'
+        else if (trendPercent < -5) trend = 'down'
+      }
+    }
+
+    return {
+      name: compName,
+      currentRate,
+      avgRate,
+      trend,
+      trendPercent,
+      bestEngine: 'all',
+      color: COMPETITOR_COLORS[idx % COMPETITOR_COLORS.length] ?? '#6b7280',
+    }
+  })
+
+  const brandStats: CompetitorStats = {
+    name: selectedBrand?.name ?? 'Your Brand',
+    currentRate: snapshots.length > 0 ? (snapshots[snapshots.length - 1]?.citation_rate ?? 0) : 0,
+    avgRate:
+      snapshots.length > 0
+        ? snapshots.reduce((a, s) => a + s.citation_rate, 0) / snapshots.length
+        : 0,
+    trend: (() => {
+      if (snapshots.length < 2) return 'stable'
+      const first = snapshots[0]?.citation_rate ?? 0
+      const last = snapshots[snapshots.length - 1]?.citation_rate ?? 0
+      if (first > 0) {
+        const pct = ((last - first) / first) * 100
+        if (pct > 5) return 'up'
+        if (pct < -5) return 'down'
+      }
+      return 'stable'
+    })(),
+    trendPercent: (() => {
+      if (snapshots.length < 2) return 0
+      const first = snapshots[0]?.citation_rate ?? 0
+      const last = snapshots[snapshots.length - 1]?.citation_rate ?? 0
+      return first > 0 ? ((last - first) / first) * 100 : 0
+    })(),
+    bestEngine: 'all',
+    color: '#6366f1',
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-text-on-surface">Historical Tracking</h2>
+          <p className="text-sm text-text-muted-surface">
+            Track competitor citation rates over time from monitoring data
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {brands.length > 1 && (
+            <select
+              className="rounded-lg border border-surface-input-border bg-surface-input px-3 py-2 text-sm text-text-on-surface focus:border-brand-500 focus:outline-none"
+              value={selectedBrand?.id || ''}
+              onChange={(e) => {
+                const b = brands.find((x) => x.id === e.target.value)
+                if (b) setSelectedBrand(b)
+              }}
+            >
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="flex rounded-lg border border-surface-input-border bg-surface-input p-1">
+            {DATE_RANGES.map((range) => (
+              <button
+                key={range.days}
+                className={cn(
+                  'rounded px-3 py-1 text-xs font-medium transition-colors',
+                  days === range.days
+                    ? 'bg-brand-500 text-white'
+                    : 'text-text-muted-surface hover:text-text-on-surface',
+                )}
+                onClick={() => setDays(range.days)}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {!loading && snapshots.length === 0 && (
+        <Card className="flex flex-col items-center justify-center p-12 text-center">
+          <BarChart3 className="mb-4 h-12 w-12 text-text-muted-surface" />
+          <h3 className="text-lg font-bold text-text-on-surface">No tracking data yet</h3>
+          <p className="mt-2 max-w-md text-sm text-text-muted-surface">
+            Run monitoring and recalculate snapshots to start tracking competitor rates.
+          </p>
+        </Card>
+      )}
+
+      {!loading && chartData.length > 0 && (
+        <>
+          <Card className="p-6">
+            <h3 className="mb-6 text-lg font-bold text-text-on-surface">Citation Rate Trend</h3>
+            <ResponsiveContainer height={320} width="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[0, 100]} unit="%" />
+                <Tooltip {...tooltipStyle()} formatter={(v: number) => [`${v.toFixed(1)}%`]} />
+                <Legend />
+                <Line
+                  dataKey="brand"
+                  name={selectedBrand?.name || 'Your Brand'}
+                  stroke="#6366f1"
+                  strokeWidth={3}
+                  dot={{ fill: '#6366f1', strokeWidth: 2 }}
+                  type="monotone"
+                />
+                {allCompetitors.map((comp) => (
+                  <Line
+                    key={comp}
+                    dataKey={comp}
+                    name={comp}
+                    stroke={
+                      COMPETITOR_COLORS[allCompetitors.indexOf(comp) % COMPETITOR_COLORS.length]
+                    }
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                    dot={false}
+                    type="monotone"
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="mb-5 text-lg font-bold text-text-on-surface">Competitor Statistics</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-surface-input-border">
+                    <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      Name
+                    </th>
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      Current Rate
+                    </th>
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      Avg Rate
+                    </th>
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      Trend
+                    </th>
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-surface-input-border/50">
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full bg-brand-500" />
+                        <span className="font-bold text-text-on-surface">{brandStats.name}</span>
+                        <Badge variant="brand">Your Brand</Badge>
+                      </div>
+                    </td>
+                    <td className="py-3 text-center font-black text-brand-400">
+                      {brandStats.currentRate.toFixed(1)}%
+                    </td>
+                    <td className="py-3 text-center text-text-secondary-surface">
+                      {brandStats.avgRate.toFixed(1)}%
+                    </td>
+                    <td className="py-3 text-center">
+                      {brandStats.trend === 'up' && (
+                        <span className="flex items-center justify-center gap-1 text-emerald-400">
+                          <TrendingUp className="h-4 w-4" />+{brandStats.trendPercent.toFixed(1)}%
+                        </span>
+                      )}
+                      {brandStats.trend === 'down' && (
+                        <span className="flex items-center justify-center gap-1 text-red-400">
+                          <TrendingDown className="h-4 w-4" />
+                          {brandStats.trendPercent.toFixed(1)}%
+                        </span>
+                      )}
+                      {brandStats.trend === 'stable' && (
+                        <span className="flex items-center justify-center gap-1 text-text-muted-surface">
+                          <Minus className="h-4 w-4" />
+                          Stable
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 text-center">
+                      <Badge
+                        variant={
+                          brandStats.trend === 'up'
+                            ? 'success'
+                            : brandStats.trend === 'down'
+                              ? 'danger'
+                              : 'default'
+                        }
+                      >
+                        {brandStats.trend === 'up'
+                          ? 'Improving'
+                          : brandStats.trend === 'down'
+                            ? 'Declining'
+                            : 'Stable'}
+                      </Badge>
+                    </td>
+                  </tr>
+                  {competitorStats.map((comp) => (
+                    <tr key={comp.name} className="border-b border-surface-input-border/50">
+                      <td className="py-3">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: comp.color }}
+                          />
+                          <span className="font-medium text-text-secondary-surface">
+                            {comp.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 text-center font-black text-text-on-surface">
+                        {comp.currentRate.toFixed(1)}%
+                      </td>
+                      <td className="py-3 text-center text-text-muted-surface">
+                        {comp.avgRate.toFixed(1)}%
+                      </td>
+                      <td className="py-3 text-center">
+                        {comp.trend === 'up' && (
+                          <span className="flex items-center justify-center gap-1 text-red-400">
+                            <TrendingUp className="h-4 w-4" />+{comp.trendPercent.toFixed(1)}%
+                          </span>
+                        )}
+                        {comp.trend === 'down' && (
+                          <span className="flex items-center justify-center gap-1 text-emerald-400">
+                            <TrendingDown className="h-4 w-4" />
+                            {comp.trendPercent.toFixed(1)}%
+                          </span>
+                        )}
+                        {comp.trend === 'stable' && (
+                          <span className="flex items-center justify-center gap-1 text-text-muted-surface">
+                            <Minus className="h-4 w-4" />
+                            Stable
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 text-center">
+                        {comp.currentRate > brandStats.currentRate ? (
+                          <Badge variant="warning">Ahead</Badge>
+                        ) : (
+                          <Badge variant="success">Behind</Badge>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw className="h-6 w-6 animate-spin text-brand-400" />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ScoreRing({ score, color }: { score: number; color: string }) {
+  const r = 26
+  const circ = 2 * Math.PI * r
+  const offset = circ - (score / 100) * circ
+  return (
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: 68, height: 68 }}
+    >
+      <svg className="-rotate-90" height={68} width={68}>
+        <circle
+          cx={34}
+          cy={34}
+          fill="none"
+          r={r}
+          stroke="rgb(var(--color-ring-track))"
+          strokeWidth="6"
+        />
+        <circle
+          cx={34}
+          cy={34}
+          fill="none"
+          r={r}
+          stroke={color}
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          strokeWidth="6"
+          style={{ transition: 'stroke-dashoffset 1s ease' }}
+        />
+      </svg>
+      <span className="absolute text-sm font-black text-text-on-surface">{score}</span>
+    </div>
+  )
+}
+
+function ResultCard({
+  result,
+  rank,
+  color,
+  isPrimary,
+}: {
+  result: CompetitorResult
+  rank: number
+  color: string
+  isPrimary: boolean
+}) {
+  const isWinner = rank === 0
+
+  return (
+    <Card className={cn('p-5 transition-all', isWinner && 'ring-1 ring-brand-500/40')}>
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-base">{RANK_BADGES[rank]}</span>
+            {isPrimary && <Badge variant="brand">Your Site</Badge>}
+            {isWinner && <Badge variant="success">Winner</Badge>}
+          </div>
+          <p className="truncate text-xs text-text-muted-surface">{result.url}</p>
+        </div>
+        <ScoreRing color={color} score={result.score} />
+      </div>
+
+      <p className="mb-4 text-xs leading-relaxed text-text-muted-surface">{result.summary}</p>
+
+      <div className="space-y-2">
+        {result.engineBreakdown.slice(0, 4).map((e) => (
+          <div key={e.engine} className="flex items-center gap-2 text-xs">
+            <span className="w-16 shrink-0 text-text-muted-surface">{e.engine}</span>
+            <div className="h-1 flex-1 rounded-full bg-surface-input-border">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${e.score}%`, background: color }}
+              />
+            </div>
+            <span className="w-7 text-right font-bold text-text-secondary-surface">{e.score}</span>
+          </div>
+        ))}
+      </div>
+
+      {result.keywords.length > 0 && (
+        <div className="mt-4 border-t border-surface-input-border pt-3">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-text-secondary-surface">
+            Top Keywords
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {result.keywords.slice(0, 3).map((k) => (
+              <span
+                key={k.word}
+                className="rounded border px-1.5 py-0.5 text-[10px] font-semibold"
+                style={{ borderColor: `${color}30`, color }}
+              >
+                {k.word}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+export default function CompetitorPage() {
+  const [primaryUrl, setPrimaryUrl] = useState('')
+  const [competitorUrls, setCompetitorUrls] = useState([''])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [results, setResults] = useState<{
+    primary: CompetitorResult
+    competitors: CompetitorResult[]
+  } | null>(null)
+  const [savedAnalyses, setSavedAnalyses] = useState<
+    Array<{
+      id: string
+      primary_url: string
+      summary: string
+      competitors: any
+      created_at: string
+    }>
+  >([])
+
+  useEffect(() => {
+    async function loadSaved() {
+      try {
+        const res = await fetch('/api/competitor?limit=5')
+        const d = await res.json()
+        if (d.success && d.data?.length > 0) {
+          setSavedAnalyses(d.data)
+        }
+      } catch {
+        // Silently fail
+      }
+    }
+    loadSaved()
+  }, [])
+
+  const addCompetitor = () => {
+    if (competitorUrls.length < 3) setCompetitorUrls((prev) => [...prev, ''])
+  }
+  const removeCompetitor = (i: number) =>
+    setCompetitorUrls((prev) => prev.filter((_, idx) => idx !== i))
+  const updateCompetitor = (i: number, val: string) => {
+    setCompetitorUrls((prev) => prev.map((u, idx) => (idx === i ? val : u)))
+  }
+
+  const handleCompare = useCallback(async () => {
+    const validCompetitors = competitorUrls.filter((u) => u.trim())
+    if (!primaryUrl.trim() || validCompetitors.length === 0) return
+
+    setLoading(true)
+    setError(null)
+    setResults(null)
+
+    try {
+      const res = await fetch('/api/competitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          primaryUrl: primaryUrl.trim(),
+          competitorUrls: validCompetitors,
+        }),
+      })
+
+      const json = (await res.json()) as {
+        success: boolean
+        data?: { primary: CompetitorResult; competitors: CompetitorResult[] }
+        message?: string
+      }
+
+      if (!json.success || !json.data) throw new Error(json.message ?? 'Comparison failed')
+      setResults(json.data)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }, [primaryUrl, competitorUrls])
+
+  const radarData = results
+    ? ['ChatGPT', 'Gemini', 'Perplexity', 'Claude'].map((engine) => {
+        const point: Record<string, number | string> = { engine }
+        const allResults = [results.primary, ...results.competitors]
+        allResults.forEach((r, i) => {
+          const match = r.engineBreakdown.find((e) => e.engine === engine)
+          point[`site${i}`] = match?.score ?? 0
+        })
+        return point
+      })
+    : []
+
+  const rankedResults = results
+    ? [
+        ...[
+          { ...results.primary, isPrimary: true },
+          ...results.competitors.map((c) => ({ ...c, isPrimary: false })),
+        ],
+      ].sort((a, b) => b.score - a.score)
+    : []
+
+  const winner = rankedResults[0]
+
+  return (
+    <div className="animate-in space-y-8">
+      <div>
+        <h1 className="text-3xl font-black tracking-tight text-text-on-surface">
+          Competitor Comparison
+        </h1>
+        <p className="mt-1 text-text-muted-surface">
+          Benchmark your AI visibility against up to 3 competitors.
+        </p>
+      </div>
+
+      <HistoricalSection />
+
+      {savedAnalyses.length > 0 && !results && (
+        <Card className="p-5">
+          <h3 className="mb-3 text-sm font-bold text-text-secondary-surface">
+            Previous Comparisons
+          </h3>
+          <div className="space-y-2">
+            {savedAnalyses.map((sa) => (
+              <button
+                key={sa.id}
+                className="flex w-full items-center gap-3 rounded-lg border border-surface-input-border bg-surface-row px-3 py-2 text-left transition-all hover:border-surface-input"
+                onClick={() => {
+                  if (sa.competitors?.primary && sa.competitors?.competitors) {
+                    setResults(sa.competitors)
+                    setPrimaryUrl(sa.primary_url)
+                  }
+                }}
+              >
+                <GitCompare className="h-4 w-4 shrink-0 text-brand-400" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium text-text-secondary-surface">
+                    {sa.primary_url}
+                  </p>
+                  <p className="text-[10px] text-text-muted-surface">
+                    {new Date(sa.created_at).toLocaleString('sv-SE')} · {sa.summary}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+              Your URL (Primary)
+            </label>
+            <input
+              className="w-full rounded-xl border border-brand-500/30 bg-surface-input px-4 py-3 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              placeholder="https://yoursite.com/page-to-analyze"
+              type="url"
+              value={primaryUrl}
+              onChange={(e) => setPrimaryUrl(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+              Competitor URLs
+            </label>
+            <div className="space-y-2">
+              {competitorUrls.map((url, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    className="flex-1 rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all focus:border-brand-500"
+                    placeholder={`https://competitor${i + 1}.com/their-page`}
+                    type="url"
+                    value={url}
+                    onChange={(e) => updateCompetitor(i, e.target.value)}
+                  />
+                  {competitorUrls.length > 1 && (
+                    <button
+                      className="rounded-xl border border-surface-input-border p-3 text-text-muted-surface transition-colors hover:border-red-500/30 hover:text-red-400"
+                      onClick={() => removeCompetitor(i)}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {competitorUrls.length < 3 && (
+              <button
+                className="mt-2 flex items-center gap-2 rounded-xl border border-dashed border-surface-input-border px-4 py-2 text-sm text-text-muted-surface transition-colors hover:border-surface-input-border hover:text-text-secondary-surface"
+                onClick={addCompetitor}
+              >
+                <Plus className="h-4 w-4" /> Add competitor
+              </button>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <p className="text-sm text-red-300">{error}</p>
+          </div>
+        )}
+
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-xs text-text-muted-surface">
+            Each URL will be fetched and analyzed individually using Gemini AI.
+          </p>
+          <Button
+            disabled={!primaryUrl.trim() || !competitorUrls.some((u) => u.trim())}
+            loading={loading}
+            size="lg"
+            onClick={handleCompare}
+          >
+            <GitCompare className="h-5 w-5" />
+            {loading ? 'Analyzing...' : 'Compare'}
+          </Button>
+        </div>
+      </Card>
+
+      {results && (
+        <div className="animate-in space-y-6">
+          {winner && (
+            <div className="flex items-center gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4">
+              <Trophy className="h-8 w-8 text-emerald-400" />
+              <div>
+                <p className="font-bold text-emerald-300">
+                  {winner.isPrimary ? '🎉 Your site leads!' : 'Competitor leads'} — Score:{' '}
+                  {winner.score}/100
+                </p>
+                <p className="max-w-md truncate text-xs text-text-muted-surface">{winner.url}</p>
+              </div>
+              <Button
+                className="ml-auto"
+                size="sm"
+                variant="outline"
+                onClick={() => exportToJson(results, 'competitor-analysis')}
+              >
+                Export JSON
+              </Button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {rankedResults.map((r, i) => (
+              <ResultCard
+                key={r.url}
+                color={COMPETITOR_COLORS[i] ?? '#6b7280'}
+                isPrimary={r.isPrimary}
+                rank={i}
+                result={r}
+              />
+            ))}
+          </div>
+
+          {radarData.length > 0 && (
+            <Card className="p-6">
+              <h2 className="mb-6 text-lg font-bold text-text-on-surface">
+                Engine-by-Engine Radar
+              </h2>
+              <ResponsiveContainer height={320} width="100%">
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="#1f2937" />
+                  <PolarAngleAxis dataKey="engine" tick={{ fontSize: 12, fill: '#6b7280' }} />
+                  <PolarRadiusAxis
+                    angle={90}
+                    domain={[0, 100]}
+                    tick={{ fontSize: 9, fill: '#4b5563' }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: '#0f172a',
+                      border: '1px solid #1f2937',
+                      borderRadius: 8,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {rankedResults.map((r, i) => (
+                    <Radar
+                      key={r.url}
+                      dataKey={`site${i}`}
+                      fill={COMPETITOR_COLORS[i] ?? '#6b7280'}
+                      fillOpacity={0.15}
+                      name={r.isPrimary ? 'Your Site' : `Competitor ${i}`}
+                      stroke={COMPETITOR_COLORS[i] ?? '#6b7280'}
+                      strokeWidth={2}
+                    />
+                  ))}
+                </RadarChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          <Card className="p-6">
+            <h2 className="mb-5 text-lg font-bold text-text-on-surface">
+              Score Delta vs Your Site
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-surface-input-border">
+                    <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      URL
+                    </th>
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      Score
+                    </th>
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      Delta
+                    </th>
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                      Rank
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rankedResults.map((r, i) => {
+                    const delta = r.score - results.primary.score
+                    return (
+                      <tr key={r.url} className="border-b border-surface-input-border/50">
+                        <td className="max-w-[200px] truncate py-3 text-xs text-text-secondary-surface">
+                          {r.url}
+                        </td>
+                        <td className="py-3 text-center font-black text-text-on-surface">
+                          {r.score}
+                        </td>
+                        <td className="py-3 text-center">
+                          {r.isPrimary ? (
+                            <span className="text-xs text-text-muted-surface">baseline</span>
+                          ) : (
+                            <span
+                              className={cn(
+                                'flex items-center justify-center gap-1 text-xs font-bold',
+                                delta > 0 ? 'text-red-400' : 'text-emerald-400',
+                              )}
+                            >
+                              {delta > 0 ? (
+                                <TrendingUp className="h-3 w-3" />
+                              ) : (
+                                <TrendingDown className="h-3 w-3" />
+                              )}
+                              {delta > 0 ? '+' : ''}
+                              {delta}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 text-center text-lg">{RANK_BADGES[i]}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}

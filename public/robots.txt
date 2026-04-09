@@ -1,0 +1,6 @@
+# robots.txt
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://aio-pulse.com/sitemap.xml

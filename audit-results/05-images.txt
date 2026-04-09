@@ -1,0 +1,8 @@
+Image Optimization Check
+=======================
+
+Searched for raw <img> tags in src/**/*.tsx:
+Result: None found
+
+All images in the project are already using next/image component
+or are handled through other optimization mechanisms.

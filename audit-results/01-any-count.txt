@@ -1,0 +1,13 @@
+Count of "as any" usages
+========================
+
+src/app/api/: 153 occurrences
+src/lib/: 20 occurrences
+
+Total: 173 occurrences
+
+Target files for fixing (auth/authorization):
+- src/lib/authorize.ts - check for as any
+- src/lib/supabase.ts - check for as any  
+- src/app/api/brands/route.ts - check for as any
+- src/app/api/brands/[id]/route.ts - check for as any

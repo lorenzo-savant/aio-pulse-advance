@@ -1,0 +1,19 @@
+Build Output - Agent 5
+======================
+
+Build Result: PASSED (no errors)
+
+Build completed successfully with:
+- 71 routes (static and dynamic)
+- No blocking errors
+- Some warnings about:
+  - Middleware deprecation (use "proxy" instead)
+  - Edge runtime disables static generation
+  - Multiple lockfiles warning
+
+All API routes compile correctly.
+
+Heaviest routes (by typical bundle size):
+- /api/queries/orchestrate (dynamic, AI calls)
+- /api/monitoring (dynamic, AI calls)
+- /api/competitor (dynamic, AI calls)

@@ -1,0 +1,102 @@
+// PATH: src/app/api/archive/timeline/route.ts
+// GET /api/archive/timeline?brand_id=xxx&from=xxx&to=xxx&type=xxx&limit=20&offset=0
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { verifyBrandAccess } from '@/lib/authorize'
+
+export async function GET(req: NextRequest) {
+  let userId: string
+  try {
+    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
+  } catch (e) {
+    if (e instanceof AuthError)
+      return NextResponse.json({ success: false, message: e.message }, { status: 401 })
+    return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(req.url)
+  const brandId = searchParams.get('brand_id')
+  const from = searchParams.get('from')
+  const to = searchParams.get('to')
+  const type = searchParams.get('type')
+  const limit = parseInt(searchParams.get('limit') || '20')
+  const offset = parseInt(searchParams.get('offset') || '0')
+
+  if (!brandId) {
+    return NextResponse.json({ success: false, message: 'brand_id is required' }, { status: 400 })
+  }
+
+  const db = createServerClient()
+  if (!db) {
+    return NextResponse.json(
+      { success: false, message: 'Database not configured' },
+      { status: 503 },
+    )
+  }
+
+  const brand = await verifyBrandAccess(brandId, userId)
+  if (!brand) {
+    return NextResponse.json(
+      { success: false, message: 'Brand not found or access denied' },
+      { status: 403 },
+    )
+  }
+
+  try {
+    let query = db
+      .from('research_archives')
+      .select(
+        'id, query_type, tool_section, query_text, created_at, query_date, ai_model_used, status',
+      )
+      .eq('brand_id', brandId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (from) {
+      query = query.gte('query_date', from)
+    }
+    if (to) {
+      query = query.lte('query_date', to)
+    }
+    if (type) {
+      query = query.eq('query_type', type)
+    }
+
+    const { data: archives, error } = await query
+
+    if (error) throw error
+
+    // Get total count for pagination
+    let countQuery = db
+      .from('research_archives')
+      .select('*', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .eq('status', 'active')
+
+    if (from) countQuery = countQuery.gte('query_date', from)
+    if (to) countQuery = countQuery.lte('query_date', to)
+    if (type) countQuery = countQuery.eq('query_type', type)
+
+    const { count } = await countQuery
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        archives: archives || [],
+        pagination: {
+          total: count || 0,
+          limit,
+          offset,
+          hasMore: offset + (archives?.length || 0) < (count || 0),
+        },
+      },
+    })
+  } catch (error) {
+    console.error('[archive/timeline] Error:', error)
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch timeline' },
+      { status: 500 },
+    )
+  }
+}

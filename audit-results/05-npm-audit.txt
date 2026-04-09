@@ -1,0 +1,23 @@
+npm Audit Results
+=================
+
+Total vulnerabilities: 8
+- Moderate: 2
+- High: 5
+- Critical: 1
+
+Vulnerabilities by package:
+
+Critical:
+- jspdf <=4.2.0 (PDF Object Injection, HTML Injection)
+
+High:
+- flatted <=3.4.1 (Prototype Pollution)
+- picomatch (ReDoS, Method Injection)
+
+Moderate:
+- brace-expansion (Memory exhaustion)
+- next 16.0.0-beta.0 - 16.1.6 (HTTP request smuggling, CSRF bypass, DoS)
+
+Recommendation: Run `npm audit fix` to address these issues.
+Note: Breaking changes may occur - test thoroughly after fixing.

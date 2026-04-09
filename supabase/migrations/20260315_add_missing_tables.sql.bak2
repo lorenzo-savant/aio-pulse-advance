@@ -1,0 +1,401 @@
+-- Missing tables migration
+-- Run this in Supabase SQL Editor
+
+-- 1. Scan History
+CREATE TABLE IF NOT EXISTS scan_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE SET NULL,
+  source TEXT DEFAULT '',
+  type TEXT DEFAULT 'text',
+  summary TEXT DEFAULT '',
+  visibility_score FLOAT DEFAULT 0,
+  engine TEXT DEFAULT 'all',
+  model TEXT DEFAULT 'default',
+  intent TEXT DEFAULT 'Informational',
+  intent_confidence FLOAT DEFAULT 0,
+  content_type TEXT DEFAULT 'Article',
+  tone TEXT DEFAULT 'Professional',
+  reading_level TEXT DEFAULT 'Undergraduate',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Team Members
+CREATE TABLE IF NOT EXISTS team_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('owner', 'editor', 'viewer')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'pending', 'disabled')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Brand Invitations
+CREATE TABLE IF NOT EXISTS brand_invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('editor', 'viewer')),
+  invited_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  token UUID DEFAULT gen_random_uuid(),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired')),
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(brand_id, email)
+);
+
+-- 4. Prompts
+CREATE TABLE IF NOT EXISTS prompts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  text TEXT NOT NULL,
+  language TEXT DEFAULT 'en',
+  market TEXT DEFAULT 'global',
+  category TEXT CHECK (category IN ('awareness', 'comparison', 'alternative', 'features', 'custom')),
+  engines TEXT[] DEFAULT ARRAY['chatgpt', 'gemini', 'perplexity'],
+  run_frequency TEXT DEFAULT 'daily' CHECK (run_frequency IN ('hourly', 'daily', 'weekly')),
+  last_run_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. Monitoring Results
+CREATE TABLE IF NOT EXISTS monitoring_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prompt_id UUID REFERENCES prompts(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  engine TEXT NOT NULL,
+  query_text TEXT NOT NULL,
+  result_text TEXT,
+  url TEXT,
+  rank INTEGER,
+  sentiment_score FLOAT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Alert Rules
+CREATE TABLE IF NOT EXISTS alert_rules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  condition TEXT NOT NULL,
+  threshold FLOAT,
+  notification_channels TEXT[] DEFAULT ARRAY['email'],
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Alert Events
+CREATE TABLE IF NOT EXISTS alert_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  alert_rule_id UUID REFERENCES alert_rules(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,
+  message TEXT,
+  channels_sent TEXT[] DEFAULT '{}',
+  triggered_at TIMESTAMPTZ DEFAULT NOW(),
+  acknowledged BOOLEAN DEFAULT false
+);
+
+-- 8. Analysis Results
+CREATE TABLE IF NOT EXISTS analysis_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  analysis_type TEXT NOT NULL,
+  result_data JSONB DEFAULT '{}',
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Archive Audit Log
+CREATE TABLE IF NOT EXISTS archive_audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE,
+  action TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  resource_id UUID,
+  details JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. Brand Health Scores
+CREATE TABLE IF NOT EXISTS brand_health_scores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  visibility_score FLOAT DEFAULT 0,
+  sentiment_score FLOAT DEFAULT 0,
+  hallucination_rate FLOAT DEFAULT 0,
+  mention_count INTEGER DEFAULT 0,
+  health_score FLOAT DEFAULT 0,
+  data JSONB DEFAULT '{}',
+  calculated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(brand_id, date)
+);
+
+-- 11. Brand Snapshots
+CREATE TABLE IF NOT EXISTS brand_snapshots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  snapshot_data JSONB DEFAULT '{}',
+  snapshot_type TEXT DEFAULT 'manual',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 12. Citation Snapshots
+CREATE TABLE IF NOT EXISTS citation_snapshots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  query_text TEXT NOT NULL,
+  citations JSONB DEFAULT '[]',
+  engine TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 13. Competitor Analyses
+CREATE TABLE IF NOT EXISTS competitor_analyses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  competitor_name TEXT NOT NULL,
+  competitor_domain TEXT,
+  analysis_data JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 14. Keyword Tracking
+CREATE TABLE IF NOT EXISTS keyword_tracking (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  keyword TEXT NOT NULL,
+  engine TEXT,
+  current_rank INTEGER,
+  previous_rank INTEGER,
+  tracked_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 15. Query Export Jobs
+CREATE TABLE IF NOT EXISTS query_export_jobs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE,
+  export_type TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+  file_url TEXT,
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
+);
+
+-- 16. Recommendation History
+CREATE TABLE IF NOT EXISTS recommendation_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  recommendation_type TEXT NOT NULL,
+  recommendation_text TEXT,
+  priority TEXT DEFAULT 'medium',
+  status TEXT DEFAULT 'pending',
+  implemented_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 17. Recommendation Tracking
+CREATE TABLE IF NOT EXISTS recommendation_tracking (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  recommendation_id UUID,
+  status TEXT DEFAULT 'pending',
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 18. Research Archives
+CREATE TABLE IF NOT EXISTS research_archives (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT,
+  archive_type TEXT DEFAULT 'research',
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 19. Sentiment History
+CREATE TABLE IF NOT EXISTS sentiment_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id UUID REFERENCES brands(id) ON DELETE CASCADE NOT NULL,
+  sentiment_score FLOAT NOT NULL,
+  sample_text TEXT,
+  source TEXT,
+  analyzed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 20. User API Keys
+CREATE TABLE IF NOT EXISTS user_api_keys (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  key_prefix TEXT NOT NULL,
+  key_hash TEXT NOT NULL,
+  last_used_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS on all tables
+ALTER TABLE scan_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE brand_invitations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE monitoring_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE alert_rules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE alert_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analysis_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE archive_audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE brand_health_scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE brand_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE citation_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE competitor_analyses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE keyword_tracking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE query_export_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recommendation_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recommendation_tracking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE research_archives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sentiment_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_api_keys ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies: scan_history
+CREATE POLICY "users_view_own_scans" ON scan_history FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "users_insert_own_scans" ON scan_history FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "users_delete_own_scans" ON scan_history FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies: team_members
+CREATE POLICY "team_view" ON team_members FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "team_insert" ON team_members FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "team_delete" ON team_members FOR DELETE USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: brand_invitations
+CREATE POLICY "invitations_view" ON brand_invitations FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "invitations_insert" ON brand_invitations FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "invitations_delete" ON brand_invitations FOR DELETE USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: prompts
+CREATE POLICY "prompts_view" ON prompts FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "prompts_insert" ON prompts FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "prompts_update" ON prompts FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "prompts_delete" ON prompts FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies: monitoring_results
+CREATE POLICY "results_view" ON monitoring_results FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "results_insert" ON monitoring_results FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: alert_rules
+CREATE POLICY "alert_rules_view" ON alert_rules FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "alert_rules_insert" ON alert_rules FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "alert_rules_update" ON alert_rules FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "alert_rules_delete" ON alert_rules FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies: alert_events
+CREATE POLICY "alert_events_view" ON alert_events FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: analysis_results
+CREATE POLICY "analysis_results_view" ON analysis_results FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "analysis_results_insert" ON analysis_results FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "analysis_results_delete" ON analysis_results FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies: archive_audit_log
+CREATE POLICY "audit_log_view" ON archive_audit_log FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
+CREATE POLICY "audit_log_insert" ON archive_audit_log FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.uid() IS NULL);
+
+-- RLS Policies: brand_health_scores
+CREATE POLICY "health_scores_view" ON brand_health_scores FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "health_scores_insert" ON brand_health_scores FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: brand_snapshots
+CREATE POLICY "snapshots_view" ON brand_snapshots FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "snapshots_insert" ON brand_snapshots FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: citation_snapshots
+CREATE POLICY "citations_view" ON citation_snapshots FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "citations_insert" ON citation_snapshots FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: competitor_analyses
+CREATE POLICY "competitors_view" ON competitor_analyses FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "competitors_insert" ON competitor_analyses FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "competitors_delete" ON competitor_analyses FOR DELETE USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: keyword_tracking
+CREATE POLICY "keywords_view" ON keyword_tracking FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "keywords_insert" ON keyword_tracking FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "keywords_update" ON keyword_tracking FOR UPDATE USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: query_export_jobs
+CREATE POLICY "export_jobs_view" ON query_export_jobs FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "export_jobs_insert" ON query_export_jobs FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "export_jobs_update" ON query_export_jobs FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "export_jobs_delete" ON query_export_jobs FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies: recommendation_history
+CREATE POLICY "rec_history_view" ON recommendation_history FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "rec_history_insert" ON recommendation_history FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "rec_history_update" ON recommendation_history FOR UPDATE USING (auth.uid() = user_id);
+
+-- RLS Policies: recommendation_tracking
+CREATE POLICY "rec_tracking_view" ON recommendation_tracking FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "rec_tracking_insert" ON recommendation_tracking FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "rec_tracking_update" ON recommendation_tracking FOR UPDATE USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: research_archives
+CREATE POLICY "archives_view" ON research_archives FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "archives_insert" ON research_archives FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "archives_update" ON research_archives FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "archives_delete" ON research_archives FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies: sentiment_history
+CREATE POLICY "sentiment_view" ON sentiment_history FOR SELECT USING (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+CREATE POLICY "sentiment_insert" ON sentiment_history FOR INSERT WITH CHECK (brand_id IN (SELECT id FROM brands WHERE user_id = auth.uid()));
+
+-- RLS Policies: user_api_keys
+CREATE POLICY "api_keys_view" ON user_api_keys FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "api_keys_insert" ON user_api_keys FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "api_keys_delete" ON user_api_keys FOR DELETE USING (auth.uid() = user_id);
+
+-- Create indexes
+CREATE INDEX idx_scan_history_user_id ON scan_history(user_id);
+CREATE INDEX idx_scan_history_created_at ON scan_history(created_at DESC);
+CREATE INDEX idx_team_members_brand_id ON team_members(brand_id);
+CREATE INDEX idx_brand_invitations_brand_id ON brand_invitations(brand_id);
+CREATE INDEX idx_prompts_user_id ON prompts(user_id);
+CREATE INDEX idx_prompts_brand_id ON prompts(brand_id);
+CREATE INDEX idx_monitoring_results_prompt_id ON monitoring_results(prompt_id);
+CREATE INDEX idx_monitoring_results_brand_id ON monitoring_results(brand_id);
+CREATE INDEX idx_alert_rules_user_id ON alert_rules(user_id);
+CREATE INDEX idx_alert_rules_brand_id ON alert_rules(brand_id);
+CREATE INDEX idx_analysis_results_user_id ON analysis_results(user_id);
+CREATE INDEX idx_analysis_results_brand_id ON analysis_results(brand_id);
+CREATE INDEX idx_brand_health_scores_brand_id ON brand_health_scores(brand_id);
+CREATE INDEX idx_brand_snapshots_brand_id ON brand_snapshots(brand_id);
+CREATE INDEX idx_citation_snapshots_brand_id ON citation_snapshots(brand_id);
+CREATE INDEX idx_competitor_analyses_brand_id ON competitor_analyses(brand_id);
+CREATE INDEX idx_keyword_tracking_brand_id ON keyword_tracking(brand_id);
+CREATE INDEX idx_recommendation_history_brand_id ON recommendation_history(brand_id);
+CREATE INDEX idx_recommendation_tracking_brand_id ON recommendation_tracking(brand_id);
+CREATE INDEX idx_research_archives_user_id ON research_archives(user_id);
+CREATE INDEX idx_research_archives_brand_id ON research_archives(brand_id);
+CREATE INDEX idx_sentiment_history_brand_id ON sentiment_history(brand_id);
+CREATE INDEX idx_user_api_keys_user_id ON user_api_keys(user_id);
+
+SELECT 'All migrations complete!' as status;

@@ -427,8 +427,8 @@ export default function SettingsPage() {
   return (
     <div className="animate-in space-y-8 bg-background">
       <div>
-        <h1 className="text-3xl font-black tracking-tight text-white">Settings</h1>
-        <p className="mt-1 text-surface-400">Manage your account, API keys, and preferences.</p>
+        <h1 className="text-3xl font-black tracking-tight text-foreground">Settings</h1>
+        <p className="mt-1 text-muted-foreground">Manage your account, API keys, and preferences.</p>
       </div>
 
       <div className="grid max-w-3xl gap-6">

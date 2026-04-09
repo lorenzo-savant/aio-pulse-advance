@@ -223,7 +223,7 @@ function HistoricalSection() {
                 className={cn(
                   'rounded px-3 py-1 text-xs font-medium transition-colors',
                   days === range.days
-                    ? 'bg-primary text-white'
+                    ? 'bg-primary text-foreground'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => setDays(range.days)}

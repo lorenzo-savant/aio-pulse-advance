@@ -348,9 +348,9 @@ export default function NewBrandWizard() {
  className={cn(
  'flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all',
  step === s.id
- ? 'bg-primary text-white'
+ ? 'bg-primary text-foreground'
  : step > s.id
- ? 'bg-emerald-600 text-white'
+ ? 'bg-emerald-600 text-foreground'
  : 'bg-secondary text-muted-foreground',
  )}
  >
@@ -359,7 +359,7 @@ export default function NewBrandWizard() {
  <span
  className={cn(
  'ml-2 hidden text-sm font-medium sm:inline-block',
- step >= s.id ? 'text-white' : 'text-muted-foreground',
+ step >= s.id ? 'text-foreground' : 'text-muted-foreground',
  )}
  >
  {s.name}
@@ -380,7 +380,7 @@ export default function NewBrandWizard() {
  {step === 1 && (
  <Card className="space-y-6 p-6">
  <div>
- <h2 className="text-xl font-black text-white">Brand Information</h2>
+ <h2 className="text-xl font-black text-foreground">Brand Information</h2>
  <p className="mt-1 text-sm text-muted-foreground">Tell us about your brand.</p>
  </div>
 
@@ -390,7 +390,7 @@ export default function NewBrandWizard() {
  Brand Name *
  </label>
  <input
- className="w-full rounded-xl border border-border px-4 py-3 text-sm text-white placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-white placeholder-surface-600"
+ className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-surface-600"
  placeholder="e.g. AIO Pulse"
  value={form.name}
  onChange={(e) => set('name', e.target.value)}
@@ -402,7 +402,7 @@ export default function NewBrandWizard() {
  Description
  </label>
  <textarea
- className="w-full resize-none rounded-xl border border-border px-4 py-3 text-sm text-white placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-white placeholder-surface-600"
+ className="w-full resize-none rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-surface-600"
  placeholder="Brief description of your brand..."
  rows={3}
  value={form.description}
@@ -416,7 +416,7 @@ export default function NewBrandWizard() {
  Primary Domain
  </label>
  <input
- className="w-full rounded-xl border border-border px-4 py-3 text-sm text-white placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-white placeholder-surface-600"
+ className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-surface-600"
  placeholder="yourdomain.com"
  value={form.domain}
  onChange={(e) => set('domain', e.target.value)}
@@ -427,7 +427,7 @@ export default function NewBrandWizard() {
  Industry
  </label>
  <select
- className="w-full rounded-xl border border-border px-4 py-3 text-sm text-white outline-none focus:border-primary border-border text-white"
+ className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground outline-none focus:border-primary border-border text-foreground"
  value={form.industry}
  onChange={(e) => set('industry', e.target.value)}
  >
@@ -470,7 +470,7 @@ export default function NewBrandWizard() {
  </h3>
  <div className="mb-3 flex gap-2">
  <input
- className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-primary border-border text-white placeholder-surface-600"
+ className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary border-border text-foreground placeholder-surface-600"
  placeholder="Alternative names..."
  value={form.aliasInput}
  onChange={(e) => set('aliasInput', e.target.value)}
@@ -506,7 +506,7 @@ export default function NewBrandWizard() {
  </h3>
  <div className="mb-3 flex gap-2">
  <input
- className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-primary border-border text-white placeholder-surface-600"
+ className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary border-border text-foreground placeholder-surface-600"
  placeholder="Competitor names..."
  value={form.competitorInput}
  onChange={(e) => set('competitorInput', e.target.value)}
@@ -541,7 +541,7 @@ export default function NewBrandWizard() {
  {step === 2 && (
  <Card className="space-y-6 p-6">
  <div>
- <h2 className="text-xl font-black text-white">Target Languages & Markets</h2>
+ <h2 className="text-xl font-black text-foreground">Target Languages & Markets</h2>
  <p className="mt-1 text-sm text-muted-foreground">
  Select which languages and markets you want to monitor.
  </p>
@@ -569,7 +569,7 @@ export default function NewBrandWizard() {
  className={cn(
  'flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all',
  form.languages.includes(lang.id)
- ? 'border-brand-500 bg-primary/10 text-white'
+ ? 'border-brand-500 bg-primary/10 text-foreground'
  : 'border-border bg-secondary/50 text-muted-foreground hover:border-border',
  )}
  >
@@ -603,7 +603,7 @@ export default function NewBrandWizard() {
  className={cn(
  'rounded-xl border px-4 py-2.5 text-sm font-medium transition-all',
  form.markets.includes(market.id)
- ? 'border-brand-500 bg-primary/10 text-white'
+ ? 'border-brand-500 bg-primary/10 text-foreground'
  : 'border-border bg-secondary/50 text-muted-foreground hover:border-border',
  )}
  >
@@ -618,7 +618,7 @@ export default function NewBrandWizard() {
 
  <div className="rounded-xl bg-secondary/50 p-4">
  <p className="text-sm text-muted-foreground">
- Based on: <span className="font-bold text-white">{form.name || 'Your brand'}</span>
+ Based on: <span className="font-bold text-foreground">{form.name || 'Your brand'}</span>
  {form.industry && (
  <>
  {' '}
@@ -628,7 +628,7 @@ export default function NewBrandWizard() {
  </p>
  <p className="mt-2 text-sm text-muted-foreground">
  We&apos;ll generate monitoring prompts for:{' '}
- <span className="font-medium text-white">
+ <span className="font-medium text-foreground">
  {form.languages.length} language{form.languages.length !== 1 ? 's' : ''} ×{' '}
  {form.markets.length} market{form.markets.length !== 1 ? 's' : ''}
  </span>
@@ -679,7 +679,7 @@ export default function NewBrandWizard() {
  {step === 3 && (
  <Card className="space-y-6 p-6">
  <div>
- <h2 className="text-xl font-black text-white">Configure Monitoring</h2>
+ <h2 className="text-xl font-black text-foreground">Configure Monitoring</h2>
  <p className="mt-1 text-sm text-muted-foreground">
  Choose which AI engines to monitor and how often.
  </p>
@@ -722,7 +722,7 @@ export default function NewBrandWizard() {
  >
  {engine.label.slice(0, 3).toUpperCase()}
  </div>
- <span className="font-medium text-white">{engine.label}</span>
+ <span className="font-medium text-foreground">{engine.label}</span>
  {form.engines.includes(engine.id) && (
  <Check className="ml-auto h-4 w-4 text-brand-400" />
  )}
@@ -744,7 +744,7 @@ export default function NewBrandWizard() {
  className={cn(
  'flex-1 rounded-xl border py-3 text-sm font-medium transition-all',
  form.frequency === freq
- ? 'border-brand-500 bg-primary/10 text-white'
+ ? 'border-brand-500 bg-primary/10 text-foreground'
  : 'border-border bg-secondary/50 text-muted-foreground hover:border-border',
  )}
  >
@@ -760,7 +760,7 @@ export default function NewBrandWizard() {
  Alert Email (optional)
  </h3>
  <input
- className="w-full rounded-xl border border-border px-4 py-3 text-sm text-white placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-white placeholder-surface-600"
+ className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-surface-600"
  placeholder="your@email.com"
  value={form.alertEmail}
  onChange={(e) => set('alertEmail', e.target.value)}
@@ -776,7 +776,7 @@ export default function NewBrandWizard() {
  {step === 4 && (
  <Card className="space-y-6 p-6">
  <div>
- <h2 className="text-xl font-black text-white">Review & Launch</h2>
+ <h2 className="text-xl font-black text-foreground">Review & Launch</h2>
  <p className="mt-1 text-sm text-muted-foreground">Ready to start monitoring?</p>
  </div>
 
@@ -785,13 +785,13 @@ export default function NewBrandWizard() {
  {/* Brand */}
  <div className="flex items-center gap-4 rounded-xl border border-border bg-secondary/50 p-4">
  <div
- className="flex h-12 w-12 items-center justify-center rounded-xl text-xl font-black text-white"
+ className="flex h-12 w-12 items-center justify-center rounded-xl text-xl font-black text-foreground"
  style={{ background: form.color }}
  >
  {form.name.charAt(0).toUpperCase() || '?'}
  </div>
  <div>
- <p className="font-bold text-white">{form.name}</p>
+ <p className="font-bold text-foreground">{form.name}</p>
  <p className="text-sm text-muted-foreground">
  {form.industry || 'No industry'} {form.domain && `• ${form.domain}`}
  </p>

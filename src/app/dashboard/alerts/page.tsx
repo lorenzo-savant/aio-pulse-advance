@@ -120,7 +120,7 @@ function EventCard({
       className={cn(
         'group flex items-start gap-4 rounded-2xl border p-4 transition-all',
         event.is_read
-          ? 'border-border bg-surface-900/20'
+          ? 'border-border bg-secondary/20'
           : 'border-brand-500/20 bg-primary/5',
       )}
     >
@@ -136,7 +136,7 @@ function EventCard({
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2">
           {!event.is_read && <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />}
-          <p className="text-sm font-bold text-white">{event.title}</p>
+          <p className="text-sm font-bold text-foreground">{event.title}</p>
           <Badge
             variant={
               (TYPE_COLOR_MAP[event.type] as Parameters<typeof Badge>[0]['variant']) ?? 'default'
@@ -155,7 +155,7 @@ function EventCard({
               Sent via: {event.channels_sent.join(', ')}
             </span>
           )}
-          <span className="text-[10px] text-white">{formatRelativeTime(event.created_at)}</span>
+          <span className="text-[10px] text-foreground">{formatRelativeTime(event.created_at)}</span>
         </div>
       </div>
 
@@ -188,12 +188,12 @@ function RuleCard({
   const Icon = typeConf?.icon ?? Bell
 
   return (
-    <div className="group flex items-center gap-4 rounded-2xl border border-border bg-surface-900/40 p-4 transition-all hover:border-border">
+    <div className="group flex items-center gap-4 rounded-2xl border border-border bg-secondary/40 p-4 transition-all hover:border-border">
       <div
         className={cn(
           'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
           `text-${typeConf?.color ?? 'gray'}-400`,
-          rule.is_active ? `bg-${typeConf?.color ?? 'gray'}-500/10` : 'bg-surface-800',
+          rule.is_active ? `bg-${typeConf?.color ?? 'gray'}-500/10` : 'bg-secondary',
         )}
       >
         <Icon className="h-5 w-5" />
@@ -201,11 +201,11 @@ function RuleCard({
 
       <div className="min-w-0 flex-1">
         <div className="mb-0.5 flex items-center gap-2">
-          <p className="font-bold text-white">{rule.name}</p>
+          <p className="font-bold text-foreground">{rule.name}</p>
           {rule.is_active ? (
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
           ) : (
-            <span className="h-1.5 w-1.5 rounded-full bg-surface-600" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
           )}
         </div>
         <p className="text-xs text-muted-foreground">{typeConf?.desc}</p>
@@ -219,7 +219,7 @@ function RuleCard({
             {rule.channels.join(', ')}
           </div>
           {rule.last_fired_at && (
-            <span className="text-[10px] text-white">
+            <span className="text-[10px] text-foreground">
               Last fired {formatRelativeTime(rule.last_fired_at)}
             </span>
           )}
@@ -307,7 +307,7 @@ function CreateRuleForm({
 
   return (
     <Card className="animate-in border-brand-500/20 p-6">
-      <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-white">
+      <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-foreground">
         <Plus className="h-4 w-4 text-brand-400" /> New Alert Rule
       </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -334,7 +334,7 @@ function CreateRuleForm({
             Rule Name *
           </label>
           <input
-            className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+            className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
             placeholder="e.g. New mention alert"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -353,12 +353,12 @@ function CreateRuleForm({
                   'rounded-xl border p-3 text-left transition-all',
                   form.type === t.type
                     ? 'border-brand-500/50 bg-primary/10'
-                    : 'border-border bg-surface-900/40 hover:border-border',
+                    : 'border-border bg-secondary/40 hover:border-border',
                 )}
                 onClick={() => setForm((f) => ({ ...f, type: t.type }))}
               >
                 <t.icon className={cn('mb-1.5 h-4 w-4', `text-${t.color}-400`)} />
-                <p className="text-[11px] font-bold text-white">{t.label}</p>
+                <p className="text-[11px] font-bold text-foreground">{t.label}</p>
                 <p className="text-[10px] leading-tight text-muted-foreground">{t.desc}</p>
               </button>
             ))}
@@ -371,7 +371,7 @@ function CreateRuleForm({
               Competitor Name
             </label>
             <input
-              className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+              className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
               placeholder="e.g. GetCito"
               value={form.competitor}
               onChange={(e) => setForm((f) => ({ ...f, competitor: e.target.value }))}
@@ -388,7 +388,7 @@ function CreateRuleForm({
                 : '(score points, e.g. 10 for 10%)'}
             </label>
             <input
-              className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+              className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
               placeholder={form.type === 'sentiment_drop' ? '0.3' : '10'}
               type="number"
               value={form.threshold}
@@ -402,7 +402,7 @@ function CreateRuleForm({
             Email *
           </label>
           <input
-            className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+            className="w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
             placeholder="alerts@yourdomain.com"
             type="email"
             value={form.email}
@@ -490,7 +490,7 @@ export default function AlertsPage() {
     <div className="animate-in space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white">Alerts</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Alerts</h1>
           <p className="mt-1 text-muted-foreground">
             Real-time notifications when your brand visibility changes.
           </p>
@@ -565,7 +565,7 @@ export default function AlertsPage() {
           {events.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <Bell className="200 mb-4 h-16 w-16 text-muted-foreground" />
-              <h2 className="mb-2 text-xl font-bold text-white">No events yet</h2>
+              <h2 className="mb-2 text-xl font-bold text-foreground">No events yet</h2>
               <p className="text-muted-foreground">
                 Alert events will appear here when your monitoring rules trigger.
               </p>
@@ -586,7 +586,7 @@ export default function AlertsPage() {
           {rules.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <Bell className="mb-4 h-16 w-16 text-muted-foreground" />
-              <h2 className="mb-2 text-xl font-bold text-white">No alert rules</h2>
+              <h2 className="mb-2 text-xl font-bold text-foreground">No alert rules</h2>
               <p className="mb-6 text-muted-foreground">
                 Create a rule to get notified when brand metrics change.
               </p>

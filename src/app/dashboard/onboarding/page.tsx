@@ -278,10 +278,10 @@ export default function OnboardingPage() {
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
                 i < step
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary text-foreground'
                   : i === step
                     ? 'bg-primary/20 text-primary ring-2 ring-brand-500'
-                    : 'bg-secondary text-surface-200',
+                    : 'bg-secondary text-muted-foreground',
               )}
               onClick={() => i < step && setStep(i)}
             >
@@ -302,8 +302,8 @@ export default function OnboardingPage() {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/20">
             <Sparkles className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-3xl font-black text-white">Welcome to AIO Pulse</h1>
-          <p className="mx-auto mt-3 max-w-md text-surface-400">
+          <h1 className="text-3xl font-black text-foreground">Welcome to AIO Pulse</h1>
+          <p className="mx-auto mt-3 max-w-md text-muted-foreground">
             Let&apos;s set up your first brand for AI visibility monitoring. This takes about 2
             minutes.
           </p>
@@ -313,10 +313,10 @@ export default function OnboardingPage() {
               { icon: MessageSquare, title: 'Set up prompts', desc: 'What questions to monitor' },
               { icon: Zap, title: 'Start monitoring', desc: 'Track across AI engines' },
             ].map((item) => (
-              <div key={item.title} className="rounded-xl border border-surface-800 p-4 text-left">
+              <div key={item.title} className="rounded-xl border border-border p-4 text-left">
                 <item.icon className="mb-2 h-5 w-5 text-primary" />
-                <p className="text-sm font-bold text-white">{item.title}</p>
-                <p className="text-xs text-surface-500">{item.desc}</p>
+                <p className="text-sm font-bold text-foreground">{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -329,19 +329,19 @@ export default function OnboardingPage() {
       {/* Step 1: Brand Setup */}
       {step === 1 && (
         <Card className="p-8">
-          <h2 className="text-2xl font-black text-white">Set up your brand</h2>
-          <p className="mt-1 text-sm text-surface-400">
+          <h2 className="text-2xl font-black text-foreground">Set up your brand</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Tell us about the brand you want to monitor.
           </p>
 
           <div className="mt-6 space-y-5">
             {/* Name */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-surface-500">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Brand Name <span className="text-red-400">*</span>
               </label>
               <input
-                className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="e.g. Ekonomirådgivarna"
                 value={brand.name}
                 onChange={(e) => setBrand({ ...brand, name: e.target.value })}
@@ -350,11 +350,11 @@ export default function OnboardingPage() {
 
             {/* Domain */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-surface-500">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Website Domain
               </label>
               <input
-                className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="e.g. ekonomiradgivarna.se"
                 value={brand.domain}
                 onChange={(e) => setBrand({ ...brand, domain: e.target.value })}
@@ -363,11 +363,11 @@ export default function OnboardingPage() {
 
             {/* Industry */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-surface-500">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Industry
               </label>
               <select
-                className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+                className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
                 value={brand.industry}
                 onChange={(e) => setBrand({ ...brand, industry: e.target.value })}
               >
@@ -382,11 +382,11 @@ export default function OnboardingPage() {
 
             {/* Description */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-surface-500">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Description
               </label>
               <textarea
-                className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="Brief description of what your brand does..."
                 rows={2}
                 value={brand.description}
@@ -397,34 +397,34 @@ export default function OnboardingPage() {
             {/* Aliases & Competitors */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-surface-500">
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Aliases / Variants
                 </label>
                 <input
-                  className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+                  className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                   placeholder="e.g. ERG, Ekonomi AB"
                   value={brand.aliases}
                   onChange={(e) => setBrand({ ...brand, aliases: e.target.value })}
                 />
-                <p className="mt-1 text-[10px] text-surface-200">Comma-separated</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">Comma-separated</p>
               </div>
               <div>
-                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-surface-500">
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Competitors
                 </label>
                 <input
-                  className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+                  className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                   placeholder="e.g. Fortnox, Visma"
                   value={brand.competitors}
                   onChange={(e) => setBrand({ ...brand, competitors: e.target.value })}
                 />
-                <p className="mt-1 text-[10px] text-surface-200">Comma-separated</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">Comma-separated</p>
               </div>
             </div>
 
             {/* Color */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-surface-500">
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Brand Color
               </label>
               <div className="flex flex-wrap gap-2">
@@ -450,8 +450,8 @@ export default function OnboardingPage() {
       {/* Step 2: Prompts */}
       {step === 2 && (
         <Card className="p-8">
-          <h2 className="text-2xl font-black text-white">Monitoring Prompts</h2>
-          <p className="mt-1 text-sm text-surface-400">
+          <h2 className="text-2xl font-black text-foreground">Monitoring Prompts</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             These are the questions we&apos;ll ask AI engines about your brand. We auto-generated
             some based on your brand — edit or add more.
           </p>
@@ -460,11 +460,11 @@ export default function OnboardingPage() {
             {prompts.map((p, i) => (
               <div
                 key={i}
-                className="flex items-start gap-3 rounded-xl border border-surface-800 p-3"
+                className="flex items-start gap-3 rounded-xl border border-border p-3"
               >
-                <MessageSquare className="mt-1 h-4 w-4 shrink-0 text-surface-200" />
+                <MessageSquare className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="flex-1">
-                  <p className="text-sm text-white">{p.text}</p>
+                  <p className="text-sm text-foreground">{p.text}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {p.engines.map((e) => (
                       <Badge key={e} variant="default" size="sm">
@@ -477,7 +477,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
                 <button
-                  className="shrink-0 rounded-lg p-1 text-surface-200 hover:text-red-400"
+                  className="shrink-0 rounded-lg p-1 text-muted-foreground hover:text-red-400"
                   onClick={() => removePrompt(i)}
                 >
                   ×
@@ -488,7 +488,7 @@ export default function OnboardingPage() {
             {/* Add custom prompt */}
             <div className="flex gap-2">
               <input
-                className="flex-1 rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+                className="flex-1 rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                 placeholder="Add a custom prompt..."
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
@@ -508,30 +508,30 @@ export default function OnboardingPage() {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-600/20">
             <Rocket className="h-10 w-10 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-black text-white">Ready to launch!</h2>
-          <p className="mx-auto mt-2 max-w-md text-surface-400">
+          <h2 className="text-2xl font-black text-foreground">Ready to launch!</h2>
+          <p className="mx-auto mt-2 max-w-md text-muted-foreground">
             We&apos;ll create your brand and {prompts.length} monitoring prompts. You can always add
             more later.
           </p>
 
           {/* Summary */}
           <div className="mx-auto mt-6 max-w-sm space-y-3 text-left">
-            <div className="flex items-center gap-3 rounded-xl border border-surface-800 p-3">
+            <div className="flex items-center gap-3 rounded-xl border border-border p-3">
               <div className="h-8 w-8 rounded-lg" style={{ backgroundColor: brand.color }} />
               <div>
-                <p className="text-sm font-bold text-white">{brand.name}</p>
-                <p className="text-xs text-surface-500">
+                <p className="text-sm font-bold text-foreground">{brand.name}</p>
+                <p className="text-xs text-muted-foreground">
                   {brand.domain || 'No domain'} · {brand.industry || 'No industry'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border border-surface-800 p-3">
+            <div className="flex items-center gap-3 rounded-xl border border-border p-3">
               <MessageSquare className="h-5 w-5 text-primary" />
-              <p className="text-sm text-surface-300">{prompts.length} monitoring prompts</p>
+              <p className="text-sm text-muted-foreground">{prompts.length} monitoring prompts</p>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border border-surface-800 p-3">
+            <div className="flex items-center gap-3 rounded-xl border border-border p-3">
               <Zap className="h-5 w-5 text-amber-400" />
-              <p className="text-sm text-surface-300">
+              <p className="text-sm text-muted-foreground">
                 4 AI engines (ChatGPT, Gemini, Perplexity, Claude)
               </p>
             </div>

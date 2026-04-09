@@ -130,8 +130,8 @@ export default function KeywordsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white">Keyword Tracking</h1>
-          <p className="mt-1 text-surface-400">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Keyword Tracking</h1>
+          <p className="mt-1 text-muted-foreground">
             Track keywords that correlate with brand mentions in AI responses.
           </p>
         </div>
@@ -214,7 +214,7 @@ export default function KeywordsPage() {
         <>
           {/* Keyword Cloud Preview */}
           <Card className="p-6">
-            <h2 className="mb-4 text-lg font-bold text-white">Keyword Cloud</h2>
+            <h2 className="mb-4 text-lg font-bold text-foreground">Keyword Cloud</h2>
             <div className="flex flex-wrap gap-2">
               {filteredKeywords.slice(0, 30).map((kw) => {
                 const size = 0.75 + (kw.frequency / maxFrequency) * 0.75
@@ -228,7 +228,7 @@ export default function KeywordsPage() {
                         ? 'bg-primary/20 text-brand-300'
                         : corr > 0
                           ? 'bg-blue-500/20 text-blue-300'
-                          : 'bg-surface-800 text-surface-400',
+                          : 'bg-secondary text-muted-foreground',
                     )}
                     style={{ fontSize: `${size}rem` }}
                   >
@@ -241,24 +241,24 @@ export default function KeywordsPage() {
 
           {/* Keywords Table */}
           <Card className="p-6">
-            <h2 className="mb-5 text-lg font-bold text-white">Keyword Details</h2>
+            <h2 className="mb-5 text-lg font-bold text-foreground">Keyword Details</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-surface-800">
-                    <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-surface-500">
+                  <tr className="border-b border-border">
+                    <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Keyword
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Frequency
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Correlation
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Engines
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Last Seen
                     </th>
                   </tr>
@@ -267,19 +267,19 @@ export default function KeywordsPage() {
                   {filteredKeywords.slice(0, 50).map((kw) => {
                     const corrBadge = getCorrelationBadge(kw.mention_correlation)
                     return (
-                      <tr key={kw.id} className="border-b border-surface-800/50">
+                      <tr key={kw.id} className="border-b border-border/50">
                         <td className="py-3">
-                          <span className="font-medium text-white">{kw.keyword}</span>
+                          <span className="font-medium text-foreground">{kw.keyword}</span>
                         </td>
                         <td className="py-3 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-800">
+                            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-secondary">
                               <div
                                 className="h-full rounded-full bg-primary"
                                 style={{ width: `${(kw.frequency / maxFrequency) * 100}%` }}
                               />
                             </div>
-                            <span className="text-surface-300">{kw.frequency}</span>
+                            <span className="text-muted-foreground">{kw.frequency}</span>
                           </div>
                         </td>
                         <td className="py-3 text-center">
@@ -291,10 +291,10 @@ export default function KeywordsPage() {
                               <TrendingDown className="h-4 w-4 text-red-400" />
                             )}
                             {kw.mention_correlation >= -0.1 && kw.mention_correlation <= 0.1 && (
-                              <Minus className="h-4 w-4 text-surface-500" />
+                              <Minus className="h-4 w-4 text-muted-foreground" />
                             )}
                             <Badge variant={corrBadge.variant}>{corrBadge.label}</Badge>
-                            <span className="text-xs text-surface-500">
+                            <span className="text-xs text-muted-foreground">
                               ({kw.mention_correlation.toFixed(2)})
                             </span>
                           </div>
@@ -315,7 +315,7 @@ export default function KeywordsPage() {
                             ))}
                           </div>
                         </td>
-                        <td className="py-3 text-center text-surface-400">
+                        <td className="py-3 text-center text-muted-foreground">
                           {kw.last_seen
                             ? new Date(kw.last_seen).toLocaleDateString('sv-SE', {
                                 month: 'short',

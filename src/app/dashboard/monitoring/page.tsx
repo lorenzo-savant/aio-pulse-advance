@@ -38,7 +38,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
       <div className="flex items-center gap-4 p-4">
         {/* Engine badge */}
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-xs font-black uppercase text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-xs font-black uppercase text-foreground"
           style={{
             background: `${engineColor}20`,
             borderColor: `${engineColor}40`,
@@ -253,7 +253,7 @@ export default function MonitoringPage() {
     <div className="animate-in space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white">Monitoring Results</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Monitoring Results</h1>
           <p className="mt-1">Live AI engine response analysis for your brands.</p>
         </div>
         <div className="flex items-center gap-3">
@@ -290,13 +290,13 @@ export default function MonitoringPage() {
             label: 'Mention Rate',
             value: `${mentionRate}%`,
             icon: CheckCircle2,
-            color: 'text-emerald-600 text-emerald-400',
+            color: 'text-emerald-400',
           },
           {
             label: 'Hallucinations',
             value: hallucinationCount,
             icon: AlertTriangle,
-            color: 'text-red-600 text-red-400',
+            color: 'text-red-400',
           },
           {
             label: 'Engines Active',
@@ -307,7 +307,7 @@ export default function MonitoringPage() {
         ].map((s) => (
           <Card key={s.label} className="p-5 text-center">
             <s.icon className={cn('mx-auto mb-2 h-6 w-6', s.color)} />
-            <p className="text-2xl font-black text-white">{s.value}</p>
+            <p className="text-2xl font-black text-foreground">{s.value}</p>
             <p className="text-muted-foreground text-xs">{s.label}</p>
           </Card>
         ))}
@@ -318,7 +318,7 @@ export default function MonitoringPage() {
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-widest">Brand:</span>
           <select
-            className="rounded-xl border px-3 py-1.5 text-xs text-white outline-none focus:border-primary"
+            className="rounded-xl border px-3 py-1.5 text-xs text-foreground outline-none focus:border-primary"
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
           >
@@ -376,7 +376,7 @@ export default function MonitoringPage() {
       ) : results.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Shield className="mb-4 h-16 w-16" />
-          <h2 className="mb-2 text-xl font-bold text-white">No results yet</h2>
+          <h2 className="mb-2 text-xl font-bold text-foreground">No results yet</h2>
           <p className="">
             Run a prompt from the Prompts page to start collecting monitoring data.
           </p>

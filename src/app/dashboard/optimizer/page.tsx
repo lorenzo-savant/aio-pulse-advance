@@ -208,7 +208,7 @@ function IntentMapping({
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-all',
                   isActive
-                    ? 'bg-primary text-white'
+                    ? 'bg-primary text-foreground'
                     : isPast
                       ? 'text-muted-foreground'
                       : 'text-muted-foreground bg-secondary',
@@ -621,7 +621,7 @@ export default function OptimizerPage() {
               className={cn(
                 'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all',
                 mode === m
-                  ? 'bg-primary text-white shadow-lg shadow-brand-600/25'
+                  ? 'bg-primary text-foreground shadow-lg shadow-brand-600/25'
                   : 'text-text-secondary-ui border border-input hover:bg-secondaryhover',
               )}
               onClick={() => setMode(m)}

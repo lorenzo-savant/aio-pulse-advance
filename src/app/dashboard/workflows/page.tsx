@@ -22,9 +22,9 @@ const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; la
  completed: { color: 'text-emerald-400', icon: CheckCircle2, label: 'Completed' },
  running: { color: 'text-primary', icon: Loader2, label: 'Running' },
  failed: { color: 'text-red-400', icon: XCircle, label: 'Failed' },
- pending: { color: 'text-surface-400', icon: Clock, label: 'Pending' },
+ pending: { color: 'text-muted-foreground', icon: Clock, label: 'Pending' },
  retrying: { color: 'text-amber-400', icon: AlertTriangle, label: 'Retrying' },
- cancelled: { color: 'text-surface-500', icon: XCircle, label: 'Cancelled' },
+ cancelled: { color: 'text-muted-foreground', icon: XCircle, label: 'Cancelled' },
 }
 
 function getStatusConfig(status: string): {
@@ -107,16 +107,16 @@ export default function WorkflowStatusPage() {
   <div className="space-y-6">
    <div className="flex items-center justify-between">
     <div>
-     <h1 className="text-3xl font-black tracking-tight text-white">
+     <h1 className="text-3xl font-black tracking-tight text-foreground">
       Workflow Status
      </h1>
-     <p className="mt-1 text-surface-400">
+     <p className="mt-1 text-muted-foreground">
       Track and manage background job executions.
      </p>
     </div>
     <div className="flex items-center gap-4">
      <select
-      className="rounded-xl border border-border px-4 py-2 text-sm text-white border-border bg-secondary text-white"
+      className="rounded-xl border border-border px-4 py-2 text-sm text-foreground border-border bg-secondary text-foreground"
       value={selectedBrand}
       onChange={(e) => setSelectedBrand(e.target.value)}
      >
@@ -134,25 +134,25 @@ export default function WorkflowStatusPage() {
    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
     <Card className="p-4 text-center">
      <Activity className="mx-auto mb-2 h-6 w-6 text-primary text-primary" />
-     <p className="text-2xl font-black text-white">{workflows.length}</p>
-     <p className="text-xs text-surface-500">Total</p>
+     <p className="text-2xl font-black text-foreground">{workflows.length}</p>
+     <p className="text-xs text-muted-foreground">Total</p>
     </Card>
     <Card className="p-4 text-center">
      <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-primary text-primary" />
-     <p className="text-2xl font-black text-white">{runningCount}</p>
-     <p className="text-xs text-surface-500">Running</p>
+     <p className="text-2xl font-black text-foreground">{runningCount}</p>
+     <p className="text-xs text-muted-foreground">Running</p>
     </Card>
     <Card className="p-4 text-center">
-     <XCircle className="mx-auto mb-2 h-6 w-6 text-red-600 text-red-400" />
-     <p className="text-2xl font-black text-white">{failedCount}</p>
-     <p className="text-xs text-surface-500">Failed</p>
+     <XCircle className="mx-auto mb-2 h-6 w-6 text-red-400" />
+     <p className="text-2xl font-black text-foreground">{failedCount}</p>
+     <p className="text-xs text-muted-foreground">Failed</p>
     </Card>
     <Card className="p-4 text-center">
-     <CheckCircle2 className="mx-auto mb-2 h-6 w-6 text-emerald-600 text-emerald-400" />
-     <p className="text-2xl font-black text-white">
+     <CheckCircle2 className="mx-auto mb-2 h-6 w-6 text-emerald-400" />
+     <p className="text-2xl font-black text-foreground">
       {workflows.filter((w) => w.status === 'completed').length}
      </p>
-     <p className="text-xs text-surface-500">Completed</p>
+     <p className="text-xs text-muted-foreground">Completed</p>
     </Card>
    </div>
 
@@ -164,7 +164,7 @@ export default function WorkflowStatusPage() {
        <Loader2 className="h-8 w-8 animate-spin text-primary text-primary" />
       </div>
      ) : workflows.length === 0 ? (
-      <div className="p-12 text-center text-surface-500">No workflow executions found</div>
+      <div className="p-12 text-center text-muted-foreground">No workflow executions found</div>
      ) : (
       workflows.map((workflow) => {
        const statusConfig = getStatusConfig(workflow.status)
@@ -182,10 +182,10 @@ export default function WorkflowStatusPage() {
          >
           <StatusIcon className={cn('h-5 w-5 shrink-0', statusConfig.color)} />
           <div className="min-w-0 flex-1">
-           <p className="truncate font-medium text-white">
+           <p className="truncate font-medium text-foreground">
             {WORKFLOW_TYPE_LABELS[workflow.type] || workflow.type}
            </p>
-           <p className="text-sm text-surface-500">
+           <p className="text-sm text-muted-foreground">
             {formatRelativeTime(workflow.startedAt)}
            </p>
           </div>
@@ -202,7 +202,7 @@ export default function WorkflowStatusPage() {
           </Badge>
           <ChevronRight
            className={cn(
-            'h-5 w-5 text-surface-400 transition-transform',
+            'h-5 w-5 text-muted-foreground transition-transform',
             isExpanded && 'rotate-90',
            )}
           />
@@ -244,7 +244,7 @@ export default function WorkflowStatusPage() {
 
            {/* Steps */}
            <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-surface-500">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
              Steps
             </p>
             {workflow.steps.map((step, i) => {
@@ -253,7 +253,7 @@ export default function WorkflowStatusPage() {
              return (
               <div key={i} className="flex items-center gap-3 text-sm">
                <StepIcon className={cn('h-4 w-4', stepStatus.color)} />
-               <span className="text-surface-300">{step.name}</span>
+               <span className="text-muted-foreground">{step.name}</span>
                {step.error && (
                 <span className="max-w-xs truncate text-xs text-red-400">
                  {step.error}

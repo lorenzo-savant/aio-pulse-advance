@@ -160,7 +160,7 @@ function BillingPage() {
       <div>
         <div className="flex items-center gap-3">
           <CreditCard className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-black tracking-tight text-white">Billing</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Billing</h1>
         </div>
         <p className="mt-1 text-muted-foreground">Manage your subscription and billing details.</p>
       </div>

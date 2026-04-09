@@ -214,7 +214,7 @@ export default function SnapshotsPage() {
     <div>
      <div className="flex items-center gap-3">
       <Camera className="h-8 w-8 text-primary text-primary" />
-      <h1 className="text-3xl font-black tracking-tight text-white">
+      <h1 className="text-3xl font-black tracking-tight text-foreground">
        Snapshots
       </h1>
      </div>
@@ -246,7 +246,7 @@ export default function SnapshotsPage() {
         Brand
        </label>
        <select
-        className="rounded-lg border border-border px-3 py-1.5 text-sm text-white border-border bg-secondary text-white"
+        className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground border-border bg-secondary text-foreground"
         value={selectedBrand?.id || ''}
         onChange={(e) => {
          const b = brands.find((b) => b.id === e.target.value)
@@ -274,8 +274,8 @@ export default function SnapshotsPage() {
          className={cn(
           'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
           engine === e
-           ? 'bg-brand-600 text-white'
-           : 'bg-secondary text-white hover:bg-secondary bg-secondary text-muted-foreground surface-600',
+           ? 'bg-brand-600 text-foreground'
+           : 'bg-secondary text-foreground hover:bg-secondary bg-secondary text-muted-foreground surface-600',
          )}
          onClick={() => setEngine(e)}
         >
@@ -297,8 +297,8 @@ export default function SnapshotsPage() {
          className={cn(
           'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
           days === r.days
-           ? 'bg-brand-600 text-white'
-           : 'bg-secondary text-white hover:bg-secondary bg-secondary text-muted-foreground surface-600',
+           ? 'bg-brand-600 text-foreground'
+           : 'bg-secondary text-foreground hover:bg-secondary bg-secondary text-muted-foreground surface-600',
          )}
          onClick={() => setDays(r.days)}
         >
@@ -327,7 +327,7 @@ export default function SnapshotsPage() {
        Citation Rate
       </p>
       <div className="mt-2 flex items-end gap-2">
-       <span className="text-3xl font-black text-white">
+       <span className="text-3xl font-black text-foreground">
         {latest.citation_rate.toFixed(1)}%
        </span>
        <TrendIcon direction={citationTrend.direction} percent={citationTrend.percent} />
@@ -340,7 +340,7 @@ export default function SnapshotsPage() {
        Avg Visibility
       </p>
       <div className="mt-2 flex items-end gap-2">
-       <span className="text-3xl font-black text-white">
+       <span className="text-3xl font-black text-foreground">
         {latest.avg_visibility.toFixed(0)}
        </span>
        <TrendIcon direction={visibilityTrend.direction} percent={visibilityTrend.percent} />
@@ -352,7 +352,7 @@ export default function SnapshotsPage() {
       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
        Total Prompts
       </p>
-      <span className="mt-2 block text-3xl font-black text-white">
+      <span className="mt-2 block text-3xl font-black text-foreground">
        {latest.total_prompts}
       </span>
      </Card>
@@ -362,7 +362,7 @@ export default function SnapshotsPage() {
       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
        Brand Citations
       </p>
-      <span className="mt-2 block text-3xl font-black text-white">
+      <span className="mt-2 block text-3xl font-black text-foreground">
        {latest.brand_citations}
       </span>
      </Card>
@@ -371,7 +371,7 @@ export default function SnapshotsPage() {
 
    {/* Citation Rate Trend Chart */}
    <Card className="p-6">
-    <h2 className="mb-1 text-lg font-bold text-white">Citation Rate Trend</h2>
+    <h2 className="mb-1 text-lg font-bold text-foreground">Citation Rate Trend</h2>
     <p className="mb-6 text-xs text-muted-foreground">
      How often your brand is cited across AI engines over time
     </p>
@@ -381,7 +381,7 @@ export default function SnapshotsPage() {
      </div>
     ) : chartData.length === 0 ? (
      <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
-      <Camera className="mb-3 h-10 w-10 text-white" />
+      <Camera className="mb-3 h-10 w-10 text-foreground" />
       <p className="text-sm">No snapshots available for this period.</p>
       <p className="mt-1 text-xs text-muted-foreground">
        Run monitoring and recalculate snapshots to start tracking.
@@ -411,7 +411,7 @@ export default function SnapshotsPage() {
    {/* Visibility Trend Chart */}
    {chartData.length > 0 && (
     <Card className="p-6">
-     <h2 className="mb-1 text-lg font-bold text-white">Visibility & Sentiment</h2>
+     <h2 className="mb-1 text-lg font-bold text-foreground">Visibility & Sentiment</h2>
      <p className="mb-6 text-xs text-muted-foreground">
       Average visibility score and normalized sentiment over time
      </p>
@@ -446,7 +446,7 @@ export default function SnapshotsPage() {
    {/* Competitor Rates (from latest snapshot) */}
    {competitorData.length > 0 && (
     <Card className="p-6">
-     <h2 className="mb-1 text-lg font-bold text-white">Competitor Citation Rates</h2>
+     <h2 className="mb-1 text-lg font-bold text-foreground">Competitor Citation Rates</h2>
      <p className="mb-6 text-xs text-muted-foreground">
       Latest snapshot: how often competitors are cited vs your brand
      </p>
@@ -480,7 +480,7 @@ export default function SnapshotsPage() {
    {/* Raw Snapshots Table */}
    {snapshots.length > 0 && (
     <Card className="p-6">
-     <h2 className="mb-4 text-lg font-bold text-white">Snapshot History</h2>
+     <h2 className="mb-4 text-lg font-bold text-foreground">Snapshot History</h2>
      <div className="overflow-x-auto">
       <table className="w-full text-sm">
        <thead>
@@ -531,7 +531,7 @@ export default function SnapshotsPage() {
              {s.citation_rate.toFixed(1)}%
             </Badge>
            </td>
-           <td className="py-3 text-center text-xs font-bold text-white">
+           <td className="py-3 text-center text-xs font-bold text-foreground">
             {s.avg_visibility.toFixed(0)}
            </td>
            <td className="py-3 text-center">

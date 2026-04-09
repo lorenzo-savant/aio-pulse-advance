@@ -245,7 +245,7 @@ export default function CitationsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
             Citation Trends
           </h1>
           <p className="mt-1 text-muted-foreground">
@@ -255,7 +255,7 @@ export default function CitationsPage() {
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
             <select
-              className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
+              className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
               value={selectedBrand?.id || ''}
               onChange={(e) => {
                 const b = brands.find((x) => x.id === e.target.value)
@@ -270,7 +270,7 @@ export default function CitationsPage() {
             </select>
           )}
           <select
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
+            className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value)}
           >
@@ -314,7 +314,7 @@ export default function CitationsPage() {
       {!loading && snapshots.length === 0 && (
         <Card className="flex flex-col items-center justify-center p-12 text-center">
           <BarChart3 className="mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="text-lg font-bold text-white">No citation data yet</h3>
+          <h3 className="text-lg font-bold text-foreground">No citation data yet</h3>
           <p className="mt-2 max-w-md text-sm text-muted-foreground">
             Run the monitoring cron first, then click &quot;Recalculate&quot; to generate citation
             snapshots.
@@ -363,7 +363,7 @@ export default function CitationsPage() {
           <Card className="p-6">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-white">
+                <h2 className="text-lg font-bold text-foreground">
                   Citation Rate — Brand vs Competitors
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -404,14 +404,14 @@ export default function CitationsPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Engine Breakdown */}
             <Card className="p-6">
-              <h2 className="mb-6 text-lg font-bold text-white">Citation Rate by Engine</h2>
+              <h2 className="mb-6 text-lg font-bold text-foreground">Citation Rate by Engine</h2>
               {engineChartData.length > 0 ? (
                 <div className="space-y-5">
                   {engineChartData.map((engine) => (
                     <div key={engine.engine}>
                       <div className="mb-1.5 flex justify-between text-sm font-medium">
                         <span className="text-muted-foreground">{engine.engine}</span>
-                        <span className="font-bold text-white">
+                        <span className="font-bold text-foreground">
                           {engine.citation_rate.toFixed(1)}%
                         </span>
                       </div>
@@ -437,13 +437,13 @@ export default function CitationsPage() {
 
             {/* Competitor Rates Detail */}
             <Card className="p-6">
-              <h2 className="mb-6 text-lg font-bold text-white">Competitor Breakdown</h2>
+              <h2 className="mb-6 text-lg font-bold text-foreground">Competitor Breakdown</h2>
               <div className="space-y-4">
                 {/* Brand row */}
                 <div className="flex items-center justify-between rounded-xl border border-brand-500/20 bg-primary/5 px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="h-3 w-3 rounded-full bg-primary" />
-                    <span className="font-bold text-white">{selectedBrand?.name}</span>
+                    <span className="font-bold text-foreground">{selectedBrand?.name}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-xl font-black text-primary">
@@ -477,7 +477,7 @@ export default function CitationsPage() {
                             }}
                           />
                         </div>
-                        <span className="w-12 text-right text-sm font-bold text-white">
+                        <span className="w-12 text-right text-sm font-bold text-foreground">
                           {rate}%
                         </span>
                       </div>
@@ -495,7 +495,7 @@ export default function CitationsPage() {
           {trendData.length > 1 && (
             <Card className="p-6">
               <div className="mb-6">
-                <h2 className="text-lg font-bold text-white">Citation Rate Over Time</h2>
+                <h2 className="text-lg font-bold text-foreground">Citation Rate Over Time</h2>
                 <p className="text-sm text-muted-foreground">Daily trend — brand vs competitors</p>
               </div>
               <ResponsiveContainer height={300} width="100%">

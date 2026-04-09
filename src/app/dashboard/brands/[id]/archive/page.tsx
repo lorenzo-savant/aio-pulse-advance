@@ -45,7 +45,7 @@ export default function BrandArchivePage({ params }: { params: Promise<{ id: str
             <ArrowLeft className="h-4 w-4" />
             Back to brand
           </button>
-          <h1 className="text-3xl font-black tracking-tight text-white">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
             Brand Archive
           </h1>
           <p className="mt-1 text-muted-foreground">
@@ -60,7 +60,7 @@ export default function BrandArchivePage({ params }: { params: Promise<{ id: str
               <Archive className="h-8 w-8 text-primary text-primary" />
             </div>
           </div>
-          <h2 className="mb-2 text-xl font-bold text-white">Archive System</h2>
+          <h2 className="mb-2 text-xl font-bold text-foreground">Archive System</h2>
           <p className="mx-auto mb-6 max-w-md text-muted-foreground">
             Run the database migrations in Supabase to activate the archive system. This will enable
             timeline tracking, sentiment history, and recommendation insights.

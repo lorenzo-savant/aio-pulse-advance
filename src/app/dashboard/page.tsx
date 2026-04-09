@@ -22,9 +22,9 @@ const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; la
   completed: { color: 'text-emerald-400', icon: CheckCircle2, label: 'Completed' },
   running: { color: 'text-primary', icon: Loader2, label: 'Running' },
   failed: { color: 'text-red-400', icon: XCircle, label: 'Failed' },
-  pending: { color: 'text-surface-400', icon: Clock, label: 'Pending' },
+  pending: { color: 'text-muted-foreground', icon: Clock, label: 'Pending' },
   retrying: { color: 'text-amber-400', icon: AlertTriangle, label: 'Retrying' },
-  cancelled: { color: 'text-surface-500', icon: XCircle, label: 'Cancelled' },
+  cancelled: { color: 'text-muted-foreground', icon: XCircle, label: 'Cancelled' },
 }
 
 function getStatusConfig(status: string): {
@@ -107,7 +107,7 @@ export default function WorkflowStatusPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white">Workflow Status</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Workflow Status</h1>
           <p className="mt-1 text-muted-foreground">Track and manage background job executions.</p>
         </div>
         <div className="flex items-center gap-4">
@@ -130,22 +130,22 @@ export default function WorkflowStatusPage() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card className="p-4 text-center">
           <Activity className="mx-auto mb-2 h-6 w-6 text-primary" />
-          <p className="text-2xl font-black text-white">{workflows.length}</p>
+          <p className="text-2xl font-black text-foreground">{workflows.length}</p>
           <p className="text-xs text-muted-foreground">Total</p>
         </Card>
         <Card className="p-4 text-center">
           <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-primary" />
-          <p className="text-2xl font-black text-white">{runningCount}</p>
+          <p className="text-2xl font-black text-foreground">{runningCount}</p>
           <p className="text-xs text-muted-foreground">Running</p>
         </Card>
         <Card className="p-4 text-center">
           <XCircle className="mx-auto mb-2 h-6 w-6 text-red-400 text-red-600" />
-          <p className="text-2xl font-black text-white">{failedCount}</p>
+          <p className="text-2xl font-black text-foreground">{failedCount}</p>
           <p className="text-xs text-muted-foreground">Failed</p>
         </Card>
         <Card className="p-4 text-center">
           <CheckCircle2 className="mx-auto mb-2 h-6 w-6 text-emerald-400 text-emerald-600" />
-          <p className="text-2xl font-black text-white">
+          <p className="text-2xl font-black text-foreground">
             {workflows.filter((w) => w.status === 'completed').length}
           </p>
           <p className="text-xs text-muted-foreground">Completed</p>
@@ -177,7 +177,7 @@ export default function WorkflowStatusPage() {
                   >
                     <StatusIcon className={cn('h-5 w-5 shrink-0', statusConfig.color)} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-white">
+                      <p className="truncate font-medium text-foreground">
                         {WORKFLOW_TYPE_LABELS[workflow.type] || workflow.type}
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -205,7 +205,7 @@ export default function WorkflowStatusPage() {
 
                   {/* Expanded Details */}
                   {isExpanded && (
-                    <div className="animate-in slide-in-from-top-2 bg-surface-800/50 border-t border-border bg-surface-800 p-4">
+                    <div className="animate-in slide-in-from-top-2 bg-secondary/50 border-t border-border bg-secondary p-4">
                       <div className="mb-4 flex items-center gap-2">
                         <button
                           onClick={(e) => {

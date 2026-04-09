@@ -206,9 +206,9 @@ export default function ReportsPage() {
         <div>
           <div className="flex items-center gap-3">
             <FileText className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-black tracking-tight text-white">White-Label Reports</h1>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">White-Label Reports</h1>
           </div>
-          <p className="mt-1 text-surface-400">
+          <p className="mt-1 text-muted-foreground">
             Customize and generate branded PDF reports for your clients.
           </p>
         </div>
@@ -398,10 +398,10 @@ export default function ReportsPage() {
                       }}
                     />
                   )}
-                  <h3 className="text-lg font-black text-white">
+                  <h3 className="text-lg font-black text-foreground">
                     {settings.brandName || 'Brand Report'}
                   </h3>
-                  <p className="mt-1 text-xs text-white/60">AI Visibility Report</p>
+                  <p className="mt-1 text-xs text-foreground/60">AI Visibility Report</p>
                 </div>
               )}
               {settings.headerStyle === 'minimal' && (
@@ -417,10 +417,10 @@ export default function ReportsPage() {
                     />
                   )}
                   <div>
-                    <h3 className="text-sm font-black text-white">
+                    <h3 className="text-sm font-black text-foreground">
                       {settings.brandName || 'Brand Report'}
                     </h3>
-                    <p className="text-[10px] text-surface-500">AI Visibility Report</p>
+                    <p className="text-[10px] text-muted-foreground">AI Visibility Report</p>
                   </div>
                 </div>
               )}
@@ -436,7 +436,7 @@ export default function ReportsPage() {
                       }}
                     />
                   )}
-                  <h3 className="text-lg font-black text-white">
+                  <h3 className="text-lg font-black text-foreground">
                     {settings.brandName || 'Brand Report'}
                   </h3>
                 </div>
@@ -454,7 +454,7 @@ export default function ReportsPage() {
                 </div>
               ))}
               {settings.showPoweredBy && (
-                <p className="text-center text-[9px] text-surface-200">Powered by AIO Pulse</p>
+                <p className="text-center text-[9px] text-muted-foreground">Powered by AIO Pulse</p>
               )}
             </div>
           </Card>
@@ -497,8 +497,8 @@ export default function ReportsPage() {
                 <div className="flex items-center gap-2">
                   <Zap className="h-5 w-5 text-primary" />
                   <div>
-                    <h3 className="text-lg font-bold text-white">AEO Agent System</h3>
-                    <p className="mt-0.5 text-xs text-surface-500">
+                    <h3 className="text-lg font-bold text-foreground">AEO Agent System</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       Automatisk analys körs dagligen 07:00. Kör manuellt vid behov.
                     </p>
                   </div>
@@ -510,10 +510,10 @@ export default function ReportsPage() {
 
               <div className="mb-4 rounded-xl border border-border bg-secondary/40 p-4">
                 <div className="flex items-start gap-3">
-                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-surface-500" />
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-surface-300">Schemalagda körningar</p>
-                    <p className="mt-1 text-xs text-surface-500">
+                    <p className="text-sm font-medium text-muted-foreground">Schemalagda körningar</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Varje dag 07:00 — alla aktiva brand skickas automatiskt till AEO-systemet.
                       Agenter analyserar och returnerar optimeringsförslag inom ~10 minuter.
                     </p>

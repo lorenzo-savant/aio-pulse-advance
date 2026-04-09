@@ -138,7 +138,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
           {/* Engine breakdown */}
           {entry.engineBreakdown.length > 0 && (
             <div className="mb-4">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-surface-200">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Engine Scores
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -169,7 +169,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
           {/* Keywords */}
           {entry.keywords.length > 0 && (
             <div className="mb-4">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-surface-200">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Keywords
               </p>
               <div className="flex flex-wrap gap-1.5">

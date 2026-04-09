@@ -148,7 +148,7 @@ export default function CreditsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Credits</h1>
+          <h1 className="text-2xl font-bold text-foreground">Credits</h1>
           <p className="">Manage your AI query credits</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchCredits}>

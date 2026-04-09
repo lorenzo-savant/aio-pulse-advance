@@ -216,7 +216,7 @@ export default function RecommendationsPage() {
               className={cn(
                 'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                 filterPriority === 'all'
-                  ? 'bg-brand-600 text-white'
+                  ? 'bg-brand-600 text-foreground'
                   : 'bg-secondaryrow text-muted-foreground hover:text-foreground',
               )}
               onClick={() => setFilterPriority('all')}
@@ -229,7 +229,7 @@ export default function RecommendationsPage() {
                 className={cn(
                   'rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all',
                   filterPriority === p
-                    ? 'bg-brand-600 text-white'
+                    ? 'bg-brand-600 text-foreground'
                     : 'bg-secondaryrow text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => setFilterPriority(p)}
@@ -244,7 +244,7 @@ export default function RecommendationsPage() {
               className={cn(
                 'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                 filterCategory === 'all'
-                  ? 'bg-brand-600 text-white'
+                  ? 'bg-brand-600 text-foreground'
                   : 'bg-secondaryrow text-muted-foreground hover:text-foreground',
               )}
               onClick={() => setFilterCategory('all')}
@@ -257,7 +257,7 @@ export default function RecommendationsPage() {
                 className={cn(
                   'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                   filterCategory === c
-                    ? 'bg-brand-600 text-white'
+                    ? 'bg-brand-600 text-foreground'
                     : 'bg-secondaryrow text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => setFilterCategory(c)}

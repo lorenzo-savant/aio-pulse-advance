@@ -390,7 +390,7 @@ export default function NewBrandWizard() {
  Brand Name *
  </label>
  <input
- className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-surface-600"
+ className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-muted-foreground"
  placeholder="e.g. AIO Pulse"
  value={form.name}
  onChange={(e) => set('name', e.target.value)}
@@ -402,7 +402,7 @@ export default function NewBrandWizard() {
  Description
  </label>
  <textarea
- className="w-full resize-none rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-surface-600"
+ className="w-full resize-none rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-muted-foreground"
  placeholder="Brief description of your brand..."
  rows={3}
  value={form.description}
@@ -416,7 +416,7 @@ export default function NewBrandWizard() {
  Primary Domain
  </label>
  <input
- className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-surface-600"
+ className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-muted-foreground"
  placeholder="yourdomain.com"
  value={form.domain}
  onChange={(e) => set('domain', e.target.value)}
@@ -470,7 +470,7 @@ export default function NewBrandWizard() {
  </h3>
  <div className="mb-3 flex gap-2">
  <input
- className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary border-border text-foreground placeholder-surface-600"
+ className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary border-border text-foreground placeholder-muted-foreground"
  placeholder="Alternative names..."
  value={form.aliasInput}
  onChange={(e) => set('aliasInput', e.target.value)}
@@ -506,7 +506,7 @@ export default function NewBrandWizard() {
  </h3>
  <div className="mb-3 flex gap-2">
  <input
- className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary border-border text-foreground placeholder-surface-600"
+ className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary border-border text-foreground placeholder-muted-foreground"
  placeholder="Competitor names..."
  value={form.competitorInput}
  onChange={(e) => set('competitorInput', e.target.value)}
@@ -760,7 +760,7 @@ export default function NewBrandWizard() {
  Alert Email (optional)
  </h3>
  <input
- className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-surface-600"
+ className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary border-border text-foreground placeholder-muted-foreground"
  placeholder="your@email.com"
  value={form.alertEmail}
  onChange={(e) => set('alertEmail', e.target.value)}

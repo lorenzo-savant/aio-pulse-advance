@@ -691,7 +691,7 @@ export default function BrandDetailPage() {
                 Report Brand Name
               </label>
               <input
-                className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+                className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                 placeholder="Your Company Name"
                 value={editForm.report_brand_name}
                 onChange={(e) => setEditForm({ ...editForm, report_brand_name: e.target.value })}
@@ -711,7 +711,7 @@ export default function BrandDetailPage() {
                   }
                 />
                 <input
-                  className="flex-1 rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+                  className="flex-1 rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                   placeholder="#6366f1"
                   value={editForm.report_primary_color}
                   onChange={(e) =>
@@ -725,7 +725,7 @@ export default function BrandDetailPage() {
                 Logo URL (optional)
               </label>
               <input
-                className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+                className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
                 placeholder="https://your-company.com/logo.png"
                 value={editForm.report_logo_url}
                 onChange={(e) => setEditForm({ ...editForm, report_logo_url: e.target.value })}
@@ -774,7 +774,7 @@ export default function BrandDetailPage() {
         <div className="mb-6 flex flex-wrap gap-3">
           <input
             type="email"
-            className="min-w-[200px] flex-1 rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
+            className="min-w-[200px] flex-1 rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
             placeholder="colleague@company.com"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}

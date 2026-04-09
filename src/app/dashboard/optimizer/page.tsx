@@ -636,7 +636,7 @@ export default function OptimizerPage() {
         {mode === 'text' ? (
           <div className="space-y-1">
             <textarea
-              className="text-foreground placeholder-text-muted-ui w-full resize-none rounded-xl border border-input bg-input px-4 py-3 font-mono text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+              className="text-foreground placeholder-muted-foreground w-full resize-none rounded-xl border border-input bg-input px-4 py-3 font-mono text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
               maxLength={charLimit}
               placeholder="Paste your content here — article, landing page copy, blog post, product description..."
               rows={10}
@@ -656,7 +656,7 @@ export default function OptimizerPage() {
           </div>
         ) : (
           <input
-            className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+            className="text-foreground placeholder-muted-foreground w-full rounded-xl border border-input bg-input px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
             placeholder="https://example.com/your-page"
             type="url"
             value={input}

@@ -34,7 +34,7 @@ function BrandCard({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl font-black text-foreground shadow-lg"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl font-black text-white shadow-lg"
             style={{ background: brand.color, boxShadow: `0 4px 16px ${brand.color}40` }}
           >
             {brand.name.charAt(0).toUpperCase()}

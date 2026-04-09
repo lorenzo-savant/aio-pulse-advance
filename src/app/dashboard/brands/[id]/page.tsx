@@ -285,7 +285,9 @@ export default function BrandDetailPage() {
   const handleRemoveMember = async (memberId: string, memberEmail?: string) => {
     const confirmed = await confirm({
       title: 'Remove team member?',
-      description: memberEmail ? `Remove ${memberEmail} from this brand?` : 'Remove this team member from this brand?',
+      description: memberEmail
+        ? `Remove ${memberEmail} from this brand?`
+        : 'Remove this team member from this brand?',
       confirmLabel: 'Remove',
       destructive: true,
     })
@@ -458,7 +460,9 @@ export default function BrandDetailPage() {
               <h1 className="text-2xl font-black text-white">{brand.name}</h1>
               {brand.domain && (
                 <a
-                  href={brand.domain}
+                  href={
+                    /^https?:\/\//i.test(brand.domain) ? brand.domain : `https://${brand.domain}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-sm text-surface-500 hover:text-brand-400"

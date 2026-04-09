@@ -4,21 +4,58 @@ import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 
 // ─── Webhook URL validator (blocca SSRF) ──────────────────────────────────────
+function isPrivateIp(ip: string): boolean {
+  const parts = ip.split('.').map(Number)
+  if (parts.length === 4) {
+    const [a, b] = parts
+    // 127.0.0.0/8 (loopback)
+    if (a === 127) return true
+    // 0.0.0.0/8 (current network)
+    if (a === 0) return true
+    // 10.0.0.0/8 (private)
+    if (a === 10) return true
+    // 172.16.0.0/12 (private, including Docker)
+    if (a === 172 && b >= 16 && b <= 31) return true
+    // 192.168.0.0/16 (private)
+    if (a === 192 && b === 168) return true
+    // 100.64.0.0/10 (CGNAT, includes Alibaba metadata 100.100.100.200)
+    if (a === 100 && b >= 64 && b <= 127) return true
+    // 169.254.0.0/16 (link-local, includes AWS/GCP/Azure metadata)
+    if (a === 169 && b === 254) return true
+  }
+  // IPv6 checks
+  const lower = ip.toLowerCase()
+  if (lower === '::1' || lower === '0:0:0:0:0:0:0:1') return true
+  // ULA (fc00::/7)
+  if (lower.startsWith('fc') || lower.startsWith('fd')) return true
+  // Link-local (fe80::/10)
+  if (lower.startsWith('fe80')) return true
+  // IPv4-mapped IPv6
+  if (lower.startsWith('::ffff:')) return true
+  return false
+}
+
 function isSafeWebhookUrl(url: string): boolean {
   try {
-    const { hostname } = new URL(url)
-    const blocked = [
+    const parsed = new URL(url)
+    // Only allow http/https
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false
+    // Block non-standard ports that hint at internal services
+    if (parsed.port && !['80', '443', '8080', '8443'].includes(parsed.port)) return false
+    const hostname = parsed.hostname
+    // Block known internal hostnames
+    const blockedHostnames = [
       'localhost',
-      '127.0.0.1',
-      '0.0.0.0',
-      '::1',
-      '169.254.169.254', // AWS metadata
-      'metadata.google.internal', // GCP metadata
+      'metadata.google.internal',
+      'metadata.goog',
+      '169.254.169.254',
+      'metadata.azure.com',
+      '100.100.100.200', // Alibaba metadata
+      'metadata.digitalocean.com',
     ]
-    if (blocked.includes(hostname)) return false
-    if (hostname.startsWith('192.168.')) return false
-    if (hostname.startsWith('10.')) return false
-    if (hostname.startsWith('172.16.') || hostname.startsWith('172.31.')) return false
+    if (blockedHostnames.includes(hostname)) return false
+    // Check for private IP ranges
+    if (isPrivateIp(hostname)) return false
     return true
   } catch {
     return false

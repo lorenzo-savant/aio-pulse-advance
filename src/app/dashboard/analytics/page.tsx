@@ -131,10 +131,19 @@ export default function EnhancedAnalyticsPage() {
         ),
       ])
 
-      const citData = await citRes.json()
-      const visData = await visRes.json()
-      const sentData = await sentRes.json()
-      const compData = await compRes.json()
+      // Helper to safely parse JSON responses
+      const parseJson = async (res: Response) => {
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(`API error ${res.status}: ${text.substring(0, 100)}`)
+        }
+        return res.json()
+      }
+
+      const citData = await parseJson(citRes)
+      const visData = await parseJson(visRes)
+      const sentData = await parseJson(sentRes)
+      const compData = await parseJson(compRes)
 
       if (citData.success) setCitations(citData.data)
       if (visData.success) setVisibility(visData.data)
@@ -145,8 +154,9 @@ export default function EnhancedAnalyticsPage() {
         setError('No data available. Run some scans first.')
       }
     } catch (e) {
-      setError('Failed to load analytics data')
-      console.error(e)
+      const msg = e instanceof Error ? e.message : 'Failed to load analytics data'
+      setError(msg)
+      console.error('fetchAllData error:', e)
     } finally {
       setLoading(false)
     }

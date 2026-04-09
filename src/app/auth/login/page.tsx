@@ -116,24 +116,24 @@ function LoginForm() {
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      <div className="absolute inset-0 bg-page-bg">
+      <div className="absolute inset-0 bg-background">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-[0.05]" />
-        <div className="absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-brand-500/10 blur-[100px]" />
+        <div className="bg-accent/20 absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full blur-[120px]" />
+        <div className="bg-accent/10 absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]" />
       </div>
 
       <header className="relative z-10 flex items-center justify-between px-6 py-5">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 shadow-lg shadow-brand-500/30">
+          <div className="to-primary/80 shadow-primary/30 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary shadow-lg">
             <Shield className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-black tracking-tight text-text-on-surface">{APP_NAME}</span>
+          <span className="text-xl font-black tracking-tight text-foreground">{APP_NAME}</span>
         </Link>
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <Link
             href="/auth/register"
-            className="flex items-center gap-2 rounded-xl bg-surface-input px-4 py-2 text-sm font-medium text-text-on-surface transition-all hover:bg-surface-input-border"
+            className="hover:bg-accent/10 flex items-center gap-2 rounded-xl bg-input px-4 py-2 text-sm font-medium text-foreground transition-all"
           >
             Create account <ArrowRight className="h-4 w-4" />
           </Link>
@@ -142,10 +142,10 @@ function LoginForm() {
 
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-surface-input-border bg-auth-card p-8 shadow-2xl backdrop-blur-xl">
+          <div className="rounded-2xl border border-input bg-card p-8 shadow-2xl backdrop-blur-xl">
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-black text-text-on-surface">Welcome back</h1>
-              <p className="mt-2 text-sm text-text-muted-surface">
+              <h1 className="text-2xl font-black text-foreground">Welcome back</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
                 Sign in to your account to continue
               </p>
             </div>
@@ -173,12 +173,12 @@ function LoginForm() {
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
                     <Mail className="h-8 w-8 text-emerald-400" />
                   </div>
-                  <h2 className="text-lg font-bold text-text-on-surface">Check your email</h2>
-                  <p className="mt-2 text-sm text-text-muted-surface">
+                  <h2 className="text-lg font-bold text-foreground">Check your email</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
                     We sent a magic link to{' '}
-                    <span className="font-medium text-text-on-surface">{email}</span>
+                    <span className="font-medium text-foreground">{email}</span>
                   </p>
-                  <p className="mt-1 text-xs text-text-muted-surface">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Click the link to sign in. The link expires in 1 hour.
                   </p>
                 </div>
@@ -187,21 +187,21 @@ function LoginForm() {
                     setMagicLinkSent(false)
                     setError(null)
                   }}
-                  className="w-full rounded-xl border border-surface-input-border bg-surface-input py-3 text-sm font-medium text-text-on-surface transition-all hover:bg-surface-input-border"
+                  className="hover:bg-accent/10 w-full rounded-xl border border-input bg-input py-3 text-sm font-medium text-foreground transition-all"
                 >
                   Use a different login method
                 </button>
               </div>
             ) : (
               <>
-                <div className="mb-6 flex rounded-xl bg-surface-input p-1">
+                <div className="mb-6 flex rounded-xl bg-input p-1">
                   <button
                     type="button"
                     onClick={() => setLoginMode('password')}
                     className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
                       loginMode === 'password'
-                        ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/25'
-                        : 'text-text-muted-surface hover:text-text-on-surface'
+                        ? 'shadow-accent/25 bg-accent text-white shadow-lg'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     Password
@@ -211,8 +211,8 @@ function LoginForm() {
                     onClick={() => setLoginMode('magic')}
                     className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
                       loginMode === 'magic'
-                        ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/25'
-                        : 'text-text-muted-surface hover:text-text-on-surface'
+                        ? 'shadow-accent/25 bg-accent text-white shadow-lg'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     Magic Link
@@ -222,13 +222,13 @@ function LoginForm() {
                 {loginMode === 'password' ? (
                   <form className="space-y-5" onSubmit={handlePasswordSubmit}>
                     <div>
-                      <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+                      <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         Email
                       </label>
                       <input
                         required
                         autoComplete="email"
-                        className="w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                        className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                         disabled={loading}
                         placeholder="you@company.com"
                         type="email"
@@ -238,14 +238,14 @@ function LoginForm() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+                      <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         Password
                       </label>
                       <div className="relative">
                         <input
                           required
                           autoComplete="current-password"
-                          className="w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 pr-11 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                          className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                           disabled={loading}
                           placeholder="••••••••"
                           type={showPw ? 'text' : 'password'}
@@ -256,7 +256,7 @@ function LoginForm() {
                           type="button"
                           aria-label={showPw ? 'Hide password' : 'Show password'}
                           aria-pressed={showPw}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted-surface transition-colors hover:text-text-on-surface"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                           onClick={() => setShowPw((v) => !v)}
                         >
                           {showPw ? (
@@ -269,17 +269,17 @@ function LoginForm() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <label className="flex cursor-pointer items-center gap-2 text-sm text-text-muted-surface">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
                         <input
                           checked={rememberMe}
-                          className="rounded border-surface-input-border bg-surface-input"
+                          className="rounded border-input bg-input"
                           type="checkbox"
                           onChange={(e) => setRememberMe(e.target.checked)}
                         />
                         Remember me
                       </label>
                       <Link
-                        className="text-brand text-sm font-medium transition-colors hover:text-brand-400"
+                        className="hover:text-accent/80 text-sm font-medium text-accent transition-colors"
                         href="/auth/forgot-password"
                       >
                         Forgot password?
@@ -287,7 +287,7 @@ function LoginForm() {
                     </div>
 
                     <button
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-500/25 transition-all hover:from-brand-500 hover:to-brand-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="to-primary/80 shadow-primary/25 hover:from-primary/90 hover:to-primary/70 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary py-3.5 text-sm font-bold text-primary-foreground shadow-lg transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={loading}
                       type="submit"
                     >
@@ -307,13 +307,13 @@ function LoginForm() {
                 ) : (
                   <form className="space-y-5" onSubmit={handleMagicLinkSubmit}>
                     <div>
-                      <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+                      <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         Email
                       </label>
                       <input
                         required
                         autoComplete="email"
-                        className="w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                        className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                         disabled={loading}
                         placeholder="you@company.com"
                         type="email"
@@ -322,13 +322,13 @@ function LoginForm() {
                       />
                     </div>
 
-                    <p className="text-xs text-text-muted-surface">
+                    <p className="text-xs text-muted-foreground">
                       We&apos;ll email you a magic link. Click it to sign in instantly — no password
                       needed.
                     </p>
 
                     <button
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-500/25 transition-all hover:from-brand-500 hover:to-brand-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="to-primary/80 shadow-primary/25 hover:from-primary/90 hover:to-primary/70 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary py-3.5 text-sm font-bold text-primary-foreground shadow-lg transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={loading}
                       type="submit"
                     >
@@ -347,10 +347,10 @@ function LoginForm() {
                   </form>
                 )}
 
-                <p className="mt-8 text-center text-sm text-text-muted-surface">
+                <p className="mt-8 text-center text-sm text-muted-foreground">
                   Don&apos;t have an account?{' '}
                   <Link
-                    className="text-brand font-semibold transition-colors hover:text-brand-400"
+                    className="hover:text-accent/80 font-semibold text-accent transition-colors"
                     href="/auth/register"
                   >
                     Create one
@@ -360,13 +360,13 @@ function LoginForm() {
             )}
           </div>
 
-          <p className="mt-6 text-center text-xs text-text-muted-surface">
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             By continuing, you agree to our{' '}
-            <Link className="text-brand hover:text-brand-400" href="#">
+            <Link className="hover:text-accent/80 text-accent" href="#">
               Terms of Service
             </Link>{' '}
             and{' '}
-            <Link className="text-brand hover:text-brand-400" href="#">
+            <Link className="hover:text-accent/80 text-accent" href="#">
               Privacy Policy
             </Link>
           </p>
@@ -380,8 +380,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-page-bg">
-          <Loader2 className="text-brand h-8 w-8 animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
       }
     >

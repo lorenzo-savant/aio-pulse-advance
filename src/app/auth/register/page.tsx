@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation'
 
 function PasswordRequirement({ label, met }: { label: string; met: boolean }) {
   return (
-    <p className={`text-xs ${met ? 'text-emerald-500' : 'text-auth-muted'}`}>
+    <p className={`text-xs ${met ? 'text-emerald-500' : 'text-muted-foreground'}`}>
       {met ? <CheckCircle2 className="mr-1 inline h-3 w-3" /> : '○'} {label}
     </p>
   )
@@ -81,16 +81,16 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-page-bg px-6">
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="w-full max-w-sm text-center">
           <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-500" />
-          <h1 className="mb-2 text-2xl font-black text-nav-text-hover">Check your inbox</h1>
-          <p className="mb-6 text-sm text-nav-text">
-            We sent a verification link to <strong className="text-nav-text-hover">{email}</strong>.
+          <h1 className="mb-2 text-2xl font-black text-foreground">Check your inbox</h1>
+          <p className="mb-6 text-sm text-muted-foreground">
+            We sent a verification link to <strong className="text-foreground">{email}</strong>.
             Click the link to activate your account.
           </p>
           <Link
-            className="inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-brand-500"
+            className="hover:bg-primary/90 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-all"
             href="/auth/login"
           >
             Back to Sign In
@@ -101,14 +101,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-page-bg px-6">
+    <div className="relative flex min-h-screen flex-col bg-background px-6">
       <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" />
-      <div className="pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-600/15 blur-3xl" />
+      <div className="bg-primary/15 pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
 
       <header className="relative z-10 flex items-center justify-between py-5">
         <Link
           href="/"
-          className="flex items-center gap-2 text-sm text-text-muted-surface hover:text-text-on-surface"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
@@ -119,12 +119,12 @@ export default function RegisterPage() {
       <div className="animate-in relative z-10 flex flex-1 items-center justify-center pb-12">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 shadow-xl shadow-brand-600/30">
+            <div className="shadow-primary/30 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-xl">
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-nav-text-hover">{APP_NAME}</h1>
-              <p className="mt-1 text-sm text-nav-text">Create your account</p>
+              <h1 className="text-2xl font-black tracking-tight text-foreground">{APP_NAME}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Create your account</p>
             </div>
           </div>
 
@@ -137,13 +137,13 @@ export default function RegisterPage() {
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-auth-label">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Full Name
                 </label>
                 <input
                   required
                   autoComplete="name"
-                  className="w-full rounded-xl border border-auth-input-border bg-auth-input px-4 py-3 text-sm text-auth-input-text placeholder-auth-muted outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                   disabled={loading}
                   placeholder="Your Name"
                   type="text"
@@ -153,13 +153,13 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-auth-label">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Email
                 </label>
                 <input
                   required
                   autoComplete="email"
-                  className="w-full rounded-xl border border-auth-input-border bg-auth-input px-4 py-3 text-sm text-auth-input-text placeholder-auth-muted outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                   disabled={loading}
                   placeholder="you@company.com"
                   type="email"
@@ -169,14 +169,14 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-auth-label">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Password
                 </label>
                 <div className="relative">
                   <input
                     required
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-auth-input-border bg-auth-input px-4 py-3 pr-11 text-sm text-auth-input-text placeholder-auth-muted outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                    className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                     disabled={loading}
                     minLength={8}
                     placeholder="Min. 8 characters"
@@ -185,7 +185,7 @@ export default function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                   <button
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-auth-muted transition-colors hover:text-auth-label"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
                     aria-label={showPw ? 'Hide password' : 'Show password'}
@@ -212,13 +212,13 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-auth-label">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Confirm Password
                 </label>
                 <input
                   required
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-auth-input-border bg-auth-input px-4 py-3 text-sm text-auth-input-text placeholder-auth-muted outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                   disabled={loading}
                   placeholder="••••••••"
                   type="password"
@@ -228,7 +228,7 @@ export default function RegisterPage() {
               </div>
 
               <button
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition-all hover:bg-brand-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="shadow-primary/25 hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={loading}
                 type="submit"
               >
@@ -243,12 +243,9 @@ export default function RegisterPage() {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-auth-muted">
+            <p className="mt-6 text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link
-                className="font-semibold text-brand-600 hover:text-brand-700"
-                href="/auth/login"
-              >
+              <Link className="hover:text-accent/80 font-semibold text-accent" href="/auth/login">
                 Sign in
               </Link>
             </p>

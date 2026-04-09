@@ -81,25 +81,25 @@ function AcceptContent() {
   }, [token])
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-page-bg p-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-4">
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <Card className="w-full max-w-md border border-surface-input-border bg-card p-8">
+      <Card className="w-full max-w-md border border-input bg-card p-8">
         <div className="text-center">
           {status === 'loading' && (
             <>
-              <Loader2 className="mx-auto h-12 w-12 animate-spin text-brand-400" />
-              <h2 className="mt-4 text-xl font-bold text-text-on-surface">Accepting Invitation</h2>
-              <p className="mt-2 text-text-muted-surface">{message}</p>
+              <Loader2 className="mx-auto h-12 w-12 animate-spin text-accent" />
+              <h2 className="mt-4 text-xl font-bold text-foreground">Accepting Invitation</h2>
+              <p className="mt-2 text-muted-foreground">{message}</p>
             </>
           )}
 
           {status === 'success' && (
             <>
               <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
-              <h2 className="mt-4 text-xl font-bold text-text-on-surface">Welcome!</h2>
-              <p className="mt-2 text-text-muted-surface">{message}</p>
+              <h2 className="mt-4 text-xl font-bold text-foreground">Welcome!</h2>
+              <p className="mt-2 text-muted-foreground">{message}</p>
               <Button onClick={() => router.push('/dashboard')} className="mt-6">
                 Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -109,8 +109,8 @@ function AcceptContent() {
           {status === 'error' && (
             <>
               <XCircle className="mx-auto h-12 w-12 text-red-400" />
-              <h2 className="mt-4 text-xl font-bold text-text-on-surface">Unable to Accept</h2>
-              <p className="mt-2 text-text-muted-surface">{message}</p>
+              <h2 className="mt-4 text-xl font-bold text-foreground">Unable to Accept</h2>
+              <p className="mt-2 text-muted-foreground">{message}</p>
               <div className="mt-6 flex justify-center gap-3">
                 <Button variant="outline" onClick={() => router.push('/login')}>
                   Sign In
@@ -134,8 +134,8 @@ function HomePage() {
     return (
       <Suspense
         fallback={
-          <div className="flex min-h-screen items-center justify-center bg-page-bg">
-            <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+          <div className="flex min-h-screen items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin text-accent" />
           </div>
         }
       >
@@ -151,8 +151,8 @@ export default function HomePageWrapper() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-page-bg">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
       }
     >

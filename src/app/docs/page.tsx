@@ -639,8 +639,11 @@ export default function DocsPage() {
         return (
           <ul key={i} className="mb-4 ml-1 space-y-2">
             {items.map((item, j) => (
-              <li key={j} className="flex gap-2.5 text-[15px] leading-relaxed text-nav-text">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500/60" />
+              <li
+                key={j}
+                className="flex gap-2.5 text-[15px] leading-relaxed text-muted-foreground"
+              >
+                <span className="bg-accent/60 mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" />
                 <span>{item.replace(/^•\s*/, '')}</span>
               </li>
             ))}
@@ -657,15 +660,15 @@ export default function DocsPage() {
               if (match) {
                 return (
                   <div key={j} className="flex gap-3">
-                    <span className="text-brand mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-500/15 text-xs font-bold">
+                    <span className="bg-accent/15 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold text-accent">
                       {match[1]?.replace('Step ', '')}
                     </span>
-                    <p className="text-[15px] leading-relaxed text-nav-text">{match[2]}</p>
+                    <p className="text-[15px] leading-relaxed text-muted-foreground">{match[2]}</p>
                   </div>
                 )
               }
               return (
-                <p key={j} className="text-[15px] leading-relaxed text-nav-text">
+                <p key={j} className="text-[15px] leading-relaxed text-muted-foreground">
                   {line}
                 </p>
               )
@@ -688,15 +691,17 @@ export default function DocsPage() {
                   const def = line.slice(dashIndex + 3).trim()
                   return (
                     <div key={j}>
-                      <span className="text-brand inline-block rounded bg-surface-input px-1.5 py-0.5 text-sm font-semibold">
+                      <span className="inline-block rounded bg-input px-1.5 py-0.5 text-sm font-semibold text-accent">
                         {term}
                       </span>
-                      <span className="ml-2 text-[15px] leading-relaxed text-nav-text">{def}</span>
+                      <span className="ml-2 text-[15px] leading-relaxed text-muted-foreground">
+                        {def}
+                      </span>
                     </div>
                   )
                 }
                 return (
-                  <p key={j} className="text-[15px] leading-relaxed text-nav-text">
+                  <p key={j} className="text-[15px] leading-relaxed text-muted-foreground">
                     {line}
                   </p>
                 )
@@ -707,7 +712,7 @@ export default function DocsPage() {
       }
 
       return (
-        <p key={i} className="mb-4 text-[15px] leading-relaxed text-text-secondary-surface">
+        <p key={i} className="mb-4 text-[15px] leading-relaxed text-muted-foreground">
           {paragraph}
         </p>
       )
@@ -715,16 +720,16 @@ export default function DocsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-page-bg transition-colors">
+    <div className="min-h-screen bg-background transition-colors">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-nav-border bg-nav-bg/80 backdrop-blur-sm">
+      <header className="bg-nav-bg/80 sticky top-0 z-50 border-b border-nav-border backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Zap className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-nav-text-hover">AIO Pulse</span>
+              <span className="text-xl font-bold text-foreground">AIO Pulse</span>
             </Link>
           </div>
 
@@ -733,7 +738,7 @@ export default function DocsPage() {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
-              className="p-2 text-nav-text lg:hidden"
+              className="p-2 text-muted-foreground lg:hidden"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -741,19 +746,22 @@ export default function DocsPage() {
 
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
             <Link
-              className="text-nav-text transition-colors hover:text-brand-600"
+              className="text-muted-foreground transition-colors hover:text-accent"
               href="/#features"
             >
               Features
             </Link>
-            <Link className="text-nav-text transition-colors hover:text-brand-600" href="/#stats">
+            <Link
+              className="text-muted-foreground transition-colors hover:text-accent"
+              href="/#stats"
+            >
               Stats
             </Link>
-            <Link className="text-brand-600" href="/docs">
+            <Link className="text-accent" href="/docs">
               Docs
             </Link>
             <Link
-              className="text-nav-text transition-colors hover:text-brand-600"
+              className="text-muted-foreground transition-colors hover:text-accent"
               href="/dashboard"
             >
               Dashboard
@@ -761,13 +769,13 @@ export default function DocsPage() {
           </nav>
           <div className="hidden items-center gap-3 md:flex">
             <Link
-              className="rounded-lg px-4 py-2 text-sm font-medium text-nav-text transition-colors hover:text-brand-600"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-accent"
               href="/auth/login"
             >
               Sign in
             </Link>
             <Link
-              className="flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition-all hover:bg-brand-500 hover:shadow-brand-500/30 active:scale-95"
+              className="shadow-primary/25 hover:bg-primary/90 flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg transition-all active:scale-95"
               href="/dashboard"
             >
               Get Started
@@ -782,34 +790,38 @@ export default function DocsPage() {
           <nav className="flex flex-col gap-4">
             <Link
               onClick={() => setMobileNavOpen(false)}
-              className="text-nav-text"
+              className="text-muted-foreground"
               href="/#features"
             >
               Features
             </Link>
-            <Link onClick={() => setMobileNavOpen(false)} className="text-nav-text" href="/#stats">
+            <Link
+              onClick={() => setMobileNavOpen(false)}
+              className="text-muted-foreground"
+              href="/#stats"
+            >
               Stats
             </Link>
-            <Link onClick={() => setMobileNavOpen(false)} className="text-brand-600" href="/docs">
+            <Link onClick={() => setMobileNavOpen(false)} className="text-accent" href="/docs">
               Docs
             </Link>
             <Link
               onClick={() => setMobileNavOpen(false)}
-              className="text-nav-text"
+              className="text-muted-foreground"
               href="/dashboard"
             >
               Dashboard
             </Link>
             <Link
               onClick={() => setMobileNavOpen(false)}
-              className="text-nav-text"
+              className="text-muted-foreground"
               href="/auth/login"
             >
               Sign in
             </Link>
             <Link
               onClick={() => setMobileNavOpen(false)}
-              className="font-medium text-brand-600"
+              className="font-medium text-accent"
               href="/dashboard"
             >
               Get Started
@@ -824,23 +836,48 @@ export default function DocsPage() {
         <div className="mb-8">
           <Link
             href="/"
-            className="hover:text-brand mb-4 inline-flex items-center gap-1 text-sm text-text-muted-surface"
+            className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-accent"
           >
             <ArrowLeft className="h-3 w-3" />
             Back to Home
           </Link>
-          <h1 className="text-3xl font-black tracking-tight text-text-on-surface">Documentation</h1>
-          <p className="mt-1 text-text-muted-surface">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Documentation</h1>
+          <p className="mt-1 text-muted-foreground">
             Everything you need to know about using AIO Pulse.
           </p>
         </div>
 
         {/* Search */}
         <div className="relative mb-8">
-          <Search className="absolute left-4 top-3 h-4 w-4 text-text-muted-surface" />
+          <Search className="absolute left-4 top-3 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            className="w-full rounded-xl border border-surface-input-border bg-surface-input py-3 pl-11 pr-10 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+            className="focus:ring-accent/20 w-full rounded-xl border border-input bg-input py-3 pl-11 pr-10 text-sm text-foreground placeholder-muted-foreground outline-none transition-colors focus:border-accent focus:ring-2"
+            placeholder="Search documentation..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-3 rounded p-0.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          {searchQuery && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {totalSections} result{totalSections !== 1 ? 's' : ''} found
+            </p>
+          )}
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-8">
+          <Search className="text-text-muted-surface absolute left-4 top-3 h-4 w-4" />
+          <input
+            type="text"
+            className="border-surface-input-border bg-surface-input text-text-on-surface placeholder-text-muted-surface focus:border-brand-500 focus:ring-brand-500/20 w-full rounded-xl border py-3 pl-11 pr-10 text-sm outline-none transition-colors focus:ring-2"
             placeholder="Search documentation..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -854,7 +891,7 @@ export default function DocsPage() {
             </button>
           )}
           {searchQuery && (
-            <p className="mt-2 text-xs text-text-muted-surface">
+            <p className="text-text-muted-surface mt-2 text-xs">
               {totalSections} result{totalSections !== 1 ? 's' : ''} found
             </p>
           )}
@@ -868,8 +905,8 @@ export default function DocsPage() {
               {filteredDocs.map((group) => (
                 <div key={group.group}>
                   <div className="mb-2 flex items-center gap-2">
-                    <group.icon className="h-4 w-4 text-nav-text" />
-                    <p className="text-xs font-bold uppercase tracking-wider text-nav-text">
+                    <group.icon className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       {group.group}
                     </p>
                   </div>
@@ -881,8 +918,8 @@ export default function DocsPage() {
                         className={cn(
                           'block w-full rounded-lg px-3 py-2 text-left text-sm transition-all',
                           activeSection === section.id
-                            ? 'bg-nav-active-bg font-medium text-nav-active-text'
-                            : 'text-nav-text hover:bg-page-bg-alt hover:text-nav-text-hover',
+                            ? 'bg-accent font-medium text-accent-foreground'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                         )}
                       >
                         {section.title}
@@ -907,14 +944,14 @@ export default function DocsPage() {
                   className="mb-16 scroll-mt-24"
                 >
                   {/* Breadcrumb */}
-                  <p className="mb-2 flex items-center gap-1 text-xs text-text-muted-surface">
+                  <p className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
                     <span>{group.group}</span>
                     <ChevronRight className="h-3 w-3" />
-                    <span className="text-text-muted-surface">{section.title}</span>
+                    <span className="text-muted-foreground">{section.title}</span>
                   </p>
 
                   {/* Title */}
-                  <h2 className="mb-6 text-2xl font-bold text-text-on-surface">{section.title}</h2>
+                  <h2 className="mb-6 text-2xl font-bold text-foreground">{section.title}</h2>
 
                   {/* Content */}
                   <div className="prose prose-slate dark:prose-invert max-w-none">
@@ -922,7 +959,7 @@ export default function DocsPage() {
                   </div>
 
                   {/* Divider */}
-                  <div className="mt-16 border-t border-surface-input-border" />
+                  <div className="mt-16 border-t border-input" />
                 </section>
               )),
             )}
@@ -930,11 +967,14 @@ export default function DocsPage() {
             {/* No results */}
             {totalSections === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Search className="mb-4 h-10 w-10 text-text-secondary-surface" />
-                <p className="text-lg font-bold text-nav-text-hover">No results found</p>
-                <p className="mt-1 text-sm text-nav-text">
+                <Search className="mb-4 h-10 w-10 text-muted-foreground" />
+                <p className="text-lg font-bold text-foreground">No results found</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Try a different search term or{' '}
-                  <button onClick={() => setSearchQuery('')} className="text-brand hover:underline">
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="text-accent hover:underline"
+                  >
                     clear the search
                   </button>
                   .
@@ -948,16 +988,16 @@ export default function DocsPage() {
         {showBackToTop && (
           <button
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 z-50 rounded-full border border-surface-input-border bg-surface-input p-3 shadow-lg transition-all hover:border-brand-500/30 hover:bg-brand-500/10"
+            className="hover:border-accent/30 hover:bg-accent/10 fixed bottom-6 right-6 z-50 rounded-full border border-input bg-input p-3 shadow-lg transition-all"
           >
-            <ArrowUp className="h-4 w-4 text-nav-text" />
+            <ArrowUp className="h-4 w-4 text-muted-foreground" />
           </button>
         )}
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-nav-border bg-page-bg py-8">
-        <div className="mx-auto max-w-7xl px-4 text-center text-sm text-nav-text">
+      <footer className="border-t border-nav-border bg-background py-8">
+        <div className="mx-auto max-w-7xl px-4 text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} AIO Pulse. All rights reserved.</p>
         </div>
       </footer>

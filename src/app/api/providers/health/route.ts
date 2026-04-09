@@ -5,10 +5,12 @@ export async function GET() {
   try {
     const manager = getProviderManager()
     const health = await manager.getProviderHealth()
+    const stats = manager.getProviderStats()
 
     const response = {
       success: true,
       providers: health,
+      stats,
       summary: {
         totalConfigured: health.filter((p) => p.isConfigured).length,
         totalAvailable: health.filter((p) => p.isAvailable).length,
@@ -31,11 +33,12 @@ export async function POST() {
   try {
     const manager = getProviderManager()
     manager.clearHealthCache()
+    manager.clearMRUCache()
     const health = await manager.getProviderHealth()
 
     return NextResponse.json({
       success: true,
-      message: 'Health cache cleared and providers rechecked',
+      message: 'Health cache and MRU cache cleared, providers rechecked',
       providers: health,
       timestamp: new Date().toISOString(),
     })

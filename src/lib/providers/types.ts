@@ -14,6 +14,7 @@ export interface AIProviderConfig {
   enabled: boolean
   priority: number
   isAvailable: boolean
+  latencyMs?: number
 }
 
 export interface AIProviderResult {
@@ -24,6 +25,7 @@ export interface AIProviderResult {
   latencyMs?: number
   tokensUsed?: number
   costEstimate?: number
+  cached?: boolean
 }
 
 export interface AIProviderRequest {
@@ -42,14 +44,42 @@ export interface AIProvider {
   execute(request: AIProviderRequest): Promise<AIProviderResult>
 }
 
-export const PROVIDER_PRIORITY: AIProviderId[] = [
-  'chatgpt',
-  'gemini',
+export interface ProviderTimeoutConfig {
+  warningMs: number
+  timeoutMs: number
+  maxRetries: number
+}
+
+export const DEFAULT_TIMEOUT_CONFIG: Record<AIProviderId, ProviderTimeoutConfig> = {
+  openrouter: { warningMs: 1000, timeoutMs: 30000, maxRetries: 2 },
+  perplexity: { warningMs: 1500, timeoutMs: 45000, maxRetries: 1 },
+  cerebras: { warningMs: 1500, timeoutMs: 45000, maxRetries: 1 },
+  gemini: { warningMs: 2000, timeoutMs: 60000, maxRetries: 2 },
+  'azure-openai': { warningMs: 2000, timeoutMs: 60000, maxRetries: 2 },
+  groq: { warningMs: 2000, timeoutMs: 60000, maxRetries: 2 },
+  chatgpt: { warningMs: 3000, timeoutMs: 90000, maxRetries: 1 },
+  dataforseo: { warningMs: 3000, timeoutMs: 120000, maxRetries: 1 },
+}
+
+export const DEFAULT_PROVIDER_PRIORITY: AIProviderId[] = [
+  'openrouter',
   'perplexity',
+  'cerebras',
+  'gemini',
   'azure-openai',
   'groq',
-  'cerebras',
+  'chatgpt',
+  'dataforseo',
+]
+
+export const PROVIDER_PRIORITY: AIProviderId[] = [
   'openrouter',
+  'perplexity',
+  'cerebras',
+  'gemini',
+  'azure-openai',
+  'groq',
+  'chatgpt',
   'dataforseo',
 ]
 

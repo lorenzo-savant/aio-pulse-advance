@@ -1,5 +1,10 @@
 import type { AIProviderConfig, AIProviderId, AIProviderRequest, AIProviderResult } from './types'
-import { PROVIDER_PRIORITY, PROVIDER_NAMES } from './types'
+import {
+  PROVIDER_PRIORITY,
+  PROVIDER_NAMES,
+  DEFAULT_TIMEOUT_CONFIG,
+  type ProviderTimeoutConfig,
+} from './types'
 import { GeminiProvider } from './gemini-provider'
 import { GroqProvider } from './groq-provider'
 import { CerebrasProvider } from './cerebras-provider'
@@ -33,6 +38,15 @@ export interface ProviderHealthStatus {
   lastChecked: string
 }
 
+export interface ProviderManagerConfig {
+  baseHealthCacheTtl?: number
+  mruCacheSize?: number
+  mruCacheTtl?: number
+  dynamicReorderEnabled?: boolean
+  onCreditDeduction?: (provider: AIProviderId, cost: number) => void
+  onSlowProvider?: (provider: AIProviderId, latencyMs: number, threshold: number) => void
+}
+
 function generateJobKey(request: AIProviderRequest, providerId?: AIProviderId): string {
   const parts = [
     providerId || 'all',
@@ -48,16 +62,29 @@ export class ProviderManager {
   private providerConfigs: Map<AIProviderId, AIProviderConfig>
   private activeJobs: Map<string, Promise<JobResult[]>>
   private healthCache: Map<AIProviderId, { status: ProviderHealthStatus; timestamp: number }>
-  private healthCacheTtl: number = 60000
-
+  private baseHealthCacheTtl: number
+  private mruCache: Map<string, { result: AIProviderResult; timestamp: number }>
+  private mruCacheSize: number
+  private mruCacheTtl: number
+  private dynamicReorderEnabled: boolean
+  private providerLatencies: Map<AIProviderId, number[]>
+  private onCreditDeduction?: (provider: AIProviderId, cost: number) => void
+  private onSlowProvider?: (provider: AIProviderId, latencyMs: number, threshold: number) => void
   private onProviderFallback?: (from: AIProviderId, to: AIProviderId, error?: string) => void
 
-  constructor(onFallback?: (from: AIProviderId, to: AIProviderId, error?: string) => void) {
+  constructor(config?: ProviderManagerConfig) {
     this.providers = new Map()
     this.providerConfigs = new Map()
     this.activeJobs = new Map()
     this.healthCache = new Map()
-    this.onProviderFallback = onFallback
+    this.baseHealthCacheTtl = config?.baseHealthCacheTtl ?? 60000
+    this.mruCacheSize = config?.mruCacheSize ?? 100
+    this.mruCacheTtl = config?.mruCacheTtl ?? 300000
+    this.dynamicReorderEnabled = config?.dynamicReorderEnabled ?? true
+    this.mruCache = new Map()
+    this.providerLatencies = new Map()
+    this.onCreditDeduction = config?.onCreditDeduction
+    this.onSlowProvider = config?.onSlowProvider
 
     this.registerProvider(new ChatGPTProvider())
     this.registerProvider(new GeminiProvider())
@@ -79,6 +106,73 @@ export class ProviderManager {
       priority,
       isAvailable: false,
     })
+    this.providerLatencies.set(provider.id, [])
+  }
+
+  setFallbackCallback(
+    callback: (from: AIProviderId, to: AIProviderId, error?: string) => void,
+  ): void {
+    this.onProviderFallback = callback
+  }
+
+  private getDynamicTtl(providerId: AIProviderId): number {
+    const latencies = this.providerLatencies.get(providerId) ?? []
+    if (latencies.length === 0) return this.baseHealthCacheTtl
+
+    const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length
+    return Math.min(Math.max(avgLatency * 2, 30000), 300000)
+  }
+
+  private updateProviderLatency(providerId: AIProviderId, latencyMs: number): void {
+    const latencies = this.providerLatencies.get(providerId) ?? []
+    latencies.push(latencyMs)
+    if (latencies.length > 10) latencies.shift()
+    this.providerLatencies.set(providerId, latencies)
+  }
+
+  private getSortedProviders(): Array<{
+    id: AIProviderId
+    provider: BaseProvider
+    avgLatency: number
+  }> {
+    return PROVIDER_PRIORITY.map((id) => {
+      const provider = this.providers.get(id)
+      if (!provider) return null
+      const latencies = this.providerLatencies.get(id) ?? []
+      const avgLatency =
+        latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : 10000
+      return { id, provider, avgLatency }
+    })
+      .filter(
+        (p): p is { id: AIProviderId; provider: BaseProvider; avgLatency: number } => p !== null,
+      )
+      .sort((a, b) => a.avgLatency - b.avgLatency)
+  }
+
+  private getMRUCachedResult(request: AIProviderRequest): AIProviderResult | null {
+    const key = generateJobKey(request)
+    const cached = this.mruCache.get(key)
+    if (!cached) return null
+
+    const now = Date.now()
+    if (now - cached.timestamp > this.mruCacheTtl) {
+      this.mruCache.delete(key)
+      return null
+    }
+
+    return { ...cached.result, cached: true }
+  }
+
+  private setMRUCachedResult(request: AIProviderRequest, result: AIProviderResult): void {
+    if (!result.success) return
+
+    const key = generateJobKey(request)
+    this.mruCache.set(key, { result, timestamp: Date.now() })
+
+    if (this.mruCache.size > this.mruCacheSize) {
+      const oldestKey = this.mruCache.keys().next().value
+      if (oldestKey) this.mruCache.delete(oldestKey)
+    }
   }
 
   async checkAvailability(): Promise<Record<AIProviderId, boolean>> {
@@ -88,7 +182,10 @@ export class ProviderManager {
       Array.from(this.providers.entries()).map(async ([id, provider]) => {
         const isAvailable = await provider.isAvailable()
         results[id] = isAvailable
-        this.providerConfigs.get(id)!.isAvailable = isAvailable
+        const config = this.providerConfigs.get(id)
+        if (config) {
+          config.isAvailable = isAvailable
+        }
       }),
     )
 
@@ -101,8 +198,9 @@ export class ProviderManager {
 
     await Promise.all(
       Array.from(this.providers.entries()).map(async ([id, provider]) => {
+        const ttl = this.getDynamicTtl(id)
         const cached = this.healthCache.get(id)
-        if (cached && now - cached.timestamp < this.healthCacheTtl) {
+        if (cached && now - cached.timestamp < ttl) {
           results.push(cached.status)
           return
         }
@@ -121,6 +219,7 @@ export class ProviderManager {
         }
 
         this.healthCache.set(id, { status, timestamp: now })
+        this.updateProviderLatency(id, latencyMs)
         results.push(status)
       }),
     )
@@ -144,11 +243,50 @@ export class ProviderManager {
     return this.providers.get(id)?.isConfigured() ?? false
   }
 
+  private getTimeoutConfig(providerId: AIProviderId): ProviderTimeoutConfig {
+    return (
+      DEFAULT_TIMEOUT_CONFIG[providerId] ?? { warningMs: 5000, timeoutMs: 60000, maxRetries: 1 }
+    )
+  }
+
+  private async executeWithTimeout<T>(
+    providerId: AIProviderId,
+    fn: () => Promise<T>,
+  ): Promise<{ result: T; timedOut: boolean; latencyMs: number }> {
+    const config = this.getTimeoutConfig(providerId)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), config.timeoutMs)
+
+    const startTime = Date.now()
+    try {
+      const result = await fn()
+      clearTimeout(timeoutId)
+      const latencyMs = Date.now() - startTime
+
+      if (latencyMs > config.warningMs) {
+        this.onSlowProvider?.(providerId, latencyMs, config.warningMs)
+      }
+
+      return { result, timedOut: false, latencyMs }
+    } catch (error) {
+      clearTimeout(timeoutId)
+      throw error
+    }
+  }
+
   async executeWithFallback(request: AIProviderRequest): Promise<AIProviderResult> {
-    const sortedProviders = PROVIDER_PRIORITY.map((id) => ({
-      id,
-      provider: this.providers.get(id)!,
-    })).filter(({ provider }) => provider.isConfigured())
+    const cachedResult = this.getMRUCachedResult(request)
+    if (cachedResult) {
+      return cachedResult
+    }
+
+    const sortedProviders = this.dynamicReorderEnabled
+      ? this.getSortedProviders().filter(({ provider }) => provider.isConfigured())
+      : PROVIDER_PRIORITY.map((id) => ({
+          id,
+          provider: this.providers.get(id)!,
+          avgLatency: 0,
+        })).filter(({ provider }) => provider?.isConfigured())
 
     if (sortedProviders.length === 0) {
       return {
@@ -161,17 +299,34 @@ export class ProviderManager {
     let lastError: string | undefined
 
     for (const { id, provider } of sortedProviders) {
-      const result = await provider.execute(request)
+      try {
+        const { result, latencyMs } = await this.executeWithTimeout(id, () =>
+          provider.execute(request),
+        )
 
-      if (result.success) {
-        return result
-      }
+        this.updateProviderLatency(id, latencyMs)
 
-      lastError = result.error
+        if (result.costEstimate && result.costEstimate > 0) {
+          this.onCreditDeduction?.(id, result.costEstimate)
+        }
 
-      const nextProvider = sortedProviders.find((p) => p.id !== id)
-      if (nextProvider && this.onProviderFallback) {
-        this.onProviderFallback(id, nextProvider.id, result.error)
+        if (result.success) {
+          this.setMRUCachedResult(request, result)
+          return result
+        }
+
+        lastError = result.error
+
+        const nextProvider = sortedProviders.find((p) => p.id !== id)
+        if (nextProvider && this.onProviderFallback) {
+          this.onProviderFallback(id, nextProvider.id, result.error)
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : 'Unknown error'
+        const nextProvider = sortedProviders.find((p) => p.id !== id)
+        if (nextProvider && this.onProviderFallback) {
+          this.onProviderFallback(id, nextProvider.id, lastError)
+        }
       }
     }
 
@@ -203,7 +358,24 @@ export class ProviderManager {
       }
     }
 
-    return provider.execute(request)
+    try {
+      const { result, latencyMs } = await this.executeWithTimeout(providerId, () =>
+        provider.execute(request),
+      )
+      this.updateProviderLatency(providerId, latencyMs)
+
+      if (result.costEstimate && result.costEstimate > 0) {
+        this.onCreditDeduction?.(providerId, result.costEstimate)
+      }
+
+      return result
+    } catch (error) {
+      return {
+        success: false,
+        provider: providerId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }
+    }
   }
 
   async executeWithPreferred(
@@ -339,6 +511,7 @@ export class ProviderManager {
   }
 
   removeProvider(id: AIProviderId): boolean {
+    this.providerLatencies.delete(id)
     return this.providers.delete(id) && this.providerConfigs.delete(id)
   }
 
@@ -347,7 +520,8 @@ export class ProviderManager {
   }
 
   getFirstAvailableProvider(): AIProviderId | null {
-    for (const id of PROVIDER_PRIORITY) {
+    const sorted = this.getSortedProviders()
+    for (const { id } of sorted) {
       if (this.isProviderAvailable(id)) {
         return id
       }
@@ -366,6 +540,51 @@ export class ProviderManager {
   clearHealthCache(): void {
     this.healthCache.clear()
   }
+
+  clearMRUCache(): void {
+    this.mruCache.clear()
+  }
+
+  getProviderStats(): Record<
+    AIProviderId,
+    { avgLatency: number; successRate: number; callCount: number }
+  > {
+    const stats: Record<string, { latencies: number[]; successes: number; total: number }> = {}
+
+    for (const [id, latencies] of this.providerLatencies.entries()) {
+      stats[id] = {
+        latencies,
+        successes: 0,
+        total: 0,
+      }
+    }
+
+    for (const [, { result }] of this.mruCache.entries()) {
+      const providerStats = stats[result.provider]
+      if (providerStats) {
+        providerStats.total++
+        if (result.success) providerStats.successes++
+      }
+    }
+
+    const result: Record<
+      AIProviderId,
+      { avgLatency: number; successRate: number; callCount: number }
+    > = {} as Record<AIProviderId, { avgLatency: number; successRate: number; callCount: number }>
+
+    for (const id of PROVIDER_PRIORITY) {
+      const s = stats[id] ?? { latencies: [], successes: 0, total: 0 }
+      const avgLatency =
+        s.latencies.length > 0 ? s.latencies.reduce((a, b) => a + b, 0) / s.latencies.length : 0
+      result[id] = {
+        avgLatency,
+        successRate: s.total > 0 ? s.successes / s.total : 0,
+        callCount: s.total,
+      }
+    }
+
+    return result
+  }
 }
 
 let globalProviderManager: ProviderManager | null = null
@@ -377,9 +596,7 @@ export function getProviderManager(): ProviderManager {
   return globalProviderManager
 }
 
-export function createProviderManager(
-  onFallback?: (from: AIProviderId, to: AIProviderId, error?: string) => void,
-): ProviderManager {
-  globalProviderManager = new ProviderManager(onFallback)
+export function createProviderManager(config?: ProviderManagerConfig): ProviderManager {
+  globalProviderManager = new ProviderManager(config)
   return globalProviderManager
 }

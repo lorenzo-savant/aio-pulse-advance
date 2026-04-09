@@ -18,11 +18,6 @@ export const supabase = isConfigured
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        onAuthStateChange: (event: string) => {
-          if (event === 'SIGNED_OUT') {
-            console.log('[auth] Signed out')
-          }
-        },
       },
     })
   : null

@@ -194,15 +194,15 @@ function HistoricalSection() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-text-on-surface">Historical Tracking</h2>
-          <p className="text-sm text-text-muted-surface">
+          <h2 className="text-xl font-bold text-foreground">Historical Tracking</h2>
+          <p className="text-sm text-muted-foreground">
             Track competitor citation rates over time from monitoring data
           </p>
         </div>
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
             <select
-              className="rounded-lg border border-surface-input-border bg-surface-input px-3 py-2 text-sm text-text-on-surface focus:border-brand-500 focus:outline-none"
+              className="rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
               value={selectedBrand?.id || ''}
               onChange={(e) => {
                 const b = brands.find((x) => x.id === e.target.value)
@@ -216,15 +216,15 @@ function HistoricalSection() {
               ))}
             </select>
           )}
-          <div className="flex rounded-lg border border-surface-input-border bg-surface-input p-1">
+          <div className="flex rounded-lg border border-input bg-input p-1">
             {DATE_RANGES.map((range) => (
               <button
                 key={range.days}
                 className={cn(
                   'rounded px-3 py-1 text-xs font-medium transition-colors',
                   days === range.days
-                    ? 'bg-brand-500 text-white'
-                    : 'text-text-muted-surface hover:text-text-on-surface',
+                    ? 'bg-primary text-white'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => setDays(range.days)}
               >
@@ -237,9 +237,9 @@ function HistoricalSection() {
 
       {!loading && snapshots.length === 0 && (
         <Card className="flex flex-col items-center justify-center p-12 text-center">
-          <BarChart3 className="mb-4 h-12 w-12 text-text-muted-surface" />
-          <h3 className="text-lg font-bold text-text-on-surface">No tracking data yet</h3>
-          <p className="mt-2 max-w-md text-sm text-text-muted-surface">
+          <BarChart3 className="mb-4 h-12 w-12 text-muted-foreground" />
+          <h3 className="text-lg font-bold text-foreground">No tracking data yet</h3>
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">
             Run monitoring and recalculate snapshots to start tracking competitor rates.
           </p>
         </Card>
@@ -248,7 +248,7 @@ function HistoricalSection() {
       {!loading && chartData.length > 0 && (
         <>
           <Card className="p-6">
-            <h3 className="mb-6 text-lg font-bold text-text-on-surface">Citation Rate Trend</h3>
+            <h3 className="mb-6 text-lg font-bold text-foreground">Citation Rate Trend</h3>
             <ResponsiveContainer height={320} width="100%">
               <LineChart data={chartData}>
                 <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
@@ -283,41 +283,41 @@ function HistoricalSection() {
           </Card>
 
           <Card className="p-6">
-            <h3 className="mb-5 text-lg font-bold text-text-on-surface">Competitor Statistics</h3>
+            <h3 className="mb-5 text-lg font-bold text-foreground">Competitor Statistics</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-surface-input-border">
-                    <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                  <tr className="border-b border-input">
+                    <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Name
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Current Rate
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Avg Rate
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Trend
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Status
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-surface-input-border/50">
+                  <tr className="border-b border-input/50">
                     <td className="py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full bg-brand-500" />
-                        <span className="font-bold text-text-on-surface">{brandStats.name}</span>
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                        <span className="font-bold text-foreground">{brandStats.name}</span>
                         <Badge variant="brand">Your Brand</Badge>
                       </div>
                     </td>
-                    <td className="py-3 text-center font-black text-brand-400">
+                    <td className="py-3 text-center font-black text-primary">
                       {brandStats.currentRate.toFixed(1)}%
                     </td>
-                    <td className="py-3 text-center text-text-secondary-surface">
+                    <td className="py-3 text-center text-muted-foreground">
                       {brandStats.avgRate.toFixed(1)}%
                     </td>
                     <td className="py-3 text-center">
@@ -333,7 +333,7 @@ function HistoricalSection() {
                         </span>
                       )}
                       {brandStats.trend === 'stable' && (
-                        <span className="flex items-center justify-center gap-1 text-text-muted-surface">
+                        <span className="flex items-center justify-center gap-1 text-muted-foreground">
                           <Minus className="h-4 w-4" />
                           Stable
                         </span>
@@ -358,22 +358,22 @@ function HistoricalSection() {
                     </td>
                   </tr>
                   {competitorStats.map((comp) => (
-                    <tr key={comp.name} className="border-b border-surface-input-border/50">
+                    <tr key={comp.name} className="border-b border-input/50">
                       <td className="py-3">
                         <div className="flex items-center gap-2">
                           <div
                             className="h-3 w-3 rounded-full"
                             style={{ backgroundColor: comp.color }}
                           />
-                          <span className="font-medium text-text-secondary-surface">
+                          <span className="font-medium text-muted-foreground">
                             {comp.name}
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 text-center font-black text-text-on-surface">
+                      <td className="py-3 text-center font-black text-foreground">
                         {comp.currentRate.toFixed(1)}%
                       </td>
-                      <td className="py-3 text-center text-text-muted-surface">
+                      <td className="py-3 text-center text-muted-foreground">
                         {comp.avgRate.toFixed(1)}%
                       </td>
                       <td className="py-3 text-center">
@@ -389,7 +389,7 @@ function HistoricalSection() {
                           </span>
                         )}
                         {comp.trend === 'stable' && (
-                          <span className="flex items-center justify-center gap-1 text-text-muted-surface">
+                          <span className="flex items-center justify-center gap-1 text-muted-foreground">
                             <Minus className="h-4 w-4" />
                             Stable
                           </span>
@@ -413,7 +413,7 @@ function HistoricalSection() {
 
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <RefreshCw className="h-6 w-6 animate-spin text-brand-400" />
+          <RefreshCw className="h-6 w-6 animate-spin text-primary" />
         </div>
       )}
     </div>
@@ -451,7 +451,7 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
           style={{ transition: 'stroke-dashoffset 1s ease' }}
         />
       </svg>
-      <span className="absolute text-sm font-black text-text-on-surface">{score}</span>
+      <span className="absolute text-sm font-black text-foreground">{score}</span>
     </div>
   )
 }
@@ -478,31 +478,31 @@ function ResultCard({
             {isPrimary && <Badge variant="brand">Your Site</Badge>}
             {isWinner && <Badge variant="success">Winner</Badge>}
           </div>
-          <p className="truncate text-xs text-text-muted-surface">{result.url}</p>
+          <p className="truncate text-xs text-muted-foreground">{result.url}</p>
         </div>
         <ScoreRing color={color} score={result.score} />
       </div>
 
-      <p className="mb-4 text-xs leading-relaxed text-text-muted-surface">{result.summary}</p>
+      <p className="mb-4 text-xs leading-relaxed text-muted-foreground">{result.summary}</p>
 
       <div className="space-y-2">
         {result.engineBreakdown.slice(0, 4).map((e) => (
           <div key={e.engine} className="flex items-center gap-2 text-xs">
-            <span className="w-16 shrink-0 text-text-muted-surface">{e.engine}</span>
-            <div className="h-1 flex-1 rounded-full bg-surface-input-border">
+            <span className="w-16 shrink-0 text-muted-foreground">{e.engine}</span>
+            <div className="h-1 flex-1 rounded-full bg-input-border">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{ width: `${e.score}%`, background: color }}
               />
             </div>
-            <span className="w-7 text-right font-bold text-text-secondary-surface">{e.score}</span>
+            <span className="w-7 text-right font-bold text-muted-foreground">{e.score}</span>
           </div>
         ))}
       </div>
 
       {result.keywords.length > 0 && (
-        <div className="mt-4 border-t border-surface-input-border pt-3">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-text-secondary-surface">
+        <div className="mt-4 border-t border-input pt-3">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
             Top Keywords
           </p>
           <div className="flex flex-wrap gap-1">
@@ -624,10 +624,10 @@ export default function CompetitorPage() {
   return (
     <div className="animate-in space-y-8">
       <div>
-        <h1 className="text-3xl font-black tracking-tight text-text-on-surface">
+        <h1 className="text-3xl font-black tracking-tight text-foreground">
           Competitor Comparison
         </h1>
-        <p className="mt-1 text-text-muted-surface">
+        <p className="mt-1 text-muted-foreground">
           Benchmark your AI visibility against up to 3 competitors.
         </p>
       </div>
@@ -636,14 +636,14 @@ export default function CompetitorPage() {
 
       {savedAnalyses.length > 0 && !results && (
         <Card className="p-5">
-          <h3 className="mb-3 text-sm font-bold text-text-secondary-surface">
+          <h3 className="mb-3 text-sm font-bold text-muted-foreground">
             Previous Comparisons
           </h3>
           <div className="space-y-2">
             {savedAnalyses.map((sa) => (
               <button
                 key={sa.id}
-                className="flex w-full items-center gap-3 rounded-lg border border-surface-input-border bg-surface-row px-3 py-2 text-left transition-all hover:border-surface-input"
+                className="flex w-full items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2 text-left transition-all hover:border-input"
                 onClick={() => {
                   if (sa.competitors?.primary && sa.competitors?.competitors) {
                     setResults(sa.competitors)
@@ -651,12 +651,12 @@ export default function CompetitorPage() {
                   }
                 }}
               >
-                <GitCompare className="h-4 w-4 shrink-0 text-brand-400" />
+                <GitCompare className="h-4 w-4 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-text-secondary-surface">
+                  <p className="truncate text-xs font-medium text-muted-foreground">
                     {sa.primary_url}
                   </p>
-                  <p className="text-[10px] text-text-muted-surface">
+                  <p className="text-[10px] text-muted-foreground">
                     {new Date(sa.created_at).toLocaleString('sv-SE')} · {sa.summary}
                   </p>
                 </div>
@@ -669,11 +669,11 @@ export default function CompetitorPage() {
       <Card className="p-6">
         <div className="space-y-4">
           <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               Your URL (Primary)
             </label>
             <input
-              className="w-full rounded-xl border border-brand-500/30 bg-surface-input px-4 py-3 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-brand-500/30 bg-input px-4 py-3 text-sm text-foreground placeholder-text-muted-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder="https://yoursite.com/page-to-analyze"
               type="url"
               value={primaryUrl}
@@ -682,14 +682,14 @@ export default function CompetitorPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               Competitor URLs
             </label>
             <div className="space-y-2">
               {competitorUrls.map((url, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <input
-                    className="flex-1 rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all focus:border-brand-500"
+                    className="flex-1 rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-text-muted-surface outline-none transition-all focus:border-primary"
                     placeholder={`https://competitor${i + 1}.com/their-page`}
                     type="url"
                     value={url}
@@ -697,7 +697,7 @@ export default function CompetitorPage() {
                   />
                   {competitorUrls.length > 1 && (
                     <button
-                      className="rounded-xl border border-surface-input-border p-3 text-text-muted-surface transition-colors hover:border-red-500/30 hover:text-red-400"
+                      className="rounded-xl border border-input p-3 text-muted-foreground transition-colors hover:border-red-500/30 hover:text-red-400"
                       onClick={() => removeCompetitor(i)}
                     >
                       <X className="h-4 w-4" />
@@ -708,7 +708,7 @@ export default function CompetitorPage() {
             </div>
             {competitorUrls.length < 3 && (
               <button
-                className="mt-2 flex items-center gap-2 rounded-xl border border-dashed border-surface-input-border px-4 py-2 text-sm text-text-muted-surface transition-colors hover:border-surface-input-border hover:text-text-secondary-surface"
+                className="mt-2 flex items-center gap-2 rounded-xl border border-dashed border-input px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-input hover:text-muted-foreground"
                 onClick={addCompetitor}
               >
                 <Plus className="h-4 w-4" /> Add competitor
@@ -725,7 +725,7 @@ export default function CompetitorPage() {
         )}
 
         <div className="mt-6 flex items-center justify-between">
-          <p className="text-xs text-text-muted-surface">
+          <p className="text-xs text-muted-foreground">
             Each URL will be fetched and analyzed individually using Gemini AI.
           </p>
           <Button
@@ -750,7 +750,7 @@ export default function CompetitorPage() {
                   {winner.isPrimary ? '🎉 Your site leads!' : 'Competitor leads'} — Score:{' '}
                   {winner.score}/100
                 </p>
-                <p className="max-w-md truncate text-xs text-text-muted-surface">{winner.url}</p>
+                <p className="max-w-md truncate text-xs text-muted-foreground">{winner.url}</p>
               </div>
               <Button
                 className="ml-auto"
@@ -777,7 +777,7 @@ export default function CompetitorPage() {
 
           {radarData.length > 0 && (
             <Card className="p-6">
-              <h2 className="mb-6 text-lg font-bold text-text-on-surface">
+              <h2 className="mb-6 text-lg font-bold text-foreground">
                 Engine-by-Engine Radar
               </h2>
               <ResponsiveContainer height={320} width="100%">
@@ -814,23 +814,23 @@ export default function CompetitorPage() {
           )}
 
           <Card className="p-6">
-            <h2 className="mb-5 text-lg font-bold text-text-on-surface">
+            <h2 className="mb-5 text-lg font-bold text-foreground">
               Score Delta vs Your Site
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-surface-input-border">
-                    <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                  <tr className="border-b border-input">
+                    <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       URL
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Score
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Delta
                     </th>
-                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                    <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Rank
                     </th>
                   </tr>
@@ -839,16 +839,16 @@ export default function CompetitorPage() {
                   {rankedResults.map((r, i) => {
                     const delta = r.score - results.primary.score
                     return (
-                      <tr key={r.url} className="border-b border-surface-input-border/50">
-                        <td className="max-w-[200px] truncate py-3 text-xs text-text-secondary-surface">
+                      <tr key={r.url} className="border-b border-input/50">
+                        <td className="max-w-[200px] truncate py-3 text-xs text-muted-foreground">
                           {r.url}
                         </td>
-                        <td className="py-3 text-center font-black text-text-on-surface">
+                        <td className="py-3 text-center font-black text-foreground">
                           {r.score}
                         </td>
                         <td className="py-3 text-center">
                           {r.isPrimary ? (
-                            <span className="text-xs text-text-muted-surface">baseline</span>
+                            <span className="text-xs text-muted-foreground">baseline</span>
                           ) : (
                             <span
                               className={cn(

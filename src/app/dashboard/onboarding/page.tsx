@@ -278,10 +278,10 @@ export default function OnboardingPage() {
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
                 i < step
-                  ? 'bg-brand-600 text-white'
+                  ? 'bg-primary text-white'
                   : i === step
-                    ? 'bg-brand-600/20 text-brand-400 ring-2 ring-brand-500'
-                    : 'bg-surface-800 text-surface-200',
+                    ? 'bg-primary/20 text-primary ring-2 ring-brand-500'
+                    : 'bg-secondary text-surface-200',
               )}
               onClick={() => i < step && setStep(i)}
             >
@@ -289,7 +289,7 @@ export default function OnboardingPage() {
             </button>
             {i < STEPS.length - 1 && (
               <div
-                className={cn('h-0.5 w-8 rounded', i < step ? 'bg-brand-600' : 'bg-surface-800')}
+                className={cn('h-0.5 w-8 rounded', i < step ? 'bg-primary' : 'bg-secondary')}
               />
             )}
           </div>
@@ -299,8 +299,8 @@ export default function OnboardingPage() {
       {/* Step 0: Welcome */}
       {step === 0 && (
         <Card className="p-8 text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-600/20">
-            <Sparkles className="h-10 w-10 text-brand-400" />
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/20">
+            <Sparkles className="h-10 w-10 text-primary" />
           </div>
           <h1 className="text-3xl font-black text-white">Welcome to AIO Pulse</h1>
           <p className="mx-auto mt-3 max-w-md text-surface-400">
@@ -314,7 +314,7 @@ export default function OnboardingPage() {
               { icon: Zap, title: 'Start monitoring', desc: 'Track across AI engines' },
             ].map((item) => (
               <div key={item.title} className="rounded-xl border border-surface-800 p-4 text-left">
-                <item.icon className="mb-2 h-5 w-5 text-brand-400" />
+                <item.icon className="mb-2 h-5 w-5 text-primary" />
                 <p className="text-sm font-bold text-white">{item.title}</p>
                 <p className="text-xs text-surface-500">{item.desc}</p>
               </div>
@@ -341,7 +341,7 @@ export default function OnboardingPage() {
                 Brand Name <span className="text-red-400">*</span>
               </label>
               <input
-                className="w-full rounded-xl border border-surface-800 bg-surface-input px-4 py-3 text-sm text-dashboard-text placeholder-surface-500 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="e.g. Ekonomirådgivarna"
                 value={brand.name}
                 onChange={(e) => setBrand({ ...brand, name: e.target.value })}
@@ -354,7 +354,7 @@ export default function OnboardingPage() {
                 Website Domain
               </label>
               <input
-                className="w-full rounded-xl border border-surface-800 bg-surface-input px-4 py-3 text-sm text-dashboard-text placeholder-surface-500 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="e.g. ekonomiradgivarna.se"
                 value={brand.domain}
                 onChange={(e) => setBrand({ ...brand, domain: e.target.value })}
@@ -367,7 +367,7 @@ export default function OnboardingPage() {
                 Industry
               </label>
               <select
-                className="w-full rounded-xl border border-surface-800 bg-surface-input px-4 py-3 text-sm text-dashboard-text outline-none focus:border-brand-500"
+                className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
                 value={brand.industry}
                 onChange={(e) => setBrand({ ...brand, industry: e.target.value })}
               >
@@ -386,7 +386,7 @@ export default function OnboardingPage() {
                 Description
               </label>
               <textarea
-                className="w-full rounded-xl border border-surface-800 bg-surface-input px-4 py-3 text-sm text-dashboard-text placeholder-surface-500 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="Brief description of what your brand does..."
                 rows={2}
                 value={brand.description}
@@ -401,7 +401,7 @@ export default function OnboardingPage() {
                   Aliases / Variants
                 </label>
                 <input
-                  className="w-full rounded-xl border border-surface-800 bg-surface-input px-4 py-3 text-sm text-dashboard-text placeholder-surface-500 outline-none focus:border-brand-500"
+                  className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
                   placeholder="e.g. ERG, Ekonomi AB"
                   value={brand.aliases}
                   onChange={(e) => setBrand({ ...brand, aliases: e.target.value })}
@@ -413,7 +413,7 @@ export default function OnboardingPage() {
                   Competitors
                 </label>
                 <input
-                  className="w-full rounded-xl border border-surface-800 bg-surface-input px-4 py-3 text-sm text-dashboard-text placeholder-surface-500 outline-none focus:border-brand-500"
+                  className="w-full rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
                   placeholder="e.g. Fortnox, Visma"
                   value={brand.competitors}
                   onChange={(e) => setBrand({ ...brand, competitors: e.target.value })}
@@ -434,7 +434,7 @@ export default function OnboardingPage() {
                     className={cn(
                       'h-8 w-8 rounded-lg transition-all',
                       brand.color === c
-                        ? 'ring-2 ring-white ring-offset-2 ring-offset-surface-900'
+                        ? 'ring-2 ring-white ring-offset-2 ring-offset-background900'
                         : 'opacity-60 hover:opacity-100',
                     )}
                     style={{ backgroundColor: c }}
@@ -488,7 +488,7 @@ export default function OnboardingPage() {
             {/* Add custom prompt */}
             <div className="flex gap-2">
               <input
-                className="flex-1 rounded-xl border border-surface-800 bg-surface-input px-4 py-3 text-sm text-dashboard-text placeholder-surface-500 outline-none focus:border-brand-500"
+                className="flex-1 rounded-xl border border-surface-800 bg-input px-4 py-3 text-sm text-foreground placeholder-surface-500 outline-none focus:border-primary"
                 placeholder="Add a custom prompt..."
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
@@ -526,7 +526,7 @@ export default function OnboardingPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-surface-800 p-3">
-              <MessageSquare className="h-5 w-5 text-brand-400" />
+              <MessageSquare className="h-5 w-5 text-primary" />
               <p className="text-sm text-surface-300">{prompts.length} monitoring prompts</p>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-surface-800 p-3">

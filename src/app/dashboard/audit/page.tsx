@@ -284,12 +284,12 @@ function ScoreRing({ score, size = 120, label }: { score: number; size?: number;
         className="absolute flex flex-col items-center justify-center"
         style={{ width: size, height: size }}
       >
-        <span className="text-2xl font-black text-text-on-surface">{score}</span>
-        <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted-surface">
+        <span className="text-2xl font-black text-foreground">{score}</span>
+        <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
           / 100
         </span>
       </div>
-      {label && <p className="text-xs font-bold text-text-muted-surface">{label}</p>}
+      {label && <p className="text-xs font-bold text-muted-foreground">{label}</p>}
     </div>
   )
 }
@@ -344,11 +344,11 @@ export default function AuditPage() {
   }
 
   return (
-    <div className="space-y-6 bg-page-bg">
+    <div className="space-y-6 bg-background">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black tracking-tight text-text-on-surface">Content Audit</h1>
-        <p className="mt-1 text-text-muted-surface">
+        <h1 className="text-3xl font-black tracking-tight text-foreground">Content Audit</h1>
+        <p className="mt-1 text-muted-foreground">
           Comprehensive AEO/GEO audit — analyze any URL for AI search engine readiness.
         </p>
       </div>
@@ -357,9 +357,9 @@ export default function AuditPage() {
       <Card className="p-6">
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <Globe className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted-surface" />
+            <Globe className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              className="w-full rounded-xl border border-surface-input-border bg-surface-input py-3 pl-11 pr-4 text-sm text-text-on-surface placeholder-text-muted-surface outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-input bg-input py-3 pl-11 pr-4 text-sm text-foreground placeholder-text-muted-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder="Enter URL to audit (e.g. https://yoursite.com/page)"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -381,12 +381,12 @@ export default function AuditPage() {
       {/* Previous Audits */}
       {history.length > 0 && !result && (
         <Card className="p-5">
-          <h3 className="mb-3 text-sm font-bold text-text-on-surface">Previous Audits</h3>
+          <h3 className="mb-3 text-sm font-bold text-foreground">Previous Audits</h3>
           <div className="space-y-2">
             {history.map((h) => (
               <button
                 key={h.id}
-                className="flex w-full items-center gap-3 rounded-lg border border-surface-input-border bg-surface-row px-3 py-2 text-left transition-all hover:bg-surface-row-hover"
+                className="flex w-full items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2 text-left transition-all hover:bg-secondary-hover"
                 onClick={() => {
                   setUrl(h.input || '')
                   if (h.input) {
@@ -399,15 +399,15 @@ export default function AuditPage() {
                     (h.visibility_score || 0) >= 80
                       ? 'bg-emerald-500/15 text-emerald-500'
                       : (h.visibility_score || 0) >= 50
-                        ? 'bg-brand-500/15 text-brand-500'
+                        ? 'bg-primary/15 text-primary'
                         : 'bg-red-500/15 text-red-500'
                   }`}
                 >
                   {h.visibility_score || 0}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-text-on-surface">{h.input}</p>
-                  <p className="text-[10px] text-text-muted-surface">
+                  <p className="truncate text-xs font-medium text-foreground">{h.input}</p>
+                  <p className="text-[10px] text-muted-foreground">
                     {new Date(h.created_at).toLocaleString('sv-SE')} · Score:{' '}
                     {h.visibility_score || 'N/A'}
                   </p>
@@ -424,7 +424,7 @@ export default function AuditPage() {
           {/* Overall Score + Radar */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card className="flex flex-col items-center justify-center p-8">
-              <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+              <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Overall AEO Score
               </p>
               <div className="relative">
@@ -447,7 +447,7 @@ export default function AuditPage() {
                     ? 'Needs Improvement'
                     : 'Critical'}
               </Badge>
-              <p className="mt-2 text-center text-xs text-text-muted-surface">
+              <p className="mt-2 text-center text-xs text-muted-foreground">
                 {result.criticalIssues.length} critical · {result.warnings.length} warnings ·{' '}
                 {result.passed.length} passed
               </p>
@@ -455,7 +455,7 @@ export default function AuditPage() {
 
             {result.engineScores.length > 0 && (
               <Card className="p-6">
-                <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+                <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Engine Readiness
                 </p>
                 <ResponsiveContainer width="100%" height={250}>
@@ -479,10 +479,10 @@ export default function AuditPage() {
 
           {/* Category Breakdown */}
           <Card className="p-6">
-            <h2 className="mb-4 text-lg font-bold text-text-on-surface">Category Breakdown</h2>
+            <h2 className="mb-4 text-lg font-bold text-foreground">Category Breakdown</h2>
             <div className="space-y-4">
               {result.categories.map((cat) => (
-                <div key={cat.name} className="rounded-xl border border-surface-input-border p-4">
+                <div key={cat.name} className="rounded-xl border border-input p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div
@@ -498,13 +498,13 @@ export default function AuditPage() {
                         {cat.score}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-text-on-surface">{cat.name}</p>
-                        <p className="text-[10px] text-text-muted-surface">
+                        <p className="text-sm font-bold text-foreground">{cat.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
                           Weight: {(cat.weight * 100).toFixed(0)}%
                         </p>
                       </div>
                     </div>
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-surface-input-border">
+                    <div className="h-2 w-32 overflow-hidden rounded-full bg-input-border">
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',
@@ -527,10 +527,10 @@ export default function AuditPage() {
                           <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
                         )}
                         <div>
-                          <p className="text-xs font-semibold text-text-secondary-surface">
+                          <p className="text-xs font-semibold text-muted-foreground">
                             {check.name}
                           </p>
-                          <p className="text-[10px] text-text-muted-surface">{check.detail}</p>
+                          <p className="text-[10px] text-muted-foreground">{check.detail}</p>
                         </div>
                       </div>
                     ))}
@@ -550,7 +550,7 @@ export default function AuditPage() {
                 {result.criticalIssues.map((issue, i) => (
                   <div key={i} className="rounded-xl border border-red-500/20 bg-red-500/5 p-3">
                     <p className="text-sm font-bold text-red-400">{issue.title}</p>
-                    <p className="text-xs text-text-muted-surface">{issue.detail}</p>
+                    <p className="text-xs text-muted-foreground">{issue.detail}</p>
                     <Badge variant="danger" size="sm" className="mt-1">
                       {issue.category}
                     </Badge>
@@ -563,17 +563,17 @@ export default function AuditPage() {
           {/* Recommendations */}
           {result.recommendations.length > 0 && (
             <Card className="p-6">
-              <h2 className="mb-4 text-lg font-bold text-text-on-surface">Recommendations</h2>
+              <h2 className="mb-4 text-lg font-bold text-foreground">Recommendations</h2>
               <div className="space-y-2">
                 {result.recommendations.map((rec, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-3 rounded-xl border border-surface-input-border p-3"
+                    className="flex items-start gap-3 rounded-xl border border-input p-3"
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600/20 text-[10px] font-black text-brand-500">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-black text-primary">
                       {i + 1}
                     </span>
-                    <p className="text-sm text-text-secondary-surface">{rec}</p>
+                    <p className="text-sm text-muted-foreground">{rec}</p>
                   </div>
                 ))}
               </div>

@@ -75,8 +75,8 @@ function ScoreRing({ score, size = 120 }: { score: number; size?: number }) {
         />
       </svg>
       <div className="absolute text-center">
-        <span className="text-text-primary-ui text-2xl font-black">{score}</span>
-        <span className="text-text-muted-ui block text-[9px] font-bold uppercase tracking-widest">
+        <span className="text-foreground text-2xl font-black">{score}</span>
+        <span className="text-muted-foreground block text-[9px] font-bold uppercase tracking-widest">
           Score
         </span>
       </div>
@@ -94,22 +94,22 @@ function EngineCard({ breakdown }: { breakdown: AnalysisResult['engineBreakdown'
   }[breakdown.status] as 'success' | 'warning' | 'danger'
 
   return (
-    <div className="rounded-xl border border-surface-input-border bg-surface-row p-4">
+    <div className="rounded-xl border border-input bg-secondary p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-text-primary-ui font-semibold">{breakdown.engine}</span>
+        <span className="text-foreground font-semibold">{breakdown.engine}</span>
         <div className="flex items-center gap-2">
           <Badge variant={statusColor}>{breakdown.status}</Badge>
-          <span className="text-text-primary-ui text-lg font-black">{breakdown.score}</span>
+          <span className="text-foreground text-lg font-black">{breakdown.score}</span>
         </div>
       </div>
-      <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-input-border">
+      <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-input-border">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-700',
             breakdown.score >= 80
               ? 'bg-emerald-500'
               : breakdown.score >= 50
-                ? 'bg-brand-500'
+                ? 'bg-primary'
                 : 'bg-rose-500',
           )}
           style={{ width: `${breakdown.score}%` }}
@@ -137,21 +137,21 @@ function KeywordRow({
       : null
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-surface-input-border bg-surface-row px-3 py-2">
-      <span className="text-text-primary-ui flex-1 text-sm font-medium">{kw.word}</span>
+    <div className="flex items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2">
+      <span className="text-foreground flex-1 text-sm font-medium">{kw.word}</span>
       <div className="flex items-center gap-2 text-xs">
         {kw.count !== undefined && (
           <>
-            <span className="text-text-muted-ui">{kw.count}x</span>
-            <span className="text-text-muted-ui">|</span>
+            <span className="text-muted-foreground">{kw.count}x</span>
+            <span className="text-muted-foreground">|</span>
           </>
         )}
         <span className="text-emerald-500">Impact {kw.impact}</span>
-        <span className="text-text-muted-ui">|</span>
+        <span className="text-muted-foreground">|</span>
         <span className="text-amber-500">Diff {kw.difficulty}</span>
         {densityStatus && (
           <>
-            <span className="text-text-muted-ui">|</span>
+            <span className="text-muted-foreground">|</span>
             <span
               className={cn(
                 'font-semibold',
@@ -194,8 +194,8 @@ function IntentMapping({
   return (
     <Card className="p-6">
       <div className="mb-4 flex items-center gap-2">
-        <SearchCheck className="h-5 w-5 text-brand-400" />
-        <h2 className="text-text-primary-ui text-lg font-bold">Intent Mapping</h2>
+        <SearchCheck className="h-5 w-5 text-primary" />
+        <h2 className="text-foreground text-lg font-bold">Intent Mapping</h2>
       </div>
 
       <div className="mb-5 space-y-2">
@@ -208,10 +208,10 @@ function IntentMapping({
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-all',
                   isActive
-                    ? 'bg-brand-500 text-white'
+                    ? 'bg-primary text-white'
                     : isPast
-                      ? 'text-text-muted-ui'
-                      : 'text-text-muted-ui bg-surface-row',
+                      ? 'text-muted-foreground'
+                      : 'text-muted-foreground bg-secondary',
                 )}
               >
                 {isActive ? Math.round(confidence) : idx + 1}
@@ -219,13 +219,13 @@ function IntentMapping({
               <span
                 className={cn(
                   'text-sm font-medium',
-                  isActive ? 'text-text-primary-ui' : 'text-text-muted-ui',
+                  isActive ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >
                 {type}
               </span>
               {isActive && (
-                <span className="ml-auto rounded-lg bg-brand-500/20 px-2 py-0.5 text-xs font-semibold text-brand-400">
+                <span className="ml-auto rounded-lg bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
                   Active
                 </span>
               )}
@@ -236,14 +236,14 @@ function IntentMapping({
 
       {signals.length > 0 && (
         <div className="border-t pt-4">
-          <p className="text-text-muted-ui mb-2 text-[10px] font-black uppercase tracking-widest">
+          <p className="text-muted-foreground mb-2 text-[10px] font-black uppercase tracking-widest">
             Detected Intent Signals
           </p>
           <div className="flex flex-wrap gap-1.5">
             {signals.map((s) => (
               <span
                 key={s}
-                className="text-text-secondary-ui rounded-lg border border-surface-input-border bg-surface-row px-2 py-0.5 text-xs"
+                className="text-text-secondary-ui rounded-lg border border-input bg-secondary px-2 py-0.5 text-xs"
               >
                 {s}
               </span>
@@ -299,8 +299,8 @@ function KeywordDensityAnalysis({
     <Card className="p-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-brand-400" />
-          <h2 className="text-text-primary-ui text-lg font-bold">Keyword Density Analysis</h2>
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <h2 className="text-foreground text-lg font-bold">Keyword Density Analysis</h2>
         </div>
         <Badge variant="brand">{stats.total} keywords</Badge>
       </div>
@@ -318,12 +318,12 @@ function KeywordDensityAnalysis({
           {
             label: 'Avg %',
             value: `${stats.avgDensity.toFixed(1)}%`,
-            color: 'text-text-muted-ui',
-            bg: 'bg-surface-row border-surface-input-border',
+            color: 'text-muted-foreground',
+            bg: 'bg-secondary border-input',
           },
         ].map((stat) => (
           <div key={stat.label} className={cn('rounded-lg border p-3', stat.bg)}>
-            <p className="text-text-muted-ui text-xs">{stat.label}</p>
+            <p className="text-muted-foreground text-xs">{stat.label}</p>
             <p className={cn('text-lg font-bold', stat.color)}>{stat.value}</p>
           </div>
         ))}
@@ -337,9 +337,9 @@ function KeywordDensityAnalysis({
           return (
             <div key={kw.word} className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-text-primary-ui text-sm font-medium">{kw.word}</span>
+                <span className="text-foreground text-sm font-medium">{kw.word}</span>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-text-muted-ui">{kw.count} occurrences</span>
+                  <span className="text-muted-foreground">{kw.count} occurrences</span>
                   <span
                     className={cn(
                       'font-semibold',
@@ -354,7 +354,7 @@ function KeywordDensityAnalysis({
                   </span>
                 </div>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-input-border">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-input-border">
                 <div
                   className={cn(
                     'h-full rounded-full transition-all',
@@ -372,9 +372,9 @@ function KeywordDensityAnalysis({
         })}
       </div>
 
-      <div className="mt-4 rounded-lg border border-surface-input-border bg-surface-row px-3 py-2">
-        <p className="text-text-muted-ui text-xs">
-          <span className="text-text-primary-ui font-semibold">Target density:</span> 0.5% - 4.0%
+      <div className="mt-4 rounded-lg border border-input bg-secondary px-3 py-2">
+        <p className="text-muted-foreground text-xs">
+          <span className="text-foreground font-semibold">Target density:</span> 0.5% - 4.0%
           per keyword
         </p>
       </div>
@@ -428,8 +428,8 @@ function EngineRecommendations({ selectedEngine }: { selectedEngine: EngineId })
   return (
     <Card className="p-6">
       <div className="mb-4 flex items-center gap-2">
-        <Lightbulb className="h-5 w-5 text-brand-400" />
-        <h2 className="text-text-primary-ui text-lg font-bold">
+        <Lightbulb className="h-5 w-5 text-primary" />
+        <h2 className="text-foreground text-lg font-bold">
           {selectedEngine === 'all'
             ? 'Cross-Engine'
             : ENGINES.find((e) => e.id === selectedEngine)?.label}{' '}
@@ -441,9 +441,9 @@ function EngineRecommendations({ selectedEngine }: { selectedEngine: EngineId })
         {tips.map((tip, idx) => (
           <div
             key={idx}
-            className="flex items-start gap-3 rounded-lg border border-surface-input-border bg-surface-row px-4 py-3"
+            className="flex items-start gap-3 rounded-lg border border-input bg-secondary px-4 py-3"
           >
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-600/20 text-[10px] font-black text-brand-500">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-black text-primary">
               {idx + 1}
             </span>
             <p className="text-text-secondary-ui text-sm leading-relaxed">{tip}</p>
@@ -542,31 +542,31 @@ export default function OptimizerPage() {
   const charLimit = 15000
 
   return (
-    <div className="animate-in space-y-8 bg-page-bg">
+    <div className="animate-in space-y-8 bg-background">
       {/* Header */}
       <div>
-        <h1 className="text-text-primary-ui text-3xl font-black tracking-tight">
+        <h1 className="text-foreground text-3xl font-black tracking-tight">
           Content Optimizer
         </h1>
-        <p className="text-text-muted-ui mt-1">
+        <p className="text-muted-foreground mt-1">
           Analyze content for AI search visibility & citation readiness.
         </p>
       </div>
 
       {/* Previous Analyses */}
       {history.length > 0 && (
-        <Card className="border border-surface-input-border bg-card p-4">
+        <Card className="border border-input bg-card p-4">
           <button
             className="flex w-full items-center justify-between"
             onClick={() => setShowHistory(!showHistory)}
           >
-            <span className="text-text-primary-ui text-sm font-bold">
+            <span className="text-foreground text-sm font-bold">
               Previous Analyses ({history.length})
             </span>
             {showHistory ? (
-              <ChevronUp className="text-text-muted-ui h-4 w-4" />
+              <ChevronUp className="text-muted-foreground h-4 w-4" />
             ) : (
-              <ChevronDown className="text-text-muted-ui h-4 w-4" />
+              <ChevronDown className="text-muted-foreground h-4 w-4" />
             )}
           </button>
           {showHistory && (
@@ -574,7 +574,7 @@ export default function OptimizerPage() {
               {history.map((h) => (
                 <button
                   key={h.id}
-                  className="flex w-full items-center gap-3 rounded-lg border border-surface-input-border bg-surface-row px-3 py-2 text-left transition-all hover:bg-surface-row-hover"
+                  className="flex w-full items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2 text-left transition-all hover:bg-secondaryhover"
                   onClick={() => {
                     if (h.raw_response) {
                       setResult(h.raw_response as AnalysisResult)
@@ -588,19 +588,19 @@ export default function OptimizerPage() {
                       (h.visibility_score || 0) >= 80
                         ? 'bg-emerald-500/15 text-emerald-500'
                         : (h.visibility_score || 0) >= 50
-                          ? 'bg-brand-500/15 text-brand-500'
+                          ? 'bg-primary/15 text-primary'
                           : 'bg-red-500/15 text-red-500',
                     )}
                   >
                     {h.visibility_score || 0}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-text-primary-ui truncate text-xs font-medium">
+                    <p className="text-foreground truncate text-xs font-medium">
                       {h.input_mode === 'url'
                         ? h.input
                         : h.summary || h.input?.substring(0, 80) + '...'}
                     </p>
-                    <p className="text-text-muted-ui text-[10px]">
+                    <p className="text-muted-foreground text-[10px]">
                       {new Date(h.created_at).toLocaleString('sv-SE')} · {h.input_mode}
                     </p>
                   </div>
@@ -612,7 +612,7 @@ export default function OptimizerPage() {
       )}
 
       {/* Input Card */}
-      <Card className="border border-surface-input-border bg-card p-6">
+      <Card className="border border-input bg-card p-6">
         {/* Mode Toggle */}
         <div className="mb-6 flex items-center gap-2">
           {(['text', 'url'] as const).map((m) => (
@@ -621,8 +621,8 @@ export default function OptimizerPage() {
               className={cn(
                 'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all',
                 mode === m
-                  ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
-                  : 'text-text-secondary-ui border border-surface-input-border hover:bg-surface-row-hover',
+                  ? 'bg-primary text-white shadow-lg shadow-brand-600/25'
+                  : 'text-text-secondary-ui border border-input hover:bg-secondaryhover',
               )}
               onClick={() => setMode(m)}
             >
@@ -636,7 +636,7 @@ export default function OptimizerPage() {
         {mode === 'text' ? (
           <div className="space-y-1">
             <textarea
-              className="text-text-primary-ui placeholder-text-muted-ui w-full resize-none rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 font-mono text-sm outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="text-foreground placeholder-text-muted-ui w-full resize-none rounded-xl border border-input bg-input px-4 py-3 font-mono text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
               maxLength={charLimit}
               placeholder="Paste your content here — article, landing page copy, blog post, product description..."
               rows={10}
@@ -647,7 +647,7 @@ export default function OptimizerPage() {
               <span
                 className={cn(
                   'text-xs',
-                  charCount > charLimit * 0.9 ? 'text-amber-500' : 'text-text-muted-ui',
+                  charCount > charLimit * 0.9 ? 'text-amber-500' : 'text-muted-foreground',
                 )}
               >
                 {charCount.toLocaleString()} / {charLimit.toLocaleString()}
@@ -656,7 +656,7 @@ export default function OptimizerPage() {
           </div>
         ) : (
           <input
-            className="text-text-primary-ui placeholder-text-muted-ui w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm outline-none transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+            className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
             placeholder="https://example.com/your-page"
             type="url"
             value={input}
@@ -668,7 +668,7 @@ export default function OptimizerPage() {
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end">
           {/* Provider */}
           <div className="space-y-1">
-            <label className="text-text-muted-ui text-[10px] font-black uppercase tracking-widest">
+            <label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
               AI Provider
             </label>
             <div className="flex flex-wrap gap-2">
@@ -678,8 +678,8 @@ export default function OptimizerPage() {
                   className={cn(
                     'rounded-lg border px-3 py-1.5 text-xs font-bold transition-all',
                     provider === p.id
-                      ? 'border-brand-500/50 bg-brand-500/15 text-brand-400'
-                      : 'text-text-muted-ui border-surface-input-border hover:bg-surface-row-hover',
+                      ? 'border-brand-500/50 bg-primary/15 text-primary'
+                      : 'text-muted-foreground border-input hover:bg-secondaryhover',
                   )}
                   onClick={() => {
                     setProvider(p.id)
@@ -695,11 +695,11 @@ export default function OptimizerPage() {
 
           {/* Model */}
           <div className="space-y-1">
-            <label className="text-text-muted-ui text-[10px] font-black uppercase tracking-widest">
+            <label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
               Model
             </label>
             <select
-              className="text-text-primary-ui rounded-xl border border-surface-input-border bg-surface-input px-3 py-2 text-sm outline-none focus:border-brand-500"
+              className="text-foreground rounded-xl border border-input bg-input px-3 py-2 text-sm outline-none focus:border-primary"
               value={model}
               onChange={(e) => setModel(e.target.value as ModelId)}
             >
@@ -713,7 +713,7 @@ export default function OptimizerPage() {
 
           {/* Engine */}
           <div className="flex-1 space-y-1">
-            <label className="text-text-muted-ui text-[10px] font-black uppercase tracking-widest">
+            <label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
               Target Engine
             </label>
             <div className="flex flex-wrap gap-2">
@@ -723,8 +723,8 @@ export default function OptimizerPage() {
                   className={cn(
                     'rounded-lg border px-3 py-1.5 text-xs font-bold transition-all',
                     engine === e.id
-                      ? 'border-brand-500/50 bg-brand-500/15 text-brand-400'
-                      : 'text-text-muted-ui border-surface-input-border hover:bg-surface-row-hover',
+                      ? 'border-brand-500/50 bg-primary/15 text-primary'
+                      : 'text-muted-foreground border-input hover:bg-secondaryhover',
                   )}
                   onClick={() => setEngine(e.id)}
                 >
@@ -763,7 +763,7 @@ export default function OptimizerPage() {
             {/* Score */}
             <Card className="flex flex-col items-center justify-center p-8">
               <ScoreRing score={result.visibilityScore} size={140} />
-              <p className="text-text-primary-ui mt-4 text-center text-sm font-semibold">
+              <p className="text-foreground mt-4 text-center text-sm font-semibold">
                 Overall Visibility Score
               </p>
               <div className="mt-4 flex gap-2">
@@ -784,7 +784,7 @@ export default function OptimizerPage() {
 
             {/* Summary */}
             <Card className="p-6 lg:col-span-2">
-              <p className="text-text-muted-ui mb-4 text-[10px] font-black uppercase tracking-widest">
+              <p className="text-muted-foreground mb-4 text-[10px] font-black uppercase tracking-widest">
                 AI Summary
               </p>
               <p className="text-text-secondary-ui leading-relaxed">{result.summary}</p>
@@ -809,24 +809,24 @@ export default function OptimizerPage() {
                 ].map(({ icon: Icon, label, value, conf }) => (
                   <div
                     key={label}
-                    className="rounded-lg border border-surface-input-border bg-surface-row p-3"
+                    className="rounded-lg border border-input bg-secondary p-3"
                   >
-                    <Icon className="text-text-muted-ui mb-1.5 h-3.5 w-3.5" />
-                    <p className="text-text-muted-ui text-[10px] font-bold uppercase tracking-wider">
+                    <Icon className="text-muted-foreground mb-1.5 h-3.5 w-3.5" />
+                    <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
                       {label}
                     </p>
-                    <p className="text-text-primary-ui mt-0.5 text-sm font-semibold">{value}</p>
+                    <p className="text-foreground mt-0.5 text-sm font-semibold">{value}</p>
                     {conf !== null && conf !== undefined && (
-                      <p className="text-text-muted-ui text-[10px]">{conf}% confidence</p>
+                      <p className="text-muted-foreground text-[10px]">{conf}% confidence</p>
                     )}
                   </div>
                 ))}
               </div>
 
-              <div className="mt-4 flex items-center gap-2 rounded-lg border border-surface-input-border bg-surface-row px-3 py-2">
-                <Users className="text-text-muted-ui h-3.5 w-3.5" />
+              <div className="mt-4 flex items-center gap-2 rounded-lg border border-input bg-secondary px-3 py-2">
+                <Users className="text-muted-foreground h-3.5 w-3.5" />
                 <p className="text-text-secondary-ui text-xs">
-                  <span className="text-text-primary-ui font-semibold">Audience: </span>
+                  <span className="text-foreground font-semibold">Audience: </span>
                   {result.audience}
                 </p>
               </div>
@@ -841,7 +841,7 @@ export default function OptimizerPage() {
               signals={result.intentSignals}
             />
             <div>
-              <h2 className="text-text-primary-ui mb-4 text-lg font-bold">
+              <h2 className="text-foreground mb-4 text-lg font-bold">
                 Engine-by-Engine Breakdown
               </h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -857,7 +857,7 @@ export default function OptimizerPage() {
             {/* Keywords */}
             <Card className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-text-primary-ui text-lg font-bold">Keywords</h2>
+                <h2 className="text-foreground text-lg font-bold">Keywords</h2>
                 <Badge variant="brand">{result.keywords.length} found</Badge>
               </div>
               <div className="space-y-2">
@@ -880,7 +880,7 @@ export default function OptimizerPage() {
 
             {/* Radar Chart */}
             <Card className="p-6">
-              <h2 className="text-text-primary-ui mb-4 text-lg font-bold">SEO Radar</h2>
+              <h2 className="text-foreground mb-4 text-lg font-bold">SEO Radar</h2>
               <ResponsiveContainer height={260} width="100%">
                 <RadarChart data={radarData}>
                   <PolarGrid />
@@ -912,12 +912,12 @@ export default function OptimizerPage() {
           {/* Suggestions */}
           <Card className="p-6">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-text-primary-ui text-lg font-bold">
-                <TrendingUp className="mr-2 inline h-5 w-5 text-brand-400" />
+              <h2 className="text-foreground text-lg font-bold">
+                <TrendingUp className="mr-2 inline h-5 w-5 text-primary" />
                 Improvement Suggestions
               </h2>
               <button
-                className="hover:text-text-primary-ui text-text-muted-ui flex items-center gap-1 text-xs"
+                className="hover:text-foreground text-muted-foreground flex items-center gap-1 text-xs"
                 onClick={toggleDetails}
               >
                 {showDetails ? 'Collapse' : 'Expand all'}
@@ -932,9 +932,9 @@ export default function OptimizerPage() {
               {result.suggestions.map((s, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-4 rounded-xl border border-surface-input-border bg-surface-row px-4 py-3"
+                  className="flex items-start gap-4 rounded-xl border border-input bg-secondary px-4 py-3"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600/20 text-[11px] font-black text-brand-500">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[11px] font-black text-primary">
                     {i + 1}
                   </span>
                   <p className="text-text-secondary-ui text-sm leading-relaxed">{s}</p>

@@ -44,7 +44,7 @@ function PromptCard({
   const categoryColor = CATEGORY_COLORS[prompt.category ?? 'custom'] ?? 'default'
 
   return (
-    <Card className="border-surface-input-border bg-card p-5">
+    <Card className="border-input bg-card p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="mb-1.5 flex flex-wrap gap-1.5">
@@ -56,7 +56,7 @@ function PromptCard({
               </Badge>
             ))}
           </div>
-          <p className="text-sm font-medium text-text-secondary-surface">"{prompt.text}"</p>
+          <p className="text-sm font-medium text-muted-foreground">"{prompt.text}"</p>
         </div>
         <div className="flex shrink-0 gap-1">
           <Button
@@ -78,13 +78,13 @@ function PromptCard({
             {deleting ? (
               <Loader2 className="h-4 w-4 animate-spin text-red-400" />
             ) : (
-              <X className="h-4 w-4 text-text-secondary-surface hover:text-red-400" />
+              <X className="h-4 w-4 text-muted-foreground hover:text-red-400" />
             )}
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-text-muted-surface">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3 w-3" />
           {prompt.last_run_at ? `Last run ${formatRelativeTime(prompt.last_run_at)}` : 'Never run'}
@@ -257,8 +257,8 @@ function PromptsPageContent() {
     <div className="animate-in space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-text-on-surface">Prompts</h1>
-          <p className="mt-1 text-text-muted-surface">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Prompts</h1>
+          <p className="mt-1 text-muted-foreground">
             Configure the queries to monitor across AI engines.
           </p>
         </div>
@@ -267,17 +267,17 @@ function PromptsPageContent() {
         </Button>
       </div>
 
-      <Card className="border-nav-border bg-surface-row p-4">
+      <Card className="border-border bg-secondary p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
             Brand:
           </span>
           <button
             className={cn(
               'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all',
               !selectedBrandId
-                ? 'border-brand text-brand bg-brand-500/10'
-                : 'border-surface-input-border bg-surface-input text-text-secondary-surface hover:border-surface-input',
+                ? 'border-brand text-brand bg-primary/10'
+                : 'border-input bg-input text-muted-foreground hover:border-input',
             )}
             onClick={() => setSelectedBrandId('')}
           >
@@ -289,8 +289,8 @@ function PromptsPageContent() {
               className={cn(
                 'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all',
                 selectedBrandId === b.id
-                  ? 'border-brand text-brand bg-brand-500/10'
-                  : 'border-surface-input-border bg-surface-input text-text-secondary-surface hover:border-surface-input',
+                  ? 'border-brand text-brand bg-primary/10'
+                  : 'border-input bg-input text-muted-foreground hover:border-input',
               )}
               onClick={() => setSelectedBrandId(b.id)}
             >
@@ -302,14 +302,14 @@ function PromptsPageContent() {
 
       {showForm && (
         <Card className="border-brand-500/30 p-6">
-          <h2 className="mb-5 text-base font-bold text-text-on-surface">Create New Prompt</h2>
+          <h2 className="mb-5 text-base font-bold text-foreground">Create New Prompt</h2>
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Brand *
               </label>
               <select
-                className="focus:border-brand w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface outline-none"
+                className="focus:border-brand w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none"
                 value={selectedBrandId}
                 onChange={(e) => setSelectedBrandId(e.target.value)}
               >
@@ -323,14 +323,14 @@ function PromptsPageContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Quick Templates
               </label>
               <div className="flex flex-wrap gap-2">
                 {PROMPT_TEMPLATES.map((t, i) => (
                   <button
                     key={i}
-                    className="hover:border-brand hover:text-brand rounded-lg border border-surface-input-border bg-surface-input px-2.5 py-1 text-xs text-text-muted-surface transition-colors"
+                    className="hover:border-primary hover:text-brand rounded-lg border border-input bg-input px-2.5 py-1 text-xs text-muted-foreground transition-colors"
                     onClick={() => {
                       const brandName =
                         brands.find((b) => b.id === selectedBrandId)?.name ?? 'YourBrand'
@@ -350,11 +350,11 @@ function PromptsPageContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Prompt Text *
               </label>
               <textarea
-                className="focus:border-brand w-full resize-none rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface placeholder-text-muted-surface outline-none"
+                className="focus:border-brand w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-text-muted-surface outline-none"
                 placeholder="e.g. What are the best AI monitoring tools?"
                 rows={3}
                 value={form.text}
@@ -364,11 +364,11 @@ function PromptsPageContent() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Category
                 </label>
                 <select
-                  className="focus:border-brand w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface outline-none"
+                  className="focus:border-brand w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none"
                   value={form.category ?? 'custom'}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, category: e.target.value as Prompt['category'] }))
@@ -383,11 +383,11 @@ function PromptsPageContent() {
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Run Frequency
                 </label>
                 <select
-                  className="focus:border-brand w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface outline-none"
+                  className="focus:border-brand w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none"
                   value={form.run_frequency}
                   onChange={(e) =>
                     setForm((f) => ({
@@ -406,7 +406,7 @@ function PromptsPageContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Engines to Monitor
               </label>
               <div className="flex gap-2">
@@ -416,8 +416,8 @@ function PromptsPageContent() {
                     className={cn(
                       'rounded-xl border px-4 py-2 text-xs font-bold transition-all',
                       form.engines.includes(engine)
-                        ? 'border-brand text-brand bg-brand-500/10'
-                        : 'border-surface-input-border bg-surface-input text-text-secondary-surface hover:border-surface-input',
+                        ? 'border-brand text-brand bg-primary/10'
+                        : 'border-input bg-input text-muted-foreground hover:border-input',
                     )}
                     onClick={() => toggleEngine(engine)}
                   >
@@ -428,7 +428,7 @@ function PromptsPageContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Language
               </label>
               <div className="flex gap-2">
@@ -441,8 +441,8 @@ function PromptsPageContent() {
                     className={cn(
                       'rounded-xl border px-4 py-2 text-xs font-bold transition-all',
                       form.language === lang.code
-                        ? 'border-brand text-brand bg-brand-500/10'
-                        : 'border-surface-input-border bg-surface-input text-text-secondary-surface hover:border-surface-input',
+                        ? 'border-brand text-brand bg-primary/10'
+                        : 'border-input bg-input text-muted-foreground hover:border-input',
                     )}
                     onClick={() => setForm((f) => ({ ...f, language: lang.code }))}
                   >
@@ -452,7 +452,7 @@ function PromptsPageContent() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-nav-border pt-4">
+            <div className="flex justify-end gap-3 border-t border-border pt-4">
               <Button variant="ghost" onClick={() => setShowForm(false)}>
                 Cancel
               </Button>
@@ -470,9 +470,9 @@ function PromptsPageContent() {
         </div>
       ) : prompts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <MessageSquare className="mb-4 h-16 w-16 text-text-muted-surface" />
-          <h2 className="mb-2 text-xl font-bold text-text-on-surface">No prompts yet</h2>
-          <p className="text-text-muted-surface">
+          <MessageSquare className="mb-4 h-16 w-16 text-muted-foreground" />
+          <h2 className="mb-2 text-xl font-bold text-foreground">No prompts yet</h2>
+          <p className="text-muted-foreground">
             Create your first prompt to start monitoring AI responses.
           </p>
         </div>

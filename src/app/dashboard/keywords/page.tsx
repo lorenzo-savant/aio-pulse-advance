@@ -126,7 +126,7 @@ export default function KeywordsPage() {
   }
 
   return (
-    <div className="animate-in space-y-8 bg-page-bg">
+    <div className="animate-in space-y-8 bg-background">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -138,7 +138,7 @@ export default function KeywordsPage() {
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
             <select
-              className="text-text-primary-ui rounded-lg border border-surface-input-border bg-surface-input px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+              className="text-foreground rounded-lg border border-input bg-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
               value={selectedBrand?.id || ''}
               onChange={(e) => {
                 const b = brands.find((x) => x.id === e.target.value)
@@ -161,9 +161,9 @@ export default function KeywordsPage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="text-text-muted-ui absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+        <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
         <input
-          className="text-text-primary-ui placeholder-text-muted-ui w-full rounded-xl border border-surface-input-border bg-surface-input py-2.5 pl-10 pr-4 text-sm outline-none focus:border-brand-500"
+          className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
           placeholder="Search keywords..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -171,7 +171,7 @@ export default function KeywordsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-nav-border pb-0">
+      <div className="flex gap-2 border-b border-border pb-0">
         {[
           { id: 'all', label: `All Keywords (${keywords.length})` },
           { id: 'correlated', label: `Correlated (${correlatedKeywords.length})` },
@@ -181,8 +181,8 @@ export default function KeywordsPage() {
             className={cn(
               'border-b-2 px-4 pb-3 text-sm font-bold transition-colors',
               tab === t.id
-                ? 'border-brand-600 text-brand-600'
-                : 'text-text-muted-ui hover:text-text-secondary-ui border-transparent',
+                ? 'border-brand-600 text-primary'
+                : 'text-muted-foreground hover:text-text-secondary-ui border-transparent',
             )}
             onClick={() => setTab(t.id as typeof tab)}
           >
@@ -200,10 +200,10 @@ export default function KeywordsPage() {
 
       {/* No data */}
       {!loading && filteredKeywords.length === 0 && (
-        <Card className="flex flex-col items-center justify-center border border-surface-input-border bg-card p-12 text-center">
-          <Tag className="text-text-muted-ui mb-4 h-12 w-12" />
+        <Card className="flex flex-col items-center justify-center border border-input bg-card p-12 text-center">
+          <Tag className="text-muted-foreground mb-4 h-12 w-12" />
           <h3 className="text-text-secondary-ui text-lg font-bold">No keywords tracked yet</h3>
-          <p className="text-text-muted-ui mt-2 max-w-md text-sm">
+          <p className="text-muted-foreground mt-2 max-w-md text-sm">
             Run monitoring and click &quot;Refresh&quot; to extract keywords from AI responses.
           </p>
         </Card>
@@ -225,7 +225,7 @@ export default function KeywordsPage() {
                     className={cn(
                       'inline-block rounded-full px-3 py-1 transition-transform hover:scale-110',
                       corr > 0.5
-                        ? 'bg-brand-500/20 text-brand-300'
+                        ? 'bg-primary/20 text-brand-300'
                         : corr > 0
                           ? 'bg-blue-500/20 text-blue-300'
                           : 'bg-surface-800 text-surface-400',
@@ -275,7 +275,7 @@ export default function KeywordsPage() {
                           <div className="flex items-center justify-center gap-2">
                             <div className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-800">
                               <div
-                                className="h-full rounded-full bg-brand-500"
+                                className="h-full rounded-full bg-primary"
                                 style={{ width: `${(kw.frequency / maxFrequency) * 100}%` }}
                               />
                             </div>

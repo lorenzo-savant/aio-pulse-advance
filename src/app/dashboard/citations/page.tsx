@@ -88,7 +88,7 @@ function StatCard({
 }) {
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
   const accentMap = {
-    brand: 'text-brand-400',
+    brand: 'text-primary',
     emerald: 'text-emerald-400',
     red: 'text-red-400',
     amber: 'text-amber-400',
@@ -96,13 +96,13 @@ function StatCard({
 
   return (
     <Card className="p-5">
-      <p className="mb-2 text-sm font-medium text-surface-400">{title}</p>
+      <p className="mb-2 text-sm font-medium text-muted-foreground">{title}</p>
       <div className="flex items-baseline gap-1">
         <p className={cn('text-3xl font-black', accentMap[accent])}>{value}</p>
-        {suffix && <span className="text-lg font-bold text-surface-500">{suffix}</span>}
+        {suffix && <span className="text-lg font-bold text-muted-foreground">{suffix}</span>}
       </div>
       {subtitle && (
-        <div className="mt-2 flex items-center gap-1 text-xs text-surface-500">
+        <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
           {trend && <TrendIcon className="h-3.5 w-3.5" />}
           {subtitle}
         </div>
@@ -248,14 +248,14 @@ export default function CitationsPage() {
           <h1 className="text-3xl font-black tracking-tight text-white">
             Citation Trends
           </h1>
-          <p className="mt-1 text-surface-400">
+          <p className="mt-1 text-muted-foreground">
             Track brand visibility across AI search engines over time.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
             <select
-              className="rounded-lg border border-surface-700 bg-surface-800 px-3 py-2 text-sm text-white focus:border-brand-500 focus:outline-none"
+              className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
               value={selectedBrand?.id || ''}
               onChange={(e) => {
                 const b = brands.find((x) => x.id === e.target.value)
@@ -270,7 +270,7 @@ export default function CitationsPage() {
             </select>
           )}
           <select
-            className="rounded-lg border border-surface-700 bg-surface-800 px-3 py-2 text-sm text-white focus:border-brand-500 focus:outline-none"
+            className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-white focus:border-primary focus:outline-none"
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value)}
           >
@@ -306,16 +306,16 @@ export default function CitationsPage() {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <RefreshCw className="h-6 w-6 animate-spin text-brand-400" />
+          <RefreshCw className="h-6 w-6 animate-spin text-primary" />
         </div>
       )}
 
       {/* No data */}
       {!loading && snapshots.length === 0 && (
         <Card className="flex flex-col items-center justify-center p-12 text-center">
-          <BarChart3 className="mb-4 h-12 w-12 text-surface-400" />
+          <BarChart3 className="mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="text-lg font-bold text-white">No citation data yet</h3>
-          <p className="mt-2 max-w-md text-sm text-surface-400">
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">
             Run the monitoring cron first, then click &quot;Recalculate&quot; to generate citation
             snapshots.
           </p>
@@ -366,11 +366,11 @@ export default function CitationsPage() {
                 <h2 className="text-lg font-bold text-white">
                   Citation Rate — Brand vs Competitors
                 </h2>
-                <p className="text-sm text-surface-500">
+                <p className="text-sm text-muted-foreground">
                   How often each brand is mentioned in AI responses
                 </p>
               </div>
-              <Target className="h-5 w-5 text-surface-200" />
+              <Target className="h-5 w-5 text-muted-foreground" />
             </div>
             <ResponsiveContainer height={260} width="100%">
               <BarChart data={competitorChartData} layout="vertical">
@@ -410,12 +410,12 @@ export default function CitationsPage() {
                   {engineChartData.map((engine) => (
                     <div key={engine.engine}>
                       <div className="mb-1.5 flex justify-between text-sm font-medium">
-                        <span className="text-surface-300">{engine.engine}</span>
+                        <span className="text-muted-foreground">{engine.engine}</span>
                         <span className="font-bold text-white">
                           {engine.citation_rate.toFixed(1)}%
                         </span>
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-800">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                         <div
                           className="h-full rounded-full transition-all duration-700"
                           style={{
@@ -424,14 +424,14 @@ export default function CitationsPage() {
                           }}
                         />
                       </div>
-                      <p className="mt-1 text-xs text-surface-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Visibility: {engine.avg_visibility.toFixed(0)}%
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-surface-500">No per-engine data available yet.</p>
+                <p className="text-sm text-muted-foreground">No per-engine data available yet.</p>
               )}
             </Card>
 
@@ -440,13 +440,13 @@ export default function CitationsPage() {
               <h2 className="mb-6 text-lg font-bold text-white">Competitor Breakdown</h2>
               <div className="space-y-4">
                 {/* Brand row */}
-                <div className="flex items-center justify-between rounded-xl border border-brand-500/20 bg-brand-500/5 px-4 py-3">
+                <div className="flex items-center justify-between rounded-xl border border-brand-500/20 bg-primary/5 px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-3 w-3 rounded-full bg-brand-500" />
+                    <div className="h-3 w-3 rounded-full bg-primary" />
                     <span className="font-bold text-white">{selectedBrand?.name}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-xl font-black text-brand-400">
+                    <span className="text-xl font-black text-primary">
                       {citationRate.toFixed(1)}%
                     </span>
                   </div>
@@ -458,17 +458,17 @@ export default function CitationsPage() {
                   .map(([name, rate]) => (
                     <div
                       key={name}
-                      className="flex items-center justify-between rounded-xl border border-surface-800 px-4 py-3"
+                      className="flex items-center justify-between rounded-xl border border-border px-4 py-3"
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className="h-3 w-3 rounded-full"
                           style={{ backgroundColor: COMPETITOR_COLORS[name] || '#6b7280' }}
                         />
-                        <span className="font-medium text-surface-300">{name}</span>
+                        <span className="font-medium text-muted-foreground">{name}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-800">
+                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-secondary">
                           <div
                             className="h-full rounded-full"
                             style={{
@@ -485,7 +485,7 @@ export default function CitationsPage() {
                   ))}
 
                 {Object.keys(competitorRates).length === 0 && (
-                  <p className="text-sm text-surface-500">No competitor data detected.</p>
+                  <p className="text-sm text-muted-foreground">No competitor data detected.</p>
                 )}
               </div>
             </Card>
@@ -496,7 +496,7 @@ export default function CitationsPage() {
             <Card className="p-6">
               <div className="mb-6">
                 <h2 className="text-lg font-bold text-white">Citation Rate Over Time</h2>
-                <p className="text-sm text-surface-500">Daily trend — brand vs competitors</p>
+                <p className="text-sm text-muted-foreground">Daily trend — brand vs competitors</p>
               </div>
               <ResponsiveContainer height={300} width="100%">
                 <LineChart data={trendData}>

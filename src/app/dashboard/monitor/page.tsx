@@ -131,8 +131,8 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
               <Icon className={cn('h-5 w-5', engine.accent)} />
             </div>
             <div>
-              <p className="font-bold text-text-on-surface">{engine.name}</p>
-              <p className="text-xs text-text-muted-surface">
+              <p className="font-bold text-foreground">{engine.name}</p>
+              <p className="text-xs text-muted-foreground">
                 {engine.company} · {engine.version}
               </p>
             </div>
@@ -144,7 +144,7 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-surface-input-border bg-surface-input p-2.5">
+          <div className="rounded-lg border border-input bg-input p-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary-surface">
               Indexing
             </p>
@@ -152,7 +152,7 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
               {engine.indexingSpeed}
             </p>
           </div>
-          <div className="rounded-lg border border-surface-input-border bg-surface-input p-2.5">
+          <div className="rounded-lg border border-input bg-input p-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary-surface">
               Citations
             </p>
@@ -184,7 +184,7 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
         </div>
 
         <button
-          className="w-full rounded-lg border border-surface-input-border bg-surface-row px-3 py-2 text-left text-xs font-semibold text-text-muted-surface transition-colors hover:text-text-on-surface"
+          className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-left text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? '↑ Hide' : '↓ Show'} optimization signals ({signals.length})
@@ -193,7 +193,7 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
         {expanded && (
           <div className="animate-in mt-3 space-y-1.5">
             {signals.map((s, i) => (
-              <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-row px-3 py-2">
+              <div key={i} className="flex items-start gap-2 rounded-lg bg-secondary px-3 py-2">
                 <span className={cn('mt-0.5 text-xs font-black', engine.accent)}>→</span>
                 <p className="text-xs text-text-secondary-surface">{s}</p>
               </div>
@@ -201,7 +201,7 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-between border-t border-surface-input-border pt-3">
+        <div className="mt-4 flex items-center justify-between border-t border-input pt-3">
           <span className="text-[10px] text-text-secondary-surface">
             Checked {engine.lastChecked}
           </span>
@@ -236,10 +236,10 @@ export default function MonitorPage() {
     <div className="animate-in space-y-8">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-text-on-surface">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
             Engine Monitor
           </h1>
-          <p className="mt-1 text-text-muted-surface">
+          <p className="mt-1 text-muted-foreground">
             Live status and optimization intelligence for all AI search engines.
           </p>
         </div>
@@ -264,7 +264,7 @@ export default function MonitorPage() {
           <p className={cn('font-bold', allOperational ? 'text-emerald-300' : 'text-amber-300')}>
             {allOperational ? 'All Systems Operational' : 'Partial Disruption Detected'}
           </p>
-          <p className="text-xs text-text-muted-surface">
+          <p className="text-xs text-muted-foreground">
             {ENGINES.filter((e) => e.status === 'operational').length}/{ENGINES.length} engines
             fully operational
           </p>
@@ -278,14 +278,14 @@ export default function MonitorPage() {
       </div>
 
       <Card className="p-6">
-        <h2 className="mb-6 text-lg font-bold text-text-on-surface">
+        <h2 className="mb-6 text-lg font-bold text-foreground">
           Content Factor Importance by Engine
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-surface-input-border">
-                <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+              <tr className="border-b border-input">
+                <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Factor
                 </th>
                 {ENGINES.map((e) => (
@@ -303,7 +303,7 @@ export default function MonitorPage() {
             </thead>
             <tbody>
               {OPTIMIZATION_MATRIX.map((row) => (
-                <tr key={row.category} className="border-b border-surface-input-border/50">
+                <tr key={row.category} className="border-b border-input/50">
                   <td className="py-3 font-semibold text-text-secondary-surface">{row.category}</td>
                   {[row.chatgpt, row.gemini, row.perplexity, row.claude].map((score, i) => (
                     <td key={i} className="py-3 text-center">
@@ -315,20 +315,20 @@ export default function MonitorPage() {
                               ? 'text-emerald-400'
                               : score >= 80
                                 ? 'text-brand-400'
-                                : 'text-text-muted-surface',
+                                : 'text-muted-foreground',
                           )}
                         >
                           {score}%
                         </span>
-                        <div className="h-1 w-12 rounded-full bg-surface-input-border">
+                        <div className="h-1 w-12 rounded-full bg-input-border">
                           <div
                             className={cn(
                               'h-full rounded-full',
                               score >= 90
                                 ? 'bg-emerald-500'
                                 : score >= 80
-                                  ? 'bg-brand-500'
-                                  : 'bg-surface-input',
+                                  ? 'bg-primary'
+                                  : 'bg-input',
                             )}
                             style={{ width: `${score}%` }}
                           />

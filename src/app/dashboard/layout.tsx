@@ -52,7 +52,7 @@ function DashboardInitializer({ children }: DashboardLayoutProps) {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <DashboardInitializer>
-      <div className="flex h-screen overflow-hidden bg-page-bg">
+      <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
 
         <div className="flex flex-1 flex-col overflow-hidden lg:pl-64">

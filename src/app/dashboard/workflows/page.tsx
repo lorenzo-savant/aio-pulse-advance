@@ -20,7 +20,7 @@ import type { Brand, WorkflowExecution } from '@/types'
 
 const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; label: string }> = {
  completed: { color: 'text-emerald-400', icon: CheckCircle2, label: 'Completed' },
- running: { color: 'text-brand-400', icon: Loader2, label: 'Running' },
+ running: { color: 'text-primary', icon: Loader2, label: 'Running' },
  failed: { color: 'text-red-400', icon: XCircle, label: 'Failed' },
  pending: { color: 'text-surface-400', icon: Clock, label: 'Pending' },
  retrying: { color: 'text-amber-400', icon: AlertTriangle, label: 'Retrying' },
@@ -116,7 +116,7 @@ export default function WorkflowStatusPage() {
     </div>
     <div className="flex items-center gap-4">
      <select
-      className="rounded-xl border border-surface-600 px-4 py-2 text-sm text-white border-surface-600 bg-surface-800 text-white"
+      className="rounded-xl border border-border px-4 py-2 text-sm text-white border-border bg-secondary text-white"
       value={selectedBrand}
       onChange={(e) => setSelectedBrand(e.target.value)}
      >
@@ -133,12 +133,12 @@ export default function WorkflowStatusPage() {
    {/* Stats */}
    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
     <Card className="p-4 text-center">
-     <Activity className="mx-auto mb-2 h-6 w-6 text-brand-600 text-brand-400" />
+     <Activity className="mx-auto mb-2 h-6 w-6 text-primary text-primary" />
      <p className="text-2xl font-black text-white">{workflows.length}</p>
      <p className="text-xs text-surface-500">Total</p>
     </Card>
     <Card className="p-4 text-center">
-     <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-brand-600 text-brand-400" />
+     <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-primary text-primary" />
      <p className="text-2xl font-black text-white">{runningCount}</p>
      <p className="text-xs text-surface-500">Running</p>
     </Card>
@@ -158,10 +158,10 @@ export default function WorkflowStatusPage() {
 
    {/* Workflow List */}
    <Card className="overflow-hidden">
-    <div className="divide-y divide-surface-200 divide-surface-700">
+    <div className="divide-y divide-border">
      {loading ? (
       <div className="flex items-center justify-center p-12">
-       <Loader2 className="h-8 w-8 animate-spin text-brand-600 text-brand-400" />
+       <Loader2 className="h-8 w-8 animate-spin text-primary text-primary" />
       </div>
      ) : workflows.length === 0 ? (
       <div className="p-12 text-center text-surface-500">No workflow executions found</div>
@@ -174,7 +174,7 @@ export default function WorkflowStatusPage() {
        return (
         <div
          key={workflow.id}
-         className="transition-colors hover:bg-surface-800 hover:bg-surface-800/50"
+         className="transition-colors hover:bg-secondary hover:bg-secondary/50"
         >
          <div
           className="flex cursor-pointer items-center gap-4 p-4"
@@ -210,14 +210,14 @@ export default function WorkflowStatusPage() {
 
          {/* Expanded Details */}
          {isExpanded && (
-          <div className="animate-in slide-in-from-top-2 border-t border-surface-700 bg-surface-800 p-4 border-surface-700 bg-surface-800/50">
+          <div className="animate-in slide-in-from-top-2 border-t border-border bg-secondary p-4 border-border bg-secondary/50">
            <div className="mb-4 flex items-center gap-2">
             <button
              onClick={(e) => {
               e.stopPropagation()
               rerunWorkflow(workflow.id)
              }}
-             className="flex items-center gap-1 rounded-lg bg-brand-100 px-3 py-1.5 text-xs text-brand-700 hover:bg-brand-200 bg-brand-500/20 text-brand-400 brand-500/30"
+             className="flex items-center gap-1 rounded-lg bg-brand-100 px-3 py-1.5 text-xs text-brand-700 hover:bg-brand-200 bg-primary/20 text-primary brand-500/30"
             >
              <RotateCcw className="h-3 w-3" />
              Re-run

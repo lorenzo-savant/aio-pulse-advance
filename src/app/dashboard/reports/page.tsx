@@ -200,12 +200,12 @@ export default function ReportsPage() {
   ] as const
 
   return (
-    <div className="space-y-6 bg-page-bg">
+    <div className="space-y-6 bg-background">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <FileText className="h-8 w-8 text-brand-400" />
+            <FileText className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-black tracking-tight text-white">White-Label Reports</h1>
           </div>
           <p className="mt-1 text-surface-400">
@@ -215,7 +215,7 @@ export default function ReportsPage() {
         <div className="flex items-center gap-2">
           {brands.length > 1 && (
             <select
-              className="text-text-primary-ui rounded-lg border border-surface-input-border bg-surface-input px-3 py-2 text-sm"
+              className="text-foreground rounded-lg border border-input bg-input px-3 py-2 text-sm"
               value={selectedBrand?.id || ''}
               onChange={(e) => {
                 const b = brands.find((b) => b.id === e.target.value)
@@ -239,64 +239,64 @@ export default function ReportsPage() {
         {/* Settings Column */}
         <div className="space-y-6 lg:col-span-2">
           {/* Branding */}
-          <Card className="border border-surface-input-border bg-card p-6">
+          <Card className="border border-input bg-card p-6">
             <h2 className="text-text-secondary-ui mb-4 flex items-center gap-2 text-lg font-bold">
-              <Palette className="text-text-muted-ui h-5 w-5" /> Branding
+              <Palette className="text-muted-foreground h-5 w-5" /> Branding
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="text-text-muted-ui mb-1.5 block text-[10px] font-black uppercase tracking-widest">
+                <label className="text-muted-foreground mb-1.5 block text-[10px] font-black uppercase tracking-widest">
                   Report Brand Name
                 </label>
                 <input
-                  className="text-text-primary-ui placeholder-text-muted-ui w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm outline-none focus:border-brand-500"
+                  className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm outline-none focus:border-primary"
                   placeholder="Your Agency Name"
                   value={settings.brandName}
                   onChange={(e) => setSettings({ ...settings, brandName: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-text-muted-ui mb-1.5 block text-[10px] font-black uppercase tracking-widest">
+                <label className="text-muted-foreground mb-1.5 block text-[10px] font-black uppercase tracking-widest">
                   Logo URL
                 </label>
                 <input
-                  className="text-text-primary-ui placeholder-text-muted-ui w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm outline-none focus:border-brand-500"
+                  className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm outline-none focus:border-primary"
                   placeholder="https://youragency.com/logo.png"
                   value={settings.logoUrl}
                   onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-text-muted-ui mb-1.5 block text-[10px] font-black uppercase tracking-widest">
+                <label className="text-muted-foreground mb-1.5 block text-[10px] font-black uppercase tracking-widest">
                   Primary Color
                 </label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
-                    className="h-10 w-10 cursor-pointer rounded-lg border border-surface-input-border"
+                    className="h-10 w-10 cursor-pointer rounded-lg border border-input"
                     value={settings.primaryColor}
                     onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
                   />
                   <input
-                    className="text-text-primary-ui w-32 rounded-xl border border-surface-input-border bg-surface-input px-4 py-2.5 font-mono text-sm outline-none focus:border-brand-500"
+                    className="text-foreground w-32 rounded-xl border border-input bg-input px-4 py-2.5 font-mono text-sm outline-none focus:border-primary"
                     value={settings.primaryColor}
                     onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
                   />
                 </div>
               </div>
-              <div className="flex items-center justify-between rounded-xl border border-nav-border bg-card p-3">
+              <div className="flex items-center justify-between rounded-xl border border-border bg-card p-3">
                 <div>
                   <p className="text-text-secondary-ui text-sm font-bold">
                     Show &quot;Powered by AIO Pulse&quot;
                   </p>
-                  <p className="text-text-muted-ui text-[10px]">
+                  <p className="text-muted-foreground text-[10px]">
                     Display a small attribution in the report footer
                   </p>
                 </div>
                 <button
                   className={cn(
                     'relative h-6 w-11 rounded-full transition-colors',
-                    settings.showPoweredBy ? 'bg-brand-600' : 'bg-surface-700',
+                    settings.showPoweredBy ? 'bg-primary' : 'bg-secondary',
                   )}
                   onClick={() =>
                     setSettings({ ...settings, showPoweredBy: !settings.showPoweredBy })
@@ -314,7 +314,7 @@ export default function ReportsPage() {
           </Card>
 
           {/* Header Style */}
-          <Card className="border border-surface-input-border bg-card p-6">
+          <Card className="border border-input bg-card p-6">
             <h2 className="text-text-secondary-ui mb-4 text-lg font-bold">Header Style</h2>
             <div className="grid grid-cols-3 gap-3">
               {HEADER_STYLES.map((style) => (
@@ -323,15 +323,15 @@ export default function ReportsPage() {
                   className={cn(
                     'rounded-xl border p-4 text-left transition-all',
                     settings.headerStyle === style.id
-                      ? 'border-brand-500 bg-brand-500/10'
-                      : 'border-surface-input-border hover:border-surface-700',
+                      ? 'border-brand-500 bg-primary/10'
+                      : 'border-input hover:border-border',
                   )}
                   onClick={() => setSettings({ ...settings, headerStyle: style.id })}
                 >
                   <p className="text-text-secondary-ui text-sm font-bold">{style.label}</p>
-                  <p className="text-text-muted-ui text-[10px]">{style.desc}</p>
+                  <p className="text-muted-foreground text-[10px]">{style.desc}</p>
                   {settings.headerStyle === style.id && (
-                    <Check className="mt-2 h-4 w-4 text-brand-400" />
+                    <Check className="mt-2 h-4 w-4 text-primary" />
                   )}
                 </button>
               ))}
@@ -339,22 +339,22 @@ export default function ReportsPage() {
           </Card>
 
           {/* Report Sections */}
-          <Card className="border border-surface-input-border bg-card p-6">
+          <Card className="border border-input bg-card p-6">
             <h2 className="text-text-secondary-ui mb-4 text-lg font-bold">Report Sections</h2>
             <div className="space-y-2">
               {REPORT_SECTIONS.map((section) => (
                 <div
                   key={section.key}
-                  className="flex items-center justify-between rounded-xl border border-nav-border bg-card p-3"
+                  className="flex items-center justify-between rounded-xl border border-border bg-card p-3"
                 >
                   <div>
                     <p className="text-text-secondary-ui text-sm font-bold">{section.label}</p>
-                    <p className="text-text-muted-ui text-[10px]">{section.desc}</p>
+                    <p className="text-muted-foreground text-[10px]">{section.desc}</p>
                   </div>
                   <button
                     className={cn(
                       'relative h-6 w-11 rounded-full transition-colors',
-                      settings[section.key] ? 'bg-brand-600' : 'bg-surface-700',
+                      settings[section.key] ? 'bg-primary' : 'bg-secondary',
                     )}
                     onClick={() =>
                       setSettings({ ...settings, [section.key]: !settings[section.key] })
@@ -376,7 +376,7 @@ export default function ReportsPage() {
         {/* Preview + Actions Column */}
         <div className="space-y-6">
           {/* Preview */}
-          <Card className="overflow-hidden border border-nav-border bg-page-bg-elevated">
+          <Card className="overflow-hidden border border-border bg-secondary">
             <div
               className="p-6"
               style={{
@@ -446,11 +446,11 @@ export default function ReportsPage() {
               {REPORT_SECTIONS.filter((s) => settings[s.key]).map((section) => (
                 <div
                   key={section.key}
-                  className="rounded-lg border border-surface-input-border bg-card p-3"
+                  className="rounded-lg border border-input bg-card p-3"
                 >
                   <p className="text-text-secondary-ui text-xs font-bold">{section.label}</p>
-                  <div className="mt-1 h-2 w-3/4 rounded bg-surface-input-border" />
-                  <div className="mt-1 h-2 w-1/2 rounded bg-surface-input-border" />
+                  <div className="mt-1 h-2 w-3/4 rounded bg-input-border" />
+                  <div className="mt-1 h-2 w-1/2 rounded bg-input-border" />
                 </div>
               ))}
               {settings.showPoweredBy && (
@@ -460,14 +460,14 @@ export default function ReportsPage() {
           </Card>
 
           {/* Actions */}
-          <Card className="border border-surface-input-border bg-card p-5">
+          <Card className="border border-input bg-card p-5">
             <div className="space-y-3">
               <div>
-                <label className="text-text-muted-ui mb-1.5 block text-[10px] font-black uppercase tracking-widest">
+                <label className="text-muted-foreground mb-1.5 block text-[10px] font-black uppercase tracking-widest">
                   Date Range
                 </label>
                 <select
-                  className="text-text-primary-ui w-full rounded-lg border border-surface-input-border bg-surface-input px-3 py-2 text-sm"
+                  className="text-foreground w-full rounded-lg border border-input bg-input px-3 py-2 text-sm"
                   value={dateRange}
                   onChange={(e) => setDateRange(Number(e.target.value))}
                 >
@@ -492,10 +492,10 @@ export default function ReportsPage() {
           </Card>
 
           {selectedBrand && (
-            <Card className="border border-surface-input-border bg-card p-5">
+            <Card className="border border-input bg-card p-5">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-brand-400" />
+                  <Zap className="h-5 w-5 text-primary" />
                   <div>
                     <h3 className="text-lg font-bold text-white">AEO Agent System</h3>
                     <p className="mt-0.5 text-xs text-surface-500">
@@ -508,7 +508,7 @@ export default function ReportsPage() {
                 </Badge>
               </div>
 
-              <div className="mb-4 rounded-xl border border-surface-800 bg-surface-900/40 p-4">
+              <div className="mb-4 rounded-xl border border-border bg-secondary/40 p-4">
                 <div className="flex items-start gap-3">
                   <Clock className="mt-0.5 h-4 w-4 shrink-0 text-surface-500" />
                   <div>

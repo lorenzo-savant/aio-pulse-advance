@@ -33,7 +33,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
   const engineColor = ENGINE_COLORS[result.engine] ?? '#6366f1'
 
   return (
-    <div className="bg-surface-/40 hover:border-surface- rounded-2xl border transition-all">
+    <div className="bg-secondary/40 hover:border-border- rounded-2xl border transition-all">
       {/* Header */}
       <div className="flex items-center gap-4 p-4">
         {/* Engine badge */}
@@ -82,7 +82,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
               <Badge variant="info">Position #{result.mention_position}</Badge>
             )}
           </div>
-          <p className="text-surface- truncate text-xs">"{result.prompt_text}"</p>
+          <p className="text-muted-foreground truncate text-xs">"{result.prompt_text}"</p>
         </div>
 
         {/* Score */}
@@ -99,10 +99,10 @@ function ResultCard({ result }: { result: MonitoringResult }) {
           >
             {result.visibility_score}
           </p>
-          <p className="text-surface- text-[9px] uppercase tracking-wider">score</p>
+          <p className="text-muted-foreground text-[9px] uppercase tracking-wider">score</p>
         </div>
 
-        <button className="hover:text-surface- ml-2" onClick={() => setExpanded((v) => !v)}>
+        <button className="hover:text-muted-foreground ml-2" onClick={() => setExpanded((v) => !v)}>
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
       </div>
@@ -112,18 +112,18 @@ function ResultCard({ result }: { result: MonitoringResult }) {
         <div className="animate-in space-y-4 border-t px-4 pb-4 pt-3">
           {/* AI Response */}
           <div>
-            <p className="text-surface- mb-2 text-[10px] font-black uppercase tracking-widest">
+            <p className="text-muted-foreground mb-2 text-[10px] font-black uppercase tracking-widest">
               AI Response
             </p>
-            <div className="max-h-48 overflow-y-auto rounded-xl border bg-surface-input/50 p-3">
-              <p className="text-surface- text-sm leading-relaxed">{result.response_text}</p>
+            <div className="max-h-48 overflow-y-auto rounded-xl border bg-input/50 p-3">
+              <p className="text-muted-foreground text-sm leading-relaxed">{result.response_text}</p>
             </div>
           </div>
 
           {/* Competitor mentions */}
           {result.competitor_mentions.length > 0 && (
             <div>
-              <p className="text-surface- mb-2 text-[10px] font-black uppercase tracking-widest">
+              <p className="text-muted-foreground mb-2 text-[10px] font-black uppercase tracking-widest">
                 Competitor Mentions
               </p>
               <div className="flex flex-wrap gap-2">
@@ -133,7 +133,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
                     className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-1.5 text-xs"
                   >
                     <span className="font-bold text-amber-400">{c.name}</span>
-                    <span className="text-surface- ml-2">
+                    <span className="text-muted-foreground ml-2">
                       pos #{c.position} · {c.count}x
                     </span>
                   </div>
@@ -157,7 +157,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
                     <div className="text-xs">
                       <p className="text-red-300">"{flag.text}"</p>
-                      <p className="text-surface- mt-0.5">
+                      <p className="text-muted-foreground mt-0.5">
                         {flag.type.replace(/_/g, ' ')} · severity: {flag.severity}
                       </p>
                     </div>
@@ -170,7 +170,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
           {/* Cited URLs */}
           {result.cited_urls.length > 0 && (
             <div>
-              <p className="text-surface- mb-2 text-[10px] font-black uppercase tracking-widest">
+              <p className="text-muted-foreground mb-2 text-[10px] font-black uppercase tracking-widest">
                 Cited URLs
               </p>
               <div className="space-y-1">
@@ -189,7 +189,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
             </div>
           )}
 
-          <p className="text-surface- text-[10px]">{formatRelativeTime(result.created_at)}</p>
+          <p className="text-muted-foreground text-[10px]">{formatRelativeTime(result.created_at)}</p>
         </div>
       )}
     </div>
@@ -265,8 +265,8 @@ export default function MonitoringPage() {
               </>
             ) : (
               <>
-                <WifiOff className="text-surface- h-3.5 w-3.5" />
-                <span className="text-surface-">Offline</span>
+                <WifiOff className="text-muted-foreground h-3.5 w-3.5" />
+                <span className="text-muted-foreground">Offline</span>
               </>
             )}
           </div>
@@ -284,7 +284,7 @@ export default function MonitoringPage() {
             label: 'Total Results',
             value: pagination.total,
             icon: Shield,
-            color: 'text-brand-600 text-brand-400',
+            color: 'text-primary',
           },
           {
             label: 'Mention Rate',
@@ -308,7 +308,7 @@ export default function MonitoringPage() {
           <Card key={s.label} className="p-5 text-center">
             <s.icon className={cn('mx-auto mb-2 h-6 w-6', s.color)} />
             <p className="text-2xl font-black text-white">{s.value}</p>
-            <p className="text-surface- text-xs">{s.label}</p>
+            <p className="text-muted-foreground text-xs">{s.label}</p>
           </Card>
         ))}
       </div>
@@ -318,7 +318,7 @@ export default function MonitoringPage() {
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-widest">Brand:</span>
           <select
-            className="rounded-xl border px-3 py-1.5 text-xs text-white outline-none focus:border-brand-500"
+            className="rounded-xl border px-3 py-1.5 text-xs text-white outline-none focus:border-primary"
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
           >
@@ -331,15 +331,15 @@ export default function MonitoringPage() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-surface- text-xs font-bold uppercase tracking-widest">Engine:</span>
+          <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Engine:</span>
           {['', 'chatgpt', 'gemini', 'perplexity'].map((e) => (
             <button
               key={e}
               className={cn(
                 'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all',
                 selectedEngine === e
-                  ? 'border-brand-500/50 bg-brand-500/15 text-brand-400'
-                  : 'hover:text-surface-',
+                  ? 'border-brand-500/50 bg-primary/15 text-brand-400'
+                  : 'hover:text-muted-foreground',
               )}
               onClick={() => setSelectedEngine(e)}
             >
@@ -348,11 +348,11 @@ export default function MonitoringPage() {
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-surface- text-xs font-bold uppercase tracking-widest">
+          <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">
             Language:
           </span>
           <select
-            className="rounded-xl border bg-surface-input px-3 py-1.5 text-xs text-dashboard-text outline-none focus:border-brand-500"
+            className="rounded-xl border bg-input px-3 py-1.5 text-xs text-foreground outline-none focus:border-primary"
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value)}
           >

@@ -53,9 +53,9 @@ const SENTIMENT_CONFIG = {
   },
   neutral: {
     icon: Meh,
-    color: 'text-text-muted-surface',
-    bg: 'bg-surface-input',
-    border: 'border-surface-input-border',
+    color: 'text-muted-foreground',
+    bg: 'bg-input',
+    border: 'border-input',
     bar: '#6b7280',
   },
 }
@@ -132,7 +132,7 @@ function SentimentGauge({ score }: { score: number }) {
           {score > 0 ? '+' : ''}
           {score.toFixed(2)}
         </p>
-        <p className="text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Sentiment Score
         </p>
       </div>
@@ -182,21 +182,21 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
   }
 
   return (
-    <Card className="border-surface-input-border bg-card p-6">
+    <Card className="border-input bg-card p-6">
       <div className="mb-5 flex items-center gap-3">
         <Brain className="text-brand h-5 w-5" />
-        <h2 className="text-lg font-bold text-text-on-surface">Manual Analyzer</h2>
-        <span className="text-xs text-text-muted-surface">Paste any AI response to analyze</span>
+        <h2 className="text-lg font-bold text-foreground">Manual Analyzer</h2>
+        <span className="text-xs text-muted-foreground">Paste any AI response to analyze</span>
       </div>
 
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Brand
             </label>
             <select
-              className="focus:border-brand w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-2.5 text-sm text-text-on-surface outline-none"
+              className="focus:border-brand w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none"
               value={brandId}
               onChange={(e) => setBrandId(e.target.value)}
             >
@@ -209,7 +209,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
             </select>
           </div>
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted-surface">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Analysis Mode
             </label>
             <div className="flex gap-2">
@@ -219,8 +219,8 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                   className={cn(
                     'flex-1 rounded-xl border py-2.5 text-xs font-bold transition-all',
                     mode === m
-                      ? 'text-brand border-brand-500/50 bg-brand-500/15'
-                      : 'border-surface-input-border bg-surface-input text-text-secondary-surface hover:border-surface-input',
+                      ? 'text-brand border-brand-500/50 bg-primary/15'
+                      : 'border-input bg-input text-muted-foreground hover:border-input',
                   )}
                   onClick={() => setMode(m)}
                 >
@@ -232,7 +232,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
         </div>
 
         <textarea
-          className="focus:border-brand w-full resize-none rounded-xl border border-surface-input-border bg-surface-input px-4 py-3 text-sm text-text-on-surface placeholder-text-muted-surface outline-none"
+          className="focus:border-brand w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-text-muted-surface outline-none"
           placeholder="Paste an AI-generated response here to analyze sentiment and detect hallucinations..."
           rows={5}
           value={text}
@@ -246,10 +246,10 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
       </div>
 
       {result && (
-        <div className="animate-in mt-6 space-y-4 border-t border-nav-border pt-5">
+        <div className="animate-in mt-6 space-y-4 border-t border-border pt-5">
           {result.sentiment && (
             <div>
-              <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+              <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Sentiment Result
               </p>
               <div
@@ -269,16 +269,16 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                     {result.sentiment.sentiment}
                   </span>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-text-on-surface">
+                    <p className="text-sm font-bold text-foreground">
                       Score: {result.sentiment.score > 0 ? '+' : ''}
                       {result.sentiment.score.toFixed(2)}
                     </p>
-                    <p className="text-xs text-text-muted-surface">
+                    <p className="text-xs text-muted-foreground">
                       Confidence: {result.sentiment.confidence}%
                     </p>
                   </div>
                 </div>
-                <p className="text-sm text-text-secondary-surface">{result.sentiment.reasoning}</p>
+                <p className="text-sm text-muted-foreground">{result.sentiment.reasoning}</p>
                 {result.sentiment.aspects.length > 0 && (
                   <div className="mt-3 space-y-1">
                     {result.sentiment.aspects.map((a, i) => (
@@ -287,12 +287,12 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                           className={cn(
                             'font-bold',
                             SENTIMENT_CONFIG[a.sentiment as keyof typeof SENTIMENT_CONFIG]?.color ??
-                              'text-text-muted-surface',
+                              'text-muted-foreground',
                           )}
                         >
                           {a.aspect}:
                         </span>
-                        <span className="text-text-muted-surface">{a.explanation}</span>
+                        <span className="text-muted-foreground">{a.explanation}</span>
                       </div>
                     ))}
                   </div>
@@ -303,7 +303,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
 
           {result.hallucination && (
             <div>
-              <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-text-muted-surface">
+              <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Hallucination Check
               </p>
               <div
@@ -330,11 +330,11 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                       ? `${result.hallucination.flags.length} issue(s) detected`
                       : 'No hallucinations detected'}
                   </span>
-                  <span className="ml-auto text-xs text-text-muted-surface">
+                  <span className="ml-auto text-xs text-muted-foreground">
                     Confidence: {result.hallucination.confidence}%
                   </span>
                 </div>
-                <p className="text-sm text-text-secondary-surface">
+                <p className="text-sm text-muted-foreground">
                   {result.hallucination.summary}
                 </p>
                 {result.hallucination.flags.map((flag, i) => (
@@ -343,7 +343,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                     className="mt-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs"
                   >
                     <p className="font-bold text-red-400">"{flag.text}"</p>
-                    <p className="mt-0.5 text-text-muted-surface">
+                    <p className="mt-0.5 text-muted-foreground">
                       {flag.type} · {flag.severity} severity
                     </p>
                   </div>
@@ -404,16 +404,16 @@ export default function SentimentPage() {
     <div className="animate-in space-y-8">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-text-on-surface">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
             Sentiment & Hallucinations
           </h1>
-          <p className="mt-1 text-text-muted-surface">
+          <p className="mt-1 text-muted-foreground">
             How AI systems feel about your brand — and what they get wrong.
           </p>
         </div>
         {brands.length > 0 && (
           <select
-            className="focus:border-brand rounded-xl border border-surface-input-border bg-surface-input px-4 py-2.5 text-sm text-text-on-surface outline-none"
+            className="focus:border-brand rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none"
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
           >
@@ -433,26 +433,26 @@ export default function SentimentPage() {
       ) : stats ? (
         <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <Card className="flex flex-col items-center justify-center border-surface-input-border bg-card p-8">
+            <Card className="flex flex-col items-center justify-center border-input bg-card p-8">
               <SentimentGauge score={stats.avgSentimentScore} />
               <div className="mt-6 flex gap-4 text-center">
                 <div>
                   <p className="text-lg font-black text-emerald-500">
                     {stats.sentimentCounts.positive}
                   </p>
-                  <p className="text-[10px] text-text-muted-surface">Positive</p>
+                  <p className="text-[10px] text-muted-foreground">Positive</p>
                 </div>
                 <div>
-                  <p className="text-lg font-black text-text-muted-surface">
+                  <p className="text-lg font-black text-muted-foreground">
                     {stats.sentimentCounts.neutral}
                   </p>
-                  <p className="text-[10px] text-text-muted-surface">Neutral</p>
+                  <p className="text-[10px] text-muted-foreground">Neutral</p>
                 </div>
                 <div>
                   <p className="text-lg font-black text-red-500">
                     {stats.sentimentCounts.negative}
                   </p>
-                  <p className="text-[10px] text-text-muted-surface">Negative</p>
+                  <p className="text-[10px] text-muted-foreground">Negative</p>
                 </div>
               </div>
             </Card>
@@ -484,18 +484,18 @@ export default function SentimentPage() {
                   color: stats.hallucinationRate > 0.1 ? 'text-red-500' : 'text-emerald-500',
                 },
               ].map((s) => (
-                <Card key={s.label} className="border-surface-input-border bg-card p-5">
+                <Card key={s.label} className="border-input bg-card p-5">
                   <s.icon className={cn('mb-2 h-5 w-5', s.color)} />
-                  <p className="text-2xl font-black text-text-on-surface">{s.value}</p>
-                  <p className="text-xs text-text-muted-surface">{s.label}</p>
+                  <p className="text-2xl font-black text-foreground">{s.value}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
                 </Card>
               ))}
             </div>
           </div>
 
           {engineData.length > 0 && (
-            <Card className="border-nav-border bg-page-bg-elevated p-6">
-              <h2 className="mb-6 text-lg font-bold text-text-on-surface">
+            <Card className="border-border bg-secondary p-6">
+              <h2 className="mb-6 text-lg font-bold text-foreground">
                 Average Sentiment by Engine
               </h2>
               <ResponsiveContainer height={220} width="100%">
@@ -521,9 +521,9 @@ export default function SentimentPage() {
           )}
 
           {stats.totalResults === 0 && (
-            <div className="rounded-2xl border border-surface-input-border bg-surface-row px-6 py-10 text-center">
-              <p className="mb-2 text-lg font-bold text-text-on-surface">No data yet</p>
-              <p className="text-text-muted-surface">
+            <div className="rounded-2xl border border-input bg-secondary px-6 py-10 text-center">
+              <p className="mb-2 text-lg font-bold text-foreground">No data yet</p>
+              <p className="text-muted-foreground">
                 Run monitoring checks from the Prompts page to populate sentiment data.
               </p>
             </div>

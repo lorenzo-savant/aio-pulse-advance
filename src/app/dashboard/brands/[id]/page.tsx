@@ -76,7 +76,7 @@ function StatCard({
     <Card className="p-4">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-surface-400">{label}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
           <p className="mt-1 text-2xl font-black text-white">{value}</p>
           {change !== undefined && (
             <div
@@ -107,7 +107,7 @@ function ResultRow({ result }: { result: MonitoringResult }) {
   const engineColor = ENGINE_COLORS[result.engine] ?? '#6366f1'
 
   return (
-    <div className="flex items-center gap-3 border-b border-surface-800 py-3 last:border-0">
+    <div className="flex items-center gap-3 border-b border-border py-3 last:border-0">
       <div
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-black uppercase"
         style={{ background: `${engineColor}20`, color: engineColor }}
@@ -115,10 +115,10 @@ function ResultRow({ result }: { result: MonitoringResult }) {
         {result.engine.slice(0, 3)}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-surface-300">
+        <p className="truncate text-sm text-muted-foreground">
           {result.prompt?.text || result.prompt_text || 'Unknown prompt'}
         </p>
-        <p className="text-xs text-surface-400">
+        <p className="text-xs text-muted-foreground">
           {new Date(result.created_at).toLocaleDateString()}
         </p>
       </div>
@@ -129,7 +129,7 @@ function ResultRow({ result }: { result: MonitoringResult }) {
             result.visibility_score >= 70
               ? 'text-emerald-400'
               : result.visibility_score >= 40
-                ? 'text-brand-400'
+                ? 'text-primary'
                 : 'text-red-400',
           )}
         >
@@ -420,7 +420,7 @@ export default function BrandDetailPage() {
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -428,7 +428,7 @@ export default function BrandDetailPage() {
   if (!brand) {
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-4">
-        <p className="text-surface-400">Brand not found</p>
+        <p className="text-muted-foreground">Brand not found</p>
         <Button variant="outline" onClick={() => router.push('/dashboard/brands')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Brands
@@ -445,7 +445,7 @@ export default function BrandDetailPage() {
           <Link
             href="/dashboard/brands"
             aria-label="Back to brands"
-            className="rounded-lg p-2 text-surface-500 hover:bg-surface-800 hover:text-surface-300"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-surface-800 hover:text-muted-foreground"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Link>
@@ -465,7 +465,7 @@ export default function BrandDetailPage() {
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-sm text-surface-500 hover:text-brand-400"
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
                 >
                   {brand.domain}
                   <ExternalLink className="h-3 w-3" />
@@ -581,7 +581,7 @@ export default function BrandDetailPage() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-[250px] items-center justify-center text-surface-500">
+            <div className="flex h-[250px] items-center justify-center text-muted-foreground">
               No trend data available
             </div>
           )}
@@ -610,7 +610,7 @@ export default function BrandDetailPage() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-[250px] items-center justify-center text-surface-500">
+            <div className="flex h-[250px] items-center justify-center text-muted-foreground">
               No engine data
             </div>
           )}
@@ -624,7 +624,7 @@ export default function BrandDetailPage() {
           <h3 className="text-lg font-bold text-white">Recent Monitoring Results</h3>
           <Link
             href={`/dashboard/monitoring?brand=${brandId}`}
-            className="text-sm text-brand-400 hover:text-brand-300"
+            className="text-sm text-primary hover:text-brand-300"
           >
             View all
           </Link>
@@ -636,7 +636,7 @@ export default function BrandDetailPage() {
             ))}
           </div>
         ) : (
-          <div className="py-8 text-center text-surface-500">
+          <div className="py-8 text-center text-muted-foreground">
             No monitoring results yet. Run a scan to see results.
           </div>
         )}
@@ -646,7 +646,7 @@ export default function BrandDetailPage() {
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Palette className="h-5 w-5 text-surface-400" />
+            <Palette className="h-5 w-5 text-muted-foreground" />
             <h3 className="text-lg font-bold text-white">White-label Report Settings</h3>
           </div>
           {!isEditing ? (
@@ -680,38 +680,38 @@ export default function BrandDetailPage() {
             </div>
           )}
         </div>
-        <p className="mb-4 text-sm text-surface-500">
+        <p className="mb-4 text-sm text-muted-foreground">
           Customize how your brand appears in PDF reports. Leave empty to use default AIO Pulse
           branding.
         </p>
         {isEditing ? (
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-surface-500">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Report Brand Name
               </label>
               <input
-                className="w-full rounded-xl border border-surface-700 bg-surface-900 px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-brand-500"
+                className="w-full rounded-xl border border-border bg-surface-900 px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-primary"
                 placeholder="Your Company Name"
                 value={editForm.report_brand_name}
                 onChange={(e) => setEditForm({ ...editForm, report_brand_name: e.target.value })}
               />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-surface-500">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Primary Color (Hex)
               </label>
               <div className="flex gap-2">
                 <input
                   type="color"
-                  className="h-10 w-14 rounded-lg border border-surface-700 bg-transparent"
+                  className="h-10 w-14 rounded-lg border border-border bg-transparent"
                   value={editForm.report_primary_color}
                   onChange={(e) =>
                     setEditForm({ ...editForm, report_primary_color: e.target.value })
                   }
                 />
                 <input
-                  className="flex-1 rounded-xl border border-surface-700 bg-surface-900 px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-brand-500"
+                  className="flex-1 rounded-xl border border-border bg-surface-900 px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-primary"
                   placeholder="#6366f1"
                   value={editForm.report_primary_color}
                   onChange={(e) =>
@@ -721,11 +721,11 @@ export default function BrandDetailPage() {
               </div>
             </div>
             <div className="md:col-span-2">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-surface-500">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Logo URL (optional)
               </label>
               <input
-                className="w-full rounded-xl border border-surface-700 bg-surface-900 px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-brand-500"
+                className="w-full rounded-xl border border-border bg-surface-900 px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-primary"
                 placeholder="https://your-company.com/logo.png"
                 value={editForm.report_logo_url}
                 onChange={(e) => setEditForm({ ...editForm, report_logo_url: e.target.value })}
@@ -734,14 +734,14 @@ export default function BrandDetailPage() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-surface-800 bg-surface-900/50 p-4">
-              <p className="mb-1 text-xs text-surface-500">Report Brand Name</p>
+            <div className="rounded-xl border border-border bg-surface-900/50 p-4">
+              <p className="mb-1 text-xs text-muted-foreground">Report Brand Name</p>
               <p className="font-medium text-white">
                 {brand?.report_brand_name || 'AIO Pulse (default)'}
               </p>
             </div>
-            <div className="rounded-xl border border-surface-800 bg-surface-900/50 p-4">
-              <p className="mb-1 text-xs text-surface-500">Primary Color</p>
+            <div className="rounded-xl border border-border bg-surface-900/50 p-4">
+              <p className="mb-1 text-xs text-muted-foreground">Primary Color</p>
               <div className="flex items-center gap-2">
                 <div
                   className="h-4 w-4 rounded"
@@ -750,8 +750,8 @@ export default function BrandDetailPage() {
                 <p className="font-medium text-white">{brand?.report_primary_color || '#6366f1'}</p>
               </div>
             </div>
-            <div className="rounded-xl border border-surface-800 bg-surface-900/50 p-4">
-              <p className="mb-1 text-xs text-surface-500">Logo URL</p>
+            <div className="rounded-xl border border-border bg-surface-900/50 p-4">
+              <p className="mb-1 text-xs text-muted-foreground">Logo URL</p>
               <p className="font-medium text-white">{brand?.report_logo_url || 'Not configured'}</p>
             </div>
           </div>
@@ -762,11 +762,11 @@ export default function BrandDetailPage() {
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-surface-400" />
+            <Users className="h-5 w-5 text-muted-foreground" />
             <h3 className="text-lg font-bold text-white">Team Members</h3>
           </div>
         </div>
-        <p className="mb-4 text-sm text-surface-500">
+        <p className="mb-4 text-sm text-muted-foreground">
           Invite team members to collaborate on this brand. They will receive an email invitation.
         </p>
 
@@ -774,14 +774,14 @@ export default function BrandDetailPage() {
         <div className="mb-6 flex flex-wrap gap-3">
           <input
             type="email"
-            className="min-w-[200px] flex-1 rounded-xl border border-surface-700 bg-surface-900 px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-brand-500"
+            className="min-w-[200px] flex-1 rounded-xl border border-border bg-surface-900 px-4 py-2.5 text-sm text-white placeholder-surface-500 outline-none focus:border-primary"
             placeholder="colleague@company.com"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
           />
           <select
-            className="rounded-xl border border-surface-700 bg-surface-900 px-4 py-2.5 text-sm text-white outline-none focus:border-brand-500"
+            className="rounded-xl border border-border bg-surface-900 px-4 py-2.5 text-sm text-white outline-none focus:border-primary"
             value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value as 'editor' | 'viewer')}
           >
@@ -797,25 +797,25 @@ export default function BrandDetailPage() {
         {/* Team Members List */}
         <div className="space-y-3">
           {teamMembers.length === 0 && pendingInvites.length === 0 ? (
-            <p className="text-sm text-surface-500">No team members yet.</p>
+            <p className="text-sm text-muted-foreground">No team members yet.</p>
           ) : (
             <>
               {/* Pending Invitations */}
               {pendingInvites.length > 0 && (
                 <div className="mb-4">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-surface-500">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                     Pending Invitations
                   </p>
                   {pendingInvites.map((invite) => (
                     <div
                       key={invite.id}
-                      className="flex items-center justify-between rounded-lg border border-surface-800 bg-surface-900/30 px-4 py-3"
+                      className="flex items-center justify-between rounded-lg border border-border bg-surface-900/30 px-4 py-3"
                     >
                       <div className="flex items-center gap-3">
-                        <Mail className="h-4 w-4 text-surface-500" />
+                        <Mail className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-sm text-white">{invite.email}</p>
-                          <p className="text-xs text-surface-500">
+                          <p className="text-xs text-muted-foreground">
                             Invited as {invite.role} • Expires{' '}
                             {new Date(invite.expires_at).toLocaleDateString()}
                           </p>
@@ -826,7 +826,7 @@ export default function BrandDetailPage() {
                         size="sm"
                         onClick={() => handleRemoveInvite(invite.id)}
                         aria-label="Cancel invitation"
-                        className="text-surface-500 hover:text-red-400"
+                        className="text-muted-foreground hover:text-red-400"
                       >
                         <X className="h-4 w-4" aria-hidden="true" />
                       </Button>
@@ -838,21 +838,21 @@ export default function BrandDetailPage() {
               {/* Current Members */}
               {teamMembers.length > 0 && (
                 <>
-                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-surface-500">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                     Active Members
                   </p>
                   {teamMembers.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between rounded-lg border border-surface-800 bg-surface-900/30 px-4 py-3"
+                      className="flex items-center justify-between rounded-lg border border-border bg-surface-900/30 px-4 py-3"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-500/20 text-sm font-bold text-brand-400">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
                           {member.email?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div>
                           <p className="text-sm text-white">{member.email}</p>
-                          <p className="text-xs text-surface-500">
+                          <p className="text-xs text-muted-foreground">
                             {member.role === 'owner' ? 'Owner' : member.role}
                             {member.status === 'pending' && ' • Pending'}
                           </p>
@@ -861,7 +861,7 @@ export default function BrandDetailPage() {
                       {member.role !== 'owner' && (
                         <div className="flex items-center gap-2">
                           <select
-                            className="rounded-lg border border-surface-700 bg-surface-800 px-2 py-1 text-xs text-white"
+                            className="rounded-lg border border-border bg-surface-800 px-2 py-1 text-xs text-white"
                             value={member.role}
                             onChange={(e) =>
                               handleUpdateRole(member.id, e.target.value as 'editor' | 'viewer')
@@ -875,7 +875,7 @@ export default function BrandDetailPage() {
                             size="sm"
                             onClick={() => handleRemoveMember(member.id, member.email)}
                             aria-label="Remove team member"
-                            className="text-surface-500 hover:text-red-400"
+                            className="text-muted-foreground hover:text-red-400"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </Button>

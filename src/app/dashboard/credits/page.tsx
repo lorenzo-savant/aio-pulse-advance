@@ -132,7 +132,7 @@ export default function CreditsPage() {
       subscription: { label: 'Subscription', color: 'bg-indigo-500' },
       query_usage: { label: 'Used', color: 'bg-red-500' },
     }
-    return labels[source] || { label: source, color: 'bg-surface-' }
+    return labels[source] || { label: source, color: 'bg-secondary-' }
   }
 
   if (loading) {
@@ -144,7 +144,7 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="space-y-6 bg-page-bg">
+    <div className="space-y-6 bg-background">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -166,11 +166,11 @@ export default function CreditsPage() {
 
       {/* Balance Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="border border-surface-input-border bg-card p-6">
+        <Card className="border border-input bg-card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-text-muted-ui text-sm">Available Balance</p>
-              <p className="text-text-primary-ui mt-1 text-3xl font-bold">
+              <p className="text-muted-foreground text-sm">Available Balance</p>
+              <p className="text-foreground mt-1 text-3xl font-bold">
                 {balance.toLocaleString()}
               </p>
             </div>
@@ -180,11 +180,11 @@ export default function CreditsPage() {
           </div>
         </Card>
 
-        <Card className="border border-surface-input-border bg-card p-6">
+        <Card className="border border-input bg-card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-text-muted-ui text-sm">Total Purchased</p>
-              <p className="text-text-primary-ui mt-1 text-3xl font-bold">
+              <p className="text-muted-foreground text-sm">Total Purchased</p>
+              <p className="text-foreground mt-1 text-3xl font-bold">
                 {totalPurchased.toLocaleString()}
               </p>
             </div>
@@ -194,11 +194,11 @@ export default function CreditsPage() {
           </div>
         </Card>
 
-        <Card className="border border-surface-input-border bg-card p-6">
+        <Card className="border border-input bg-card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-text-muted-ui text-sm">Total Used</p>
-              <p className="text-text-primary-ui mt-1 text-3xl font-bold">
+              <p className="text-muted-foreground text-sm">Total Used</p>
+              <p className="text-foreground mt-1 text-3xl font-bold">
                 {totalUsed.toLocaleString()}
               </p>
             </div>
@@ -210,17 +210,17 @@ export default function CreditsPage() {
       </div>
 
       {/* Purchase Packages */}
-      <Card className="border border-surface-input-border bg-card p-6">
+      <Card className="border border-input bg-card p-6">
         <h2 className="text-text-secondary-ui mb-4 text-lg font-semibold">Purchase Credits</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {packages.map((pkg) => (
             <div
               key={pkg.id}
-              className="rounded-lg border border-surface-input-border bg-card p-4 transition-colors hover:border-brand-500"
+              className="rounded-lg border border-input bg-card p-4 transition-colors hover:border-primary-500"
             >
-              <div className="text-text-primary-ui text-sm font-medium">{pkg.name}</div>
+              <div className="text-foreground text-sm font-medium">{pkg.name}</div>
               <div className="mt-2">
-                <span className="text-text-primary-ui text-2xl font-bold">
+                <span className="text-foreground text-2xl font-bold">
                   {pkg.total.toLocaleString()}
                 </span>
                 <span className="text-text-secondary-ui ml-1 text-sm">credits</span>
@@ -231,7 +231,7 @@ export default function CreditsPage() {
                 </div>
               )}
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-text-primary-ui text-lg font-semibold">${pkg.price}</span>
+                <span className="text-foreground text-lg font-semibold">${pkg.price}</span>
                 <Button
                   size="sm"
                   onClick={() => handlePurchase(pkg.id)}
@@ -255,26 +255,26 @@ export default function CreditsPage() {
       {/* Usage & Transactions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Usage */}
-        <Card className="border border-surface-input-border bg-card p-6">
+        <Card className="border border-input bg-card p-6">
           <h2 className="text-text-secondary-ui mb-4 text-lg font-semibold">Recent Usage</h2>
           {usageHistory.length === 0 ? (
-            <p className="text-text-muted-ui py-8 text-center">No usage history yet</p>
+            <p className="text-muted-foreground py-8 text-center">No usage history yet</p>
           ) : (
             <div className="space-y-3">
               {usageHistory.slice(0, 10).map((usage) => (
                 <div
                   key={usage.id}
-                  className="flex items-center justify-between border-b border-nav-border py-2 last:border-0"
+                  className="flex items-center justify-between border-b border-border py-2 last:border-0"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
                       <Zap className="h-4 w-4 text-red-600 dark:text-red-400" />
                     </div>
                     <div>
-                      <p className="text-text-primary-ui text-sm font-medium">
+                      <p className="text-foreground text-sm font-medium">
                         {usage.engine || usage.provider || 'Query'}
                       </p>
-                      <p className="text-text-muted-ui text-xs">{formatDate(usage.created_at)}</p>
+                      <p className="text-muted-foreground text-xs">{formatDate(usage.created_at)}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -289,10 +289,10 @@ export default function CreditsPage() {
         </Card>
 
         {/* Transaction History */}
-        <Card className="border border-surface-input-border bg-card p-6">
+        <Card className="border border-input bg-card p-6">
           <h2 className="text-text-secondary-ui mb-4 text-lg font-semibold">Transaction History</h2>
           {transactions.length === 0 ? (
-            <p className="text-text-muted-ui py-8 text-center">No transactions yet</p>
+            <p className="text-muted-foreground py-8 text-center">No transactions yet</p>
           ) : (
             <div className="space-y-3">
               {transactions.slice(0, 10).map((tx) => {
@@ -301,7 +301,7 @@ export default function CreditsPage() {
                 return (
                   <div
                     key={tx.id}
-                    className="flex items-center justify-between border-b border-nav-border py-2 last:border-0"
+                    className="flex items-center justify-between border-b border-border py-2 last:border-0"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -319,10 +319,10 @@ export default function CreditsPage() {
                         )}
                       </div>
                       <div>
-                        <p className="text-text-primary-ui text-sm font-medium">
+                        <p className="text-foreground text-sm font-medium">
                           {sourceInfo.label}
                         </p>
-                        <p className="text-text-muted-ui text-xs">
+                        <p className="text-muted-foreground text-xs">
                           {tx.description || formatDate(tx.created_at)}
                         </p>
                       </div>
@@ -349,7 +349,7 @@ export default function CreditsPage() {
       </div>
 
       {/* Credit Costs Info */}
-      <Card className="border border-nav-border bg-page-bg-elevated p-6">
+      <Card className="border border-border bg-secondary p-6">
         <h2 className="text-text-secondary-ui mb-4 text-lg font-semibold">Credit Costs</h2>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
@@ -360,15 +360,15 @@ export default function CreditsPage() {
           ].map((item) => (
             <div
               key={item.engine}
-              className="rounded-lg border border-surface-input-border bg-card p-4 text-center"
+              className="rounded-lg border border-input bg-card p-4 text-center"
             >
-              <p className="text-text-primary-ui text-lg font-semibold">{item.cost} credits</p>
+              <p className="text-foreground text-lg font-semibold">{item.cost} credits</p>
               <p className="text-text-secondary-ui text-sm font-medium">{item.engine}</p>
-              <p className="text-text-muted-ui text-xs">{item.desc}</p>
+              <p className="text-muted-foreground text-xs">{item.desc}</p>
             </div>
           ))}
         </div>
-        <p className="text-text-muted-ui mt-4 text-center text-sm">
+        <p className="text-muted-foreground mt-4 text-center text-sm">
           Free tier: 10 queries per day • Paid plans: Unlimited with credit balance
         </p>
       </Card>

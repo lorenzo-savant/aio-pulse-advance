@@ -632,7 +632,7 @@ export default function DocsPage() {
  <ul key={i} className="mb-4 ml-1 space-y-2">
  {items.map((item, j) => (
  <li key={j} className="flex gap-2.5 text-[15px] leading-relaxed text-surface-300">
- <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500/60" />
+ <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
  <span>{item.replace(/^•\s*/, '')}</span>
  </li>
  ))}
@@ -650,7 +650,7 @@ export default function DocsPage() {
  if (match) {
  return (
  <div key={j} className="flex gap-3">
- <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-500/15 text-xs font-bold text-brand-400">
+ <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/15 text-xs font-bold text-brand-400">
  {match[1]?.replace('Step ', '')}
  </span>
  <p className="text-[15px] leading-relaxed text-surface-300">{match[2]}</p>
@@ -682,7 +682,7 @@ export default function DocsPage() {
  const def = line.slice(dashIndex + 3).trim()
  return (
  <div key={j}>
- <span className="rounded bg-surface-200 px-1.5 py-0.5 text-sm font-semibold text-brand-700 bg-surface-800/80 text-brand-300">
+ <span className="rounded bg-secondary px-1.5 py-0.5 text-sm font-semibold text-brand-700 bg-secondary/80 text-brand-300">
  {term}
  </span>
  <span className="ml-2 text-[15px] leading-relaxed text-surface-200 text-surface-400">
@@ -731,7 +731,7 @@ export default function DocsPage() {
  <Search className="absolute left-4 top-3 h-4 w-4 text-surface-500" />
  <input
  type="text"
- className="w-full rounded-xl border border-surface-700 py-3 pl-11 pr-10 text-sm text-white placeholder-surface-400 outline-none transition-colors focus:border-brand-500/50 border-surface-800 bg-surface-900 text-white placeholder-surface-500"
+ className="w-full rounded-xl border border-surface-700 py-3 pl-11 pr-10 text-sm text-white placeholder-surface-400 outline-none transition-colors focus:border-primary/50 border-surface-800 bg-secondary text-white placeholder-surface-500"
  placeholder="Search documentation..."
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
@@ -754,7 +754,7 @@ export default function DocsPage() {
  {/* Mobile nav toggle */}
  <button
  onClick={() => setMobileNavOpen(!mobileNavOpen)}
- className="mb-4 flex w-full items-center justify-between rounded-xl border border-surface-700 px-4 py-3 text-sm font-medium text-white border-surface-800 bg-surface-900 text-surface-300 lg:hidden"
+ className="mb-4 flex w-full items-center justify-between rounded-xl border border-surface-700 px-4 py-3 text-sm font-medium text-white border-surface-800 bg-secondary text-surface-300 lg:hidden"
  >
  <span>Jump to section</span>
  <ChevronRight
@@ -764,7 +764,7 @@ export default function DocsPage() {
 
  {/* Mobile nav dropdown */}
  {mobileNavOpen && (
- <div className="mb-6 rounded-xl border border-surface-700 p-4 border-surface-800 bg-surface-900 lg:hidden">
+ <div className="mb-6 rounded-xl border border-surface-700 p-4 border-surface-800 bg-secondary lg:hidden">
  {filteredDocs.map((group) => (
  <div key={group.group} className="mb-3">
  <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-surface-200">
@@ -774,7 +774,7 @@ export default function DocsPage() {
  <button
  key={section.id}
  onClick={() => scrollToSection(section.id)}
- className="block w-full py-1.5 text-left text-sm text-surface-400 hover:text-brand-400"
+ className="block w-full py-1.5 text-left text-sm text-surface-400 hover:text-primary"
  >
  {section.title}
  </button>
@@ -806,7 +806,7 @@ export default function DocsPage() {
  className={cn(
  'block w-full rounded-lg px-3 py-1.5 text-left text-[13px] transition-colors',
  activeSection === section.id
- ? 'bg-brand-500/10 font-semibold text-brand-400'
+ ? 'bg-primary/10 font-semibold text-brand-400'
  : 'text-surface-500 hover:text-surface-300',
  )}
  >
@@ -862,7 +862,7 @@ export default function DocsPage() {
  Try a different search term or{' '}
  <button
  onClick={() => setSearchQuery('')}
- className="text-brand-600 hover:underline text-brand-400"
+ className="text-primary hover:underline text-brand-400"
  >
  clear the search
  </button>
@@ -877,7 +877,7 @@ export default function DocsPage() {
  {showBackToTop && (
  <button
  onClick={scrollToTop}
- className="fixed bottom-6 right-6 z-50 rounded-full border border-surface-700 bg-surface-900 p-3 shadow-xl transition-all hover:border-brand-500/30 hover:bg-brand-500/10"
+ className="fixed bottom-6 right-6 z-50 rounded-full border border-surface-700 bg-secondary p-3 shadow-xl transition-all hover:border-primary-500/30 hover:bg-primary/10"
  >
  <ArrowUp className="h-4 w-4 text-surface-400" />
  </button>

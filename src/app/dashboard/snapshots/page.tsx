@@ -213,12 +213,12 @@ export default function SnapshotsPage() {
    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
      <div className="flex items-center gap-3">
-      <Camera className="h-8 w-8 text-brand-600 text-brand-400" />
+      <Camera className="h-8 w-8 text-primary text-primary" />
       <h1 className="text-3xl font-black tracking-tight text-white">
        Snapshots
       </h1>
      </div>
-     <p className="mt-1 text-surface-400">
+     <p className="mt-1 text-muted-foreground">
       Citation rate snapshots and trend analysis from monitoring data.
      </p>
     </div>
@@ -242,11 +242,11 @@ export default function SnapshotsPage() {
      {/* Brand selector */}
      {brands.length > 0 && (
       <div className="flex items-center gap-2">
-       <label className="text-[10px] font-black uppercase tracking-widest text-surface-500">
+       <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
         Brand
        </label>
        <select
-        className="rounded-lg border border-surface-600 px-3 py-1.5 text-sm text-white border-surface-600 bg-surface-800 text-white"
+        className="rounded-lg border border-border px-3 py-1.5 text-sm text-white border-border bg-secondary text-white"
         value={selectedBrand?.id || ''}
         onChange={(e) => {
          const b = brands.find((b) => b.id === e.target.value)
@@ -264,7 +264,7 @@ export default function SnapshotsPage() {
 
      {/* Engine filter */}
      <div className="flex items-center gap-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-surface-500">
+      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
        Engine
       </label>
       <div className="flex gap-1">
@@ -275,7 +275,7 @@ export default function SnapshotsPage() {
           'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
           engine === e
            ? 'bg-brand-600 text-white'
-           : 'bg-surface-200 text-white hover:bg-surface-300 bg-surface-700 text-surface-300 surface-600',
+           : 'bg-secondary text-white hover:bg-secondary bg-secondary text-muted-foreground surface-600',
          )}
          onClick={() => setEngine(e)}
         >
@@ -287,7 +287,7 @@ export default function SnapshotsPage() {
 
      {/* Date range */}
      <div className="flex items-center gap-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-surface-500">
+      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
        Period
       </label>
       <div className="flex gap-1">
@@ -298,7 +298,7 @@ export default function SnapshotsPage() {
           'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
           days === r.days
            ? 'bg-brand-600 text-white'
-           : 'bg-surface-200 text-white hover:bg-surface-300 bg-surface-700 text-surface-300 surface-600',
+           : 'bg-secondary text-white hover:bg-secondary bg-secondary text-muted-foreground surface-600',
          )}
          onClick={() => setDays(r.days)}
         >
@@ -323,7 +323,7 @@ export default function SnapshotsPage() {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
      {/* Citation Rate */}
      <Card className="p-5">
-      <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">
+      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
        Citation Rate
       </p>
       <div className="mt-2 flex items-end gap-2">
@@ -336,7 +336,7 @@ export default function SnapshotsPage() {
 
      {/* Avg Visibility */}
      <Card className="p-5">
-      <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">
+      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
        Avg Visibility
       </p>
       <div className="mt-2 flex items-end gap-2">
@@ -349,7 +349,7 @@ export default function SnapshotsPage() {
 
      {/* Total Prompts */}
      <Card className="p-5">
-      <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">
+      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
        Total Prompts
       </p>
       <span className="mt-2 block text-3xl font-black text-white">
@@ -359,7 +359,7 @@ export default function SnapshotsPage() {
 
      {/* Brand Citations */}
      <Card className="p-5">
-      <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">
+      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
        Brand Citations
       </p>
       <span className="mt-2 block text-3xl font-black text-white">
@@ -372,18 +372,18 @@ export default function SnapshotsPage() {
    {/* Citation Rate Trend Chart */}
    <Card className="p-6">
     <h2 className="mb-1 text-lg font-bold text-white">Citation Rate Trend</h2>
-    <p className="mb-6 text-xs text-surface-500">
+    <p className="mb-6 text-xs text-muted-foreground">
      How often your brand is cited across AI engines over time
     </p>
     {loading ? (
-     <div className="flex h-64 items-center justify-center text-surface-500">
+     <div className="flex h-64 items-center justify-center text-muted-foreground">
       <RefreshCw className="mr-2 h-5 w-5 animate-spin" /> Loading snapshots...
      </div>
     ) : chartData.length === 0 ? (
-     <div className="flex h-64 flex-col items-center justify-center text-surface-500">
+     <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
       <Camera className="mb-3 h-10 w-10 text-white" />
       <p className="text-sm">No snapshots available for this period.</p>
-      <p className="mt-1 text-xs text-surface-200">
+      <p className="mt-1 text-xs text-muted-foreground">
        Run monitoring and recalculate snapshots to start tracking.
       </p>
      </div>
@@ -412,7 +412,7 @@ export default function SnapshotsPage() {
    {chartData.length > 0 && (
     <Card className="p-6">
      <h2 className="mb-1 text-lg font-bold text-white">Visibility & Sentiment</h2>
-     <p className="mb-6 text-xs text-surface-500">
+     <p className="mb-6 text-xs text-muted-foreground">
       Average visibility score and normalized sentiment over time
      </p>
      <ResponsiveContainer width="100%" height={300}>
@@ -447,7 +447,7 @@ export default function SnapshotsPage() {
    {competitorData.length > 0 && (
     <Card className="p-6">
      <h2 className="mb-1 text-lg font-bold text-white">Competitor Citation Rates</h2>
-     <p className="mb-6 text-xs text-surface-500">
+     <p className="mb-6 text-xs text-muted-foreground">
       Latest snapshot: how often competitors are cited vs your brand
      </p>
      <ResponsiveContainer width="100%" height={300}>
@@ -484,23 +484,23 @@ export default function SnapshotsPage() {
      <div className="overflow-x-auto">
       <table className="w-full text-sm">
        <thead>
-        <tr className="border-b border-surface-800">
-         <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-surface-500">
+        <tr className="border-b border-border">
+         <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
           Date
          </th>
-         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
           Prompts
          </th>
-         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
           Citations
          </th>
-         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
           Rate
          </th>
-         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
           Visibility
          </th>
-         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-surface-500">
+         <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
           Sentiment
          </th>
         </tr>
@@ -510,12 +510,12 @@ export default function SnapshotsPage() {
          .slice()
          .reverse()
          .map((s) => (
-          <tr key={s.id} className="border-b border-surface-800/50">
-           <td className="py-3 text-xs text-surface-300">
+          <tr key={s.id} className="border-b border-border/50">
+           <td className="py-3 text-xs text-muted-foreground">
             {new Date(s.scan_date).toLocaleDateString('sv-SE')}
            </td>
-           <td className="py-3 text-center text-xs text-surface-400">{s.total_prompts}</td>
-           <td className="py-3 text-center text-xs text-surface-400">
+           <td className="py-3 text-center text-xs text-muted-foreground">{s.total_prompts}</td>
+           <td className="py-3 text-center text-xs text-muted-foreground">
             {s.brand_citations}
            </td>
            <td className="py-3 text-center">
@@ -542,7 +542,7 @@ export default function SnapshotsPage() {
                ? 'text-emerald-400'
                : s.avg_sentiment < -0.2
                 ? 'text-red-400'
-                : 'text-surface-400',
+                : 'text-muted-foreground',
              )}
             >
              {s.avg_sentiment.toFixed(2)}
@@ -583,7 +583,7 @@ function TrendIcon({
   )
  }
  return (
-  <span className="flex items-center gap-1 text-xs font-bold text-surface-500">
+  <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
    <Minus className="h-3.5 w-3.5" />
    stable
   </span>

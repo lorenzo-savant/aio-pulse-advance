@@ -151,18 +151,18 @@ export default function RecommendationsPage() {
         <div>
           <div className="flex items-center gap-3">
             <Lightbulb className="h-8 w-8 text-amber-400" />
-            <h1 className="text-3xl font-black tracking-tight text-text-on-surface">
+            <h1 className="text-3xl font-black tracking-tight text-foreground">
               Recommendations
             </h1>
           </div>
-          <p className="mt-1 text-text-muted-surface">
+          <p className="mt-1 text-muted-foreground">
             AI-powered content recommendations based on your monitoring data.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
             <select
-              className="rounded-lg border border-surface-input-border bg-page-bg-elevated px-3 py-2 text-sm text-text-on-surface"
+              className="rounded-lg border border-input bg-secondary px-3 py-2 text-sm text-foreground"
               value={selectedBrand?.id || ''}
               onChange={(e) => {
                 const b = brands.find((b) => b.id === e.target.value)
@@ -195,29 +195,29 @@ export default function RecommendationsPage() {
       )}
 
       {savedAt && data && (
-        <div className="flex items-center gap-2 text-xs text-text-muted-surface">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Last generated: {new Date(savedAt).toLocaleString('sv-SE')}</span>
-          <span className="text-text-on-surface">·</span>
+          <span className="text-foreground">·</span>
           <span>Data loaded from history</span>
         </div>
       )}
 
       {data?.summary && (
-        <Card className="border-brand-500/20 bg-brand-500/5 p-5">
-          <p className="text-sm leading-relaxed text-text-secondary-surface">{data.summary}</p>
+        <Card className="border-brand-500/20 bg-primary/5 p-5">
+          <p className="text-sm leading-relaxed text-muted-foreground">{data.summary}</p>
         </Card>
       )}
 
       {data && (
         <div className="flex flex-wrap items-center gap-3">
-          <Filter className="h-4 w-4 text-text-muted-surface" />
+          <Filter className="h-4 w-4 text-muted-foreground" />
           <div className="flex gap-1">
             <button
               className={cn(
                 'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                 filterPriority === 'all'
                   ? 'bg-brand-600 text-white'
-                  : 'bg-surface-row text-text-muted-surface hover:text-text-on-surface',
+                  : 'bg-secondaryrow text-muted-foreground hover:text-foreground',
               )}
               onClick={() => setFilterPriority('all')}
             >
@@ -230,7 +230,7 @@ export default function RecommendationsPage() {
                   'rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all',
                   filterPriority === p
                     ? 'bg-brand-600 text-white'
-                    : 'bg-surface-row text-text-muted-surface hover:text-text-on-surface',
+                    : 'bg-secondaryrow text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => setFilterPriority(p)}
               >
@@ -238,14 +238,14 @@ export default function RecommendationsPage() {
               </button>
             ))}
           </div>
-          <div className="h-4 w-px bg-surface-input-border" />
+          <div className="h-4 w-px bg-input-border" />
           <div className="flex flex-wrap gap-1">
             <button
               className={cn(
                 'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                 filterCategory === 'all'
                   ? 'bg-brand-600 text-white'
-                  : 'bg-surface-row text-text-muted-surface hover:text-text-on-surface',
+                  : 'bg-secondaryrow text-muted-foreground hover:text-foreground',
               )}
               onClick={() => setFilterCategory('all')}
             >
@@ -258,7 +258,7 @@ export default function RecommendationsPage() {
                   'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                   filterCategory === c
                     ? 'bg-brand-600 text-white'
-                    : 'bg-surface-row text-text-muted-surface hover:text-text-on-surface',
+                    : 'bg-secondaryrow text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => setFilterCategory(c)}
               >
@@ -285,8 +285,8 @@ export default function RecommendationsPage() {
                         {CATEGORY_LABELS[rec.category] || rec.category}
                       </Badge>
                     </div>
-                    <h3 className="text-sm font-bold text-text-on-surface">{rec.title}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-text-muted-surface">
+                    <h3 className="text-sm font-bold text-foreground">{rec.title}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                       {rec.description}
                     </p>
                   </div>
@@ -297,7 +297,7 @@ export default function RecommendationsPage() {
                         ? 'bg-amber-500/15'
                         : rec.impact === 'medium'
                           ? 'bg-blue-500/15'
-                          : 'bg-surface-row',
+                          : 'bg-secondaryrow',
                     )}
                   >
                     <ImpactIcon
@@ -307,7 +307,7 @@ export default function RecommendationsPage() {
                           ? 'text-amber-400'
                           : rec.impact === 'medium'
                             ? 'text-blue-400'
-                            : 'text-text-muted-surface',
+                            : 'text-muted-foreground',
                       )}
                     />
                   </div>
@@ -318,7 +318,7 @@ export default function RecommendationsPage() {
                       key={e}
                       className={cn(
                         'rounded-md px-2 py-0.5 text-[9px] font-bold uppercase',
-                        ENGINE_COLORS[e] || 'bg-surface-row text-text-muted-surface',
+                        ENGINE_COLORS[e] || 'bg-secondaryrow text-muted-foreground',
                       )}
                     >
                       {e}
@@ -333,9 +333,9 @@ export default function RecommendationsPage() {
 
       {!data && !loading && (
         <Card className="flex flex-col items-center justify-center p-12 text-center">
-          <Lightbulb className="mb-4 h-12 w-12 text-text-muted-surface" />
-          <h3 className="text-lg font-bold text-text-secondary-surface">No recommendations yet</h3>
-          <p className="mt-1 text-sm text-text-muted-surface">
+          <Lightbulb className="mb-4 h-12 w-12 text-muted-foreground" />
+          <h3 className="text-lg font-bold text-muted-foreground">No recommendations yet</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Select a brand and click Generate to get AI-powered content recommendations based on
             your monitoring data.
           </p>

@@ -53,7 +53,7 @@ function MiniRing({ score }: { score: number }) {
           style={{ transition: 'stroke-dashoffset 1s ease' }}
         />
       </svg>
-      <span className="absolute text-[10px] font-black text-text-on-surface">{score}</span>
+      <span className="absolute text-[10px] font-black text-foreground">{score}</span>
     </div>
   )
 }
@@ -64,7 +64,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className="rounded-2xl border border-surface-input-border bg-surface-row transition-all hover:bg-surface-row-hover">
+    <div className="rounded-2xl border border-input bg-secondary transition-all hover:bg-secondaryhover">
       {/* Header row */}
       <div className="flex items-center gap-4 p-4">
         <MiniRing score={entry.visibilityScore} />
@@ -86,20 +86,20 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
               {entry.intent}
             </Badge>
           </div>
-          <p className="truncate text-sm font-semibold text-text-on-surface">{entry.source}</p>
-          <p className="text-[10px] text-text-muted-surface">
+          <p className="truncate text-sm font-semibold text-foreground">{entry.source}</p>
+          <p className="text-[10px] text-muted-foreground">
             {formatRelativeTime(entry.timestamp)} · {formatDate(entry.timestamp)}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="rounded-lg p-1.5 text-text-muted-surface transition-colors hover:bg-red-500/10 hover:text-red-500"
+            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
             onClick={onDelete}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
           <button
-            className="rounded-lg p-1.5 text-text-muted-surface transition-colors hover:text-text-on-surface"
+            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-foreground"
             onClick={() => setExpanded((v) => !v)}
           >
             {expanded ? (
@@ -113,8 +113,8 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="animate-in border-t border-surface-input-border px-4 pb-4 pt-3">
-          <p className="mb-3 text-xs leading-relaxed text-text-muted-surface">{entry.summary}</p>
+        <div className="animate-in border-t border-input px-4 pb-4 pt-3">
+          <p className="mb-3 text-xs leading-relaxed text-muted-foreground">{entry.summary}</p>
 
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
@@ -125,12 +125,12 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
             ].map(({ label, value }) => (
               <div
                 key={label}
-                className="rounded-lg border border-surface-input-border bg-surface-row p-2.5"
+                className="rounded-lg border border-input bg-secondary p-2.5"
               >
-                <p className="text-[9px] font-black uppercase tracking-wider text-text-on-surface">
+                <p className="text-[9px] font-black uppercase tracking-wider text-foreground">
                   {label}
                 </p>
-                <p className="mt-0.5 text-xs font-semibold text-text-secondary-surface">{value}</p>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{value}</p>
               </div>
             ))}
           </div>
@@ -145,9 +145,9 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
                 {entry.engineBreakdown.map((e) => (
                   <div
                     key={e.engine}
-                    className="rounded-lg border border-surface-input-border bg-surface-row p-2"
+                    className="rounded-lg border border-input bg-secondary p-2"
                   >
-                    <p className="text-[10px] text-text-muted-surface">{e.engine}</p>
+                    <p className="text-[10px] text-muted-foreground">{e.engine}</p>
                     <p
                       className={cn(
                         'text-sm font-black',
@@ -176,7 +176,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
                 {entry.keywords.map((k) => (
                   <span
                     key={k.word}
-                    className="rounded-lg border border-surface-input-border bg-surface-row px-2 py-0.5 text-xs text-text-secondary-surface"
+                    className="rounded-lg border border-input bg-secondary px-2 py-0.5 text-xs text-muted-foreground"
                   >
                     {k.word} <span className="text-brand-400">•{k.impact}</span>
                   </span>
@@ -189,7 +189,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
           {entry.suggestions[0] && (
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-              <p className="text-xs text-text-secondary-surface">{entry.suggestions[0]}</p>
+              <p className="text-xs text-muted-foreground">{entry.suggestions[0]}</p>
             </div>
           )}
         </div>
@@ -239,8 +239,8 @@ export default function HistoryPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-text-on-surface">Scan History</h1>
-          <p className="mt-1 text-text-muted-surface">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Scan History</h1>
+          <p className="mt-1 text-muted-foreground">
             All your previous content analyses — searchable and filterable.
           </p>
         </div>
@@ -293,8 +293,8 @@ export default function HistoryPage() {
             { label: 'Engines Used', value: [...new Set(scanHistory.map((s) => s.engine))].length },
           ].map(({ label, value }) => (
             <Card key={label} className="p-4 text-center">
-              <p className="text-2xl font-black text-text-on-surface">{value}</p>
-              <p className="text-xs text-text-muted-surface">{label}</p>
+              <p className="text-2xl font-black text-foreground">{value}</p>
+              <p className="text-xs text-muted-foreground">{label}</p>
             </Card>
           ))}
         </div>
@@ -305,24 +305,24 @@ export default function HistoryPage() {
         <Card className="p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted-surface" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
-                className="w-full rounded-xl border border-surface-input-border bg-surface-input py-2 pl-10 pr-4 text-sm text-text-on-surface placeholder-text-muted-surface outline-none focus:border-brand-500"
+                className="w-full rounded-xl border border-input bg-input py-2 pl-10 pr-4 text-sm text-foreground placeholder-text-muted-surface outline-none focus:border-primary"
                 placeholder="Search by source URL or text..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-text-muted-surface" />
+              <Filter className="h-4 w-4 text-muted-foreground" />
               {ENGINE_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   className={cn(
                     'rounded-lg border px-3 py-1.5 text-xs font-bold transition-all',
                     engineFilter === opt.value
-                      ? 'border-brand-500/50 bg-brand-500/15 text-brand-400'
-                      : 'border-surface-input-border text-text-muted-surface hover:text-text-on-surface',
+                      ? 'border-brand-500/50 bg-primary/15 text-brand-400'
+                      : 'border-input text-muted-foreground hover:text-foreground',
                   )}
                   onClick={() => setEngineFilter(opt.value)}
                 >
@@ -330,7 +330,7 @@ export default function HistoryPage() {
                 </button>
               ))}
               <select
-                className="rounded-xl border border-surface-input-border bg-surface-input px-3 py-1.5 text-xs text-text-on-surface outline-none"
+                className="rounded-xl border border-input bg-input px-3 py-1.5 text-xs text-foreground outline-none"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'date' | 'score')}
               >
@@ -345,11 +345,11 @@ export default function HistoryPage() {
       {/* Empty state */}
       {scanHistory.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-surface-input-border bg-surface-row">
-            <Clock className="h-10 w-10 text-text-muted-surface" />
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-input bg-secondary">
+            <Clock className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h2 className="mb-2 text-xl font-bold text-text-on-surface">No scans yet</h2>
-          <p className="max-w-sm text-text-muted-surface">
+          <h2 className="mb-2 text-xl font-bold text-foreground">No scans yet</h2>
+          <p className="max-w-sm text-muted-foreground">
             Run your first analysis in the Content Optimizer and your results will appear here
             automatically.
           </p>
@@ -366,7 +366,7 @@ export default function HistoryPage() {
       )}
 
       {filtered.length === 0 && scanHistory.length > 0 && (
-        <div className="py-12 text-center text-text-muted-surface">
+        <div className="py-12 text-center text-muted-foreground">
           No results match your filters.
         </div>
       )}

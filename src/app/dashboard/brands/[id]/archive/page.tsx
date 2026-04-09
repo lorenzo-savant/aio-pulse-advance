@@ -28,19 +28,19 @@ export default function BrandArchivePage({ params }: { params: Promise<{ id: str
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-800 bg-surface-950">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+      <div className="flex min-h-screen items-center justify-center bg-secondary bg-secondary">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-surface-800 p-6 bg-surface-950">
+    <div className="min-h-screen bg-secondary p-6 bg-secondary">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6">
           <button
             onClick={() => router.push(`/dashboard/brands/${brandId}`)}
-            className="mb-2 flex items-center gap-1 text-sm text-surface-500 transition-colors hover:text-brand-600 text-surface-400 hover:text-brand-400"
+            className="mb-2 flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary text-muted-foreground hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to brand
@@ -48,27 +48,27 @@ export default function BrandArchivePage({ params }: { params: Promise<{ id: str
           <h1 className="text-3xl font-black tracking-tight text-white">
             Brand Archive
           </h1>
-          <p className="mt-1 text-surface-400">
+          <p className="mt-1 text-muted-foreground">
             View all research queries, recommendations, and sentiment data
           </p>
         </div>
 
         {/* Placeholder - Components will be added as migrations run */}
-        <div className="rounded-xl border border-surface-700  p-8 text-center shadow-sm border-surface-800 bg-surface-900">
+        <div className="rounded-xl border border-border  p-8 text-center shadow-sm border-border bg-secondary">
           <div className="mb-4 flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 bg-brand-500/10">
-              <Archive className="h-8 w-8 text-brand-600 text-brand-400" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 bg-primary/10">
+              <Archive className="h-8 w-8 text-primary text-primary" />
             </div>
           </div>
           <h2 className="mb-2 text-xl font-bold text-white">Archive System</h2>
-          <p className="mx-auto mb-6 max-w-md text-surface-400">
+          <p className="mx-auto mb-6 max-w-md text-muted-foreground">
             Run the database migrations in Supabase to activate the archive system. This will enable
             timeline tracking, sentiment history, and recommendation insights.
           </p>
-          <div className="flex flex-col items-center gap-2 text-sm text-surface-400">
+          <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
             <p>
               Endpoint:{' '}
-              <code className="rounded bg-surface-800 px-2 py-0.5 text-brand-600 bg-surface-800 text-brand-400">
+              <code className="rounded bg-secondary px-2 py-0.5 text-primary bg-secondary text-primary">
                 /api/archive/overview
               </code>
             </p>

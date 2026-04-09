@@ -26,7 +26,7 @@ export default function BillingPageWrapper() {
     <Suspense
       fallback={
         <div className="flex h-64 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }
     >
@@ -65,8 +65,8 @@ const PLAN_ICONS: Record<string, typeof Zap> = {
 }
 
 const PLAN_COLORS: Record<string, string> = {
-  free: 'border-surface-input-border',
-  pro: 'border-brand-500/50 bg-brand-500/5',
+  free: 'border-input',
+  pro: 'border-brand-500/50 bg-primary/5',
   business: 'border-amber-500/50 bg-amber-500/5',
 }
 
@@ -146,7 +146,7 @@ function BillingPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -155,29 +155,29 @@ function BillingPage() {
   const plans = data?.allPlans || {}
 
   return (
-    <div className="space-y-6 bg-page-bg">
+    <div className="space-y-6 bg-background">
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
-          <CreditCard className="h-8 w-8 text-brand-400" />
+          <CreditCard className="h-8 w-8 text-primary" />
           <h1 className="text-3xl font-black tracking-tight text-white">Billing</h1>
         </div>
-        <p className="mt-1 text-surface-400">Manage your subscription and billing details.</p>
+        <p className="mt-1 text-muted-foreground">Manage your subscription and billing details.</p>
       </div>
 
       {/* Current Plan Status */}
       <Card className="border-brand-500/20 bg-card p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600/20">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
               {(() => {
                 const Icon = PLAN_ICONS[currentPlan] || Zap
-                return <Icon className="h-6 w-6 text-brand-400" />
+                return <Icon className="h-6 w-6 text-primary" />
               })()}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-text-primary-ui text-lg font-black">
+                <h2 className="text-foreground text-lg font-black">
                   {data?.planInfo?.name || 'Free'} Plan
                 </h2>
                 <Badge variant={data?.status === 'active' ? 'success' : 'warning'}>
@@ -185,7 +185,7 @@ function BillingPage() {
                 </Badge>
               </div>
               {data?.currentPeriodEnd && (
-                <p className="text-text-muted-ui text-xs">
+                <p className="text-muted-foreground text-xs">
                   Renews {new Date(data.currentPeriodEnd).toLocaleDateString('sv-SE')}
                 </p>
               )}
@@ -221,22 +221,22 @@ function BillingPage() {
               )}
 
               <div className="mb-6 text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-surface-input">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-input">
                   <Icon
                     className={cn(
                       'h-6 w-6',
                       key === 'business'
                         ? 'text-amber-400'
                         : key === 'pro'
-                          ? 'text-brand-400'
-                          : 'text-text-muted-ui',
+                          ? 'text-primary'
+                          : 'text-muted-foreground',
                     )}
                   />
                 </div>
-                <h3 className="text-text-primary-ui text-lg font-black">{plan.name}</h3>
+                <h3 className="text-foreground text-lg font-black">{plan.name}</h3>
                 <div className="mt-2 flex items-baseline justify-center gap-1">
-                  <span className="text-text-primary-ui text-3xl font-black">${plan.price}</span>
-                  {plan.price > 0 && <span className="text-text-muted-ui text-sm">/mo</span>}
+                  <span className="text-foreground text-3xl font-black">${plan.price}</span>
+                  {plan.price > 0 && <span className="text-muted-foreground text-sm">/mo</span>}
                 </div>
               </div>
 
@@ -251,7 +251,7 @@ function BillingPage() {
 
               {isCurrentPlan ? (
                 <Button className="w-full" variant="outline" disabled>
-                  <span className="text-text-muted-ui">Current Plan</span>
+                  <span className="text-muted-foreground">Current Plan</span>
                 </Button>
               ) : key === 'free' ? (
                 <Button className="w-full" variant="ghost" disabled>
@@ -274,21 +274,21 @@ function BillingPage() {
 
       {/* Usage */}
       {data?.planInfo && (
-        <Card className="border border-surface-input-border bg-card p-6">
+        <Card className="border border-input bg-card p-6">
           <h2 className="text-text-secondary-ui mb-4 text-lg font-bold">Plan Limits</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <UsageBar label="Brands" current={0} max={data.planInfo.brands} />
             <UsageBar label="Prompts" current={0} max={data.planInfo.prompts} />
             <UsageBar label="Scans / Day" current={0} max={data.planInfo.scansPerDay} />
           </div>
-          <p className="mt-3 text-[10px] text-surface-200">
+          <p className="mt-3 text-[10px] text-muted-foreground">
             Usage data updates periodically. Actual counts may differ slightly.
           </p>
         </Card>
       )}
 
       {/* FAQ */}
-      <Card className="border border-surface-input-border bg-card p-6">
+      <Card className="border border-input bg-card p-6">
         <h2 className="text-text-secondary-ui mb-4 text-lg font-bold">Billing FAQ</h2>
         <div className="space-y-3">
           {[
@@ -309,8 +309,8 @@ function BillingPage() {
               a: 'Yes! Upgrading is instant, and downgrading takes effect at the next billing cycle. Prorated charges apply when upgrading.',
             },
           ].map((faq) => (
-            <div key={faq.q} className="rounded-xl border border-nav-border bg-card p-3">
-              <p className="text-text-primary-ui text-sm font-bold">{faq.q}</p>
+            <div key={faq.q} className="rounded-xl border border-border bg-card p-3">
+              <p className="text-foreground text-sm font-bold">{faq.q}</p>
               <p className="text-text-secondary-ui mt-1 text-xs">{faq.a}</p>
             </div>
           ))}
@@ -327,16 +327,16 @@ function UsageBar({ label, current, max }: { label: string; current: number; max
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-text-muted-ui text-xs font-bold">{label}</span>
-        <span className="text-text-muted-ui text-xs">
+        <span className="text-muted-foreground text-xs font-bold">{label}</span>
+        <span className="text-muted-foreground text-xs">
           {current} / {max}
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-surface-input">
+      <div className="h-2 overflow-hidden rounded-full bg-input">
         <div
           className={cn(
             'h-full rounded-full transition-all',
-            pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-amber-500' : 'bg-brand-500',
+            pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-amber-500' : 'bg-primary',
           )}
           style={{ width: `${pct}%` }}
         />

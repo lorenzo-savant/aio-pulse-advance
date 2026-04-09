@@ -188,14 +188,14 @@ function ApiKeysSection() {
 
   return (
     <>
-      <Card className="border border-surface-input-border bg-card p-6">
+      <Card className="border border-input bg-card p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
-              <Key className="text-text-muted-ui h-5 w-5" />
+              <Key className="text-muted-foreground h-5 w-5" />
               API Keys
             </h2>
-            <p className="text-text-muted-ui mt-1 text-sm">
+            <p className="text-muted-foreground mt-1 text-sm">
               Configure your AI provider API keys. Keys are stored securely.
             </p>
           </div>
@@ -203,7 +203,7 @@ function ApiKeysSection() {
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-brand-400" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
           <div className="space-y-4">
@@ -216,7 +216,7 @@ function ApiKeysSection() {
               return (
                 <div
                   key={provider}
-                  className="rounded-xl border border-surface-input-border bg-surface-row p-4"
+                  className="rounded-xl border border-input bg-secondaryrow p-4"
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ function ApiKeysSection() {
 
                   {existing ? (
                     <div className="flex items-center gap-2">
-                      <div className="text-text-primary-ui flex-1 rounded-lg bg-surface-input px-3 py-2 font-mono text-sm">
+                      <div className="text-foreground flex-1 rounded-lg bg-input px-3 py-2 font-mono text-sm">
                         {isShowing ? existing.encrypted_key : '••••••••••••••••••••••••••••••'}
                       </div>
                       <Button
@@ -258,7 +258,7 @@ function ApiKeysSection() {
                     <div className="flex gap-2">
                       <input
                         type="password"
-                        className="text-text-primary-ui placeholder-text-muted-ui flex-1 rounded-xl border border-surface-input-border bg-surface-input px-4 py-2 text-sm outline-none focus:border-brand-500"
+                        className="text-foreground placeholder-text-muted-ui flex-1 rounded-xl border border-input bg-input px-4 py-2 text-sm outline-none focus:border-primary"
                         placeholder={info.placeholder}
                         value={newKeys[provider]}
                         onChange={(e) =>
@@ -275,7 +275,7 @@ function ApiKeysSection() {
                     href={info.docs}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-block text-xs text-brand-400 hover:underline"
+                    className="mt-2 inline-block text-xs text-primary hover:underline"
                   >
                     Get {info.label} API key →
                   </a>
@@ -339,35 +339,35 @@ function ProfileSection() {
   }
 
   return (
-    <Card className="border border-surface-input-border bg-card p-6">
+    <Card className="border border-input bg-card p-6">
       <div className="mb-6">
         <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
-          <User className="text-text-muted-ui h-5 w-5" />
+          <User className="text-muted-foreground h-5 w-5" />
           Profile
         </h2>
-        <p className="text-text-muted-ui mt-1 text-sm">Manage your account information.</p>
+        <p className="text-muted-foreground mt-1 text-sm">Manage your account information.</p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="text-text-muted-ui mb-2 block text-xs font-bold uppercase tracking-widest">
+          <label className="text-muted-foreground mb-2 block text-xs font-bold uppercase tracking-widest">
             Email
           </label>
           <input
             type="email"
             disabled
-            className="text-text-primary-ui w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-2.5 text-sm"
+            className="text-foreground w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm"
             value={profile.email || ''}
           />
         </div>
 
         <div>
-          <label className="text-text-muted-ui mb-2 block text-xs font-bold uppercase tracking-widest">
+          <label className="text-muted-foreground mb-2 block text-xs font-bold uppercase tracking-widest">
             Full Name
           </label>
           <input
             type="text"
-            className="text-text-primary-ui placeholder-text-muted-ui w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-2.5 text-sm outline-none focus:border-brand-500"
+            className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm outline-none focus:border-primary"
             placeholder="Your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -388,28 +388,28 @@ function NotificationsSection() {
   const [saving, setSaving] = useState(false)
 
   return (
-    <Card className="border border-surface-input-border bg-card p-6">
+    <Card className="border border-input bg-card p-6">
       <div className="mb-6">
         <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
-          <Bell className="text-text-muted-ui h-5 w-5" />
+          <Bell className="text-muted-foreground h-5 w-5" />
           Notifications
         </h2>
-        <p className="text-text-muted-ui mt-1 text-sm">Configure how you receive alerts.</p>
+        <p className="text-muted-foreground mt-1 text-sm">Configure how you receive alerts.</p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="text-text-muted-ui mb-2 block text-xs font-bold uppercase tracking-widest">
+          <label className="text-muted-foreground mb-2 block text-xs font-bold uppercase tracking-widest">
             Alert Email
           </label>
           <input
             type="email"
-            className="text-text-primary-ui placeholder-text-muted-ui w-full rounded-xl border border-surface-input-border bg-surface-input px-4 py-2.5 text-sm outline-none focus:border-brand-500"
+            className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm outline-none focus:border-primary"
             placeholder="alerts@yourdomain.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <p className="text-text-muted-ui mt-2 text-xs">
+          <p className="text-muted-foreground mt-2 text-xs">
             Alerts will be sent via Resend when triggered.
           </p>
         </div>
@@ -425,7 +425,7 @@ function NotificationsSection() {
 
 export default function SettingsPage() {
   return (
-    <div className="animate-in space-y-8 bg-page-bg">
+    <div className="animate-in space-y-8 bg-background">
       <div>
         <h1 className="text-3xl font-black tracking-tight text-white">Settings</h1>
         <p className="mt-1 text-surface-400">Manage your account, API keys, and preferences.</p>

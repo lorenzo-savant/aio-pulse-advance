@@ -178,15 +178,15 @@ export default function EnhancedAnalyticsPage() {
   }
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
-    if (trend === 'up') return <TrendingUp className="h-4 w-4 text-green-500" />
-    if (trend === 'down') return <TrendingDown className="h-4 w-4 text-red-500" />
-    return <Minus className="h-4 w-4 text-text-muted-surface" />
+    if (trend === 'up') return <TrendingUp className="h-4 w-4 text-success" />
+    if (trend === 'down') return <TrendingDown className="h-4 w-4 text-error" />
+    return <Minus className="h-4 w-4 text-muted-foreground" />
   }
 
   const getTrendColor = (trend: 'up' | 'down' | 'stable') => {
-    if (trend === 'up') return 'text-green-500'
-    if (trend === 'down') return 'text-red-500'
-    return 'text-text-muted-surface'
+    if (trend === 'up') return 'text-success'
+    if (trend === 'down') return 'text-error'
+    return 'text-muted-foreground'
   }
 
   const MetricCard = ({
@@ -201,9 +201,9 @@ export default function EnhancedAnalyticsPage() {
     if (!data || data.summary.totalSnapshots === 0) {
       return (
         <Card className="p-6">
-          <p className="text-sm text-text-muted-surface">{title}</p>
-          <p className="mt-2 text-2xl font-bold text-text-on-surface">No data</p>
-          <p className="mt-1 text-xs text-text-muted-surface">Run scans to generate data</p>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="mt-2 text-2xl font-bold text-foreground">No data</p>
+          <p className="mt-1 text-xs text-muted-foreground">Run scans to generate data</p>
         </Card>
       )
     }
@@ -212,8 +212,8 @@ export default function EnhancedAnalyticsPage() {
       <Card className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-text-muted-surface">{title}</p>
-            <p className="mt-1 text-3xl font-bold text-text-on-surface">
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="mt-1 text-3xl font-bold text-foreground">
               {data.comparison.current.toFixed(1)}
               {unit}
             </p>
@@ -226,7 +226,7 @@ export default function EnhancedAnalyticsPage() {
             </span>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-text-muted-surface">
+        <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
           <div>
             <p>Previous</p>
             <p className="font-medium">
@@ -255,7 +255,7 @@ export default function EnhancedAnalyticsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <RefreshCw className="h-8 w-8 animate-spin text-brand-500" />
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -265,8 +265,8 @@ export default function EnhancedAnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-text-on-surface">Analytics</h1>
-          <p className="text-text-muted-surface">Historical trends and comparisons</p>
+          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+          <p className="text-muted-foreground">Historical trends and comparisons</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={generateSnapshots} disabled={generating}>
@@ -281,7 +281,7 @@ export default function EnhancedAnalyticsPage() {
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
-          className="rounded-lg border border-surface-input-border bg-surface-input px-3 py-2 text-text-on-surface"
+          className="rounded-lg border border-input bg-input px-3 py-2 text-foreground"
         >
           {brands.map((b) => (
             <option key={b.id} value={b.id}>
@@ -290,31 +290,31 @@ export default function EnhancedAnalyticsPage() {
           ))}
         </select>
 
-        <div className="flex overflow-hidden rounded-lg border border-surface-input-border">
+        <div className="flex overflow-hidden rounded-lg border border-input">
           {(['7d', '30d', '90d'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 text-sm ${
                 period === p
-                  ? 'bg-brand-500 text-white'
-                  : 'text-text-on-surface hover:bg-surface-row-hover'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted'
               }`}
             >
               {p === '7d' ? '7 Days' : p === '30d' ? '30 Days' : '90 Days'}
             </button>
           ))}
         </div>
-      </div>
 
-      {error && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
-          <p className="text-yellow-800 dark:text-yellow-400">{error}</p>
-          <Button size="sm" className="mt-2" onClick={generateSnapshots}>
-            Generate Historical Data
-          </Button>
-        </div>
-      )}
+        {error && (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+            <p className="text-yellow-800 dark:text-yellow-400">{error}</p>
+            <Button size="sm" className="mt-2" onClick={generateSnapshots}>
+              Generate Historical Data
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -327,17 +327,24 @@ export default function EnhancedAnalyticsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Citation Trend */}
         <Card className="p-6">
-          <h3 className="mb-4 text-lg font-semibold text-text-on-surface">Citation Trend</h3>
+          <h3 className="mb-4 text-lg font-semibold text-foreground">Citation Trend</h3>
           <div className="h-64">
             {citations?.snapshots.length ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={citations.snapshots}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tickFormatter={formatDate} fontSize={12} />
-                  <YAxis fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={formatDate}
+                    fontSize={12}
+                    className="fill-muted-foreground"
+                  />
+                  <YAxis fontSize={12} className="fill-muted-foreground" />
                   <Tooltip
                     contentStyle={{
                       borderRadius: '8px',
+                      backgroundColor: 'oklch(var(--card))',
+                      border: '1px solid oklch(var(--border))',
                     }}
                   />
                   <Line
@@ -351,7 +358,7 @@ export default function EnhancedAnalyticsPage() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-text-muted-surface">
+              <div className="flex h-full items-center justify-center text-muted-foreground">
                 No data available
               </div>
             )}
@@ -360,17 +367,24 @@ export default function EnhancedAnalyticsPage() {
 
         {/* Visibility Trend */}
         <Card className="p-6">
-          <h3 className="mb-4 text-lg font-semibold text-text-on-surface">Visibility Trend</h3>
+          <h3 className="mb-4 text-lg font-semibold text-foreground">Visibility Trend</h3>
           <div className="h-64">
             {visibility?.snapshots.length ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={visibility.snapshots}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tickFormatter={formatDate} fontSize={12} />
-                  <YAxis fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={formatDate}
+                    fontSize={12}
+                    className="fill-muted-foreground"
+                  />
+                  <YAxis fontSize={12} className="fill-muted-foreground" />
                   <Tooltip
                     contentStyle={{
                       borderRadius: '8px',
+                      backgroundColor: 'oklch(var(--card))',
+                      border: '1px solid oklch(var(--border))',
                     }}
                   />
                   <Line
@@ -384,7 +398,7 @@ export default function EnhancedAnalyticsPage() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-text-muted-surface">
+              <div className="flex h-full items-center justify-center text-muted-foreground">
                 No data available
               </div>
             )}
@@ -394,7 +408,7 @@ export default function EnhancedAnalyticsPage() {
 
       {/* Competitor Comparison */}
       <Card className="p-6">
-        <h3 className="mb-4 text-lg font-semibold text-text-on-surface">Competitor Comparison</h3>
+        <h3 className="mb-4 text-lg font-semibold text-foreground">Competitor Comparison</h3>
         {competitors && competitors.competitors.length > 0 ? (
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -412,12 +426,14 @@ export default function EnhancedAnalyticsPage() {
                   })),
                 ]}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" fontSize={12} />
-                <YAxis fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="name" fontSize={12} className="fill-muted-foreground" />
+                <YAxis fontSize={12} className="fill-muted-foreground" />
                 <Tooltip
                   contentStyle={{
                     borderRadius: '8px',
+                    backgroundColor: 'oklch(var(--card))',
+                    border: '1px solid oklch(var(--border))',
                   }}
                 />
                 <Legend />
@@ -432,7 +448,7 @@ export default function EnhancedAnalyticsPage() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="flex h-40 items-center justify-center text-text-muted-surface">
+          <div className="flex h-40 items-center justify-center text-muted-foreground">
             No competitor data. Add competitors to your brand settings.
           </div>
         )}
@@ -440,33 +456,33 @@ export default function EnhancedAnalyticsPage() {
 
       {/* Data Summary */}
       <Card className="p-6">
-        <h3 className="mb-4 text-lg font-semibold text-text-on-surface">Data Summary</h3>
+        <h3 className="mb-4 text-lg font-semibold text-foreground">Data Summary</h3>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-lg border border-surface-input-border bg-surface-row p-4 text-center">
-            <Target className="mx-auto mb-2 h-6 w-6 text-brand-500" />
-            <p className="text-2xl font-bold text-text-on-surface">
+          <div className="rounded-lg border border-input bg-muted p-4 text-center">
+            <Target className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <p className="text-2xl font-bold text-foreground">
               {citations?.summary.totalSnapshots || 0}
             </p>
-            <p className="text-sm text-text-muted-surface">Total Snapshots</p>
+            <p className="text-sm text-muted-foreground">Total Snapshots</p>
           </div>
-          <div className="rounded-lg border border-surface-input-border bg-surface-row p-4 text-center">
-            <Activity className="mx-auto mb-2 h-6 w-6 text-green-500" />
-            <p className="text-2xl font-bold text-text-on-surface">
+          <div className="rounded-lg border border-input bg-muted p-4 text-center">
+            <Activity className="mx-auto mb-2 h-6 w-6 text-success" />
+            <p className="text-2xl font-bold text-foreground">
               {citations?.summary.avgValue.toFixed(1) || 0}%
             </p>
-            <p className="text-sm text-text-muted-surface">Avg Citation</p>
+            <p className="text-sm text-muted-foreground">Avg Citation</p>
           </div>
-          <div className="rounded-lg border border-surface-input-border bg-surface-row p-4 text-center">
-            <BarChart3 className="mx-auto mb-2 h-6 w-6 text-blue-500" />
-            <p className="text-2xl font-bold text-text-on-surface">
+          <div className="rounded-lg border border-input bg-muted p-4 text-center">
+            <BarChart3 className="mx-auto mb-2 h-6 w-6 text-info" />
+            <p className="text-2xl font-bold text-foreground">
               {visibility?.summary.avgValue.toFixed(1) || 0}
             </p>
-            <p className="text-sm text-text-muted-surface">Avg Visibility</p>
+            <p className="text-sm text-muted-foreground">Avg Visibility</p>
           </div>
-          <div className="rounded-lg border border-surface-input-border bg-surface-row p-4 text-center">
-            <Calendar className="mx-auto mb-2 h-6 w-6 text-purple-500" />
-            <p className="text-2xl font-bold text-text-on-surface">{period}</p>
-            <p className="text-sm text-text-muted-surface">Time Period</p>
+          <div className="rounded-lg border border-input bg-muted p-4 text-center">
+            <Calendar className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <p className="text-2xl font-bold text-foreground">{period}</p>
+            <p className="text-sm text-muted-foreground">Time Period</p>
           </div>
         </div>
       </Card>

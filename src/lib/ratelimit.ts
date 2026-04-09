@@ -112,12 +112,21 @@ export async function checkRateLimit(
       const { success, remaining, reset } = await ratelimit.limit(identifier)
       return { success, remaining, resetAt: reset }
     } catch (error) {
-      console.error('[rate-limit] Redis error, falling back to in-memory:', error)
-      // Fall through to in-memory fallback
+      console.error('[rate-limit] Redis error:', error)
+      return { success: false, remaining: 0, resetAt: Date.now() + windowMs }
     }
   }
 
-  // ── In-memory fallback (dev mode) ────────────────────────────────────────
+  // ── No Redis configured ──────────────────────────────────────────────────
+  // In-memory Map doesn't work on serverless (Vercel) where each invocation
+  // is a separate container. Fail closed in production.
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[rate-limit] Redis not configured in production - rate limiting disabled')
+    // Allow requests but log the issue
+    return { success: true, remaining: 0, resetAt: Date.now() + windowMs }
+  }
+
+  // ── In-memory fallback (dev mode only) ──────────────────────────────────
   const now = Date.now()
   const existing = _store.get(identifier)
 

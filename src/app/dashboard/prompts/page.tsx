@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/index'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand, Prompt, MonitoringEngine } from '@/types'
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const PROMPT_TEMPLATES = [
   { category: 'awareness', text: 'What is [brand]?' },
@@ -97,6 +98,7 @@ function PromptCard({
 function PromptsPageContent() {
   const searchParams = useSearchParams()
   const preselectedBrandId = searchParams.get('brand_id')
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   const [brands, setBrands] = useState<Brand[]>([])
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -190,7 +192,13 @@ function PromptsPageContent() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this prompt?')) return
+    const confirmed = await confirm({
+      title: 'Delete prompt?',
+      description: 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!confirmed) return
     setDeletingId(id)
     try {
       const res = await fetch(`/api/prompts?id=${id}`, { method: 'DELETE' })
@@ -482,6 +490,7 @@ function PromptsPageContent() {
           ))}
         </div>
       )}
+      <ConfirmDialog />
     </div>
   )
 }

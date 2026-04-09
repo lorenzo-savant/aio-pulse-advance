@@ -1,6 +1,50 @@
 import type { AnalysisResult, EngineId, IntentType } from '@/types'
 import { generateId } from '@/lib/utils'
 
+// ─── SSRF Protection ───────────────────────────────────────────────────────────
+
+function isPrivateIp(ip: string): boolean {
+  const parts = ip.split('.').map(Number)
+  if (parts.length === 4) {
+    const a = parts[0] ?? 0
+    const b = parts[1] ?? 0
+    if (a === 127 || a === 0 || a === 10) return true
+    if (a === 172 && b >= 16 && b <= 31) return true
+    if (a === 192 && b === 168) return true
+    if (a === 100 && b >= 64 && b <= 127) return true
+    if (a === 169 && b === 254) return true
+  }
+  const lower = ip.toLowerCase()
+  if (lower === '::1' || lower === '0:0:0:0:0:0:0:1') return true
+  if (lower.startsWith('fc') || lower.startsWith('fd')) return true
+  if (lower.startsWith('fe80')) return true
+  if (lower.startsWith('::ffff:')) return true
+  return false
+}
+
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false
+    if (parsed.port && !['80', '443', '8080', '8443'].includes(parsed.port)) return false
+    const hostname = parsed.hostname
+    const blockedHostnames = [
+      'localhost',
+      'metadata.google.internal',
+      'metadata.goog',
+      '169.254.169.254',
+      'metadata.azure.com',
+      '100.100.100.200',
+      'metadata.digitalocean.com',
+    ]
+    if (blockedHostnames.includes(hostname)) return false
+    if (isPrivateIp(hostname)) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface GeminiPart {
@@ -117,6 +161,10 @@ export async function callGemini(prompt: string): Promise<string> {
 // ─── URL Fetcher ──────────────────────────────────────────────────────────────
 
 export async function fetchUrlContent(url: string): Promise<string> {
+  if (!isSafeUrl(url)) {
+    throw new Error('URL is not allowed for security reasons')
+  }
+
   let hostname = ''
   try {
     hostname = new URL(url).hostname
@@ -175,9 +223,9 @@ function repairTruncatedJson(raw: string): string {
 
   // 2. Remove trailing incomplete key-value patterns
   //    e.g. `"key":` or `"key": "val` or `"key": 4` followed by nothing
-  s = s.replace(/,\s*"[^"]*"\s*:\s*$/, '')        // "key":  (no value)
-  s = s.replace(/,\s*"[^"]*"?\s*$/, '')            // trailing orphan key
-  s = s.replace(/,\s*$/, '')                        // trailing comma
+  s = s.replace(/,\s*"[^"]*"\s*:\s*$/, '') // "key":  (no value)
+  s = s.replace(/,\s*"[^"]*"?\s*$/, '') // trailing orphan key
+  s = s.replace(/,\s*$/, '') // trailing comma
 
   // 3. Close all open brackets and braces
   const stack: string[] = []

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/index'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 type Provider = 'groq' | 'cerebras' | 'openrouter' | 'gemini'
 
@@ -62,6 +63,7 @@ function ApiKeysSection() {
     openrouter: '',
     gemini: '',
   })
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   useEffect(() => {
     loadKeys()
@@ -140,7 +142,13 @@ function ApiKeysSection() {
     const existing = getExistingKey(provider)
     if (!existing) return
 
-    if (!confirm(`Remove ${PROVIDER_INFO[provider].label} API key?`)) return
+    const confirmed = await confirm({
+      title: `Remove ${PROVIDER_INFO[provider].label} API key?`,
+      description: 'This action cannot be undone.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    })
+    if (!confirmed) return
 
     if (!supabase) {
       toast.success('API key removed (dev mode)')
@@ -276,6 +284,7 @@ function ApiKeysSection() {
         </div>
       )}
     </Card>
+    <ConfirmDialog />
   )
 }
 

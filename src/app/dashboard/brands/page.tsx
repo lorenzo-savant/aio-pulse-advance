@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand } from '@/types'
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 function BrandCard({
   brand,
@@ -28,25 +29,6 @@ function BrandCard({
   brand: Brand
   onDelete: (id: string) => void
 }): ReactNode {
-  const [deleting, setDeleting] = useState(false)
-
-  const handleDelete = async () => {
-    if (!confirm(`Delete brand "${brand.name}"? All monitoring data will also be removed.`)) return
-    setDeleting(true)
-    try {
-      const res = await fetch(`/api/brands/${brand.id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(`Server error: ${res.status}`)
-      const json = await res.json()
-      if (!json.success) throw new Error(json.message)
-      onDelete(brand.id)
-      toast.success(`"${brand.name}" deleted`)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Delete failed')
-    } finally {
-      setDeleting(false)
-    }
-  }
-
   return (
     <Card className="group border-surface-input-border p-6 transition-all hover:border-nav-text/30">
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -78,7 +60,7 @@ function BrandCard({
               <Edit3 className="h-4 w-4" />
             </Button>
           </Link>
-          <Button loading={deleting} size="icon" variant="ghost" onClick={handleDelete}>
+          <Button size="icon" variant="ghost" onClick={() => onDelete(brand.id)}>
             <Trash2 className="h-4 w-4 text-red-400" />
           </Button>
         </div>
@@ -134,6 +116,27 @@ export default function BrandsPage() {
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { confirm, ConfirmDialog } = useConfirmDialog()
+
+  const handleDelete = async (id: string, name: string) => {
+    const confirmed = await confirm({
+      title: `Delete "${name}"?`,
+      description: 'All monitoring data will also be removed. This action cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!confirmed) return
+    try {
+      const res = await fetch(`/api/brands/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`Server error: ${res.status}`)
+      const json = await res.json()
+      if (!json.success) throw new Error(json.message)
+      setBrands((b) => b.filter((x) => x.id !== id))
+      toast.success(`"${name}" deleted`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed')
+    }
+  }
 
   const loadBrands = useCallback(async () => {
     setLoading(true)
@@ -236,11 +239,18 @@ export default function BrandsPage() {
           <p className="mb-8 max-w-sm text-text-muted-surface">
             Create your first brand to start monitoring visibility.
           </p>
-          <Link href="/dashboard/brands/new">
-            <Button size="lg">
-              <Plus className="h-5 w-5" /> Create first brand
-            </Button>
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/dashboard/onboarding">
+              <Button size="lg" variant="outline">
+                Guided Setup
+              </Button>
+            </Link>
+            <Link href="/dashboard/brands/new">
+              <Button size="lg">
+                <Plus className="h-5 w-5" /> New Brand
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
 
@@ -250,11 +260,12 @@ export default function BrandsPage() {
             <BrandCard
               key={brand.id}
               brand={brand}
-              onDelete={(id) => setBrands((b) => b.filter((x) => x.id !== id))}
+              onDelete={(id) => handleDelete(id, brand.name)}
             />
           ))}
         </div>
       )}
+      <ConfirmDialog />
     </div>
   )
 }

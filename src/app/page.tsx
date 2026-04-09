@@ -18,6 +18,9 @@ function AcceptContent() {
 
   useEffect(() => {
     if (!token && typeof window !== 'undefined') {
+      // TODO(M-4): Use httpOnly cookie instead of localStorage for invite token.
+      // localStorage is vulnerable to XSS theft. Cookie with httpOnly;Secure;SameSite=Lax
+      // should be set by the server when generating the invitation link.
       const saved = localStorage.getItem('pending_invite_token')
       if (saved) {
         localStorage.removeItem('pending_invite_token')
@@ -46,6 +49,7 @@ function AcceptContent() {
       } = await supabase.auth.getSession()
 
       if (!session) {
+        // TODO(M-4): Store in httpOnly cookie instead of localStorage for XSS protection
         if (typeof window !== 'undefined') {
           localStorage.setItem('pending_invite_token', token || '')
         }

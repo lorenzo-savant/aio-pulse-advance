@@ -28,6 +28,9 @@ import {
   ClipboardCheck,
   Sparkles,
   Coins,
+  Radio,
+  GitBranch,
+  Sparkle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
@@ -49,13 +52,13 @@ const NAV_SECTIONS = [
       { href: '/dashboard/optimizer', icon: FileSearch, label: 'Content Optimizer' },
       { href: '/dashboard/audit', icon: ClipboardCheck, label: 'Content Audit' },
       { href: '/dashboard/recommendations', icon: Lightbulb, label: 'Recommendations' },
-      { href: '/dashboard/monitor', icon: Globe, label: 'Engine Monitor' },
+      { href: '/dashboard/monitor', icon: Globe, label: 'Engine Info' },
       { href: '/dashboard/competitor', icon: GitCompare, label: 'Competitor Analysis' },
       { href: '/dashboard/history', icon: Clock, label: 'Scan History' },
     ],
   },
   {
-    label: 'Brand Monitoring',
+    label: 'AI Monitoring',
     items: [
       { href: '/dashboard/brands', icon: Building2, label: 'Brands' },
       { href: '/dashboard/prompts', icon: MessageSquare, label: 'Prompts' },
@@ -78,6 +81,12 @@ const NAV_SECTIONS = [
   },
 ]
 
+const EXTRA_ITEMS = [
+  { href: '/dashboard/monitoring', icon: Radio, label: 'Live Monitoring' },
+  { href: '/dashboard/workflows', icon: GitBranch, label: 'Workflows' },
+  { href: '/dashboard/onboarding', icon: Sparkle, label: 'Guided Setup', badge: 'Start' },
+]
+
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -97,8 +106,11 @@ export function Sidebar() {
     getUser()
   }, [])
 
-  const isActive = (href: string) =>
-    href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return pathname === '/dashboard'
+    const prefix = href.endsWith('/') ? href : href + '/'
+    return pathname.startsWith(prefix) || (pathname === href)
+  }
 
   const handleLogout = async () => {
     await supabase?.auth.signOut()
@@ -180,6 +192,46 @@ export function Sidebar() {
               </div>
             </div>
           ))}
+
+          {EXTRA_ITEMS.length > 0 && (
+            <div className="mb-6">
+              <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-widest text-nav-text">
+                Tools
+              </p>
+              <div className="space-y-0.5">
+                {EXTRA_ITEMS.map((item) => {
+                  const active = isActive(item.href)
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all',
+                        active
+                          ? 'bg-nav-active-bg text-nav-text-active'
+                          : 'text-nav-text hover:bg-nav-active-bg/50 hover:text-text-on-surface',
+                      )}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <item.icon
+                        className={cn(
+                          'h-4 w-4 shrink-0',
+                          active ? 'text-nav-active-text' : 'text-nav-text',
+                        )}
+                      />
+                      {item.label}
+                      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-500" />}
+                      {item.badge && (
+                        <span className="ml-auto rounded bg-brand-500/20 px-1.5 py-0.5 text-[10px] font-black text-brand-400">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Footer */}

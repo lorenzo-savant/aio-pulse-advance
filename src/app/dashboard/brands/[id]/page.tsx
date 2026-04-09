@@ -24,6 +24,7 @@ import {
   Mail,
   Check,
 } from 'lucide-react'
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   LineChart,
   Line,
@@ -41,22 +42,13 @@ import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand, MonitoringResult } from '@/types'
+import { useChartTheme } from '@/hooks/useChartTheme'
 
 const ENGINE_COLORS: Record<string, string> = {
   chatgpt: '#10b981',
   gemini: '#3b82f6',
   perplexity: '#a855f7',
   claude: '#f97316',
-}
-
-const tooltipStyle = {
-  contentStyle: {
-    background: '#0f172a',
-    border: '1px solid #1f2937',
-    borderRadius: 8,
-    fontSize: 12,
-  },
-  labelStyle: { color: '#e2e8f0', fontWeight: 700 },
 }
 
 interface Snapshot {
@@ -159,6 +151,8 @@ export default function BrandDetailPage() {
   const router = useRouter()
   const params = useParams()
   const brandId = params.id as string
+  const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { tooltipStyle } = useChartTheme()
 
   const [brand, setBrand] = useState<Brand | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
@@ -288,8 +282,16 @@ export default function BrandDetailPage() {
     }
   }
 
-  const handleRemoveMember = async (memberId: string) => {
-    if (!confirm('Are you sure you want to remove this team member?')) return
+  const handleRemoveMember = async (memberId: string, memberEmail?: string) => {
+    const confirmed = await confirm({
+      title: 'Remove team member?',
+      description: memberEmail
+        ? `Remove ${memberEmail} from this brand?`
+        : 'Remove this team member from this brand?',
+      confirmLabel: 'Remove',
+      destructive: true,
+    })
+    if (!confirmed) return
     try {
       const res = await fetch(`/api/team?member_id=${memberId}`, { method: 'DELETE' })
       const data = await res.json()
@@ -458,7 +460,9 @@ export default function BrandDetailPage() {
               <h1 className="text-2xl font-black text-white">{brand.name}</h1>
               {brand.domain && (
                 <a
-                  href={brand.domain}
+                  href={
+                    /^https?:\/\//i.test(brand.domain) ? brand.domain : `https://${brand.domain}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-sm text-surface-500 hover:text-brand-400"
@@ -869,7 +873,7 @@ export default function BrandDetailPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleRemoveMember(member.id)}
+                            onClick={() => handleRemoveMember(member.id, member.email)}
                             aria-label="Remove team member"
                             className="text-surface-500 hover:text-red-400"
                           >
@@ -885,6 +889,7 @@ export default function BrandDetailPage() {
           )}
         </div>
       </Card>
+      <ConfirmDialog />
     </div>
   )
 }

@@ -2,6 +2,17 @@ import type { AnalysisResult, ScanHistoryEntry, MonitoringResult, Brand } from '
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function escapeHtml(value: string | number | boolean | null | undefined): string {
+  if (value === null || value === undefined) return ''
+  const str = String(value)
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function escapeCsv(value: string | number | boolean | null | undefined): string {
   if (value === null || value === undefined) return ''
   const str = String(value)
@@ -159,7 +170,7 @@ export function printBrandReport(brand: Brand, results: MonitoringResult[]): voi
 <!DOCTYPE html>
 <html>
 <head>
-  <title>${brand.name} - AIO Pulse Report</title>
+  <title>${escapeHtml(brand.name)} - AIO Pulse Report</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; color: #1a1a1a; line-height: 1.5; }
@@ -190,8 +201,8 @@ export function printBrandReport(brand: Brand, results: MonitoringResult[]): voi
 <body>
   <div class="header">
     <div class="brand-info">
-      <h1>${brand.name}</h1>
-      <p>${brand.domain || 'No domain'}${brand.industry ? ` • ${brand.industry}` : ''}</p>
+      <h1>${escapeHtml(brand.name)}</h1>
+      <p>${escapeHtml(brand.domain || 'No domain')}${brand.industry ? ` • ${escapeHtml(brand.industry)}` : ''}</p>
     </div>
     <div class="date">Generated: ${new Date().toLocaleDateString()}</div>
   </div>
@@ -232,12 +243,12 @@ export function printBrandReport(brand: Brand, results: MonitoringResult[]): voi
             (r) => `
         <tr>
           <td>${new Date(r.created_at).toLocaleDateString()}</td>
-          <td>${r.engine}</td>
-          <td class="truncate">${r.prompt_text}</td>
+          <td>${escapeHtml(r.engine)}</td>
+          <td class="truncate">${escapeHtml(r.prompt_text)}</td>
           <td><span class="badge ${r.brand_mentioned ? 'success' : 'danger'}">${r.brand_mentioned ? 'Yes' : 'No'}</span></td>
           <td>${r.mention_position || '-'}</td>
           <td>${r.visibility_score}</td>
-          <td><span class="badge ${r.sentiment === 'positive' ? 'success' : r.sentiment === 'negative' ? 'danger' : 'neutral'}">${r.sentiment || '-'}</span></td>
+          <td><span class="badge ${r.sentiment === 'positive' ? 'success' : r.sentiment === 'negative' ? 'danger' : 'neutral'}">${escapeHtml(r.sentiment || '-')}</span></td>
         </tr>
         `,
           )

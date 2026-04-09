@@ -112,7 +112,7 @@ export default function WorkflowStatusPage() {
         </div>
         <div className="flex items-center gap-4">
           <select
-            className="rounded-xl border border-border bg-secondary px-4 py-2 text-sm text-foreground"
+            className="rounded-xl border border-input bg-input px-4 py-2 text-sm text-foreground"
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
           >

@@ -34,6 +34,7 @@ import { Badge } from '@/components/ui/index'
 import { exportToJson } from '@/lib/export'
 import { cn } from '@/lib/utils'
 import type { CompetitorResult } from '@/lib/services/gemini'
+import { useChartTheme } from '@/hooks/useChartTheme'
 
 interface Snapshot {
   id: string
@@ -76,18 +77,8 @@ const DATE_RANGES = [
   { label: '90 days', days: 90 },
 ]
 
-const tooltipStyle = () => ({
-  contentStyle: {
-    background: '#0f172a',
-    border: '1px solid #1f2937',
-    borderRadius: 8,
-    fontSize: 12,
-    color: '#e2e8f0',
-  },
-  labelStyle: { color: '#e2e8f0', fontWeight: 700 as const },
-})
-
 function HistoricalSection() {
+  const { tooltipStyle } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
@@ -263,7 +254,7 @@ function HistoricalSection() {
                 <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
                 <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[0, 100]} unit="%" />
-                <Tooltip {...tooltipStyle()} formatter={(v: number) => [`${v.toFixed(1)}%`]} />
+                <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)}%`]} />
                 <Legend />
                 <Line
                   dataKey="brand"

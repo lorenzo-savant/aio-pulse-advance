@@ -26,7 +26,7 @@ function DashboardInitializer({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     const init = async () => {
-      let userId = process.env.DEV_USER_ID || 'dev-user'
+      let userId: string | null = null
 
       if (supabase) {
         const {
@@ -37,8 +37,10 @@ function DashboardInitializer({ children }: DashboardLayoutProps) {
         }
       }
 
-      setUserId(userId)
-      await loadScanHistory()
+      if (userId) {
+        setUserId(userId)
+        await loadScanHistory()
+      }
     }
 
     init()

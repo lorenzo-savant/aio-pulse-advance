@@ -29,6 +29,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
+import { useChartTheme } from '@/hooks/useChartTheme'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -73,21 +74,11 @@ const ENGINE_COLORS: Record<string, string> = {
  claude: '#a855f7',
 }
 
-const tooltipStyle = {
- contentStyle: {
-  background: '#0f172a',
-  border: '1px solid #1f2937',
-  borderRadius: 8,
-  fontSize: 12,
-  color: '#e2e8f0',
- },
- labelStyle: { color: '#e2e8f0', fontWeight: 700 as const },
-}
-
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function SnapshotsPage() {
- const [brands, setBrands] = useState<Brand[]>([])
+  const { tooltipStyle } = useChartTheme()
+  const [brands, setBrands] = useState<Brand[]>([])
  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
  const [snapshots, setSnapshots] = useState<Snapshot[]>([])
  const [loading, setLoading] = useState(true)

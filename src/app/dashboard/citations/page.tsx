@@ -27,6 +27,7 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/index'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
+import { useChartTheme } from '@/hooks/useChartTheme'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -50,18 +51,6 @@ interface Brand {
   id: string
   name: string
   color: string
-}
-
-// ─── Tooltip ─────────────────────────────────────────────────────────────────
-
-const tooltipStyle = {
-  contentStyle: {
-    background: '#0f172a',
-    border: '1px solid #1f2937',
-    borderRadius: 8,
-    fontSize: 12,
-  },
-  labelStyle: { color: '#e2e8f0', fontWeight: 700 },
 }
 
 // ─── Competitor Colors ───────────────────────────────────────────────────────
@@ -125,6 +114,7 @@ function StatCard({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function CitationsPage() {
+  const { tooltipStyle } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])

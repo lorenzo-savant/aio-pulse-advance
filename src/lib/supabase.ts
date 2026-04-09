@@ -70,9 +70,9 @@ export async function getCurrentUserId(
     throw new AuthError('Supabase not configured. Please set environment variables.', 503)
   }
 
-  // DEV MODE: Allow development users without full auth
+  // DEV MODE: Allow development users without full auth — NEVER active in production
   const devUserId = process.env.DEV_USER_ID
-  if (devUserId && !authHeader && !cookieHeader?.includes('sb-')) {
+  if (devUserId && process.env.NODE_ENV !== 'production' && !authHeader && !cookieHeader?.includes('sb-')) {
     console.log('[auth] Using DEV_USER_ID:', devUserId)
     return devUserId
   }

@@ -1,18 +1,16 @@
-import type {
-  AIProvider,
-  AIProviderConfig,
-  AIProviderId,
-  AIProviderRequest,
-  AIProviderResult,
-} from './types'
+import type { AIProviderConfig, AIProviderId, AIProviderRequest, AIProviderResult } from './types'
 import { PROVIDER_PRIORITY, PROVIDER_NAMES } from './types'
 import { GeminiProvider } from './gemini-provider'
 import { GroqProvider } from './groq-provider'
 import { CerebrasProvider } from './cerebras-provider'
 import { OpenRouterProvider } from './openrouter-provider'
+import { ChatGPTProvider } from './chatgpt-provider'
+import { PerplexityProvider } from './perplexity-provider'
+import { DataForSEOProvider } from './dataforseo-provider'
+import { BaseProvider } from './base-provider'
 
 export class ProviderManager {
-  private providers: Map<AIProviderId, AIProvider>
+  private providers: Map<AIProviderId, BaseProvider>
   private providerConfigs: Map<AIProviderId, AIProviderConfig>
   private onProviderFallback?: (from: AIProviderId, to: AIProviderId, error?: string) => void
 
@@ -21,13 +19,16 @@ export class ProviderManager {
     this.providerConfigs = new Map()
     this.onProviderFallback = onFallback
 
+    this.registerProvider(new ChatGPTProvider())
     this.registerProvider(new GeminiProvider())
+    this.registerProvider(new PerplexityProvider())
     this.registerProvider(new GroqProvider())
     this.registerProvider(new CerebrasProvider())
     this.registerProvider(new OpenRouterProvider())
+    this.registerProvider(new DataForSEOProvider())
   }
 
-  private registerProvider(provider: AIProvider): void {
+  private registerProvider(provider: BaseProvider): void {
     this.providers.set(provider.id, provider)
     const priority = PROVIDER_PRIORITY.indexOf(provider.id)
     this.providerConfigs.set(provider.id, {

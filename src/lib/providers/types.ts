@@ -1,4 +1,11 @@
-export type AIProviderId = 'gemini' | 'groq' | 'cerebras' | 'openrouter'
+export type AIProviderId =
+  | 'gemini'
+  | 'groq'
+  | 'cerebras'
+  | 'openrouter'
+  | 'chatgpt'
+  | 'perplexity'
+  | 'dataforseo'
 
 export interface AIProviderConfig {
   id: AIProviderId
@@ -34,11 +41,22 @@ export interface AIProvider {
   execute(request: AIProviderRequest): Promise<AIProviderResult>
 }
 
-export const PROVIDER_PRIORITY: AIProviderId[] = ['gemini', 'groq', 'cerebras', 'openrouter']
+export const PROVIDER_PRIORITY: AIProviderId[] = [
+  'chatgpt',
+  'gemini',
+  'perplexity',
+  'groq',
+  'cerebras',
+  'openrouter',
+  'dataforseo',
+]
 
 export const PROVIDER_NAMES: Record<AIProviderId, string> = {
   gemini: 'Google Gemini',
   groq: 'Groq (Llama)',
   cerebras: 'Cerebras',
   openrouter: 'OpenRouter',
+  chatgpt: 'ChatGPT Search',
+  perplexity: 'Perplexity',
+  dataforseo: 'Google AI Overview',
 }

@@ -1,103 +1,67 @@
-import type { AIProvider, AIProviderRequest, AIProviderResult } from './types'
+import type { AIProviderRequest, AIProviderResult } from './types'
+import { BaseProvider } from './base-provider'
 
-export class GeminiProvider implements AIProvider {
-  id = 'gemini' as const
-  name = 'Google Gemini'
+export class GeminiProvider extends BaseProvider {
+  readonly id = 'gemini' as const
+  readonly name = 'Google Gemini'
 
   isConfigured(): boolean {
     return !!process.env['GEMINI_API_KEY']
   }
 
-  async isAvailable(): Promise<boolean> {
-    if (!this.isConfigured()) return false
-    try {
-      const apiKey = process.env['GEMINI_API_KEY']
-      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-      const res = await fetch(url, { method: 'GET' })
-      return res.ok
-    } catch {
-      return false
-    }
+  protected override async healthCheckRequest(): Promise<Response> {
+    const apiKey = process.env['GEMINI_API_KEY']
+    return fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
   }
 
-  async execute(request: AIProviderRequest): Promise<AIProviderResult> {
-    const startTime = Date.now()
+  protected override async executeRequest(request: AIProviderRequest): Promise<Response> {
     const apiKey = process.env['GEMINI_API_KEY']
 
-    if (!apiKey) {
-      return {
-        success: false,
-        provider: this.id,
-        error: 'GEMINI_API_KEY not configured',
-        latencyMs: Date.now() - startTime,
-      }
+    const body: Record<string, unknown> = {
+      contents: [{ parts: [{ text: request.prompt }] }],
+      generationConfig: {
+        temperature: request.temperature ?? 0.3,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: request.maxTokens ?? 4096,
+      },
     }
 
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+    if (request.systemPrompt) {
+      body.systemInstruction = { parts: [{ text: request.systemPrompt }] }
+    }
 
-      const body: Record<string, unknown> = {
-        contents: [{ parts: [{ text: request.prompt }] }],
-        generationConfig: {
-          temperature: request.temperature ?? 0.3,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: request.maxTokens ?? 4096,
-        },
-      }
-
-      if (request.systemPrompt) {
-        body.systemInstruction = { parts: [{ text: request.systemPrompt }] }
-      }
-
-      const res = await fetch(url, {
+    return fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(30000),
-      })
+      },
+    )
+  }
 
-      if (!res.ok) {
-        const errorText = await res.text()
-        return {
-          success: false,
-          provider: this.id,
-          error: `Gemini API error: ${res.status} - ${errorText}`,
-          latencyMs: Date.now() - startTime,
-        }
-      }
+  protected override transformResponse(data: unknown): AIProviderResult {
+    const response = data as {
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> }
+      }>
+      usageMetadata?: { totalTokenCount?: number }
+    }
 
-      const data = await res.json()
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const tokensUsed = response.usageMetadata?.totalTokenCount || 0
 
-      if (!text) {
-        return {
-          success: false,
-          provider: this.id,
-          error: 'Empty response from Gemini',
-          latencyMs: Date.now() - startTime,
-        }
-      }
-
-      return {
-        success: true,
-        text,
-        provider: this.id,
-        latencyMs: Date.now() - startTime,
-        tokensUsed: data.usageMetadata?.totalTokenCount,
-        costEstimate: this.estimateCost(data.usageMetadata?.totalTokenCount ?? 0),
-      }
-    } catch (err) {
-      return {
-        success: false,
-        provider: this.id,
-        error: err instanceof Error ? err.message : 'Unknown Gemini error',
-        latencyMs: Date.now() - startTime,
-      }
+    return {
+      success: !!text,
+      text,
+      provider: this.id,
+      tokensUsed,
+      costEstimate: this.estimateCost(tokensUsed),
     }
   }
 
-  private estimateCost(tokens: number): number {
+  protected override estimateCost(tokens: number): number {
     return tokens * 0.000075
   }
 }

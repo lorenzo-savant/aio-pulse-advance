@@ -15,7 +15,15 @@ if (!isConfigured && process.env.NODE_ENV === 'production') {
 
 export const supabase = isConfigured
   ? createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
-      auth: { persistSession: true, autoRefreshToken: true },
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        onAuthStateChange: (event: string) => {
+          if (event === 'SIGNED_OUT') {
+            console.log('[auth] Signed out')
+          }
+        },
+      },
     })
   : null
 
@@ -72,7 +80,12 @@ export async function getCurrentUserId(
 
   // DEV MODE: Allow development users without full auth — NEVER active in production
   const devUserId = process.env.DEV_USER_ID
-  if (devUserId && process.env.NODE_ENV !== 'production' && !authHeader && !cookieHeader?.includes('sb-')) {
+  if (
+    devUserId &&
+    process.env.NODE_ENV !== 'production' &&
+    !authHeader &&
+    !cookieHeader?.includes('sb-')
+  ) {
     console.log('[auth] Using DEV_USER_ID:', devUserId)
     return devUserId
   }

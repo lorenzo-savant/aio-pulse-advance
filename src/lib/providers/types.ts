@@ -6,6 +6,7 @@ export type AIProviderId =
   | 'chatgpt'
   | 'perplexity'
   | 'dataforseo'
+  | 'azure-openai'
 
 export interface AIProviderConfig {
   id: AIProviderId
@@ -45,6 +46,7 @@ export const PROVIDER_PRIORITY: AIProviderId[] = [
   'chatgpt',
   'gemini',
   'perplexity',
+  'azure-openai',
   'groq',
   'cerebras',
   'openrouter',
@@ -59,4 +61,5 @@ export const PROVIDER_NAMES: Record<AIProviderId, string> = {
   chatgpt: 'ChatGPT Search',
   perplexity: 'Perplexity',
   dataforseo: 'Google AI Overview',
+  'azure-openai': 'Azure OpenAI',
 }

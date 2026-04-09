@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter as GeistSans, JetBrains_Mono as GeistMono } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'react-hot-toast'
+import { QueryProvider } from '@/providers'
 import '@/styles/globals.css'
 import { APP_NAME, APP_DESCRIPTION, APP_URL } from '@/lib/constants'
 
@@ -75,7 +76,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body className="font-sans antialiased" suppressHydrationWarning>
         <Analytics />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+          <QueryProvider>{children}</QueryProvider>
           <Toaster
             position="top-right"
             toastOptions={{

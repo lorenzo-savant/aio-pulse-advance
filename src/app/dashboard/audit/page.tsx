@@ -13,6 +13,14 @@ import {
   Minus,
   BarChart3,
   Loader2,
+  ChevronDown,
+  ChevronUp,
+  Shield,
+  Bot,
+  FileText,
+  Code2,
+  Tag,
+  Zap,
 } from 'lucide-react'
 import {
   RadarChart,
@@ -60,6 +68,45 @@ interface AuditIssue {
   detail: string
   impact: 'critical' | 'warning' | 'pass'
   category: string
+}
+
+interface TechAuditCheck {
+  id: string
+  name: string
+  status: 'pass' | 'fail' | 'warning' | 'info'
+  message: string
+  details?: string
+}
+
+interface TechAuditCategory {
+  score: number
+  weight: number
+  checks: TechAuditCheck[]
+}
+
+interface TechAuditResult {
+  url: string
+  timestamp: string
+  overallScore: number
+  categories: {
+    aiCrawlerAccess: TechAuditCategory
+    llmsTxt: TechAuditCategory
+    schemaMarkup: TechAuditCategory
+    metaTags: TechAuditCategory
+    securityHeaders: TechAuditCategory
+    performance: TechAuditCategory
+  }
+}
+
+async function runTechnicalAudit(url: string): Promise<TechAuditResult> {
+  const res = await fetch('/api/audit/technical', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  })
+  const data = await res.json()
+  if (!data.success) throw new Error(data.message || 'Technical audit failed')
+  return data.data
 }
 
 // ─── Audit Logic (client-side analysis via API) ──────────────────────────────
@@ -294,6 +341,120 @@ function ScoreRing({ score, size = 120, label }: { score: number; size?: number;
   )
 }
 
+function getCategoryName(key: string): string {
+  const names: Record<string, string> = {
+    aiCrawlerAccess: 'AI Crawler Access',
+    llmsTxt: 'llms.txt',
+    schemaMarkup: 'Schema Markup',
+    metaTags: 'Meta Tags',
+    securityHeaders: 'Security Headers',
+    performance: 'Performance',
+  }
+  return names[key] || key
+}
+
+function getCategoryIcon(key: string): React.ReactNode {
+  const icons: Record<string, React.ReactNode> = {
+    aiCrawlerAccess: <Bot className="h-5 w-5" />,
+    llmsTxt: <FileText className="h-5 w-5" />,
+    schemaMarkup: <Code2 className="h-5 w-5" />,
+    metaTags: <Tag className="h-5 w-5" />,
+    securityHeaders: <Shield className="h-5 w-5" />,
+    performance: <Zap className="h-5 w-5" />,
+  }
+  return icons[key] || <BarChart3 className="h-5 w-5" />
+}
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case 'pass':
+      return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+    case 'fail':
+      return <XCircle className="h-4 w-4 text-red-500" />
+    case 'warning':
+      return <AlertCircle className="h-4 w-4 text-amber-500" />
+    default:
+      return <Minus className="h-4 w-4 text-muted-foreground" />
+  }
+}
+
+function CategoryCard({
+  id,
+  name,
+  icon,
+  score,
+  weight,
+  checks,
+  expanded,
+  onToggle,
+}: {
+  id: string
+  name: string
+  icon: React.ReactNode
+  score: number
+  weight: number
+  checks: TechAuditCheck[]
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const scoreColor = score >= 70 ? 'bg-emerald-500' : score >= 40 ? 'bg-amber-500' : 'bg-red-500'
+  const textColor =
+    score >= 70 ? 'text-emerald-500' : score >= 40 ? 'text-amber-500' : 'text-red-500'
+
+  return (
+    <Card className="overflow-hidden">
+      <button
+        className="hover:bg-secondary/50 flex w-full cursor-pointer flex-col p-4 text-left transition-colors"
+        onClick={onToggle}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg text-primary">
+              {icon}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">{name}</p>
+              <p className="text-[10px] text-muted-foreground">
+                Weight: {(weight * 100).toFixed(0)}%
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={cn('text-lg font-black', textColor)}>{score}</span>
+            {expanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+        </div>
+        <div className="bg-input-border mt-3 h-1.5 w-full overflow-hidden rounded-full">
+          <div
+            className={cn('h-full rounded-full transition-all', scoreColor)}
+            style={{ width: `${score}%` }}
+          />
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-input px-4 py-3">
+          <div className="space-y-2">
+            {checks.map((check) => (
+              <div key={check.id} className="flex items-start gap-2">
+                {getStatusIcon(check.status)}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-foreground">{check.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{check.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function AuditPage() {
@@ -311,6 +472,10 @@ export default function AuditPage() {
       raw_response: any
     }>
   >([])
+  const [techLoading, setTechLoading] = useState(false)
+  const [techResult, setTechResult] = useState<TechAuditResult | null>(null)
+  const [techError, setTechError] = useState('')
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
 
   // Load URL-mode analysis history on mount
   useEffect(() => {
@@ -343,6 +508,25 @@ export default function AuditPage() {
     }
   }
 
+  const handleTechAudit = async () => {
+    if (!url.trim()) return
+    setTechLoading(true)
+    setTechError('')
+    setTechResult(null)
+    try {
+      const r = await runTechnicalAudit(url.trim())
+      setTechResult(r)
+    } catch (err) {
+      setTechError(err instanceof Error ? err.message : 'Technical audit failed')
+    } finally {
+      setTechLoading(false)
+    }
+  }
+
+  const toggleCategory = (id: string) => {
+    setExpandedCategory(expandedCategory === id ? null : id)
+  }
+
   return (
     <div className="space-y-6 bg-background">
       {/* Header */}
@@ -359,7 +543,7 @@ export default function AuditPage() {
           <div className="relative flex-1">
             <Globe className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              className="w-full rounded-xl border border-input bg-input py-3 pl-11 pr-4 text-sm text-foreground placeholder-text-muted-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="placeholder-text-muted-surface w-full rounded-xl border border-input bg-input py-3 pl-11 pr-4 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder="Enter URL to audit (e.g. https://yoursite.com/page)"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -370,13 +554,92 @@ export default function AuditPage() {
             <FileSearch className="h-5 w-5" />
             {loading ? 'Auditing...' : 'Run Audit'}
           </Button>
+          <Button
+            size="lg"
+            variant="secondary"
+            loading={techLoading}
+            onClick={handleTechAudit}
+            disabled={!url.trim()}
+          >
+            <Shield className="h-5 w-5" />
+            {techLoading ? 'Scanning...' : 'Tech Audit'}
+          </Button>
         </div>
         {error && (
           <div className="mt-3 flex items-center gap-2 text-sm text-red-400">
             <AlertCircle className="h-4 w-4" /> {error}
           </div>
         )}
+        {techError && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-red-400">
+            <AlertCircle className="h-4 w-4" /> {techError}
+          </div>
+        )}
       </Card>
+
+      {/* Technical SEO Audit Results */}
+      {techResult && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <Shield className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-bold text-foreground">AI Technical Audit</h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <Card className="flex flex-col items-center justify-center p-8">
+              <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Overall Score
+              </p>
+              <div className="relative">
+                <ScoreRing score={techResult.overallScore} size={160} />
+              </div>
+              <Badge
+                variant={
+                  techResult.overallScore >= 70
+                    ? 'success'
+                    : techResult.overallScore >= 40
+                      ? 'warning'
+                      : 'danger'
+                }
+                size="lg"
+                className="mt-4"
+              >
+                {techResult.overallScore >= 70
+                  ? 'Good'
+                  : techResult.overallScore >= 40
+                    ? 'Needs Work'
+                    : 'Poor'}
+              </Badge>
+            </Card>
+
+            <Card className="col-span-2 p-6">
+              <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                URL Analyzed
+              </p>
+              <p className="break-all text-sm text-foreground">{techResult.url}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Scanned: {new Date(techResult.timestamp).toLocaleString()}
+              </p>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Object.entries(techResult.categories).map(([key, category]) => (
+              <CategoryCard
+                key={key}
+                id={key}
+                name={getCategoryName(key)}
+                icon={getCategoryIcon(key)}
+                score={category.score}
+                weight={category.weight}
+                checks={category.checks}
+                expanded={expandedCategory === key}
+                onToggle={() => toggleCategory(key)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Previous Audits */}
       {history.length > 0 && !result && (
@@ -386,7 +649,7 @@ export default function AuditPage() {
             {history.map((h) => (
               <button
                 key={h.id}
-                className="flex w-full items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2 text-left transition-all hover:bg-secondary-hover"
+                className="hover:bg-secondary-hover flex w-full items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2 text-left transition-all"
                 onClick={() => {
                   setUrl(h.input || '')
                   if (h.input) {
@@ -504,7 +767,7 @@ export default function AuditPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-input-border">
+                    <div className="bg-input-border h-2 w-32 overflow-hidden rounded-full">
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',
@@ -570,7 +833,7 @@ export default function AuditPage() {
                     key={i}
                     className="flex items-start gap-3 rounded-xl border border-input p-3"
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-black text-primary">
+                    <span className="bg-primary/20 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-primary">
                       {i + 1}
                     </span>
                     <p className="text-sm text-muted-foreground">{rec}</p>

@@ -2,7 +2,11 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { runMonitoringCheck, calculateHealthScore } from '@/lib/services/monitoring'
+import {
+  runMonitoringCheck,
+  calculateHealthScore,
+  calculateAVIFromResults,
+} from '@/lib/services/monitoring'
 import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/services/alerts'
 import { checkRateLimit } from '@/lib/ratelimit'
 import type { Brand, Prompt, MonitoringResult, AlertRule } from '@/types'
@@ -295,29 +299,29 @@ export async function POST(req: NextRequest) {
 
   // ── Upsert daily brand health score ──────────────────────────────────────
   if (results.length > 0) {
-    const avgVisibility = results.reduce((a, r) => a + r.visibility_score, 0) / results.length
-
-    const mentionedResults = results.filter((r) => r.brand_mentioned)
-    const avgSentiment =
-      mentionedResults.length > 0
-        ? mentionedResults.reduce((a, r) => a + (r.sentiment_score ?? 0), 0) /
-          mentionedResults.length
-        : 0
-
-    const hallucinationRate = results.filter((r) => r.has_hallucination).length / results.length
-
-    const healthScore = calculateHealthScore(avgVisibility, avgSentiment, hallucinationRate)
+    const { avi, components } = calculateAVIFromResults(results)
+    const citedCount = results.filter((r) => r.cited_urls?.length > 0).length
 
     await (db as any).from('brand_health_scores').upsert(
       {
         brand_id: brand.id,
         user_id: userId,
         date: new Date().toISOString().split('T')[0],
-        visibility_score: avgVisibility,
-        sentiment_score: avgSentiment,
-        hallucination_rate: hallucinationRate,
-        mention_count: mentionedResults.length,
-        health_score: healthScore,
+        visibility_score: components.mentionFrequency,
+        sentiment_score: components.sentimentScore,
+        hallucination_rate: components.hallucinationIndex / 100,
+        mention_count: results.filter((r) => r.brand_mentioned).length,
+        citation_count: citedCount,
+        // AVI component fields
+        avi_score: avi,
+        citation_rate: components.citationRate,
+        mention_rate: components.mentionFrequency,
+        recommendation_rate: components.recommendationRate,
+        position_avg: components.positionAvg,
+        health_score: avi,
+        engine_breakdown: JSON.stringify(
+          Object.fromEntries(results.map((r) => [r.engine, r.visibility_score])),
+        ),
       },
       { onConflict: 'brand_id,date' },
     )

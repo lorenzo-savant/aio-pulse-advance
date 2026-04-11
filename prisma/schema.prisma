@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Brand {
@@ -173,6 +174,12 @@ model BrandHealthScore {
   hallucinationRate Float    @default(0) @map("hallucination_rate")
   mentionCount      Int      @default(0) @map("mention_count")
   citationCount     Int      @default(0) @map("citation_count")
+  // AVI component metrics
+  aviScore          Float    @default(0) @map("avi_score")
+  citationRate      Float    @default(0) @map("citation_rate")
+  mentionRate       Float    @default(0) @map("mention_rate")
+  recommendationRate Float   @default(0) @map("recommendation_rate")
+  positionAvg       Float    @default(0) @map("position_avg")
   healthScore       Float    @default(0) @map("health_score")
   engineBreakdown   Json     @default("{}") @map("engine_breakdown")
   createdAt         DateTime @default(now()) @map("created_at")

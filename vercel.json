@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/aeo-bridge",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-review",
+      "schedule": "0 7 * * 1"
     }
   ],
   "headers": [

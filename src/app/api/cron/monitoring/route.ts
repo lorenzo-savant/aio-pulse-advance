@@ -1,7 +1,11 @@
 // PATH: src/app/api/cron/monitoring/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
-import { runMonitoringCheck, calculateHealthScore } from '@/lib/services/monitoring'
+import {
+  runMonitoringCheck,
+  calculateHealthScore,
+  calculateAVIFromResults,
+} from '@/lib/services/monitoring'
 import type { Brand, Prompt, MonitoringResult, MonitoringEngine } from '@/types'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 
@@ -120,28 +124,29 @@ export async function POST(req: NextRequest) {
 
       // ── Update daily health score ─────────────────────────────────────────
       if (engineResults.length > 0) {
-        const avgVisibility =
-          engineResults.reduce((a, r) => a + r.visibility_score, 0) / engineResults.length
-        const mentionedResults = engineResults.filter((r) => r.brand_mentioned)
-        const avgSentiment =
-          mentionedResults.length > 0
-            ? mentionedResults.reduce((a, r) => a + (r.sentiment_score ?? 0), 0) /
-              mentionedResults.length
-            : 0
-        const hallucinationRate =
-          engineResults.filter((r) => r.has_hallucination).length / engineResults.length
-        const healthScore = calculateHealthScore(avgVisibility, avgSentiment, hallucinationRate)
+        const { avi, components } = calculateAVIFromResults(engineResults)
+        const citedCount = engineResults.filter((r) => r.cited_urls?.length > 0).length
 
         await (supabase as any).from('brand_health_scores').upsert(
           {
             brand_id: brand.id,
             user_id: prompt.user_id,
             date: now.toISOString().split('T')[0],
-            visibility_score: avgVisibility,
-            sentiment_score: avgSentiment,
-            hallucination_rate: hallucinationRate,
-            mention_count: mentionedResults.length,
-            health_score: healthScore,
+            visibility_score: components.mentionFrequency,
+            sentiment_score: components.sentimentScore,
+            hallucination_rate: components.hallucinationIndex / 100,
+            mention_count: engineResults.filter((r) => r.brand_mentioned).length,
+            citation_count: citedCount,
+            // AVI component fields
+            avi_score: avi,
+            citation_rate: components.citationRate,
+            mention_rate: components.mentionFrequency,
+            recommendation_rate: components.recommendationRate,
+            position_avg: components.positionAvg,
+            health_score: avi,
+            engine_breakdown: JSON.stringify(
+              Object.fromEntries(engineResults.map((r) => [r.engine, r.visibility_score])),
+            ),
           },
           { onConflict: 'brand_id,date' },
         )

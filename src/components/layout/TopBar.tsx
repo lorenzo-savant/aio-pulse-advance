@@ -6,25 +6,60 @@ import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAppStore } from '@/lib/store'
 import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+
+const BREADCRUMB_MAP: Record<string, string> = {
+  '/dashboard': 'Main Dashboard',
+  '/dashboard/analytics': 'Analytics',
+  '/dashboard/optimizer': 'Content Optimizer',
+  '/dashboard/audit': 'Content Audit',
+  '/dashboard/recommendations': 'Recommendations',
+  '/dashboard/monitor': 'Engine Info',
+  '/dashboard/competitor': 'Competitor Analysis',
+  '/dashboard/history': 'Scan History',
+  '/dashboard/brands': 'Brands',
+  '/dashboard/prompts': 'Prompts',
+  '/dashboard/sentiment': 'Sentiment',
+  '/dashboard/citations': 'Citations',
+  '/dashboard/snapshots': 'Snapshots',
+  '/dashboard/keywords': 'Keywords',
+  '/dashboard/alerts': 'Alerts',
+  '/dashboard/reports': 'Reports',
+  '/dashboard/billing': 'Billing',
+  '/dashboard/credits': 'Credits',
+  '/dashboard/settings': 'Settings',
+  '/dashboard/docs': 'Documentation',
+  '/dashboard/monitoring': 'Live Monitoring',
+  '/dashboard/workflows': 'Workflows',
+  '/dashboard/onboarding': 'Guided Setup',
+}
+
+function getBreadcrumb(pathname: string) {
+  if (BREADCRUMB_MAP[pathname]) {
+    return { section: 'Pages', title: BREADCRUMB_MAP[pathname] }
+  }
+  if (pathname.startsWith('/dashboard/brands/')) {
+    return { section: 'Pages / Brands', title: 'Brand Detail' }
+  }
+  return { section: 'Pages', title: 'Dashboard' }
+}
 
 export function TopBar() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<{ type: string; id: string; name: string }[]>(
-    [],
-  )
+  const [searchResults, setSearchResults] = useState<{ type: string; id: string; name: string }[]>([])
   const [searching, setSearching] = useState(false)
-  const [showResults, setShowResults] = useState(false)
+  const [searchResultsOpen, setSearchResultsOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [alertCount, setAlertCount] = useState(0)
   const searchRef = useRef<HTMLDivElement>(null)
   const mobileSearchRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
-  const isDark = theme === 'dark'
+  const pathname = usePathname()
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
+  const breadcrumb = getBreadcrumb(pathname)
 
   useEffect(() => {
     setMounted(true)
@@ -34,12 +69,10 @@ export function TopBar() {
         if (res.ok) {
           const data = await res.json()
           const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
-          const recent = (data.data || []).filter(
-            (e: { created_at?: string; timestamp?: string }) => {
-              const t = e.created_at || e.timestamp
-              return t && new Date(t).getTime() > oneDayAgo
-            },
-          )
+          const recent = (data.data || []).filter((e: { created_at?: string; timestamp?: string }) => {
+            const t = e.created_at || e.timestamp
+            return t && new Date(t).getTime() > oneDayAgo
+          })
           setAlertCount(recent.length)
         }
       } catch {
@@ -63,7 +96,7 @@ export function TopBar() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setMobileSearchOpen(false)
-        setShowResults(false)
+        setSearchResultsOpen(false)
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -73,7 +106,7 @@ export function TopBar() {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowResults(false)
+        setSearchResultsOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -102,7 +135,7 @@ export function TopBar() {
   }, [searchQuery])
 
   const handleResultClick = (result: { type: string; id: string }) => {
-    setShowResults(false)
+    setSearchResultsOpen(false)
     setSearchQuery('')
     if (result.type === 'brand') {
       router.push(`/dashboard/brands/${result.id}`)
@@ -114,18 +147,18 @@ export function TopBar() {
   return (
     <>
       {mobileSearchOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-nav-bg p-4">
+        <div className="fixed inset-0 z-50 flex flex-col bg-background p-4">
           <div className="flex items-center gap-3">
-            <Search className="h-5 w-5 shrink-0 text-nav-text" />
+            <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
             <input
               ref={mobileSearchRef}
-              className="flex-1 bg-transparent text-lg text-text-on-surface placeholder-text-muted-surface outline-none"
+              className="flex-1 bg-transparent text-lg text-foreground placeholder:text-muted-foreground outline-none"
               placeholder="Search brands, prompts..."
               type="text"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
-                setShowResults(true)
+                setSearchResultsOpen(true)
               }}
               onKeyDown={(e) =>
                 e.key === 'Enter' &&
@@ -142,18 +175,18 @@ export function TopBar() {
               <X className="h-5 w-5" />
             </Button>
           </div>
-          {showResults && searchResults.length > 0 && (
+          {searchResultsOpen && searchResults.length > 0 && (
             <div className="mt-4 flex-1 overflow-y-auto">
               {searchResults.map((result) => (
                 <button
                   key={`${result.type}-${result.id}`}
-                  className="flex w-full items-center gap-3 px-2 py-3 text-left text-text-secondary-surface hover:bg-surface-row"
+                  className="flex w-full items-center gap-3 px-2 py-3 text-left hover:bg-secondary"
                   onClick={() => {
                     handleResultClick(result)
                     setMobileSearchOpen(false)
                   }}
                 >
-                  <span className="text-xs uppercase text-text-muted-surface">{result.type}</span>
+                  <span className="text-xs uppercase text-muted-foreground">{result.type}</span>
                   <span>{result.name}</span>
                 </button>
               ))}
@@ -162,43 +195,50 @@ export function TopBar() {
         </div>
       )}
 
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-nav-border bg-nav-bg/80 px-6 backdrop-blur-md">
-        <div className="flex items-center gap-3">
+      <header className="navbar-horizon">
+        <div className="flex items-center gap-4">
           <Button
             size="icon"
             variant="ghost"
             className="lg:hidden"
             onClick={toggleSidebar}
-            aria-label="Apri menu"
+            aria-label="Open menu"
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
           </Button>
 
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-muted-foreground">{breadcrumb.section}</span>
+            <span className="text-sm font-bold text-foreground">{breadcrumb.title}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
           <div className="relative hidden max-w-xs flex-1 md:block" ref={searchRef}>
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-nav-text" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              className="w-full rounded-xl border border-surface-input-border bg-surface-input py-2 pl-10 pr-4 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+              className="w-full rounded-[30px] border-none bg-secondary py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-brand"
               placeholder="Search brands, prompts..."
               type="text"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
-                setShowResults(true)
+                setSearchResultsOpen(true)
               }}
-              onFocus={() => setShowResults(true)}
+              onFocus={() => setSearchResultsOpen(true)}
             />
             {searching && (
-              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-nav-text" />
+              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
             )}
-            {showResults && searchResults.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl border border-nav-border bg-page-bg-elevated py-2 shadow-xl">
+            {searchResultsOpen && searchResults.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl bg-card py-2 shadow-lg">
                 {searchResults.map((result) => (
                   <button
                     key={`${result.type}-${result.id}`}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-text-secondary-surface hover:bg-surface-row-hover"
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-secondary"
                     onClick={() => handleResultClick(result)}
                   >
-                    <span className="text-xs uppercase text-text-muted-surface">{result.type}</span>
+                    <span className="text-xs uppercase text-muted-foreground">{result.type}</span>
                     <span>{result.name}</span>
                   </button>
                 ))}
@@ -215,16 +255,16 @@ export function TopBar() {
           >
             <Search className="h-4 w-4" />
           </Button>
-        </div>
 
-        <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
 
           <Link href="/dashboard/alerts">
             <Button size="icon" variant="ghost" className="relative" aria-label="Notifications">
-              <Bell className="h-4 w-4" aria-hidden="true" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
+                <Bell className="h-4 w-4" aria-hidden="true" />
+              </div>
               {alertCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[9px] font-black text-white">
+                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[9px] font-bold text-white">
                   {alertCount > 9 ? '9+' : alertCount}
                 </span>
               )}
@@ -232,10 +272,10 @@ export function TopBar() {
             </Button>
           </Link>
 
-          <div className="h-6 w-px bg-nav-border" />
+          <div className="hidden h-6 w-px bg-border md:block" />
 
-          <Link href="/dashboard/settings">
-            <Button size="sm" variant="outline">
+          <Link href="/dashboard/settings" className="hidden md:block">
+            <Button size="sm" variant="ghost">
               <User className="h-4 w-4" />
               Settings
             </Button>

@@ -23,7 +23,11 @@ import {
   Trash2,
   Mail,
   Check,
+  FileText,
+  Copy,
+  Download,
 } from 'lucide-react'
+import { Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   LineChart,
@@ -39,6 +43,7 @@ import {
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { ObsidianExportButton } from '@/components/ObsidianExportButton'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand, MonitoringResult } from '@/types'
@@ -76,7 +81,9 @@ function StatCard({
     <Card className="p-4">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {label}
+          </p>
           <p className="mt-1 text-2xl font-black text-foreground">{value}</p>
           {change !== undefined && (
             <div
@@ -167,6 +174,16 @@ export default function BrandDetailPage() {
   })
   const [saving, setSaving] = useState(false)
 
+  // LLMS generator state
+  const [llmsModalOpen, setLlmsModalOpen] = useState(false)
+  const [llmsLoading, setLlmsLoading] = useState(false)
+  const [llmsFiles, setLlmsFiles] = useState<{
+    'llms.txt': string
+    'llms-full.txt': string
+  } | null>(null)
+  const [llmsInstructions, setLlmsInstructions] = useState<string[]>([])
+  const [llmsActiveTab, setLlmsActiveTab] = useState<'llms.txt' | 'llms-full.txt'>('llms.txt')
+
   // Team state
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [pendingInvites, setPendingInvites] = useState<any[]>([])
@@ -232,6 +249,53 @@ export default function BrandDetailPage() {
       })
     }
   }, [brand])
+
+  const handleGenerateLlms = async () => {
+    setLlmsLoading(true)
+    setLlmsFiles(null)
+    setLlmsInstructions([])
+    setLlmsModalOpen(true)
+    try {
+      const res = await fetch('/api/generate/llms-txt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandId }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setLlmsFiles(data.files)
+        setLlmsInstructions(data.instructions)
+      } else {
+        toast.error(data.message || 'Failed to generate llms files')
+      }
+    } catch (err) {
+      console.error('Failed to generate llms:', err)
+      toast.error('Network error. Please try again.')
+    } finally {
+      setLlmsLoading(false)
+    }
+  }
+
+  const handleCopyLlms = (filename: 'llms.txt' | 'llms-full.txt') => {
+    if (llmsFiles) {
+      navigator.clipboard.writeText(llmsFiles[filename])
+      toast.success('Copied to clipboard')
+    }
+  }
+
+  const handleDownloadLlms = (filename: 'llms.txt' | 'llms-full.txt') => {
+    if (llmsFiles) {
+      const blob = new Blob([llmsFiles[filename]], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
+  }
 
   // Load team data
   const loadTeam = async () => {
@@ -508,10 +572,15 @@ export default function BrandDetailPage() {
           >
             PDF
           </Button>
+          <Button variant="outline" size="sm" onClick={handleGenerateLlms}>
+            <FileText className="mr-2 h-4 w-4" />
+            Generate llms.txt
+          </Button>
           <Button variant="outline" size="sm">
             <Edit3 className="mr-2 h-4 w-4" />
             Edit
           </Button>
+          {brand && <ObsidianExportButton brandId={brand.id} brandName={brand.name} />}
         </div>
       </div>
 
@@ -624,7 +693,7 @@ export default function BrandDetailPage() {
           <h3 className="text-lg font-bold text-foreground">Recent Monitoring Results</h3>
           <Link
             href={`/dashboard/monitoring?brand=${brandId}`}
-            className="text-sm text-primary hover:text-brand-300"
+            className="hover:text-brand-300 text-sm text-primary"
           >
             View all
           </Link>
@@ -734,25 +803,29 @@ export default function BrandDetailPage() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-border bg-secondary/50 p-4">
+            <div className="bg-secondary/50 rounded-xl border border-border p-4">
               <p className="mb-1 text-xs text-muted-foreground">Report Brand Name</p>
               <p className="font-medium text-foreground">
                 {brand?.report_brand_name || 'AIO Pulse (default)'}
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-secondary/50 p-4">
+            <div className="bg-secondary/50 rounded-xl border border-border p-4">
               <p className="mb-1 text-xs text-muted-foreground">Primary Color</p>
               <div className="flex items-center gap-2">
                 <div
                   className="h-4 w-4 rounded"
                   style={{ background: brand?.report_primary_color || '#6366f1' }}
                 />
-                <p className="font-medium text-foreground">{brand?.report_primary_color || '#6366f1'}</p>
+                <p className="font-medium text-foreground">
+                  {brand?.report_primary_color || '#6366f1'}
+                </p>
               </div>
             </div>
-            <div className="rounded-xl border border-border bg-secondary/50 p-4">
+            <div className="bg-secondary/50 rounded-xl border border-border p-4">
               <p className="mb-1 text-xs text-muted-foreground">Logo URL</p>
-              <p className="font-medium text-foreground">{brand?.report_logo_url || 'Not configured'}</p>
+              <p className="font-medium text-foreground">
+                {brand?.report_logo_url || 'Not configured'}
+              </p>
             </div>
           </div>
         )}
@@ -809,7 +882,7 @@ export default function BrandDetailPage() {
                   {pendingInvites.map((invite) => (
                     <div
                       key={invite.id}
-                      className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 px-4 py-3"
+                      className="bg-secondary/30 flex items-center justify-between rounded-lg border border-border px-4 py-3"
                     >
                       <div className="flex items-center gap-3">
                         <Mail className="h-4 w-4 text-muted-foreground" />
@@ -844,10 +917,10 @@ export default function BrandDetailPage() {
                   {teamMembers.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 px-4 py-3"
+                      className="bg-secondary/30 flex items-center justify-between rounded-lg border border-border px-4 py-3"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
+                        <div className="bg-primary/20 flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-primary">
                           {member.email?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div>
@@ -889,6 +962,91 @@ export default function BrandDetailPage() {
           )}
         </div>
       </Card>
+
+      {/* LLMS Generator Modal */}
+      <Modal open={llmsModalOpen} onOpenChange={setLlmsModalOpen} className="max-w-3xl">
+        <ModalHeader>
+          <ModalTitle>LLMS Files Generator</ModalTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Generate llms.txt and llms-full.txt to improve AI visibility for {brand?.name}
+          </p>
+        </ModalHeader>
+        <ModalBody>
+          {llmsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-3 text-muted-foreground">Generating files...</span>
+            </div>
+          ) : llmsFiles ? (
+            <>
+              <div className="mb-4 flex gap-2">
+                <button
+                  onClick={() => setLlmsActiveTab('llms.txt')}
+                  className={cn(
+                    'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                    llmsActiveTab === 'llms.txt'
+                      ? 'bg-primary text-white'
+                      : 'hover:bg-secondary/80 bg-secondary text-muted-foreground',
+                  )}
+                >
+                  llms.txt
+                </button>
+                <button
+                  onClick={() => setLlmsActiveTab('llms-full.txt')}
+                  className={cn(
+                    'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                    llmsActiveTab === 'llms-full.txt'
+                      ? 'bg-primary text-white'
+                      : 'hover:bg-secondary/80 bg-secondary text-muted-foreground',
+                  )}
+                >
+                  llms-full.txt
+                </button>
+              </div>
+              <textarea
+                readOnly
+                value={llmsFiles[llmsActiveTab]}
+                className="h-80 w-full resize-none rounded-xl border border-border bg-secondary px-4 py-3 font-mono text-sm text-foreground"
+              />
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleCopyLlms(llmsActiveTab)}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownloadLlms(llmsActiveTab)}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+              <div className="bg-secondary/50 mt-6 rounded-xl border border-border p-4">
+                <h4 className="mb-2 text-sm font-bold text-foreground">Deployment Instructions</h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {llmsInstructions.map((instruction, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      {instruction}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          ) : (
+            <p className="py-8 text-center text-muted-foreground">
+              Click "Generate llms.txt" to create the files
+            </p>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setLlmsModalOpen(false)}>
+            Close
+          </Button>
+        </ModalFooter>
+      </Modal>
+
       <ConfirmDialog />
     </div>
   )

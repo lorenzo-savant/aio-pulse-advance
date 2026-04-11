@@ -239,17 +239,104 @@ Respond ONLY with valid JSON (no markdown):
   return parseJson<HallucinationResult>(raw)
 }
 
+// ─── AVI Formula ─────────────────────────────────────────────────────────────
+
+export interface AVIInput {
+  citationRate: number
+  mentionFrequency: number
+  sentimentScore: number
+  recommendationRate: number
+  positionAvg: number
+  hallucinationIndex: number
+}
+
+export function calculateAVI(input: AVIInput): number {
+  const {
+    citationRate,
+    mentionFrequency,
+    sentimentScore,
+    recommendationRate,
+    positionAvg,
+    hallucinationIndex,
+  } = input
+  const sentimentNorm = ((Math.max(-1, Math.min(1, sentimentScore)) + 1) / 2) * 100
+  const positionNorm =
+    positionAvg <= 0 ? 50 : Math.max(0, Math.min(100, ((5 - positionAvg) / 4) * 100))
+  const antiHallucination = Math.max(0, 100 - hallucinationIndex)
+
+  const raw =
+    citationRate * 0.2 +
+    mentionFrequency * 0.2 +
+    sentimentNorm * 0.15 +
+    recommendationRate * 0.2 +
+    positionNorm * 0.15 +
+    antiHallucination * 0.1
+
+  return Math.min(100, Math.max(0, Math.round(raw * 10) / 10))
+}
+
+export function calculateAVIFromResults(
+  results: Array<{
+    brand_mentioned: boolean
+    visibility_score: number
+    sentiment_score: number | null
+    cited_urls: string[]
+    has_hallucination: boolean
+    mention_position?: number | null
+  }>,
+): { avi: number; components: AVIInput } {
+  const total = results.length
+  if (total === 0)
+    return {
+      avi: 0,
+      components: {
+        citationRate: 0,
+        mentionFrequency: 0,
+        sentimentScore: 0,
+        recommendationRate: 0,
+        positionAvg: 0,
+        hallucinationIndex: 0,
+      },
+    }
+
+  const mentioned = results.filter((r) => r.brand_mentioned)
+  const cited = results.filter((r) => r.cited_urls && r.cited_urls.length > 0)
+  const hallucinated = results.filter((r) => r.has_hallucination)
+  const positionsValid = mentioned
+    .map((r) => r.mention_position)
+    .filter((p): p is number => p != null && p > 0)
+
+  const components: AVIInput = {
+    citationRate: (cited.length / total) * 100,
+    mentionFrequency: (mentioned.length / total) * 100,
+    sentimentScore:
+      mentioned.length > 0
+        ? mentioned.reduce((a, r) => a + (r.sentiment_score ?? 0), 0) / mentioned.length
+        : 0,
+    recommendationRate: (mentioned.length / total) * 100,
+    positionAvg:
+      positionsValid.length > 0
+        ? positionsValid.reduce((a, p) => a + p, 0) / positionsValid.length
+        : 0,
+    hallucinationIndex: (hallucinated.length / total) * 100,
+  }
+  return { avi: calculateAVI(components), components }
+}
+
 // ─── calculateHealthScore ─────────────────────────────────────────────────────
 
+/** @deprecated Use calculateAVI() instead. Backward-compatible wrapper. */
 export function calculateHealthScore(
   visibilityScore: number,
   sentimentScore: number,
   hallucinationRate: number,
 ): number {
-  const sentimentNorm = ((sentimentScore + 1) / 2) * 100
-  const hallucinationPenalty = hallucinationRate * 30
-
-  const raw = visibilityScore * 0.5 + sentimentNorm * 0.3 + (100 - hallucinationPenalty) * 0.2
-
-  return Math.min(100, Math.max(0, Math.round(raw)))
+  return calculateAVI({
+    citationRate: visibilityScore,
+    mentionFrequency: visibilityScore,
+    sentimentScore,
+    recommendationRate: visibilityScore,
+    positionAvg: 0,
+    hallucinationIndex: hallucinationRate * 100,
+  })
 }

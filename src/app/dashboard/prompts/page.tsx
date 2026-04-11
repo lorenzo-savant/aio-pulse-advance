@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Plus, X, Play, Loader2, MessageSquare, Clock } from 'lucide-react'
+import { Plus, X, Play, Loader2, MessageSquare, Clock, Library } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
+import { Modal, ModalHeader, ModalTitle, ModalBody } from '@/components/ui/Modal'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand, Prompt, MonitoringEngine } from '@/types'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { PromptLibrarySelector } from '@/components/PromptLibrarySelector'
 
 const PROMPT_TEMPLATES = [
   { category: 'awareness', text: 'What is [brand]?' },
@@ -115,6 +117,7 @@ function PromptsPageContent() {
   })
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [showLibrary, setShowLibrary] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -262,9 +265,14 @@ function PromptsPageContent() {
             Configure the queries to monitor across AI engines.
           </p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>
-          <Plus className="h-5 w-5" /> New Prompt
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowLibrary(true)}>
+            <Library className="h-5 w-5" /> Add from Library
+          </Button>
+          <Button onClick={() => setShowForm((v) => !v)}>
+            <Plus className="h-5 w-5" /> New Prompt
+          </Button>
+        </div>
       </div>
 
       <Card className="border-border bg-secondary p-4">
@@ -276,7 +284,7 @@ function PromptsPageContent() {
             className={cn(
               'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all',
               !selectedBrandId
-                ? 'border-brand text-brand bg-primary/10'
+                ? 'bg-primary/10 border-brand text-brand'
                 : 'border-input bg-input text-muted-foreground hover:border-input',
             )}
             onClick={() => setSelectedBrandId('')}
@@ -289,7 +297,7 @@ function PromptsPageContent() {
               className={cn(
                 'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all',
                 selectedBrandId === b.id
-                  ? 'border-brand text-brand bg-primary/10'
+                  ? 'bg-primary/10 border-brand text-brand'
                   : 'border-input bg-input text-muted-foreground hover:border-input',
               )}
               onClick={() => setSelectedBrandId(b.id)}
@@ -309,7 +317,7 @@ function PromptsPageContent() {
                 Brand *
               </label>
               <select
-                className="focus:border-brand w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none"
+                className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
                 value={selectedBrandId}
                 onChange={(e) => setSelectedBrandId(e.target.value)}
               >
@@ -330,7 +338,7 @@ function PromptsPageContent() {
                 {PROMPT_TEMPLATES.map((t, i) => (
                   <button
                     key={i}
-                    className="hover:border-primary hover:text-brand rounded-lg border border-input bg-input px-2.5 py-1 text-xs text-muted-foreground transition-colors"
+                    className="rounded-lg border border-input bg-input px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-brand"
                     onClick={() => {
                       const brandName =
                         brands.find((b) => b.id === selectedBrandId)?.name ?? 'YourBrand'
@@ -354,7 +362,7 @@ function PromptsPageContent() {
                 Prompt Text *
               </label>
               <textarea
-                className="focus:border-brand w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-text-muted-surface outline-none"
+                className="placeholder-text-muted-surface w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
                 placeholder="e.g. What are the best AI monitoring tools?"
                 rows={3}
                 value={form.text}
@@ -368,7 +376,7 @@ function PromptsPageContent() {
                   Category
                 </label>
                 <select
-                  className="focus:border-brand w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
                   value={form.category ?? 'custom'}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, category: e.target.value as Prompt['category'] }))
@@ -387,7 +395,7 @@ function PromptsPageContent() {
                   Run Frequency
                 </label>
                 <select
-                  className="focus:border-brand w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
                   value={form.run_frequency}
                   onChange={(e) =>
                     setForm((f) => ({
@@ -416,7 +424,7 @@ function PromptsPageContent() {
                     className={cn(
                       'rounded-xl border px-4 py-2 text-xs font-bold transition-all',
                       form.engines.includes(engine)
-                        ? 'border-brand text-brand bg-primary/10'
+                        ? 'bg-primary/10 border-brand text-brand'
                         : 'border-input bg-input text-muted-foreground hover:border-input',
                     )}
                     onClick={() => toggleEngine(engine)}
@@ -441,7 +449,7 @@ function PromptsPageContent() {
                     className={cn(
                       'rounded-xl border px-4 py-2 text-xs font-bold transition-all',
                       form.language === lang.code
-                        ? 'border-brand text-brand bg-primary/10'
+                        ? 'bg-primary/10 border-brand text-brand'
                         : 'border-input bg-input text-muted-foreground hover:border-input',
                     )}
                     onClick={() => setForm((f) => ({ ...f, language: lang.code }))}
@@ -466,7 +474,7 @@ function PromptsPageContent() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="text-brand h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
         </div>
       ) : prompts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -491,6 +499,34 @@ function PromptsPageContent() {
         </div>
       )}
       <ConfirmDialog />
+
+      <Modal open={showLibrary} onOpenChange={setShowLibrary}>
+        <ModalHeader>
+          <ModalTitle>Add Prompts from Library</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          {selectedBrandId ? (
+            <PromptLibrarySelector
+              brandId={selectedBrandId}
+              brandName={brands.find((b) => b.id === selectedBrandId)?.name ?? 'Unknown Brand'}
+              industry={brands.find((b) => b.id === selectedBrandId)?.industry ?? undefined}
+              competitors={
+                (brands.find((b) => b.id === selectedBrandId)?.competitors as
+                  | string[]
+                  | undefined) ?? []
+              }
+              onComplete={() => {
+                void loadData()
+                setShowLibrary(false)
+              }}
+            />
+          ) : (
+            <p className="py-8 text-center text-muted-foreground">
+              Select a brand to add prompts from the library.
+            </p>
+          )}
+        </ModalBody>
+      </Modal>
     </div>
   )
 }
@@ -500,7 +536,7 @@ export default function PromptsPage() {
     <Suspense
       fallback={
         <div className="flex justify-center py-16">
-          <Loader2 className="text-brand h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
         </div>
       }
     >

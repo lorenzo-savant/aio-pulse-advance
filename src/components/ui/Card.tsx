@@ -17,12 +17,11 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        'relative overflow-hidden rounded-xl border border-nav-border bg-page-bg-elevated text-text-on-surface',
-        'shadow-lg',
+        'relative overflow-hidden rounded-[20px] bg-card text-card-foreground shadow-lg',
         'transition-all duration-200 ease-out',
-        interactive &&
-          'card-wiggle cursor-pointer hover:-translate-y-1 hover:border-primary-600 hover:shadow-xl',
-        glow && 'hover:shadow-[0_0_20px_-5px_rgb(91_79_216/0.3)]',
+        'dark:border dark:border-border/50',
+        interactive && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-xl',
+        glow && 'hover:shadow-[0_0_20px_-5px_rgba(67,24,255,0.3)]',
         className,
       )}
       {...props}
@@ -50,8 +49,8 @@ const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
     >
       {(title ?? description ?? children) && (
         <div className="flex-1">
-          {title && <h3 className="text-lg font-bold text-text-on-surface">{title}</h3>}
-          {description && <p className="mt-1 text-sm text-text-secondary-surface">{description}</p>}
+          {title && <h3 className="text-lg font-bold text-foreground">{title}</h3>}
+          {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
           {children}
         </div>
       )}
@@ -76,7 +75,7 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('flex items-center border-t border-nav-border px-6 py-4', className)}
+      className={cn('flex items-center border-t border-border px-6 py-4', className)}
       {...props}
     />
   ),
@@ -86,7 +85,7 @@ CardFooter.displayName = 'CardFooter'
 // ─── Divider ──────────────────────────────────────────────────────────────────
 
 const CardDivider: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={cn('border-t border-nav-border', className)} />
+  <div className={cn('border-t border-border', className)} />
 )
 
 export { Card, CardHeader, CardBody, CardFooter, CardDivider }

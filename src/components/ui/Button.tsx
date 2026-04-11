@@ -19,26 +19,25 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'icon'
 // ─── Variants ─────────────────────────────────────────────────────────────────
 
 const buttonVariants = cva(
-  // Base
   [
     'inline-flex items-center justify-center gap-2',
     'font-semibold rounded-md',
     'transition-all duration-200 ease-out',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
     'disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
   {
     variants: {
       variant: {
-        primary: 'bg-brand text-white hover:bg-brand-400 hover:shadow-md active:bg-brand-600',
+        primary: 'bg-brand-gradient text-white shadow-md hover:shadow-lg hover:brightness-110 active:brightness-95',
         secondary:
-          'bg-surface-input text-text-on-surface border border-surface-input-border hover:bg-surface-input-border active:bg-surface-input',
+          'bg-secondary text-secondary-foreground hover:bg-surface-300 dark:hover:bg-surface-300',
         outline:
-          'border border-surface-input-border bg-transparent text-text-on-surface hover:bg-surface-input hover:text-text-on-surface',
-        ghost: 'bg-transparent text-brand hover:bg-brand-500/10 hover:text-brand-400',
-        danger: 'bg-error-500 text-white hover:bg-error-600 active:bg-error-700',
-        success: 'bg-success-500 text-white hover:bg-success-600 active:bg-success-700',
-        link: 'h-auto p-0 text-brand underline-offset-4 hover:underline hover:text-brand-400',
+          'border border-border bg-transparent text-foreground hover:bg-secondary',
+        ghost: 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground',
+        danger: 'bg-error text-error-foreground hover:opacity-90 active:opacity-80',
+        success: 'bg-success text-success-foreground hover:opacity-90 active:opacity-80',
+        link: 'h-auto p-0 text-brand underline-offset-4 hover:underline hover:text-brand-hover',
       },
       size: {
         xs: 'h-7 px-2.5 text-xs gap-1',

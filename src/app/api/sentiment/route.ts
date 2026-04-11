@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { analyzeSentiment, detectHallucinations } from '@/lib/services/monitoring'
+import { logger } from '@/lib/logger'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
   try {
     await Promise.all(tasks)
   } catch (analysisErr) {
-    console.error('[/api/sentiment] Analysis error:', analysisErr)
+    logger.error('Analysis error', { source: 'sentiment', error: String(analysisErr) })
     const message = analysisErr instanceof Error ? analysisErr.message : 'Analysis failed'
     return err(message)
   }

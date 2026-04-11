@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { runTechnicalAudit } from '@/lib/services/technical-seo-audit'
+import { logger } from '@/lib/logger'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import type { Json } from '@/types/database'
 
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
           expires_at: expiresAt.toISOString(),
         })
       } catch (dbErr) {
-        console.error('[/api/audit/technical] Failed to cache result:', dbErr)
+        logger.error('Failed to cache result', { source: 'audit/technical', error: String(dbErr) })
       }
     }
 
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
       },
     )
   } catch (error: unknown) {
-    console.error('[/api/audit/technical] Error:', error)
+    logger.error('Audit error', { source: 'audit/technical', error: String(error) })
     const message = error instanceof Error ? error.message : 'Audit failed'
     return NextResponse.json(
       { success: false, message: `Unable to reach URL: ${message}` },

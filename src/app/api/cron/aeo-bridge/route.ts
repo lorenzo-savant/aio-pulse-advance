@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { aggregateBrandData, buildAeoReportJson, sendToAeo } from '@/lib/aeo-bridge'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 // 5 minutes - requires Vercel Pro plan (Hobby: 10s limit)
@@ -96,14 +97,18 @@ export async function POST(req: NextRequest) {
         error: result.error,
       })
 
-      console.log(
-        `[cron/aeo-bridge] [user:${(brand.user_id ?? 'unknown').slice(0, 8)}] ${brand.name} (${brand.domain}): ${
-          result.success ? `✅ run:${result.runId}` : `❌ ${result.error}`
-        }`,
-      )
+      logger.info('Brand processed', {
+        source: 'cron/aeo-bridge',
+        userId: (brand.user_id ?? 'unknown').slice(0, 8),
+        brand: brand.name,
+        domain: brand.domain ?? '',
+        success: result.success,
+        runId: result.runId,
+        error: result.error,
+      })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error(`[cron/aeo-bridge] Error for brand ${brand.name}:`, msg)
+      logger.error('Error for brand', { source: 'cron/aeo-bridge', brand: brand.name, error: msg })
       results.push({
         brandId: brand.id,
         brandName: brand.name,
@@ -126,9 +131,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  console.log(
-    `[cron/aeo-bridge] Done: ${succeeded} ok, ${failed} failed, ${skipped} skipped, ${Object.keys(byUser).length} users`,
-  )
+  logger.info('Cron complete', {
+    source: 'cron/aeo-bridge',
+    succeeded,
+    failed,
+    skipped,
+    uniqueUsers: Object.keys(byUser).length,
+  })
 
   return NextResponse.json({
     success: true,

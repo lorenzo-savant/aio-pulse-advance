@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 import type { WorkflowExecution, WorkflowStatus, WorkflowType } from '@/types'
 
 export async function GET(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error('Failed to fetch workflows:', error)
+      logger.error('Failed to fetch workflows', { source: 'workflows', error: String(error) })
       return NextResponse.json(
         { success: false, message: 'Failed to fetch workflows', data: [] },
         { status: 500 },
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
       timestamp: Date.now(),
     })
   } catch (err) {
-    console.error('Workflows API error:', err)
+    logger.error('Workflows API error', { source: 'workflows', error: String(err) })
     return NextResponse.json(
       { success: false, message: 'Internal server error', data: [] },
       { status: 500 },

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 import {
   PROMPT_TEMPLATES,
   getTemplatesByCategories,
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
       const { error: insertError } = await db.from('prompts').insert(batch)
 
       if (insertError) {
-        console.error('[prompts/seed] Batch insert error:', insertError)
+        logger.error('Batch insert error', { source: 'prompts/seed', error: String(insertError) })
         return err(`Insert failed: ${insertError.message}`)
       }
 

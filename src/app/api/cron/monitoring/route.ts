@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { Json } from '@/types/database'
 import { createServerClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 import {
   runMonitoringCheck,
   calculateHealthScore,
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       .limit(3) // Process max 10 prompts per cron run to stay within timeout
 
     if (promptsError) {
-      console.error('[cron] Error fetching prompts:', promptsError)
+      logger.error('Error fetching prompts', { source: 'cron', error: String(promptsError) })
       return NextResponse.json(
         { success: false, message: 'Failed to fetch prompts' },
         { status: 500 },
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
             .single()
 
           if (insertError) {
-            console.error(`[cron] DB insert error for ${engine}:`, insertError)
+            logger.error('DB insert error', { source: 'cron', engine, error: String(insertError) })
             results.push({ promptId: prompt.id, engine, success: false, error: 'DB insert failed' })
             continue
           }
@@ -115,7 +116,7 @@ export async function POST(req: NextRequest) {
           results.push({ promptId: prompt.id, engine, success: true })
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
-          console.error(`[cron] ${engine} failed for prompt "${prompt.text.slice(0, 50)}":`, msg)
+          logger.error('Engine failed for prompt', { source: 'cron', engine, prompt: prompt.text.slice(0, 50), error: msg })
           results.push({ promptId: prompt.id, engine, success: false, error: msg })
         }
       }
@@ -161,7 +162,7 @@ export async function POST(req: NextRequest) {
       try {
         await calculateCitationSnapshots(bId as string)
       } catch (snapErr) {
-        console.error(`[cron] Snapshot calculation failed for brand ${bId}:`, snapErr)
+        logger.error('Snapshot calculation failed', { source: 'cron', brandId: String(bId), error: String(snapErr) })
       }
     }
 
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
       results,
     })
   } catch (error) {
-    console.error('[cron] Unhandled error:', error)
+    logger.error('Unhandled error', { source: 'cron', error: String(error) })
     return NextResponse.json({ success: false, message: 'Cron job failed' }, { status: 500 })
   }
 }

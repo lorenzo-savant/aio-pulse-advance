@@ -4,6 +4,7 @@ import { getCurrentUserId, AuthError } from '@/lib/supabase'
 import { z } from 'zod'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { generateObsidianExport, type ObsidianExportRequest } from '@/lib/services/obsidian-export'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 const obsidianExportSchema = z.object({
   brandId: z.string().uuid(),
@@ -21,6 +22,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     }
     return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`export-obsidian:${ip}`, 10, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   let body: unknown

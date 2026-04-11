@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { parsePaginationParams, paginatedResponse } from '@/lib/api-utils'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 const PROMPT_RATE_LIMIT = 50
 
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
 
   const parsed = promptSchema.safeParse(body)
   if (!parsed.success) {
-    console.log('[prompts] Validation failed:', JSON.stringify(parsed.error.flatten().fieldErrors))
+    logger.debug('Validation failed', { source: 'prompts', errors: parsed.error.flatten().fieldErrors })
     return NextResponse.json(
       {
         success: false,
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) {
-    console.error('[prompts] Insert error:', error)
+    logger.error('Insert error', { source: 'prompts', error: String(error) })
     return err(error.message)
   }
   return NextResponse.json({ success: true, data, timestamp: Date.now() }, { status: 201 })

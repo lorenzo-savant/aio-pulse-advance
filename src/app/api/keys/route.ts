@@ -1,6 +1,7 @@
 // PATH: src/app/api/keys/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 export async function GET(req: NextRequest) {
   let userId: string
@@ -10,6 +11,15 @@ export async function GET(req: NextRequest) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`keys-get:${ip}`, 30, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   const supabase = createServerClient()
@@ -43,6 +53,15 @@ export async function POST(req: NextRequest) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`keys-mut:${ip}`, 10, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   let body: unknown

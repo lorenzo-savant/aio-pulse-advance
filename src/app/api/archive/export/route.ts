@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   let userId: string
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[archive/export] Error:', error)
+    logger.error('Export error', { source: 'archive/export', error: String(error) })
     return NextResponse.json(
       { success: false, message: 'Failed to create export job' },
       { status: 500 },
@@ -172,7 +173,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[archive/export] Get error:', error)
+    logger.error('Get error', { source: 'archive/export', error: String(error) })
     return NextResponse.json(
       { success: false, message: 'Failed to get job status' },
       { status: 500 },

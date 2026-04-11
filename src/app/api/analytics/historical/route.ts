@@ -8,6 +8,8 @@ import {
   getCompetitorComparison,
   autoGenerateSnapshots,
 } from '@/lib/services/analytics-service'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -22,6 +24,15 @@ export async function GET(req: NextRequest) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return err('Authentication failed')
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`analytics-hist-get:${ip}`, 30, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   const db = createServerClient()
@@ -83,7 +94,7 @@ export async function GET(req: NextRequest) {
       timestamp: Date.now(),
     })
   } catch (error) {
-    console.error('[analytics/historical] Error:', error)
+    logger.error('Historical analytics error', { source: 'analytics/historical', error: String(error) })
     return err('Failed to fetch analytics')
   }
 }
@@ -97,6 +108,15 @@ export async function POST(req: NextRequest) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return err('Authentication failed')
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`analytics-hist-post:${ip}`, 5, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   const db = createServerClient()

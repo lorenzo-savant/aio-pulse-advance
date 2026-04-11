@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Json } from '@/types/database'
 import { analyzeTextSchema } from '@/lib/validations'
+import { logger } from '@/lib/logger'
 import { analyzeWithProvider } from '@/lib/services/analysis'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest) {
           raw_response: result as unknown as Json,
         })
       } catch (dbError) {
-        console.error('[/api/analyze] Failed to save result:', dbError)
+        logger.error('Failed to save result', { source: 'analyze', error: String(dbError) })
       }
     }
 
@@ -176,7 +177,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error: unknown) {
-    console.error('[/api/analyze] Error:', error)
+    logger.error('Analysis error', { source: 'analyze', error: String(error) })
     const message = error instanceof Error ? error.message : 'Analysis failed'
     return NextResponse.json({ success: false, message }, { status: 500 })
   }

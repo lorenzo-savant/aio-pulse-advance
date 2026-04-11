@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { calculateDomainAuthority } from '@/lib/services/domain-authority'
+import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
     const score = await calculateDomainAuthority(body.brand_id, userId)
     return NextResponse.json({ success: true, score })
   } catch (error) {
-    console.error('[domain-authority] Error:', error)
+    logger.error('Error calculating domain authority', { source: 'domain-authority', error: String(error) })
     return err('Failed to calculate domain authority')
   }
 }
@@ -100,7 +101,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, score: data.avi_score || 0 })
   } catch (error) {
-    console.error('[domain-authority] GET error:', error)
+    logger.error('GET error', { source: 'domain-authority', error: String(error) })
     return err('Failed to fetch domain authority')
   }
 }

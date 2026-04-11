@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { z } from 'zod'
 import { generateLlmsTxt, generateLlmsFullTxt, LlmsInput } from '@/lib/services/llms-generator'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -55,6 +57,15 @@ export async function GET(req: NextRequest) {
     return err('Authentication failed')
   }
 
+  const ip = getClientIp(req.headers)
+  const rateCheckGet = await checkRateLimit(`llms-txt-get:${ip}`, 30, 60_000)
+  if (!rateCheckGet.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheckGet.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   const { searchParams } = new URL(req.url)
   const brandId = searchParams.get('brandId')
   if (!brandId) return err('brandId is required', 400)
@@ -83,6 +94,15 @@ export async function POST(req: NextRequest) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return err('Authentication failed')
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`llms-txt-post:${ip}`, 5, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   let body: unknown
@@ -156,7 +176,7 @@ export async function POST(req: NextRequest) {
       version,
     })
   } catch (dbErr) {
-    console.error('[/api/generate/llms-txt] Failed to save version:', dbErr)
+    logger.error('Failed to save version', { source: 'generate/llms-txt', error: String(dbErr) })
   }
 
   const instructions = [

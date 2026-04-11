@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getLifetimeAnalytics } from '@/lib/analytics/lifetime-analytics'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
+    const ip = getClientIp(request.headers)
+    const rateCheck = await checkRateLimit(`analytics-lifetime:${ip}`, 30, 60_000)
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        { success: false, message: 'Rate limit exceeded. Try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brand_id')
 
@@ -26,7 +37,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     })
   } catch (err) {
-    console.error('Lifetime analytics error:', err)
+    logger.error('Lifetime analytics error', { source: 'analytics/lifetime', error: String(err) })
     return NextResponse.json(
       { success: false, message: 'Failed to get lifetime analytics' },
       { status: 500 },

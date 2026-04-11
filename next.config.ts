@@ -47,13 +47,7 @@ const nextConfig: NextConfig = {
             value:
               'geolocation=(), microphone=(), camera=(), payment=(), usb=(), browsing-topics=(), join-ad-interest-group=(), private-state-token-issuance=(), private-state-token-redemption=(), run-ad-auction=(), attribution-reporting=()',
           },
-          // TODO: Replace 'unsafe-inline' in script-src with nonce-based approach for stricter XSS protection.
-          // See: https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy
-          {
-            key: 'Content-Security-Policy',
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://*.vercel.com https://*.vercel.app https://*.openrouter.ai https://*.groq.com https://*.cerebras.ai; img-src 'self' data: https:; font-src 'self' data:; frame-ancestors 'none';",
-          },
+          // CSP is set dynamically by middleware with a per-request nonce (see src/middleware.ts)
           {
             key: 'X-Frame-Options',
             value: 'DENY',

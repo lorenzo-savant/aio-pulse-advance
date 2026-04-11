@@ -3,6 +3,8 @@ import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import Papa from 'papaparse'
 import { jsPDF } from 'jspdf'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 interface BrandData {
   id: string
@@ -30,6 +32,15 @@ export async function GET(req: NextRequest) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return NextResponse.json({ success: false, message: 'Authentication failed' })
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`export:${ip}`, 30, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   const { searchParams } = new URL(req.url)
@@ -255,7 +266,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (pdfError) {
-    console.error('[/api/export] PDF generation error:', pdfError)
+    logger.error('PDF generation error', { source: 'export', error: String(pdfError) })
     return NextResponse.json(
       {
         success: false,

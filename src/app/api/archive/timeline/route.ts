@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   let userId: string
@@ -93,7 +94,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[archive/timeline] Error:', error)
+    logger.error('Timeline error', { source: 'archive/timeline', error: String(error) })
     return NextResponse.json(
       { success: false, message: 'Failed to fetch timeline' },
       { status: 500 },

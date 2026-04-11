@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { createHmac } from 'crypto'
+import { logger } from '@/lib/logger'
 
 function verifyStripeSignature(payload: string, signature: string, secret: string): boolean {
   const timestamp = signature
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
   if (!webhookSecret) {
-    console.error('[webhook] STRIPE_WEBHOOK_SECRET not configured!')
+    logger.error('STRIPE_WEBHOOK_SECRET not configured', { source: 'webhook' })
     return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
   }
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!verifyStripeSignature(body, sig, webhookSecret)) {
-    console.error('[webhook] Signature verification failed')
+    logger.error('Signature verification failed', { source: 'webhook' })
     return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
   }
 
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
             description: `Purchased ${credits} credits + ${bonus || 0} bonus`,
           })
 
-          console.log(`[webhook] Added ${totalCredits} credits to user ${userId}`)
+          logger.info('Credits added', { source: 'webhook', totalCredits, userId })
         }
 
         // Handle subscription purchases
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
             },
             { onConflict: 'user_id' },
           )
-          console.log('[webhook] Subscription activated')
+          logger.info('Subscription activated', { source: 'webhook' })
         }
         break
       }
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
             })
             .eq('user_id', sub.user_id)
 
-          console.log('[webhook] Subscription updated')
+          logger.info('Subscription updated', { source: 'webhook' })
         }
         break
       }
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
             })
             .eq('user_id', sub.user_id)
 
-          console.log('[webhook] Subscription canceled')
+          logger.info('Subscription canceled', { source: 'webhook' })
         }
         break
       }
@@ -167,16 +168,16 @@ export async function POST(req: NextRequest) {
             .update({ status: 'past_due' })
             .eq('user_id', sub.user_id)
 
-          console.log('[webhook] Payment failed')
+          logger.warn('Payment failed', { source: 'webhook' })
         }
         break
       }
 
       default:
-        console.log(`[webhook] Unhandled event: ${event.type}`)
+        logger.debug('Unhandled event', { source: 'webhook', eventType: event.type })
     }
   } catch (error) {
-    console.error('[webhook] Error processing event:', error)
+    logger.error('Error processing event', { source: 'webhook', error: String(error) })
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
   }
 

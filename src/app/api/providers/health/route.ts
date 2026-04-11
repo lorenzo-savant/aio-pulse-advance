@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getProviderManager, type ProviderHealthStatus } from '@/lib/providers'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -21,7 +22,7 @@ export async function GET() {
 
     return NextResponse.json(response)
   } catch (err) {
-    console.error('Provider health check error:', err)
+    logger.error('Provider health check error', { source: 'providers/health', error: String(err) })
     return NextResponse.json(
       { success: false, message: 'Failed to check provider health' },
       { status: 500 },
@@ -43,7 +44,7 @@ export async function POST() {
       timestamp: new Date().toISOString(),
     })
   } catch (err) {
-    console.error('Provider health refresh error:', err)
+    logger.error('Provider health refresh error', { source: 'providers/health', error: String(err) })
     return NextResponse.json(
       { success: false, message: 'Failed to refresh provider health' },
       { status: 500 },

@@ -1,6 +1,7 @@
 // PATH: src/app/api/analytics/avi/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId } from '@/lib/supabase'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -8,6 +9,15 @@ export async function GET(req: NextRequest) {
   const userId = await getCurrentUserId(authHeader, cookieHeader, req)
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`analytics-avi:${ip}`, 30, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   const { searchParams } = new URL(req.url)

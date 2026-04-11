@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { getCurrentUserId, AuthError } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 import { createServerClient } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { aggregateBrandData, buildAeoReportJson, sendToAeo } from '@/lib/aeo-bridge'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -23,6 +25,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     }
     return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`aeo-bridge-export:${ip}`, 5, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   let body: ExportRequestBody
@@ -116,7 +127,7 @@ export async function POST(req: NextRequest) {
       message: 'AEO analysis triggered successfully',
     })
   } catch (error) {
-    console.error('[/api/aeo-bridge/export] Error:', error)
+    logger.error('Export error', { source: 'aeo-bridge/export', error: String(error) })
     return NextResponse.json(
       { success: false, message: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 },

@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Json } from '@/types/database'
 import { z } from 'zod'
+import { logger } from '@/lib/logger'
 import { analyzeCompetitor } from '@/lib/services/gemini'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
@@ -189,7 +190,7 @@ export async function POST(req: NextRequest) {
           raw_response: { primary, competitors } as unknown as Json,
         })
       } catch (dbError) {
-        console.error('[/api/competitor] Failed to save result:', dbError)
+        logger.error('Failed to save result', { source: 'competitor', error: String(dbError) })
       }
     }
 
@@ -199,7 +200,7 @@ export async function POST(req: NextRequest) {
       timestamp: Date.now(),
     })
   } catch (error: unknown) {
-    console.error('[/api/competitor] Error:', error)
+    logger.error('Competitor analysis error', { source: 'competitor', error: String(error) })
     const message = error instanceof Error ? error.message : 'Comparison failed'
     return NextResponse.json({ success: false, message }, { status: 500 })
   }

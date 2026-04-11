@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { Resend } from 'resend'
+import { logger } from '@/lib/logger'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
   const fromEmail = process.env['RESEND_FROM_EMAIL'] || 'AIO Pulse <onboarding@resend.dev>'
 
   if (!process.env.RESEND_API_KEY) {
-    console.warn('[digest] RESEND_API_KEY not set — skipping digest')
+    logger.warn('RESEND_API_KEY not set, skipping digest', { source: 'digest' })
     return NextResponse.json({ success: false, message: 'Resend not configured' }, { status: 503 })
   }
 
@@ -216,7 +217,7 @@ export async function POST(req: NextRequest) {
         })
         sentCount++
       } catch (error) {
-        console.error('[digest] Failed to send to', userEmail, error)
+        logger.error('Failed to send digest', { source: 'digest', to: userEmail, error: String(error) })
         failCount++
       }
     }
@@ -226,7 +227,7 @@ export async function POST(req: NextRequest) {
       message: `Sent ${sentCount} digests, ${failCount} failed`,
     })
   } catch (error) {
-    console.error('[digest] Error:', error)
+    logger.error('Digest error', { source: 'digest', error: String(error) })
     return NextResponse.json({ success: false, message: 'Digest failed' }, { status: 500 })
   }
 }

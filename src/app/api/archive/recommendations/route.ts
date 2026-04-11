@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   let userId: string
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[archive/recommendations] Error:', error)
+    logger.error('Recommendations error', { source: 'archive/recommendations', error: String(error) })
     return NextResponse.json(
       { success: false, message: 'Failed to fetch recommendations' },
       { status: 500 },
@@ -170,7 +171,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Recommendation updated' })
   } catch (error) {
-    console.error('[archive/recommendations] Update error:', error)
+    logger.error('Recommendations update error', { source: 'archive/recommendations', error: String(error) })
     return NextResponse.json(
       { success: false, message: 'Failed to update recommendation' },
       { status: 500 },

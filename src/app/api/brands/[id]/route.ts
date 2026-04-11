@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -79,6 +80,15 @@ export async function GET(req: NextRequest, { params }: Params) {
     return err('Authentication failed')
   }
 
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`brand-id-get:${ip}`, 30, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
@@ -98,6 +108,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return err('Authentication failed')
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`brand-id-mut:${ip}`, 10, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   let body: unknown
@@ -159,6 +178,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return err('Authentication failed')
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`brand-id-mut:${ip}`, 10, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   let body: unknown
@@ -225,6 +253,15 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return err('Authentication failed')
+  }
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`brand-id-mut:${ip}`, 10, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+    )
   }
 
   const db = createServerClient()

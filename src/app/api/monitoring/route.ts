@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import type { Json } from '@/types/database'
+import { logger } from '@/lib/logger'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import {
   runMonitoringCheck,
@@ -101,7 +102,8 @@ export async function POST(req: NextRequest) {
 
   const isTeamMember = !!membership
 
-  console.log('[monitoring] Access check:', {
+  logger.debug('Access check', {
+    source: 'monitoring',
     isBrandOwner,
     isPromptOwner,
     isTeamMember,
@@ -129,7 +131,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Check/deduct credits before running ───────────────────────────────────
-  console.log('[monitoring] Checking credits for engines:', engines)
+  logger.debug('Checking credits for engines', { source: 'monitoring', engines })
 
   try {
     const creditRes = await fetch(new URL('/api/credits/use', req.url).toString(), {
@@ -147,7 +149,7 @@ export async function POST(req: NextRequest) {
     })
 
     const creditData = await creditRes.json()
-    console.log('[monitoring] Credit check result:', creditData)
+    logger.debug('Credit check result', { source: 'monitoring', creditData })
 
     if (!creditData.success || !creditData.data?.allowed) {
       return NextResponse.json(
@@ -164,9 +166,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    console.log('[monitoring] Credits approved:', creditData.data)
+    logger.debug('Credits approved', { source: 'monitoring', data: creditData.data })
   } catch (creditErr) {
-    console.error('[monitoring] Credit check failed:', creditErr)
+    logger.error('Credit check failed', { source: 'monitoring', error: String(creditErr) })
     // Continue anyway - credit check failure shouldn't block monitoring in dev mode
   }
 
@@ -190,17 +192,14 @@ export async function POST(req: NextRequest) {
   const errors: string[] = []
 
   // ── Run engines in parallel ───────────────────────────────────────────────
-  console.log('[monitoring] Starting engines:', engines, 'for prompt:', prompt.id)
+  logger.info('Starting engines', { source: 'monitoring', engines, promptId: prompt.id })
 
   await Promise.all(
     engines.map(async (engine) => {
       try {
-        console.log(`[monitoring] Running ${engine} for prompt ${prompt.id}...`)
+        logger.debug('Running engine', { source: 'monitoring', engine, promptId: prompt.id })
         const resultData = await runMonitoringCheck(prompt as Prompt, brand, engine, userId)
-        console.log(
-          `[monitoring] ${engine} completed, result:`,
-          JSON.stringify(resultData, null, 2).slice(0, 500),
-        )
+        logger.debug('Engine completed', { source: 'monitoring', engine, resultPreview: JSON.stringify(resultData).slice(0, 500) })
 
         const truncatedData = {
           ...resultData,
@@ -219,10 +218,7 @@ export async function POST(req: NextRequest) {
           .single()
 
         if (insertError || !saved) {
-          console.error(
-            `[monitoring] DB insert error for ${engine}:`,
-            JSON.stringify(insertError, null, 2),
-          )
+          logger.error('DB insert error', { source: 'monitoring', engine, error: JSON.stringify(insertError) })
           errors.push(`${engine}: DB insert failed - ${insertError?.message || 'Unknown error'}`)
           return
         }
@@ -262,10 +258,7 @@ export async function POST(req: NextRequest) {
                     brand,
                   )
                 } catch (dispatchErr) {
-                  console.error(
-                    `[monitoring] dispatchAlert failed for rule ${rule.id}:`,
-                    dispatchErr,
-                  )
+                  logger.error('dispatchAlert failed', { source: 'monitoring', ruleId: rule.id, error: String(dispatchErr) })
                 }
 
                 await db
@@ -283,15 +276,16 @@ export async function POST(req: NextRequest) {
         }
       } catch (engineErr) {
         const msg = engineErr instanceof Error ? engineErr.message : String(engineErr)
-        console.error(`[monitoring] Engine ${engine} failed:`, msg, engineErr)
+        logger.error('Engine failed', { source: 'monitoring', engine, error: msg })
         errors.push(`${engine}: ${msg}`)
       }
     }),
   )
 
-  console.log('[monitoring] Final results:', {
-    results: results.length,
-    errors: errors.length,
+  logger.info('Monitoring complete', {
+    source: 'monitoring',
+    resultsCount: results.length,
+    errorsCount: errors.length,
     errorDetails: errors,
   })
 

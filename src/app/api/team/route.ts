@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { z } from 'zod'
 import { sendInvitationEmail } from '@/lib/services/email'
+import { logger } from '@/lib/logger'
 import { parsePaginationParams, paginatedResponse } from '@/lib/api-utils'
 import { randomBytes } from 'crypto'
 
@@ -206,7 +207,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (inviteError) {
-    console.error('[team] Invitation error:', inviteError)
+    logger.error('Invitation error', { source: 'team', error: String(inviteError) })
     return err(inviteError.message)
   }
 
@@ -236,9 +237,9 @@ export async function POST(req: NextRequest) {
       role: invitation?.role || role,
       acceptUrl,
     })
-    console.log(`[team] Invitation sent to ${email}`)
+    logger.info('Invitation sent', { source: 'team', email })
   } catch (emailErr) {
-    console.error('[team] Email error:', emailErr)
+    logger.error('Email error', { source: 'team', error: String(emailErr) })
     // Don't fail the request if email fails
   }
 

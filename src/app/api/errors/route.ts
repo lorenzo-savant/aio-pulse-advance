@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 interface ClientErrorEvent {
   name: string
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       severity: event.severity,
     }
 
-    console.error('[CLIENT ERROR]', JSON.stringify(logEntry))
+    logger.error('Client error', { source: 'errors', ...logEntry })
 
     const db = createServerClient()
     if (db) {
@@ -63,12 +64,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (event.severity === 'critical' || event.severity === 'high') {
-      console.error('[CRITICAL ERROR]', event)
+      logger.error('Critical client error', { source: 'errors', name: event.name, message: event.message, severity: event.severity })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[Error logging failed]', error)
+    logger.error('Error logging failed', { source: 'errors', error: String(error) })
     return NextResponse.json({ success: false, message: 'Internal error' }, { status: 500 })
   }
 }

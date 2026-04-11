@@ -1,27 +1,74 @@
-// PATH: src/app/api/credits/use/route.ts
-// Credits Usage API — deduct credits when running queries
+// PATH: src/app/api/credits/route.ts
+// Credits API — GET balance, POST add/deduct
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { calculateOrchestratedCost } from '@/lib/services/cost-calculator'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
-// Credit cost per query by engine
-const CREDIT_COSTS: Record<string, number> = {
-  chatgpt: 2,
-  gemini: 1,
-  perplexity: 3,
-  claude: 3,
-  default: 2,
+// ─── GET /api/credits — Get credit balance ──────────────────────────────────
+export async function GET(req: NextRequest) {
+  let userId: string
+  try {
+    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
+  } catch (e) {
+    if (e instanceof AuthError)
+      return NextResponse.json({ success: false, message: e.message }, { status: 401 })
+    return err('Authentication failed')
+  }
+
+  const db = createServerClient()
+  if (!db) return err('Database not configured', 503)
+
+  try {
+    const { data: credits, error: creditsError } = await (db as any)
+      .from('credits')
+      .select('amount, source, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (creditsError) throw creditsError
+
+    const totalPurchased =
+      (credits || [])
+        .filter((c: any) => c.amount > 0)
+        .reduce((sum: number, c: any) => sum + c.amount, 0)
+
+    const totalUsed =
+      (credits || [])
+        .filter((c: any) => c.amount < 0)
+        .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0)
+
+    const balance = totalPurchased - totalUsed
+
+    // Get subscription info
+    const { data: subscription } = await (db as any)
+      .from('subscriptions')
+      .select('plan, status')
+      .eq('user_id', userId)
+      .single()
+
+    return NextResponse.json({
+      success: true,
+      credits: {
+        userId,
+        totalCredits: totalPurchased,
+        usedCredits: totalUsed,
+        availableCredits: balance,
+        lastUpdated: new Date().toISOString(),
+      },
+      plan: subscription?.plan || 'free',
+      timestamp: Date.now(),
+    })
+  } catch (error) {
+    console.error('[credits] Error fetching balance:', error)
+    return err('Failed to fetch credits')
+  }
 }
 
-// Free queries per day (for free tier)
-const FREE_QUERIES_PER_DAY = 10
-
-// ─── POST /api/credits/use — Use credits for a query ────────────────────────────
+// ─── POST /api/credits — Add or deduct credits ─────────────────────────────
 export async function POST(req: NextRequest) {
   let userId: string
   try {
@@ -35,161 +82,63 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  let body: {
-    engines?: string[]
-    provider?: string
-    brand_id?: string
-    query_id?: string
-  }
+  let body: { action?: string; amount?: number; description?: string }
   try {
     body = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
 
-  const { engines = ['chatgpt'], provider, brand_id, query_id } = body
+  const { action, amount, description } = body
+  if (!action || !amount || amount <= 0) {
+    return err('action (add/deduct) and positive amount are required', 400)
+  }
+
+  if (action !== 'add' && action !== 'deduct') {
+    return err('action must be "add" or "deduct"', 400)
+  }
 
   try {
-    // Check user's subscription status
-    const { data: subscription, error: subError } = await (db as any)
-      .from('subscriptions')
-      .select('plan, status')
-      .eq('user_id', userId)
-      .single()
+    const creditAmount = action === 'deduct' ? -amount : amount
 
-    if (subError && subError.code !== 'PGRST116') {
-      throw subError
-    }
+    const { error: insertError } = await (db as any).from('credits').insert({
+      user_id: userId,
+      amount: creditAmount,
+      source: action === 'add' ? 'manual_add' : 'manual_deduct',
+      description: description || `${action} ${amount} credits`,
+    })
 
-    const isPaidUser = subscription?.status === 'active' && subscription?.plan !== 'free'
+    if (insertError) throw insertError
 
-    // Calculate credits needed
-    const defaultCost = CREDIT_COSTS['default'] ?? 2
-    const creditsNeeded = engines.reduce((total, engine) => {
-      return total + (CREDIT_COSTS[engine] ?? defaultCost)
-    }, 0)
-
-    // Check if user has free queries remaining today (for free tier)
-    if (!isPaidUser) {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      const { data: todayUsage } = await (db as any)
-        .from('credit_usage')
-        .select('count')
-        .eq('user_id', userId)
-        .gte('created_at', today.toISOString())
-
-      const queriesToday = todayUsage?.length || 0
-
-      if (queriesToday < FREE_QUERIES_PER_DAY) {
-        // User has free queries available
-        return NextResponse.json({
-          success: true,
-          data: {
-            allowed: true,
-            cost: 0,
-            type: 'free',
-            remaining: FREE_QUERIES_PER_DAY - queriesToday - 1,
-            message: `Free query (${FREE_QUERIES_PER_DAY - queriesToday} remaining today)`,
-          },
-          timestamp: Date.now(),
-        })
-      }
-    }
-
-    // Check credit balance for paid users or free users who exceeded free limit
-    const { data: credits, error: creditsError } = await (db as any)
+    // Fetch updated balance
+    const { data: credits } = await (db as any)
       .from('credits')
       .select('amount')
       .eq('user_id', userId)
 
-    if (creditsError) throw creditsError
-
     const totalPurchased =
-      credits
-        ?.filter((c: any) => c.amount > 0)
-        .reduce((sum: number, c: any) => sum + c.amount, 0) || 0
+      (credits || [])
+        .filter((c: any) => c.amount > 0)
+        .reduce((sum: number, c: any) => sum + c.amount, 0)
 
     const totalUsed =
-      credits
-        ?.filter((c: any) => c.amount < 0)
-        .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0) || 0
-
-    const balance = totalPurchased - totalUsed
-
-    if (balance < creditsNeeded) {
-      return NextResponse.json({
-        success: false,
-        message: `Insufficient credits. Need ${creditsNeeded}, have ${balance}`,
-        data: {
-          allowed: false,
-          cost: creditsNeeded,
-          balance,
-          type: 'purchase',
-        },
-        error: 'INSUFFICIENT_CREDITS',
-        timestamp: Date.now(),
-      })
-    }
-
-    // Deduct credits
-    const { error: deductError } = await (db as any).from('credits').insert({
-      user_id: userId,
-      amount: -creditsNeeded,
-      source: 'query_usage',
-      description: `Query with ${engines.join(', ')}`,
-    })
-
-    if (deductError) throw deductError
-
-    // Record usage
-    const { error: usageError } = await (db as any).from('credit_usage').insert({
-      user_id: userId,
-      query_id: query_id || null,
-      credits_used: creditsNeeded,
-      provider: provider || engines[0],
-      engine: engines.join(','),
-      brand_id: brand_id || null,
-      description: `Query with ${engines.join(', ')}`,
-      cost_credits: creditsNeeded,
-    })
-
-    if (usageError) {
-      console.error('[credits] Failed to record usage:', usageError)
-    }
+      (credits || [])
+        .filter((c: any) => c.amount < 0)
+        .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0)
 
     return NextResponse.json({
       success: true,
-      data: {
-        allowed: true,
-        cost: creditsNeeded,
-        type: 'paid',
-        balance: balance - creditsNeeded,
-        message: `${creditsNeeded} credits used`,
+      credits: {
+        userId,
+        totalCredits: totalPurchased,
+        usedCredits: totalUsed,
+        availableCredits: totalPurchased - totalUsed,
+        lastUpdated: new Date().toISOString(),
       },
       timestamp: Date.now(),
     })
   } catch (error) {
-    console.error('[credits] Error checking credits:', error)
-    return err('Failed to check credits')
+    console.error('[credits] Error:', error)
+    return err('Failed to process credits')
   }
-}
-
-// ─── GET /api/credits/use — Get credit costs info ─────────────────────────────
-export async function GET(req: NextRequest) {
-  return NextResponse.json({
-    success: true,
-    data: {
-      costs: CREDIT_COSTS,
-      freeQueriesPerDay: FREE_QUERIES_PER_DAY,
-      explanation: {
-        chatgpt: '2 credits per query',
-        gemini: '1 credit per query (most efficient)',
-        perplexity: '3 credits per query',
-        claude: '3 credits per query',
-      },
-    },
-    timestamp: Date.now(),
-  })
 }

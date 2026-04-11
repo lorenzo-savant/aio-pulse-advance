@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const brandId = searchParams.get('brand_id')
-  const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50)
+  const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10) || 10, 50)
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)

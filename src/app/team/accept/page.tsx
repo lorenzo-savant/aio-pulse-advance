@@ -18,10 +18,9 @@ function AcceptContent() {
 
   useEffect(() => {
     if (!token && typeof window !== 'undefined') {
-      // TODO(M-4): Use httpOnly cookie instead of localStorage for invite token security
-      const saved = localStorage.getItem('pending_invite_token')
+const saved = sessionStorage.getItem('pending_invite_token')
       if (saved) {
-        localStorage.removeItem('pending_invite_token')
+        sessionStorage.removeItem('pending_invite_token')
         router.replace(`/team/accept?token=${saved}`)
       }
     }
@@ -47,9 +46,8 @@ function AcceptContent() {
       } = await supabase.auth.getSession()
 
       if (!session) {
-        // TODO(M-4): Store in httpOnly cookie instead of localStorage for XSS protection
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('pending_invite_token', token || '')
+if (typeof window !== 'undefined') {
+          sessionStorage.setItem('pending_invite_token', token || '')
         }
         const loginUrl = `/auth/login?redirect=${encodeURIComponent(`/team/accept?token=${token}`)}`
         router.push(loginUrl)

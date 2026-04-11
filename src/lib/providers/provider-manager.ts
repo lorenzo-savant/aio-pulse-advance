@@ -282,11 +282,15 @@ export class ProviderManager {
 
     const sortedProviders = this.dynamicReorderEnabled
       ? this.getSortedProviders().filter(({ provider }) => provider.isConfigured())
-      : PROVIDER_PRIORITY.map((id) => ({
-          id,
-          provider: this.providers.get(id)!,
-          avgLatency: 0,
-        })).filter(({ provider }) => provider?.isConfigured())
+      : PROVIDER_PRIORITY.map((id) => {
+          const provider = this.providers.get(id)
+          if (!provider) return null
+          return { id, provider, avgLatency: 0 }
+        })
+          .filter(
+            (p): p is { id: AIProviderId; provider: BaseProvider; avgLatency: number } =>
+              p !== null && p.provider.isConfigured(),
+          )
 
     if (sortedProviders.length === 0) {
       return {

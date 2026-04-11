@@ -3,8 +3,22 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 function safeRedirect(url: string, fallback = '/dashboard'): string {
-  if (url && url.startsWith('/') && !url.includes('://') && !url.startsWith('//')) {
-    return url
+  if (
+    url &&
+    url.startsWith('/') &&
+    !url.startsWith('//') &&
+    !url.includes('://') &&
+    !url.includes('\\') &&
+    !url.includes('\0') &&
+    !url.includes('%00')
+  ) {
+    // Normalize and ensure it still starts with /
+    try {
+      const parsed = new URL(url, 'http://localhost')
+      if (parsed.pathname.startsWith('/')) return parsed.pathname + parsed.search
+    } catch {
+      // Malformed URL
+    }
   }
   return fallback
 }

@@ -16,8 +16,6 @@ interface CreditsContextValue {
 
 const CreditsContext = createContext<CreditsContextValue | null>(null)
 
-const STORAGE_KEY = 'aio-pulse-credits'
-
 export function CreditsProvider({ children }: { children: React.ReactNode }) {
   const [credits, setCredits] = useState<UserCredits | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -34,23 +32,23 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
-      if (!credits) {
-        setCredits({
+      setCredits((prev) =>
+        prev ?? {
           userId: 'local',
           totalCredits: DEFAULT_CREDITS,
           usedCredits: 0,
           availableCredits: DEFAULT_CREDITS,
           lastUpdated: new Date().toISOString(),
-        })
-      }
+        },
+      )
     } finally {
       setIsLoading(false)
     }
-  }, [credits])
+  }, [])
 
   useEffect(() => {
     refreshCredits()
-  }, [])
+  }, [refreshCredits])
 
   const deduct = useCallback(
     async (amount: number, description: string): Promise<boolean> => {
@@ -66,7 +64,7 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
         if (!res.ok) throw new Error('Failed to deduct credits')
         const data = await res.json()
         setCredits(data.credits)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.credits))
+        // Credits stored server-side only — no localStorage (XSS risk)
         return true
       } catch (err) {
         const newCredits: UserCredits = {
@@ -76,7 +74,7 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
           lastUpdated: new Date().toISOString(),
         }
         setCredits(newCredits)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newCredits))
+        // Credits stored server-side only — no localStorage (XSS risk)
         return true
       }
     },
@@ -94,7 +92,7 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
         if (!res.ok) throw new Error('Failed to add credits')
         const data = await res.json()
         setCredits(data.credits)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.credits))
+        // Credits stored server-side only — no localStorage (XSS risk)
       } catch (err) {
         if (credits) {
           const newCredits: UserCredits = {
@@ -104,7 +102,7 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
             lastUpdated: new Date().toISOString(),
           }
           setCredits(newCredits)
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(newCredits))
+          // Credits stored server-side only — no localStorage (XSS risk)
         }
       }
     },

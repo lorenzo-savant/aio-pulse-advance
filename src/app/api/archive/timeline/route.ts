@@ -19,8 +19,8 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get('from')
   const to = searchParams.get('to')
   const type = searchParams.get('type')
-  const limit = parseInt(searchParams.get('limit') || '20')
-  const offset = parseInt(searchParams.get('offset') || '0')
+  const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10) || 20, 100)
+  const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10) || 0)
 
   if (!brandId) {
     return NextResponse.json({ success: false, message: 'brand_id is required' }, { status: 400 })

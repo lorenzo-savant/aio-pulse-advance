@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const brandId = searchParams.get('brand_id')
-  const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50)
+  const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10) || 10, 50)
 
   if (!brandId) return err('brand_id is required', 400)
 

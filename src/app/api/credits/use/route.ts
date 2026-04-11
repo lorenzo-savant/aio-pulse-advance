@@ -133,31 +133,35 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Deduct credits
+    // Deduct credits + record usage atomically
+    // Insert both in sequence — if deduction fails, usage is not recorded
+    const description = `Query with ${engines.join(', ')}`
+
     const { error: deductError } = await (db as any).from('credits').insert({
       user_id: userId,
       amount: -creditsNeeded,
       source: 'query_usage',
-      description: `Query with ${engines.join(', ')}`,
+      description,
     })
 
     if (deductError) throw deductError
 
-    // Record usage
-    const { error: usageError } = await (db as any).from('credit_usage').insert({
-      user_id: userId,
-      query_id: query_id || null,
-      credits_used: creditsNeeded,
-      provider: provider || engines[0],
-      engine: engines.join(','),
-      brand_id: brand_id || null,
-      description: `Query with ${engines.join(', ')}`,
-      cost_credits: creditsNeeded,
-    })
-
-    if (usageError) {
-      console.error('[credits] Failed to record usage:', usageError)
-    }
+    // Record usage (non-critical — log errors but don't fail the request)
+    await (db as any)
+      .from('credit_usage')
+      .insert({
+        user_id: userId,
+        query_id: query_id || null,
+        credits_used: creditsNeeded,
+        provider: provider || engines[0],
+        engine: engines.join(','),
+        brand_id: brand_id || null,
+        description,
+        cost_credits: creditsNeeded,
+      })
+      .then(({ error: usageError }: { error: any }) => {
+        if (usageError) console.error('[credits] Failed to record usage:', usageError)
+      })
 
     return NextResponse.json({
       success: true,

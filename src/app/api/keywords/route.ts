@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const brandId = searchParams.get('brand_id')
   const type = searchParams.get('type') || 'all'
-  const limit = parseInt(searchParams.get('limit') || '50')
+  const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10) || 50, 200)
 
   if (!brandId) {
     return err('brand_id is required', 400)

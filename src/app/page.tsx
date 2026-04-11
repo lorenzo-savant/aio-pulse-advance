@@ -19,9 +19,9 @@ function AcceptContent() {
 
   useEffect(() => {
     if (!token && typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pending_invite_token')
+      const saved = sessionStorage.getItem('pending_invite_token')
       if (saved) {
-        localStorage.removeItem('pending_invite_token')
+        sessionStorage.removeItem('pending_invite_token')
         router.replace(`/team/accept?token=${saved}`)
       }
     }
@@ -48,7 +48,7 @@ function AcceptContent() {
 
       if (!session) {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('pending_invite_token', token || '')
+          sessionStorage.setItem('pending_invite_token', token || '')
         }
         const loginUrl = `/auth/login?redirect=${encodeURIComponent(`/team/accept?token=${token}`)}`
         router.push(loginUrl)

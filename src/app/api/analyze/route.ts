@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const brandId = searchParams.get('brand_id')
-  const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
+  const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10) || 20, 100)
   const mode = searchParams.get('mode') // 'text' | 'url' | null (all)
 
   const db = createServerClient()

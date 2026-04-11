@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
     const searchParams = request.nextUrl.searchParams
     const brandId = searchParams.get('brand_id')
-    const limit = parseInt(searchParams.get('limit') || '50', 10)
+    const limit = parseInt(searchParams.get('limit') || '50', 10) || 50
 
     let query = supabase
       .from('workflow_executions')

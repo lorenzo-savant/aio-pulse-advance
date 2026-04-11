@@ -77,9 +77,10 @@ interface MemEntry {
 
 const _store = new Map<string, MemEntry>()
 
-// Sweep expired entries every 5 minutes so the Map doesn't grow forever
-if (typeof setInterval !== 'undefined') {
-  setInterval(
+// Sweep expired entries every 5 minutes — only in dev (in-memory store)
+// In production serverless, each invocation gets a fresh process anyway.
+if (typeof setInterval !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  const _sweepInterval = setInterval(
     () => {
       const now = Date.now()
       for (const [k, v] of _store) {
@@ -88,6 +89,10 @@ if (typeof setInterval !== 'undefined') {
     },
     5 * 60 * 1000,
   )
+  // Prevent keeping the process alive in test environments
+  if (typeof _sweepInterval === 'object' && 'unref' in _sweepInterval) {
+    _sweepInterval.unref()
+  }
 }
 
 // ─── checkRateLimit ───────────────────────────────────────────────────────────

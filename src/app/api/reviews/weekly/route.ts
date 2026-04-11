@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const brandId = searchParams.get('brandId')
-  const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 52)
+  const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10) || 10, 52)
   const source = searchParams.get('source') || 'auto'
 
   const db = createServerClient()

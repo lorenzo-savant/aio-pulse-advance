@@ -42,6 +42,9 @@ model Brand {
   citationSnapshots CitationSnapshot[]
   teamMembers        TeamMember[]
   brandInvitations   BrandInvitation[]
+  seoAuditResults    SeoAuditResult[]
+  llmsTxtVersions    LlmsTxtVersion[]
+  weeklyReviews      WeeklyReview[]
 
   @@map("brands")
   @@index([userId])
@@ -350,6 +353,86 @@ model RecommendationHistory {
   @@index([brandId])
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+}
+
+model SeoAuditResult {
+  id              String   @id @default(uuid())
+  brandId         String?  @map("brand_id")
+  userId          String   @map("user_id")
+  url             String
+  overallScore    Float    @map("overall_score")
+  results         Json     @default("{}")
+  cachedAt        DateTime @default(now()) @map("cached_at")
+  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  brand Brand? @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@map("seo_audit_results")
+  @@index([userId])
+  @@index([brandId])
+  @@index([url])
+  @@index([expiresAt])
+}
+
+model LlmsTxtVersion {
+  id           String   @id @default(uuid())
+  brandId      String   @map("brand_id")
+  userId       String   @map("user_id")
+  llmsTxt      String   @map("llms_txt")
+  llmsFullTxt  String   @map("llms_full_txt")
+  inputData    Json     @default("{}") @map("input_data")
+  version      Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@map("llms_txt_versions")
+  @@index([brandId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model WeeklyReview {
+  id            String   @id @default(uuid())
+  brandId       String   @map("brand_id")
+  userId        String   @map("user_id")
+  weekNumber    Int      @map("week_number")
+  year          Int
+  weekStart     DateTime @db.Date @map("week_start")
+  weekEnd       DateTime @db.Date @map("week_end")
+  metrics       Json     @default("{}")
+  markdown      String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, year, weekNumber])
+  @@map("weekly_reviews")
+  @@index([brandId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model WebhookDeliveryLog {
+  id              String    @id @default(uuid())
+  alertEventId    String    @map("alert_event_id")
+  alertRuleId     String    @map("alert_rule_id")
+  url             String
+  status          String    @default("pending")
+  httpStatus      Int?      @map("http_status")
+  attempts        Int       @default(0)
+  lastAttemptAt   DateTime? @map("last_attempt_at")
+  nextRetryAt     DateTime? @map("next_retry_at")
+  responseBody    String?   @map("response_body")
+  error           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@map("webhook_delivery_logs")
+  @@index([alertEventId])
+  @@index([alertRuleId])
+  @@index([status])
+  @@index([nextRetryAt])
 }
 
 model CitationSnapshot {

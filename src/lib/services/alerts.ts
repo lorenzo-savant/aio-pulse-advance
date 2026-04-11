@@ -1,5 +1,6 @@
 import type { AlertEvent, AlertRule, Brand, MonitoringResult } from '@/types'
 import { Resend } from 'resend'
+import { deliverWebhook, buildWebhookPayload } from './webhook-delivery'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -125,21 +126,20 @@ function buildAlertEmail(event: AlertEvent, brand: Brand): string {
 </html>`
 }
 
-// ─── Webhook sender ───────────────────────────────────────────────────────────
+// ─── Webhook sender (with HMAC signing, retry, and delivery logging) ─────────
 
-async function sendWebhook(url: string, event: AlertEvent): Promise<boolean> {
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-AIO-Pulse-Event': event.type },
-      body: JSON.stringify({ event, timestamp: Date.now() }),
-      signal: AbortSignal.timeout(5000),
-    })
-    return res.ok
-  } catch {
-    console.error('[alerts] Webhook failed:', url)
-    return false
-  }
+async function sendWebhook(url: string, event: AlertEvent, ruleId: string): Promise<boolean> {
+  const payload = buildWebhookPayload({
+    id: event.id || 'unknown',
+    type: event.type,
+    title: event.title,
+    message: event.message,
+    data: event.data,
+    alert_rule_id: ruleId,
+    brand_id: event.brand_id,
+  })
+  const result = await deliverWebhook(url, event.id || 'unknown', ruleId, payload)
+  return result.success
 }
 
 // ─── Alert dispatcher ─────────────────────────────────────────────────────────
@@ -161,9 +161,9 @@ export async function dispatchAlert(
     if (sent) channelsSent.push('email')
   }
 
-  // Webhook
+  // Webhook (with HMAC signing, retry, and delivery logging)
   if (rule.channels.includes('webhook') && rule.webhook_url) {
-    const sent = await sendWebhook(rule.webhook_url, event)
+    const sent = await sendWebhook(rule.webhook_url, event, rule.id)
     if (sent) channelsSent.push('webhook')
   }
 

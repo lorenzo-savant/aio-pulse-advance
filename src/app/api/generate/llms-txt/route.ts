@@ -44,6 +44,37 @@ const requestSchema = z.object({
     .optional(),
 })
 
+// GET /api/generate/llms-txt?brandId=xxx — retrieve version history
+export async function GET(req: NextRequest) {
+  let userId: string
+  try {
+    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
+  } catch (e) {
+    if (e instanceof AuthError)
+      return NextResponse.json({ success: false, message: e.message }, { status: 401 })
+    return err('Authentication failed')
+  }
+
+  const { searchParams } = new URL(req.url)
+  const brandId = searchParams.get('brandId')
+  if (!brandId) return err('brandId is required', 400)
+
+  const db = createServerClient()
+  if (!db) return err('Database not configured', 503)
+
+  const { data, error: fetchErr } = await (db as any)
+    .from('llms_txt_versions')
+    .select('id, brand_id, version, llms_txt, llms_full_txt, input_data, created_at')
+    .eq('brand_id', brandId)
+    .eq('user_id', userId)
+    .order('version', { ascending: false })
+    .limit(10)
+
+  if (fetchErr) return err(fetchErr.message)
+
+  return NextResponse.json({ success: true, data: data || [] })
+}
+
 export async function POST(req: NextRequest) {
   let userId: string
   try {
@@ -103,6 +134,31 @@ export async function POST(req: NextRequest) {
   const llmsTxt = generateLlmsTxt(input)
   const llmsFullTxt = generateLlmsFullTxt(input)
 
+  // Persist version to database
+  let version = 1
+  try {
+    const { data: latest } = await (db as any)
+      .from('llms_txt_versions')
+      .select('version')
+      .eq('brand_id', brandId)
+      .order('version', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (latest) version = latest.version + 1
+
+    await (db as any).from('llms_txt_versions').insert({
+      brand_id: brandId,
+      user_id: userId,
+      llms_txt: llmsTxt,
+      llms_full_txt: llmsFullTxt,
+      input_data: { products, keyFacts, importantPages, faqs },
+      version,
+    })
+  } catch (dbErr) {
+    console.error('[/api/generate/llms-txt] Failed to save version:', dbErr)
+  }
+
   const instructions = [
     `Upload llms.txt to: https://${domain}/llms.txt`,
     `Upload llms-full.txt to: https://${domain}/llms-full.txt`,
@@ -113,6 +169,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     success: true,
     brand: brand.name,
+    version,
     files: {
       'llms.txt': llmsTxt,
       'llms-full.txt': llmsFullTxt,

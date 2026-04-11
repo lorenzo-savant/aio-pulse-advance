@@ -5,7 +5,10 @@ import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 
 const auditRequestSchema = z.object({
   url: z.string().url(),
+  brandId: z.string().uuid().optional(),
 })
+
+const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -114,15 +117,71 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { url } = parsed.data
+  const { url, brandId } = parsed.data
+
+  // Check cache first
+  const db = createServerClient()
+  if (db) {
+    try {
+      const { data: cached } = await (db as any)
+        .from('seo_audit_results')
+        .select('results, overall_score, cached_at')
+        .eq('url', url)
+        .eq('user_id', userId)
+        .gt('expires_at', new Date().toISOString())
+        .order('cached_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (cached) {
+        return NextResponse.json(
+          {
+            success: true,
+            data: cached.results,
+            cached: true,
+            cachedAt: cached.cached_at,
+          },
+          {
+            headers: {
+              'X-RateLimit-Limit': '5',
+              'X-RateLimit-Remaining': String(rl.remaining),
+              'X-RateLimit-Reset': String(rl.resetAt),
+            },
+          },
+        )
+      }
+    } catch {
+      // Cache miss — proceed with fresh audit
+    }
+  }
 
   try {
     const result = await runTechnicalAudit(url)
+
+    // Persist result to cache
+    if (db) {
+      try {
+        const now = new Date()
+        const expiresAt = new Date(now.getTime() + CACHE_TTL_MS)
+        await (db as any).from('seo_audit_results').insert({
+          brand_id: brandId || null,
+          user_id: userId,
+          url,
+          overall_score: result.overallScore ?? 0,
+          results: result,
+          cached_at: now.toISOString(),
+          expires_at: expiresAt.toISOString(),
+        })
+      } catch (dbErr) {
+        console.error('[/api/audit/technical] Failed to cache result:', dbErr)
+      }
+    }
 
     return NextResponse.json(
       {
         success: true,
         data: result,
+        cached: false,
       },
       {
         headers: {

@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     try {
       const review = await generateWeeklyReview(db, brand.id, brand.name, brand.user_id)
 
+      // Save to recommendation_histories (legacy)
       await (db as any).from('recommendation_histories').insert({
         brand_id: brand.id,
         user_id: brand.user_id,
@@ -41,6 +42,21 @@ export async function POST(req: NextRequest) {
         summary: `Weekly Review W${review.weekNumber}: AVI ${review.metrics.aviScoreCurrent.toFixed(1)} (${review.metrics.aviDelta > 0 ? '+' : ''}${review.metrics.aviDelta.toFixed(1)}), ${review.metrics.newHallucinations} new HALs`,
         based_on_count: review.metrics.totalMonitoringRuns,
       })
+
+      // Save to weekly_reviews (structured persistence)
+      await (db as any).from('weekly_reviews').upsert(
+        {
+          brand_id: brand.id,
+          user_id: brand.user_id,
+          week_number: review.weekNumber,
+          year: new Date(review.weekStart).getFullYear(),
+          week_start: review.weekStart,
+          week_end: review.weekEnd,
+          metrics: review.metrics,
+          markdown: review.obsidianNote,
+        },
+        { onConflict: 'brand_id,year,week_number' },
+      )
 
       results.push({
         brandId: brand.id,

@@ -23,7 +23,7 @@ export type Database = {
           channels_sent?: string[] | null
           created_at?: string
           data?: Json
-          id: string
+          id?: string
           is_read?: boolean
           message: string
           title: string
@@ -172,6 +172,7 @@ export type Database = {
           is_active: boolean | null
           logo_url: string | null
           name: string
+          organization_id: string | null
           report_brand_name: string | null
           report_logo_url: string | null
           report_primary_color: string | null
@@ -194,6 +195,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          organization_id?: string | null
           report_brand_name?: string | null
           report_logo_url?: string | null
           report_primary_color?: string | null
@@ -216,6 +218,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          organization_id?: string | null
           report_brand_name?: string | null
           report_logo_url?: string | null
           report_primary_color?: string | null
@@ -415,7 +418,7 @@ export type Database = {
           mention_position?: number | null
           mention_type?: string | null
           primary_provider?: string | null
-          prompt_id: string
+          prompt_id?: string | null
           prompt_text?: string | null
           query_text?: string | null
           raw_response?: Json | null
@@ -532,7 +535,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'prompts_brand_id_fkey'
+            columns: ['brand_id']
+            isOneToOne: false
+            referencedRelation: 'brands'
+            referencedColumns: ['id']
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -550,13 +561,13 @@ export type Database = {
         Insert: {
           created_at?: string
           current_period_end?: string | null
-          id: string
+          id?: string
           organization_id?: string | null
           plan?: string
           status?: string
           stripe_customer_id?: string | null
           stripe_sub_id?: string | null
-          updated_at: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -643,6 +654,7 @@ export type Database = {
         Row: {
           id: string
           brand_id: string
+          archive_id: string | null
           category: string | null
           priority: string | null
           recommendation_text: string
@@ -650,6 +662,7 @@ export type Database = {
           first_seen_date: string | null
           last_seen_date: string | null
           occurrence_count: number
+          consistency_score: number | null
           implementation_status: string
           implementation_completion_date: string | null
           notes: string | null
@@ -661,6 +674,7 @@ export type Database = {
         Insert: {
           id?: string
           brand_id: string
+          archive_id?: string | null
           category?: string | null
           priority?: string | null
           recommendation_text: string
@@ -668,6 +682,7 @@ export type Database = {
           first_seen_date?: string | null
           last_seen_date?: string | null
           occurrence_count?: number
+          consistency_score?: number | null
           implementation_status?: string
           implementation_completion_date?: string | null
           notes?: string | null
@@ -679,6 +694,7 @@ export type Database = {
         Update: {
           id?: string
           brand_id?: string
+          archive_id?: string | null
           category?: string | null
           priority?: string | null
           recommendation_text?: string
@@ -686,6 +702,7 @@ export type Database = {
           first_seen_date?: string | null
           last_seen_date?: string | null
           occurrence_count?: number
+          consistency_score?: number | null
           implementation_status?: string
           implementation_completion_date?: string | null
           notes?: string | null
@@ -709,6 +726,7 @@ export type Database = {
           metadata: Json | null
           status: string
           deleted_at: string | null
+          deleted_by: string | null
           created_at: string | null
           updated_at: string | null
           user_id: string
@@ -725,6 +743,7 @@ export type Database = {
           metadata?: Json | null
           status?: string
           deleted_at?: string | null
+          deleted_by?: string | null
           created_at?: string | null
           updated_at?: string | null
           user_id: string
@@ -741,6 +760,7 @@ export type Database = {
           metadata?: Json | null
           status?: string
           deleted_at?: string | null
+          deleted_by?: string | null
           created_at?: string | null
           updated_at?: string | null
           user_id?: string
@@ -1175,6 +1195,309 @@ export type Database = {
           next_retry_at?: string | null
           response_body?: string | null
           error?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      analysis_results: {
+        Row: {
+          id: string
+          brand_id: string | null
+          user_id: string
+          input: string
+          input_mode: string
+          engine: string
+          provider: string
+          model: string
+          visibility_score: number | null
+          sentiment: string | null
+          sentiment_score: number | null
+          summary: string | null
+          recommendations: Json | null
+          raw_response: Json | null
+          created_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          brand_id?: string | null
+          user_id: string
+          input: string
+          input_mode: string
+          engine: string
+          provider: string
+          model: string
+          visibility_score?: number | null
+          sentiment?: string | null
+          sentiment_score?: number | null
+          summary?: string | null
+          recommendations?: Json | null
+          raw_response?: Json | null
+          created_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          brand_id?: string | null
+          user_id?: string
+          input?: string
+          input_mode?: string
+          engine?: string
+          provider?: string
+          model?: string
+          visibility_score?: number | null
+          sentiment?: string | null
+          sentiment_score?: number | null
+          summary?: string | null
+          recommendations?: Json | null
+          raw_response?: Json | null
+          created_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      scan_history: {
+        Row: {
+          id: string
+          user_id: string
+          brand_id: string | null
+          source: string
+          type: string
+          summary: string | null
+          visibility_score: number | null
+          engine: string
+          model: string | null
+          intent: string | null
+          intent_confidence: number | null
+          content_type: string | null
+          tone: string | null
+          reading_level: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          brand_id?: string | null
+          source: string
+          type: string
+          summary?: string | null
+          visibility_score?: number | null
+          engine: string
+          model?: string | null
+          intent?: string | null
+          intent_confidence?: number | null
+          content_type?: string | null
+          tone?: string | null
+          reading_level?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          brand_id?: string | null
+          source?: string
+          type?: string
+          summary?: string | null
+          visibility_score?: number | null
+          engine?: string
+          model?: string | null
+          intent?: string | null
+          intent_confidence?: number | null
+          content_type?: string | null
+          tone?: string | null
+          reading_level?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          key: string
+          count: number
+          last_request: number
+        }
+        Insert: {
+          key: string
+          count: number
+          last_request: number
+        }
+        Update: {
+          key?: string
+          count?: number
+          last_request?: number
+        }
+        Relationships: []
+      }
+      brand_snapshots: {
+        Row: {
+          id: string
+          brand_id: string
+          user_id: string
+          health_score: number | null
+          sentiment_score: number | null
+          total_recommendations: number | null
+          completed_recommendations: number | null
+          queries_this_period: number | null
+          snapshot_date: string
+          created_at: string
+          metadata: Json | null
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          user_id: string
+          health_score?: number | null
+          sentiment_score?: number | null
+          total_recommendations?: number | null
+          completed_recommendations?: number | null
+          queries_this_period?: number | null
+          snapshot_date: string
+          created_at?: string
+          metadata?: Json | null
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          user_id?: string
+          health_score?: number | null
+          sentiment_score?: number | null
+          total_recommendations?: number | null
+          completed_recommendations?: number | null
+          queries_this_period?: number | null
+          snapshot_date?: string
+          created_at?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      query_export_jobs: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string | null
+          brand_id: string | null
+          format: string
+          date_from: string | null
+          date_to: string | null
+          tool_filters: Json | null
+          include_charts: boolean
+          include_sentiment_evolution: boolean
+          include_recommendations_summary: boolean
+          status: string
+          progress_percent: number | null
+          result_url: string | null
+          file_url: string | null
+          error: string | null
+          error_message: string | null
+          expires_at: string | null
+          created_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id?: string | null
+          brand_id?: string | null
+          format: string
+          date_from?: string | null
+          date_to?: string | null
+          tool_filters?: Json | null
+          include_charts?: boolean
+          include_sentiment_evolution?: boolean
+          include_recommendations_summary?: boolean
+          status?: string
+          progress_percent?: number | null
+          result_url?: string | null
+          file_url?: string | null
+          error?: string | null
+          error_message?: string | null
+          expires_at?: string | null
+          created_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string | null
+          brand_id?: string | null
+          format?: string
+          date_from?: string | null
+          date_to?: string | null
+          tool_filters?: Json | null
+          include_charts?: boolean
+          include_sentiment_evolution?: boolean
+          include_recommendations_summary?: boolean
+          status?: string
+          progress_percent?: number | null
+          result_url?: string | null
+          file_url?: string | null
+          error?: string | null
+          error_message?: string | null
+          expires_at?: string | null
+          created_at?: string
+          completed_at?: string | null
+        }
+        Relationships: []
+      }
+      recommendation_histories: {
+        Row: {
+          id: string
+          brand_id: string
+          user_id: string
+          recommendations: Json
+          summary: string | null
+          based_on_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          user_id: string
+          recommendations: Json
+          summary?: string | null
+          based_on_count: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          user_id?: string
+          recommendations?: Json
+          summary?: string | null
+          based_on_count?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      archive_audit_log: {
+        Row: {
+          id: string
+          organization_id: string | null
+          user_id: string
+          table_name: string
+          record_id: string
+          action: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          user_id: string
+          table_name: string
+          record_id: string
+          action: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          user_id?: string
+          table_name?: string
+          record_id?: string
+          action?: string
+          notes?: string | null
           created_at?: string
         }
         Relationships: []

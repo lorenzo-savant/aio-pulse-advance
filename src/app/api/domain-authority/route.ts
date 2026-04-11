@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   // Verify brand ownership
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('id')
     .eq('id', body.brand_id)
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   // Verify brand ownership
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('id')
     .eq('id', brandId)
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data, error } = await db
       .from('brand_health_scores')
-      .select('domain_authority, date')
+      .select('avi_score, date')
       .eq('brand_id', brandId)
       .order('date', { ascending: false })
       .limit(1)
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, score: 0 })
     }
 
-    return NextResponse.json({ success: true, score: (data as any).domain_authority || 0 })
+    return NextResponse.json({ success: true, score: data.avi_score || 0 })
   } catch (error) {
     console.error('[domain-authority] GET error:', error)
     return err('Failed to fetch domain authority')

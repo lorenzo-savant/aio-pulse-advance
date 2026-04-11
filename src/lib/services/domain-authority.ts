@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase'
+import { createServerClient, type TypedSupabaseClient } from '@/lib/supabase'
 
 interface BrandMetrics {
   brandId: string
@@ -49,7 +49,7 @@ export async function calculateDomainAuthority(brandId: string, userId: string):
   }
 }
 
-async function fetchBrandMetrics(db: any, brandId: string): Promise<BrandMetrics | null> {
+async function fetchBrandMetrics(db: TypedSupabaseClient, brandId: string): Promise<BrandMetrics | null> {
   // Get snapshots for the past 30 days
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -91,22 +91,22 @@ async function fetchBrandMetrics(db: any, brandId: string): Promise<BrandMetrics
 
   // Calculate average visibility
   const avgVisibility =
-    snapshots.reduce((sum: number, s: any) => sum + (s.avg_visibility || 0), 0) / snapshots.length
+    snapshots.reduce((sum, s) => sum + (Number(s.avg_visibility) || 0), 0) / snapshots.length
 
   // Calculate average sentiment
   const sentimentResults =
-    results?.filter((r: any) => r.brand_mentioned && r.sentiment_score != null) || []
+    results?.filter((r) => r.brand_mentioned && r.sentiment_score != null) || []
   const avgSentiment =
     sentimentResults.length > 0
-      ? sentimentResults.reduce((sum: number, r: any) => sum + r.sentiment_score, 0) /
+      ? sentimentResults.reduce((sum, r) => sum + (Number(r.sentiment_score) || 0), 0) /
         sentimentResults.length
       : 0
 
   // Calculate hallucination rate
-  const hallucinationResults = results?.filter((r: any) => r.brand_mentioned) || []
+  const hallucinationResults = results?.filter((r) => r.brand_mentioned) || []
   const hallucinationRate =
     hallucinationResults.length > 0
-      ? hallucinationResults.filter((r: any) => r.has_hallucination).length /
+      ? hallucinationResults.filter((r) => r.has_hallucination).length /
         hallucinationResults.length
       : 0
 
@@ -122,7 +122,7 @@ async function fetchBrandMetrics(db: any, brandId: string): Promise<BrandMetrics
 
     if (engSnaps) {
       for (const eng of engSnaps) {
-        engineRates[eng.engine] = (engineRates[eng.engine] || 0) + eng.citation_rate
+        engineRates[eng.engine] = (engineRates[eng.engine] || 0) + (eng.citation_rate ?? 0)
       }
     }
   }
@@ -151,8 +151,8 @@ async function fetchBrandMetrics(db: any, brandId: string): Promise<BrandMetrics
     mentionCount: citationCount,
     totalScans,
     engineBreakdown,
-    competitorRates: latestSnapshot?.competitor_rates || {},
-    dates: snapshots.map((s: any) => s.scan_date),
+    competitorRates: (latestSnapshot?.competitor_rates as Record<string, number>) || {},
+    dates: snapshots.map((s) => s.scan_date),
   }
 }
 
@@ -195,7 +195,7 @@ function computeScore(metrics: BrandMetrics): number {
 }
 
 async function storeScore(
-  db: any,
+  db: TypedSupabaseClient,
   brandId: string,
   userId: string,
   score: number,
@@ -236,5 +236,5 @@ export async function getDomainAuthority(brandId: string): Promise<number> {
     .single()
 
   if (error || !data) return 0
-  return (data as any).domain_authority || 0
+  return (data as { domain_authority?: number }).domain_authority || 0
 }

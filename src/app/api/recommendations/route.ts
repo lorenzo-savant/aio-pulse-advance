@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { data, error: fetchErr } = await (db as any)
+  const { data, error: fetchErr } = await db
     .from('recommendation_history')
     .select('id, brand_id, recommendations, summary, based_on_count, created_at')
     .eq('brand_id', brandId)
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   if (!brand) return err('Brand not found', 404)
 
   // Fetch latest monitoring results
-  const { data: results } = await (db as any)
+  const { data: results } = await db
     .from('monitoring_results')
     .select(
       'engine, brand_mentioned, mention_position, visibility_score, sentiment, sentiment_score, competitor_mentions, prompt_text',
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     .limit(50)
 
   // Fetch keyword data
-  const { data: keywords } = await (db as any)
+  const { data: keywords } = await db
     .from('keyword_tracking')
     .select('keyword, frequency, mention_correlation')
     .eq('brand_id', body.brand_id)
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     )
     .join(', ')
 
-  const prompt = `You are an AIO (AI Optimization) consultant. Based on the monitoring data below, generate actionable content recommendations for the brand "${brand.name}" (${(brand as any).industry || 'general business'}).
+  const prompt = `You are an AIO (AI Optimization) consultant. Based on the monitoring data below, generate actionable content recommendations for the brand "${brand.name}" (${(brand as unknown as { industry?: string }).industry || 'general business'}).
 
 MONITORING DATA:
 ${monitoringSummary}
@@ -154,7 +154,7 @@ Respond ONLY with valid JSON (no markdown):
 
     // ── Save to database ───────────────────────────────────────────────────
     try {
-      await (db as any).from('recommendation_history').insert({
+      await db.from('recommendation_history').insert({
         brand_id: body.brand_id,
         user_id: userId,
         recommendations: parsed.recommendations || [],

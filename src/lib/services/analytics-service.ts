@@ -60,7 +60,7 @@ export async function getHistoricalAnalytics(
   previousStartDate.setDate(previousStartDate.getDate() - days * 2)
 
   // Get current period data
-  const { data: currentData, error: currentError } = await (db as any)
+  const { data: currentData, error: currentError } = await db
     .from('citation_snapshots')
     .select('*')
     .eq('project_id', brandId)
@@ -69,7 +69,7 @@ export async function getHistoricalAnalytics(
     .order('scan_date', { ascending: true })
 
   // Get previous period for comparison
-  const { data: previousData } = await (db as any)
+  const { data: previousData } = await db
     .from('citation_snapshots')
     .select('*')
     .eq('project_id', brandId)
@@ -223,7 +223,7 @@ export async function getCompetitorComparison(
   startDate.setDate(startDate.getDate() - days)
 
   // Get brand data
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('name, competitors')
     .eq('id', brandId)
@@ -232,7 +232,7 @@ export async function getCompetitorComparison(
   const competitors = brand?.competitors || []
 
   // Get brand snapshots
-  const { data: brandSnapshots } = await (db as any)
+  const { data: brandSnapshots } = await db
     .from('citation_snapshots')
     .select('scan_date, citation_rate, avg_visibility')
     .eq('project_id', brandId)
@@ -241,10 +241,10 @@ export async function getCompetitorComparison(
 
   // Calculate averages
   const brandAvgCitation = calculateAverage(
-    (brandSnapshots || []).map((s: any) => ({ value: s.citation_rate })),
+    (brandSnapshots || []).map((s) => ({ date: '', value: Number(s.citation_rate) || 0 })),
   )
   const brandAvgVisibility = calculateAverage(
-    (brandSnapshots || []).map((s: any) => ({ value: s.avg_visibility })),
+    (brandSnapshots || []).map((s) => ({ date: '', value: Number(s.avg_visibility) || 0 })),
   )
 
   return {
@@ -275,7 +275,7 @@ export async function autoGenerateSnapshots(brandId: string): Promise<{
   if (!db) return { snapshotsCreated: 0, errors: ['Database not configured'] }
 
   // Get all monitoring results for this brand
-  const { data: results, error } = await (db as any)
+  const { data: results, error } = await db
     .from('monitoring_results')
     .select('*')
     .eq('brand_id', brandId)
@@ -304,14 +304,14 @@ export async function autoGenerateSnapshots(brandId: string): Promise<{
   // Create snapshot for each date
   for (const [date, dayResults] of byDate) {
     const totalPrompts = dayResults.length
-    const brandMentions = dayResults.filter((r: any) => r.brand_mentioned).length
+    const brandMentions = dayResults.filter((r) => r.brand_mentioned).length
     const citationRate = totalPrompts > 0 ? (brandMentions / totalPrompts) * 100 : 0
     const avgVisibility =
-      dayResults.reduce((sum: number, r: any) => sum + (r.visibility_score || 0), 0) / totalPrompts
+      dayResults.reduce((sum, r) => sum + (Number(r.visibility_score) || 0), 0) / totalPrompts
     const avgSentiment =
-      dayResults.reduce((sum: number, r: any) => sum + (r.sentiment_score || 0), 0) / totalPrompts
+      dayResults.reduce((sum, r) => sum + (Number(r.sentiment_score) || 0), 0) / totalPrompts
 
-    const { error: upsertError } = await (db as any).from('citation_snapshots').upsert(
+    const { error: upsertError } = await db.from('citation_snapshots').upsert(
       {
         project_id: brandId,
         scan_date: date,

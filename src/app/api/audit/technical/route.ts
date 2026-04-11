@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { runTechnicalAudit } from '@/lib/services/technical-seo-audit'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import type { Json } from '@/types/database'
 
 const auditRequestSchema = z.object({
   url: z.string().url(),
@@ -31,7 +32,7 @@ async function checkRateLimit(
     const windowMs = windowSecs * 1000
     const windowStart = now - windowMs
 
-    const { data, error } = await (db as any)
+    const { data, error } = await db
       .from('rate_limits')
       .select('count, last_request')
       .eq('key', key)
@@ -42,7 +43,7 @@ async function checkRateLimit(
     }
 
     if (!data || data.last_request < windowStart) {
-      await (db as any).from('rate_limits').upsert(
+      await db.from('rate_limits').upsert(
         {
           key,
           count: 1,
@@ -58,7 +59,7 @@ async function checkRateLimit(
       return { success: false, remaining: 0, resetAt: data.last_request + windowMs }
     }
 
-    await (db as any)
+    await db
       .from('rate_limits')
       .update({ count: data.count + 1, last_request: now })
       .eq('key', key)
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (db) {
     try {
-      const { data: cached } = await (db as any)
+      const { data: cached } = await db
         .from('seo_audit_results')
         .select('results, overall_score, cached_at')
         .eq('url', url)
@@ -163,12 +164,12 @@ export async function POST(req: NextRequest) {
       try {
         const now = new Date()
         const expiresAt = new Date(now.getTime() + CACHE_TTL_MS)
-        await (db as any).from('seo_audit_results').insert({
+        await db.from('seo_audit_results').insert({
           brand_id: brandId || null,
           user_id: userId,
           url,
           overall_score: result.overallScore ?? 0,
-          results: result,
+          results: result as unknown as Json,
           cached_at: now.toISOString(),
           expires_at: expiresAt.toISOString(),
         })

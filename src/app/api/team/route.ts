@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   // Verify user has access to this brand (owner or team member)
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('id, user_id')
     .eq('id', brandId)
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
   }
 
   const isOwner = String(brand.user_id) === userId
-  const { data: teamMembership } = await (db as any)
+  const { data: teamMembership } = await db
     .from('team_members')
     .select('id')
     .eq('brand_id', brandId)
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     data: members,
     error,
     count,
-  } = await (db as any)
+  } = await db
     .from('team_members')
     .select('id, brand_id, user_id, email, role, status, invited_by, created_at, updated_at', {
       count: 'exact',
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
     const userIds = members.map((m: any) => m.user_id).filter(Boolean)
     if (userIds.length > 0) {
       try {
-        const { data: profiles } = await (db as any)
+        const { data: profiles } = await db
           .from('profiles')
           .select('id, email, full_name')
           .in('id', userIds)
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
   }))
 
   // Get pending invitations (filter by status='pending')
-  const { data: invitations } = await (db as any)
+  const { data: invitations } = await db
     .from('brand_invitations')
     .select('*')
     .eq('brand_id', brandId)
@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   // Verify user owns the brand
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('id, name, user_id')
     .eq('id', brand_id)
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
   if (String(brand.user_id) !== userId) return err('Access denied', 403)
 
   // Check if already a member
-  const { data: existingMember } = await (db as any)
+  const { data: existingMember } = await db
     .from('team_members')
     .select('id, status')
     .eq('brand_id', brand_id)
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
   const token = randomBytes(32).toString('hex')
 
   // Create invitation (or update if exists)
-  const { data: invitation, error: inviteError } = await (db as any)
+  const { data: invitation, error: inviteError } = await db
     .from('brand_invitations')
     .upsert(
       {
@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
   // Get inviter's real name from profiles
   let inviterDisplayName = 'A team member'
   try {
-    const { data: inviterProfile } = await (db as any)
+    const { data: inviterProfile } = await db
       .from('profiles')
       .select('full_name, email')
       .eq('id', userId)
@@ -273,7 +273,7 @@ export async function DELETE(req: NextRequest) {
 
   // Get the member/invite to check permissions
   if (memberId) {
-    const { data: member } = await (db as any)
+    const { data: member } = await db
       .from('team_members')
       .select('brand_id, role, user_id')
       .eq('id', memberId)
@@ -282,7 +282,7 @@ export async function DELETE(req: NextRequest) {
     if (!member) return err('Member not found', 404)
 
     // Check if user is brand owner
-    const { data: brand } = await (db as any)
+    const { data: brand } = await db
       .from('brands')
       .select('user_id')
       .eq('id', member.brand_id)
@@ -297,13 +297,13 @@ export async function DELETE(req: NextRequest) {
       return err('Cannot remove the brand owner', 400)
     }
 
-    const { error } = await (db as any).from('team_members').delete().eq('id', memberId)
+    const { error } = await db.from('team_members').delete().eq('id', memberId)
 
     if (error) return err(error.message)
   }
 
   if (invitationId) {
-    const { data: invite } = await (db as any)
+    const { data: invite } = await db
       .from('brand_invitations')
       .select('brand_id, invited_by')
       .eq('id', invitationId)
@@ -312,7 +312,7 @@ export async function DELETE(req: NextRequest) {
     if (!invite) return err('Invitation not found', 404)
 
     // Only inviter or brand owner can cancel
-    const { data: brand } = await (db as any)
+    const { data: brand } = await db
       .from('brands')
       .select('user_id')
       .eq('id', invite.brand_id)
@@ -322,7 +322,7 @@ export async function DELETE(req: NextRequest) {
       return err('Access denied', 403)
     }
 
-    const { error } = await (db as any).from('brand_invitations').delete().eq('id', invitationId)
+    const { error } = await db.from('brand_invitations').delete().eq('id', invitationId)
 
     if (error) return err(error.message)
   }
@@ -363,7 +363,7 @@ export async function PATCH(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   // Get member and check ownership
-  const { data: member } = await (db as any)
+  const { data: member } = await db
     .from('team_members')
     .select('brand_id, role')
     .eq('id', memberId)
@@ -371,7 +371,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!member) return err('Member not found', 404)
 
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('user_id')
     .eq('id', member.brand_id)
@@ -386,7 +386,7 @@ export async function PATCH(req: NextRequest) {
     return err('Cannot change owner role', 400)
   }
 
-  const { error } = await (db as any)
+  const { error } = await db
     .from('team_members')
     .update({ role: body.role, updated_at: new Date().toISOString() })
     .eq('id', memberId)

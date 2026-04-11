@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   // Verify brand ownership
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('id')
     .eq('id', body.brand_id)

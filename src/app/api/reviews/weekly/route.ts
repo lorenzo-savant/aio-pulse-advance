@@ -16,11 +16,14 @@ export async function GET(req: NextRequest) {
   const source = searchParams.get('source') || 'auto'
 
   const db = createServerClient()
+  if (!db) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+  }
 
   // Try the new weekly_reviews table first
   if (source === 'auto' || source === 'weekly_reviews') {
     try {
-      let query = (db as any)
+      let query = db
         .from('weekly_reviews')
         .select('id, brand_id, week_number, year, week_start, week_end, metrics, markdown, created_at')
         .eq('user_id', userId)
@@ -40,8 +43,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Fallback: legacy recommendation_histories
-  let query = (db as any)
-    .from('recommendation_histories')
+  let query = db
+    .from('recommendation_history')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })

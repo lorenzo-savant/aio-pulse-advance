@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   // Verify brand belongs to this user
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('name')
     .eq('id', brand_id)
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { data, error } = await (db as any)
+  const { data, error } = await db
     .from('monitoring_results')
     .select('sentiment, sentiment_score, engine, has_hallucination, created_at, brand_mentioned')
     .eq('brand_id', brandId)

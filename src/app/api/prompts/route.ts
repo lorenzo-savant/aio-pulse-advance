@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
   if (!brand) return err('Brand not found or access denied', 404)
 
   // Insert prompt - user_id must be UUID
-  const { data, error } = await (db as any)
+  const { data, error } = await db
     .from('prompts')
     .insert({ ...parsed.data, user_id: userId })
     .select()

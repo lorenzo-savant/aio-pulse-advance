@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Verify user has access to brand
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('id, user_id')
     .eq('id', brandId)
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
 
   if (generate_all) {
     // Generate snapshots for all user's brands
-    const { data: brands } = await (db as any).from('brands').select('id').eq('user_id', userId)
+    const { data: brands } = await db.from('brands').select('id').eq('user_id', userId)
 
     const results = []
     for (const brand of brands || []) {
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify access
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('id')
     .eq('id', brand_id)

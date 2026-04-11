@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { data: invitation, error: inviteError } = await (db as any)
+  const { data: invitation, error: inviteError } = await db
     .from('brand_invitations')
     .select('*')
     .eq('token', token)
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     return err('Invitation has expired', 400)
   }
 
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('id, name, user_id')
     .eq('id', invitation.brand_id)
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     return err('Brand no longer exists', 404)
   }
 
-  const { data: existingMember } = await (db as any)
+  const { data: existingMember } = await db
     .from('team_members')
     .select('id')
     .eq('brand_id', invitation.brand_id)
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     return err('You are already a team member', 400)
   }
 
-  const { error: memberError } = await (db as any).from('team_members').insert({
+  const { error: memberError } = await db.from('team_members').insert({
     brand_id: invitation.brand_id,
     user_id: userId,
     email: invitation.email,
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   if (memberError) return err(memberError.message)
 
-  const { error: updateError } = await (db as any)
+  const { error: updateError } = await db
     .from('brand_invitations')
     .update({
       status: 'accepted',
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
   if (updateError) {
     console.error('Failed to update invitation status:', updateError)
     // Fallback: try to delete if update fails
-    await (db as any).from('brand_invitations').delete().eq('id', invitation.id)
+    await db.from('brand_invitations').delete().eq('id', invitation.id)
   }
 
   return NextResponse.json({

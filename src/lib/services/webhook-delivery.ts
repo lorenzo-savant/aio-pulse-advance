@@ -46,7 +46,7 @@ export async function deliverWebhook(
   let logId: string | null = null
   if (db) {
     try {
-      const { data } = await (db as any)
+      const { data } = await db
         .from('webhook_delivery_logs')
         .insert({
           alert_event_id: alertEventId,
@@ -87,7 +87,7 @@ export async function deliverWebhook(
       const responseBody = await res.text().catch(() => '')
 
       if (db && logId) {
-        await (db as any)
+        await db
           .from('webhook_delivery_logs')
           .update({
             status: res.ok ? 'delivered' : 'failed',
@@ -117,7 +117,7 @@ export async function deliverWebhook(
             ? new Date(Date.now() + (RETRY_DELAYS_MS[attempt + 1] || 0)).toISOString()
             : null
 
-        await (db as any)
+        await db
           .from('webhook_delivery_logs')
           .update({
             status: attempt + 1 >= MAX_ATTEMPTS ? 'failed' : 'retrying',
@@ -140,7 +140,7 @@ export async function deliverWebhook(
 }
 
 export function buildWebhookPayload(
-  event: { id: string; type: string; title: string; message: string; data: any; alert_rule_id: string; brand_id: string },
+  event: { id: string; type: string; title: string; message: string; data: Record<string, unknown>; alert_rule_id: string; brand_id: string },
 ): WebhookPayload {
   return {
     event_type: event.type,

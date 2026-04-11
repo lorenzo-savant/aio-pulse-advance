@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
   // Save to database if brand_id provided
   let savedResult = null
   if (brand_id) {
-    const { data, error } = await (db as any)
+    const { data, error } = await db
       .from('monitoring_results')
       .insert({
         prompt_id: null, // No linked prompt for direct queries

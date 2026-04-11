@@ -67,7 +67,7 @@ export abstract class BaseProvider {
 
     return {
       success: false,
-      provider: this.id as any,
+      provider: this.id,
       error: `Failed after ${this.retryConfig.maxAttempts} attempts. Last error: ${lastError}`,
       latencyMs: Date.now() - startTime,
     }
@@ -89,7 +89,7 @@ export abstract class BaseProvider {
         const truncatedError = errorBody.slice(0, 500)
         return {
           success: false,
-          provider: this.id as any,
+          provider: this.id,
           error: `API error ${response.status}: ${truncatedError}`,
           statusCode: response.status,
           latencyMs: Date.now() - startTime,
@@ -104,7 +104,7 @@ export abstract class BaseProvider {
       if (err instanceof Error && err.name === 'AbortError') {
         return {
           success: false,
-          provider: this.id as any,
+          provider: this.id,
           error: `Request timeout after ${this.timeoutMs}ms`,
           statusCode: 408,
           latencyMs: this.timeoutMs,

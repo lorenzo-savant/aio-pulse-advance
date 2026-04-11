@@ -54,27 +54,28 @@ export async function GET(req: NextRequest) {
       query = query.lte('snapshot_date', to)
     }
 
-    const { data: sentiment, error } = (await query) as any
+    const { data: sentiment, error } = await query
 
     if (error) throw error
 
     // Calculate statistics
-    const scores = ((sentiment as any[]) || []).map((s: any) => s.sentiment_score)
+    const sentimentRows = sentiment || []
+    const scores = sentimentRows.map((s) => s.sentiment_score as number)
     const avgSentiment =
       scores.length > 0 ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : 0
     const bestPeriod = scores.length > 0 ? Math.max(...scores) : 0
     const worstPeriod = scores.length > 0 ? Math.min(...scores) : 0
 
     // Determine trend
-    const recent = ((sentiment as any[]) || []).slice(-7)
-    const older = ((sentiment as any[]) || []).slice(-14, -7)
+    const recent = sentimentRows.slice(-7)
+    const older = sentimentRows.slice(-14, -7)
     const recentAvg =
       recent.length > 0
-        ? recent.reduce((a: number, b: any) => a + b.sentiment_score, 0) / recent.length
+        ? recent.reduce((a: number, b) => a + (b.sentiment_score as number), 0) / recent.length
         : 0
     const olderAvg =
       older.length > 0
-        ? older.reduce((a: number, b: any) => a + b.sentiment_score, 0) / older.length
+        ? older.reduce((a: number, b) => a + (b.sentiment_score as number), 0) / older.length
         : 0
     const trend = recentAvg > olderAvg ? 'improving' : recentAvg < olderAvg ? 'declining' : 'stable'
 

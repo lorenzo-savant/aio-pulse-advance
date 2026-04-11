@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
   defaultFrom.setDate(defaultFrom.getDate() - 30)
   const fromDate = from || defaultFrom.toISOString().split('T')[0]
 
-  let query = (db as any)
+  let query = db
     .from('citation_snapshots')
     .select('*')
     .eq('project_id', brandId)

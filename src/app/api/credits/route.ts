@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   try {
-    const { data: credits, error: creditsError } = await (db as any)
+    const { data: credits, error: creditsError } = await db
       .from('credits')
       .select('amount, source, created_at')
       .eq('user_id', userId)
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     const balance = totalPurchased - totalUsed
 
     // Get subscription info
-    const { data: subscription } = await (db as any)
+    const { data: subscription } = await db
       .from('subscriptions')
       .select('plan, status')
       .eq('user_id', userId)
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
   try {
     const creditAmount = action === 'deduct' ? -amount : amount
 
-    const { error: insertError } = await (db as any).from('credits').insert({
+    const { error: insertError } = await db.from('credits').insert({
       user_id: userId,
       amount: creditAmount,
       source: action === 'add' ? 'manual_add' : 'manual_deduct',
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     if (insertError) throw insertError
 
     // Fetch updated balance
-    const { data: credits } = await (db as any)
+    const { data: credits } = await db
       .from('credits')
       .select('amount')
       .eq('user_id', userId)

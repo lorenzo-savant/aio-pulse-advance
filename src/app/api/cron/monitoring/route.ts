@@ -1,5 +1,6 @@
 // PATH: src/app/api/cron/monitoring/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import type { Json } from '@/types/database'
 import { createServerClient } from '@/lib/supabase'
 import {
   runMonitoringCheck,
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
     // Fetch prompts that haven't run recently enough, with their brand
-    const { data: prompts, error: promptsError } = await (supabase as any)
+    const { data: prompts, error: promptsError } = await supabase
       .from('prompts')
       .select('*, brand:brands(*)')
       .eq('is_active', true)
@@ -70,10 +71,10 @@ export async function POST(req: NextRequest) {
 
     // ── Process each prompt sequentially to respect rate limits ────────────────
     for (const promptRow of prompts) {
-      const brand = promptRow.brand as Brand
+      const brand = promptRow.brand as unknown as Brand
       if (!brand || !brand.is_active) continue
 
-      const prompt = promptRow as Prompt
+      const prompt = promptRow as unknown as Prompt
       const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
       const engines = (prompt.engines || ['chatgpt', 'gemini', 'perplexity', 'claude']).filter(
         (e): e is MonitoringEngine => (validEngines as readonly string[]).includes(e),
@@ -89,15 +90,18 @@ export async function POST(req: NextRequest) {
           const resultData = await runMonitoringCheck(prompt, brand, engine, prompt.user_id)
 
           // Save to DB
-          const { data: saved, error: insertError } = await (supabase as any)
+          const insertPayload = {
+            ...resultData,
+            competitor_mentions: resultData.competitor_mentions as unknown as Json,
+            hallucination_flags: resultData.hallucination_flags as unknown as Json,
+            response_text:
+              resultData.response_text.length > 5000
+                ? resultData.response_text.slice(0, 5000) + '…'
+                : resultData.response_text,
+          }
+          const { data: saved, error: insertError } = await supabase
             .from('monitoring_results')
-            .insert({
-              ...resultData,
-              response_text:
-                resultData.response_text.length > 5000
-                  ? resultData.response_text.slice(0, 5000) + '…'
-                  : resultData.response_text,
-            })
+            .insert(insertPayload)
             .select()
             .single()
 
@@ -107,7 +111,7 @@ export async function POST(req: NextRequest) {
             continue
           }
 
-          engineResults.push(saved as MonitoringResult)
+          engineResults.push(saved as unknown as MonitoringResult)
           results.push({ promptId: prompt.id, engine, success: true })
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
@@ -117,7 +121,7 @@ export async function POST(req: NextRequest) {
       }
 
       // ── Update prompt last_run_at ─────────────────────────────────────────
-      await (supabase as any)
+      await supabase
         .from('prompts')
         .update({ last_run_at: now.toISOString() })
         .eq('id', prompt.id)
@@ -127,7 +131,7 @@ export async function POST(req: NextRequest) {
         const { avi, components } = calculateAVIFromResults(engineResults)
         const citedCount = engineResults.filter((r) => r.cited_urls?.length > 0).length
 
-        await (supabase as any).from('brand_health_scores').upsert(
+        await supabase.from('brand_health_scores').upsert(
           {
             brand_id: brand.id,
             user_id: prompt.user_id,

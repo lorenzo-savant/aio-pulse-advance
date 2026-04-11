@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const slug = slugify(data.brandName)
     const now = new Date().toISOString()
 
-    const { data: brand, error } = await (db as any)
+    const { data: brand, error } = await db
       .from('brands')
       .insert({
         user_id: userId,
@@ -93,7 +93,10 @@ export async function GET(req: NextRequest) {
   }
 
   const db = createServerClient()
-  const { data: brands } = await (db as any)
+  if (!db) {
+    return NextResponse.json({ success: false, message: 'Database not configured' }, { status: 503 })
+  }
+  const { data: brands } = await db
     .from('brands')
     .select('id, name, slug, created_at')
     .eq('user_id', userId)

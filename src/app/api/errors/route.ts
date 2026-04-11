@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const db = createServerClient()
     if (db) {
       try {
-        await (db as any).from('security_logs').insert(logEntry)
+        await db.from('security_logs').insert(logEntry)
       } catch {
         // Silently fail if table doesn't exist
       }

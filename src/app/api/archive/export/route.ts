@@ -73,15 +73,15 @@ export async function POST(req: NextRequest) {
 
   try {
     // Get organization_id
-    const { data: brandData } = (await db
+    const { data: brandData } = await db
       .from('brands')
       .select('organization_id')
       .eq('id', brand_id)
-      .single()) as any
+      .single()
 
     // Create export job
     const jobId = crypto.randomUUID()
-    const { error: insertError } = await db.from('query_export_jobs' as any).insert({
+    const { error: insertError } = await db.from('query_export_jobs').insert({
       id: jobId,
       user_id: userId,
       organization_id: brandData?.organization_id,
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       include_sentiment_evolution: options?.include_sentiment_evolution ?? true,
       include_recommendations_summary: options?.include_recommendations_summary ?? true,
       status: 'pending',
-    } as any)
+    })
 
     if (insertError) throw insertError
 
@@ -146,12 +146,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { data: job, error } = (await db
-      .from('query_export_jobs' as any)
+    const { data: job, error } = await db
+      .from('query_export_jobs')
       .select('*')
       .eq('id', jobId)
       .eq('user_id', userId)
-      .single()) as any
+      .single()
 
     if (error || !job) {
       return NextResponse.json({ success: false, message: 'Job not found' }, { status: 404 })

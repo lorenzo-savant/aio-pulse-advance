@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check if key exists for this provider
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('user_api_keys')
     .select('id')
     .eq('user_id', userId)
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
 
   if (existing) {
     // Update existing key
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('user_api_keys')
       .update({
         encrypted_key: apiKey,
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     if (error) throw error
   } else {
     // Insert new key
-    const { error } = await (supabase as any).from('user_api_keys').insert({
+    const { error } = await supabase.from('user_api_keys').insert({
       user_id: userId,
       provider,
       encrypted_key: apiKey,

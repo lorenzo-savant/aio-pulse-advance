@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const results: { type: string; id: string; name: string }[] = []
 
   // Search brands
-  const { data: brands } = await (supabase as any)
+  const { data: brands } = await supabase
     .from('brands')
     .select('id, name')
     .eq('user_id', userId)
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Search prompts
-  const { data: prompts } = await (supabase as any)
+  const { data: prompts } = await supabase
     .from('prompts')
     .select('id, text')
     .eq('user_id', userId)

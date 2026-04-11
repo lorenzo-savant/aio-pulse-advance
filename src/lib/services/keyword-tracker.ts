@@ -13,9 +13,9 @@ interface MonitoringResult {
   id: string
   brand_id: string
   engine: string
-  response_text: string
-  brand_mentioned: boolean
-  created_at: string
+  response_text: string | null
+  brand_mentioned: boolean | null
+  created_at: string | null
 }
 
 const STOP_WORDS = new Set([
@@ -191,7 +191,7 @@ export async function trackKeywords(brandId: string): Promise<void> {
   }
 
   try {
-    const { data: results, error: fetchError } = await (db as any)
+    const { data: results, error: fetchError } = await db
       .from('monitoring_results')
       .select('id, brand_id, engine, response_text, brand_mentioned, created_at')
       .eq('brand_id', brandId)
@@ -202,18 +202,18 @@ export async function trackKeywords(brandId: string): Promise<void> {
       return
     }
 
-    const mentionResults = results.filter((r: MonitoringResult) => r.brand_mentioned)
-    const noMentionResults = results.filter((r: MonitoringResult) => !r.brand_mentioned)
+    const mentionResults = results.filter((r) => r.brand_mentioned)
+    const noMentionResults = results.filter((r) => !r.brand_mentioned)
 
     const mentionKeywords = new Set<string>()
     for (const r of mentionResults) {
-      const keywords = extractKeywords(r.response_text)
+      const keywords = extractKeywords(r.response_text || '')
       keywords.forEach((k) => mentionKeywords.add(k))
     }
 
     const noMentionKeywords = new Set<string>()
     for (const r of noMentionResults) {
-      const keywords = extractKeywords(r.response_text)
+      const keywords = extractKeywords(r.response_text || '')
       keywords.forEach((k) => noMentionKeywords.add(k))
     }
 
@@ -235,13 +235,13 @@ export async function trackKeywords(brandId: string): Promise<void> {
       }
 
       const keywordEngines = results
-        .filter((r: MonitoringResult) => extractKeywords(r.response_text).includes(keyword))
-        .map((r: MonitoringResult) => r.engine)
+        .filter((r) => extractKeywords(r.response_text || '').includes(keyword))
+        .map((r) => r.engine)
       const engines: string[] = Array.from(new Set(keywordEngines))
 
       const dates = results
-        .filter((r: MonitoringResult) => extractKeywords(r.response_text).includes(keyword))
-        .map((r: MonitoringResult) => r.created_at.split('T')[0])
+        .filter((r) => extractKeywords(r.response_text || '').includes(keyword))
+        .map((r) => (r.created_at ?? '').split('T')[0])
         .sort()
 
       keywordData[keyword] = {
@@ -255,7 +255,7 @@ export async function trackKeywords(brandId: string): Promise<void> {
     }
 
     for (const [keyword, data] of Object.entries(keywordData)) {
-      const { error: upsertError } = await (db as any).from('keyword_tracking').upsert(
+      const { error: upsertError } = await db.from('keyword_tracking').upsert(
         {
           brand_id: brandId,
           keyword,
@@ -287,7 +287,7 @@ export async function getKeywords(brandId: string, limit = 50) {
   const db = createServerClient()
   if (!db) return []
 
-  const { data, error } = await (db as any)
+  const { data, error } = await db
     .from('keyword_tracking')
     .select('*')
     .eq('brand_id', brandId)
@@ -306,7 +306,7 @@ export async function getTopCorrelatedKeywords(brandId: string, limit = 20) {
   const db = createServerClient()
   if (!db) return []
 
-  const { data, error } = await (db as any)
+  const { data, error } = await db
     .from('keyword_tracking')
     .select('*')
     .eq('brand_id', brandId)

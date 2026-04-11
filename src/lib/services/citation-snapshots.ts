@@ -1,6 +1,20 @@
 // PATH: src/lib/services/citation-snapshots.ts
 import { createServerClient } from '@/lib/supabase'
 
+interface MonitoringResultRow {
+  id: string
+  brand_id: string
+  engine: string
+  response_text: string
+  brand_mentioned: boolean
+  mention_position: number | null
+  visibility_score: number | null
+  sentiment_score: number | null
+  competitor_mentions: Array<{ name: string }> | null
+  created_at: string
+  prompt?: { category?: string; language?: string } | null
+}
+
 interface CompetitorRate {
   [name: string]: number
 }
@@ -39,7 +53,7 @@ export async function calculateCitationSnapshots(
   const dayStart = `${scanDate}T00:00:00.000Z`
   const dayEnd = `${scanDate}T23:59:59.999Z`
 
-  const { data: results, error: fetchError } = await (db as any)
+  const { data: results, error: fetchError } = await db
     .from('monitoring_results')
     .select('*, prompt:prompts(category,language)')
     .eq('brand_id', brandId)
@@ -55,7 +69,7 @@ export async function calculateCitationSnapshots(
   }
 
   // ── Fetch brand competitors for competitor rate calculation ────────────────
-  const { data: brand } = await (db as any)
+  const { data: brand } = await db
     .from('brands')
     .select('competitors')
     .eq('id', brandId)
@@ -65,12 +79,14 @@ export async function calculateCitationSnapshots(
 
   // ── Group results by engine × category × language ─────────────────────────
   const engines = ['chatgpt', 'gemini', 'perplexity'] as const
+  const rows = results as unknown as MonitoringResultRow[]
+
   const categories = [
-    ...new Set(results.map((r: any) => r.prompt?.category).filter(Boolean)),
+    ...new Set(rows.map((r) => r.prompt?.category).filter(Boolean)),
     'all',
   ]
   const languages = [
-    ...new Set(results.map((r: any) => r.prompt?.language || 'en').filter(Boolean)),
+    ...new Set(rows.map((r) => r.prompt?.language || 'en').filter(Boolean)),
     'all',
   ]
   const engineList = [...engines, 'all'] as const
@@ -80,7 +96,7 @@ export async function calculateCitationSnapshots(
   for (const engine of engineList) {
     for (const category of categories) {
       for (const language of languages) {
-        const filtered = results.filter((r: any) => {
+        const filtered = rows.filter((r) => {
           const engineMatch = engine === 'all' || r.engine === engine
           const catMatch = category === 'all' || r.prompt?.category === category
           const langMatch = language === 'all' || r.prompt?.language === language
@@ -90,29 +106,29 @@ export async function calculateCitationSnapshots(
         if (filtered.length === 0) continue
 
         const totalPrompts = filtered.length
-        const brandCitations = filtered.filter((r: any) => r.brand_mentioned).length
+        const brandCitations = filtered.filter((r) => r.brand_mentioned).length
         const citationRate = totalPrompts > 0 ? (brandCitations / totalPrompts) * 100 : 0
 
         const mentionedWithPosition = filtered.filter(
-          (r: any) => r.brand_mentioned && r.mention_position != null,
+          (r) => r.brand_mentioned && r.mention_position != null,
         )
         const avgPosition =
           mentionedWithPosition.length > 0
-            ? mentionedWithPosition.reduce((sum: number, r: any) => sum + r.mention_position, 0) /
+            ? mentionedWithPosition.reduce((sum, r) => sum + (r.mention_position ?? 0), 0) /
               mentionedWithPosition.length
             : null
 
         const avgVisibility =
-          filtered.reduce((sum: number, r: any) => sum + (r.visibility_score || 0), 0) /
+          filtered.reduce((sum, r) => sum + (r.visibility_score || 0), 0) /
           totalPrompts
         const avgSentiment =
-          filtered.reduce((sum: number, r: any) => sum + (r.sentiment_score || 0), 0) / totalPrompts
+          filtered.reduce((sum, r) => sum + (r.sentiment_score || 0), 0) / totalPrompts
 
         const competitorRates: CompetitorRate = {}
         for (const comp of competitors) {
           const compLower = comp.toLowerCase()
-          const compMentioned = filtered.filter((r: any) => {
-            const mentions = r.competitor_mentions as Array<{ name: string }> | undefined
+          const compMentioned = filtered.filter((r) => {
+            const mentions = r.competitor_mentions
             if (!mentions || !Array.isArray(mentions)) return false
             return mentions.some((m) => m.name.toLowerCase().includes(compLower))
           }).length
@@ -143,7 +159,7 @@ export async function calculateCitationSnapshots(
   let inserted = 0
 
   for (const snap of snapshots) {
-    const { error: upsertError } = await (db as any)
+    const { error: upsertError } = await db
       .from('citation_snapshots')
       .upsert(snap, { onConflict: 'project_id,scan_date,engine,category,language' })
 

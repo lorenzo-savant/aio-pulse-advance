@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     maxLimit: 100,
   })
 
-  let query = (db as any)
+  let query = db
     .from('scan_history')
     .select('*', { count: 'exact' })
     .eq('user_id', userId)
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   // Verify brand access if brand_id provided
   let brandId: string | null = null
   if (body.brand_id) {
-    const { data: brand } = await (db as any)
+    const { data: brand } = await db
       .from('brands')
       .select('id')
       .eq('id', body.brand_id)
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { data, error } = await (db as any)
+  const { data, error } = await db
     .from('scan_history')
     .insert({
       user_id: userId,
@@ -140,7 +140,7 @@ export async function DELETE(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { error } = await (db as any)
+  const { error } = await db
     .from('scan_history')
     .delete()
     .eq('id', scanId)

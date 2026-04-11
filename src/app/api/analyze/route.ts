@@ -1,5 +1,6 @@
 // PATH: src/app/api/analyze/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
+import type { Json } from '@/types/database'
 import { analyzeTextSchema } from '@/lib/validations'
 import { analyzeWithProvider } from '@/lib/services/analysis'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
     if (!brand) return err('Brand not found or access denied', 404)
   }
 
-let query = (db as any)
+let query = db
   .from('analysis_results')
   .select('...')
   .order('created_at', { ascending: false })
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
 
   // ── Extract brand_id if present ─────────────────────────────────────────
   if (body && typeof body === 'object' && 'brand_id' in body) {
-    brandId = (body as any).brand_id
+    brandId = (body as Record<string, unknown>).brand_id as string
   }
 
   // ── Validate ─────────────────────────────────────────────────────────────
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
     // ── Save to database ───────────────────────────────────────────────────
     if (userId && !userId.startsWith('anonymous:') && db) {
       try {
-        await (db as any).from('analysis_results').insert({
+        await db.from('analysis_results').insert({
           brand_id: brandId,
           user_id: userId,
           input,
@@ -151,8 +152,8 @@ export async function POST(req: NextRequest) {
           visibility_score: result.visibilityScore,
           sentiment: result.engineBreakdown?.[0]?.status,
           summary: result.summary,
-          recommendations: result.suggestions,
-          raw_response: result,
+          recommendations: result.suggestions as unknown as Json,
+          raw_response: result as unknown as Json,
         })
       } catch (dbError) {
         console.error('[/api/analyze] Failed to save result:', dbError)

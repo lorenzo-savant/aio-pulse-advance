@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ success: false, message: 'Query ID is required' }, { status: 400 })
   }
 
-  const db = createServerClient() as any
+  const db = createServerClient()
   if (!db) {
     return NextResponse.json(
       { success: false, message: 'Database not configured' },
@@ -28,41 +28,41 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   try {
     // Get the archive query
-    const { data: archive, error } = (await db
+    const { data: archive, error } = await db
       .from('research_archives')
       .select('*')
       .eq('id', id)
-      .single()) as any
+      .single()
 
     if (error || !archive) {
       return NextResponse.json({ success: false, message: 'Archive not found' }, { status: 404 })
     }
 
     // Verify user has access to this brand
-    const { data: brand } = (await db
+    const { data: brand } = await db
       .from('brands')
       .select('id, user_id')
       .eq('id', archive.brand_id)
-      .single()) as any
+      .single()
 
     if (!brand || String(brand.user_id) !== userId) {
       return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
     }
 
     // Get recommendations for this archive
-    const { data: recommendations } = (await db
+    const { data: recommendations } = await db
       .from('recommendation_tracking')
       .select('*')
       .eq('archive_id', id)
-      .eq('status', 'active')) as any
+      .eq('status', 'active')
 
     // Get audit log for this archive
-    const { data: auditLog } = (await db
+    const { data: auditLog } = await db
       .from('archive_audit_log')
       .select('*')
       .eq('record_id', id)
       .order('created_at', { ascending: false })
-      .limit(20)) as any
+      .limit(20)
 
     return NextResponse.json({
       success: true,
@@ -97,7 +97,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ success: false, message: 'Query ID is required' }, { status: 400 })
   }
 
-  const db = createServerClient() as any
+  const db = createServerClient()
   if (!db) {
     return NextResponse.json(
       { success: false, message: 'Database not configured' },
@@ -107,30 +107,29 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   try {
     // Get the archive query
-    const { data: archive, error: fetchError } = (await db
+    const { data: archive, error: fetchError } = await db
       .from('research_archives')
       .select('brand_id')
       .eq('id', id)
-      .single()) as any
+      .single()
 
     if (fetchError || !archive) {
       return NextResponse.json({ success: false, message: 'Archive not found' }, { status: 404 })
     }
 
     // Verify user has access
-    const { data: brand } = (await db
+    const { data: brand } = await db
       .from('brands')
       .select('user_id, organization_id')
       .eq('id', archive.brand_id)
-      .single()) as any
+      .single()
 
     if (!brand || String(brand.user_id) !== userId) {
       return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
     }
 
     // Soft delete
-    const dbAny = db as any
-    const { error: updateError } = await dbAny
+    const { error: updateError } = await db
       .from('research_archives')
       .update({
         status: 'deleted',
@@ -142,7 +141,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (updateError) throw updateError
 
     // Log to audit
-    await dbAny.from('archive_audit_log').insert({
+    await db.from('archive_audit_log').insert({
       organization_id: brand.organization_id,
       user_id: userId,
       table_name: 'research_archives',

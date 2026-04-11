@@ -1,6 +1,7 @@
 // PATH: src/app/api/monitoring/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import type { Json } from '@/types/database'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import {
   runMonitoringCheck,
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
 
   // ── Load prompt + brand ───────────────────────────────────────────────────
   // First just get the prompt by ID (don't filter by user_id yet)
-  const { data: prompt, error: promptError } = await (db as any)
+  const { data: prompt, error: promptError } = await db
     .from('prompts')
     .select('*, brand:brands(*)')
     .eq('id', parsed.data.prompt_id)
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest) {
   const isPromptOwner = promptOwnerId === requestUserId
 
   // Also check team membership
-  const { data: membership } = await (db as any)
+  const { data: membership } = await db
     .from('team_members')
     .select('id')
     .eq('brand_id', brand.id)
@@ -203,13 +204,15 @@ export async function POST(req: NextRequest) {
 
         const truncatedData = {
           ...resultData,
+          competitor_mentions: resultData.competitor_mentions as unknown as Json,
+          hallucination_flags: resultData.hallucination_flags as unknown as Json,
           response_text:
             resultData.response_text.length > 5000
               ? resultData.response_text.slice(0, 5000) + '…'
               : resultData.response_text,
         }
 
-        const { data: saved, error: insertError } = await (db as any)
+        const { data: saved, error: insertError } = await db
           .from('monitoring_results')
           .insert(truncatedData)
           .select()
@@ -224,7 +227,7 @@ export async function POST(req: NextRequest) {
           return
         }
 
-        results.push(saved as MonitoringResult)
+        results.push(saved as unknown as MonitoringResult)
 
         // ── Evaluate alert rules (usa rules già fetchate) ───────────────────
         if (rules && rules.length > 0) {
@@ -234,17 +237,18 @@ export async function POST(req: NextRequest) {
 
           for (const rule of rules as AlertRule[]) {
             const shouldFire = shouldTriggerAlert(rule, {
-              result: saved as MonitoringResult,
+              result: saved as unknown as MonitoringResult,
               previousResult,
               brand,
             })
 
             if (shouldFire) {
-              const event = buildAlertEvent(rule, saved as MonitoringResult, brand)
+              const event = buildAlertEvent(rule, saved as unknown as MonitoringResult, brand)
 
-              const { data: savedEvent } = await (db as any)
+              const { brand: _b, alert_rule: _ar, data: eventData, ...eventRest } = event
+              const { data: savedEvent } = await db
                 .from('alert_events')
-                .insert({ ...event, user_id: userId })
+                .insert({ ...eventRest, data: eventData as unknown as Json, user_id: userId })
                 .select()
                 .single()
 
@@ -264,12 +268,12 @@ export async function POST(req: NextRequest) {
                   )
                 }
 
-                await (db as any)
+                await db
                   .from('alert_events')
                   .update({ channels_sent: channelsSent })
                   .eq('id', savedEvent.id)
 
-                await (db as any)
+                await db
                   .from('alert_rules')
                   .update({ last_fired_at: new Date().toISOString() })
                   .eq('id', rule.id)
@@ -292,7 +296,7 @@ export async function POST(req: NextRequest) {
   })
 
   // ── Update prompt last_run_at ─────────────────────────────────────────────
-  await (db as any)
+  await db
     .from('prompts')
     .update({ last_run_at: new Date().toISOString() })
     .eq('id', prompt.id)
@@ -302,7 +306,7 @@ export async function POST(req: NextRequest) {
     const { avi, components } = calculateAVIFromResults(results)
     const citedCount = results.filter((r) => r.cited_urls?.length > 0).length
 
-    await (db as any).from('brand_health_scores').upsert(
+    await db.from('brand_health_scores').upsert(
       {
         brand_id: brand.id,
         user_id: userId,

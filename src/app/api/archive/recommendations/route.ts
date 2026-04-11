@@ -129,11 +129,11 @@ export async function PATCH(req: NextRequest) {
 
   try {
     // Get recommendation and verify access
-    const { data: rec, error: fetchError } = (await db
+    const { data: rec, error: fetchError } = await db
       .from('recommendation_tracking')
       .select('brand_id')
       .eq('id', id)
-      .single()) as any
+      .single()
 
     if (fetchError || !rec) {
       return NextResponse.json(
@@ -161,8 +161,7 @@ export async function PATCH(req: NextRequest) {
     if (priority) updateData.priority = priority
     if (notes) updateData.notes = notes
 
-    const dbAny = db as any
-    const { error: updateError } = await dbAny
+    const { error: updateError } = await db
       .from('recommendation_tracking')
       .update(updateData)
       .eq('id', id)

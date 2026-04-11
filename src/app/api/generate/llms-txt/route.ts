@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { data, error: fetchErr } = await (db as any)
+  const { data, error: fetchErr } = await db
     .from('llms_txt_versions')
     .select('id, brand_id, version, llms_txt, llms_full_txt, input_data, created_at')
     .eq('brand_id', brandId)
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { data: brand, error: brandError } = await (db as any)
+  const { data: brand, error: brandError } = await db
     .from('brands')
     .select('id, name, domain, description, industry, competitors, aliases')
     .eq('id', brandId)
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
   // Persist version to database
   let version = 1
   try {
-    const { data: latest } = await (db as any)
+    const { data: latest } = await db
       .from('llms_txt_versions')
       .select('version')
       .eq('brand_id', brandId)
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
 
     if (latest) version = latest.version + 1
 
-    await (db as any).from('llms_txt_versions').insert({
+    await db.from('llms_txt_versions').insert({
       brand_id: brandId,
       user_id: userId,
       llms_txt: llmsTxt,

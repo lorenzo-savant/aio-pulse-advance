@@ -57,61 +57,61 @@ export async function POST(req: NextRequest) {
 
   try {
     // Get period 1 data
-    const { data: period1Data } = (await db
-      .from('brand_snapshots' as any)
+    const { data: period1Data } = await db
+      .from('brand_snapshots')
       .select(
         'health_score, sentiment_score, total_recommendations, completed_recommendations, queries_this_period',
       )
       .gte('snapshot_date', period1_from)
       .lte('snapshot_date', period1_to)
-      .eq('brand_id', brand_id)) as any
+      .eq('brand_id', brand_id)
 
-    const { data: period1Recs } = (await db
-      .from('recommendation_tracking' as any)
+    const { data: period1Recs } = await db
+      .from('recommendation_tracking')
       .select('id')
       .gte('last_seen_date', period1_from)
       .lte('last_seen_date', period1_to)
       .eq('brand_id', brand_id)
-      .eq('status', 'active')) as any
+      .eq('status', 'active')
 
     // Get period 2 data
-    const { data: period2Data } = (await db
-      .from('brand_snapshots' as any)
+    const { data: period2Data } = await db
+      .from('brand_snapshots')
       .select(
         'health_score, sentiment_score, total_recommendations, completed_recommendations, queries_this_period',
       )
       .gte('snapshot_date', period2_from)
       .lte('snapshot_date', period2_to)
-      .eq('brand_id', brand_id)) as any
+      .eq('brand_id', brand_id)
 
-    const { data: period2Recs } = (await db
-      .from('recommendation_tracking' as any)
+    const { data: period2Recs } = await db
+      .from('recommendation_tracking')
       .select('id, recommendation_text')
       .gte('last_seen_date', period2_from)
       .lte('last_seen_date', period2_to)
       .eq('brand_id', brand_id)
-      .eq('status', 'active')) as any
+      .eq('status', 'active')
 
     // Calculate averages
-    const period1 = period1Data as any[]
+    const period1 = period1Data as Array<Record<string, unknown>>
     const avg1 = period1?.length
       ? {
-          healthScore: period1.reduce((a, b: any) => a + (b.health_score || 0), 0) / period1.length,
+          healthScore: period1.reduce((a, b) => a + ((b.health_score as number) || 0), 0) / period1.length,
           sentiment:
-            period1.reduce((a, b: any) => a + (b.sentiment_score || 0), 0) / period1.length,
-          recommendations: period1.reduce((a, b: any) => a + (b.total_recommendations || 0), 0),
-          queries: period1.reduce((a, b: any) => a + (b.queries_this_period || 0), 0),
+            period1.reduce((a, b) => a + ((b.sentiment_score as number) || 0), 0) / period1.length,
+          recommendations: period1.reduce((a, b) => a + ((b.total_recommendations as number) || 0), 0),
+          queries: period1.reduce((a, b) => a + ((b.queries_this_period as number) || 0), 0),
         }
       : { healthScore: 0, sentiment: 0, recommendations: 0, queries: 0 }
 
-    const period2 = period2Data as any[]
+    const period2 = period2Data as Array<Record<string, unknown>>
     const avg2 = period2?.length
       ? {
-          healthScore: period2.reduce((a, b: any) => a + (b.health_score || 0), 0) / period2.length,
+          healthScore: period2.reduce((a, b) => a + ((b.health_score as number) || 0), 0) / period2.length,
           sentiment:
-            period2.reduce((a, b: any) => a + (b.sentiment_score || 0), 0) / period2.length,
-          recommendations: period2.reduce((a, b: any) => a + (b.total_recommendations || 0), 0),
-          queries: period2.reduce((a, b: any) => a + (b.queries_this_period || 0), 0),
+            period2.reduce((a, b) => a + ((b.sentiment_score as number) || 0), 0) / period2.length,
+          recommendations: period2.reduce((a, b) => a + ((b.total_recommendations as number) || 0), 0),
+          queries: period2.reduce((a, b) => a + ((b.queries_this_period as number) || 0), 0),
         }
       : { healthScore: 0, sentiment: 0, recommendations: 0, queries: 0 }
 
@@ -122,17 +122,17 @@ export async function POST(req: NextRequest) {
     const queryChange = avg2.queries - avg1.queries
 
     // Find new and disappeared recommendations
-    const p1RecIds = new Set(((period1Recs as any[]) || []).map((r: any) => r.id))
-    const p2RecIds = ((period2Recs as any[]) || []).map((r: any) => r.id)
+    const p1RecIds = new Set((period1Recs || []).map((r: Record<string, unknown>) => r.id))
+    const p2RecIds = (period2Recs || []).map((r: Record<string, unknown>) => r.id)
 
-    const newRecs = p2RecIds.filter((r) => !p1RecIds.has(r.id))
+    const newRecs = p2RecIds.filter((r) => !p1RecIds.has((r as Record<string, unknown>)?.id))
     const disappearedRecs =
       p1RecIds.size > 0
-        ? ((period1Recs as any[]) || []).filter(
-            (r: any) => !p2RecIds.some((p2: any) => p2.id === r.id),
+        ? (period1Recs || []).filter(
+            (r: Record<string, unknown>) => !p2RecIds.some((p2) => (p2 as Record<string, unknown>)?.id === r.id),
           )
         : []
-    const consistentRecs = p2RecIds.filter((r) => p1RecIds.has(r.id))
+    const consistentRecs = p2RecIds.filter((r) => p1RecIds.has((r as Record<string, unknown>)?.id))
 
     return NextResponse.json({
       success: true,

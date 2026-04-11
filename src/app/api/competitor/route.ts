@@ -1,5 +1,6 @@
 // PATH: src/app/api/competitor/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
+import type { Json } from '@/types/database'
 import { z } from 'zod'
 import { analyzeCompetitor } from '@/lib/services/gemini'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
     const brand = await verifyBrandAccess(brandId, userId)
     if (!brand) return err('Brand not found or access denied', 404)
 
-    const { data, error: fetchErr } = await (db as any)
+    const { data, error: fetchErr } = await db
       .from('competitor_analyses')
       .select('id, brand_id, primary_url, competitors, summary, created_at')
       .eq('brand_id', brandId)
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Otherwise, return user's own analyses
-  const { data, error: fetchErr } = await (db as any)
+  const { data, error: fetchErr } = await db
     .from('competitor_analyses')
     .select('id, brand_id, primary_url, competitors, summary, created_at')
     .eq('user_id', userId)
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
 
   // ── Extract brand_id if present ─────────────────────────────────────────
   if (body && typeof body === 'object' && 'brand_id' in body) {
-    brandId = (body as any).brand_id
+    brandId = (body as Record<string, unknown>).brand_id as string
   }
 
   const parsed = schema.safeParse(body)
@@ -179,13 +180,13 @@ export async function POST(req: NextRequest) {
     // ── Save to database ───────────────────────────────────────────────────
     if (userId && !userId.startsWith('anonymous:') && db) {
       try {
-        await (db as any).from('competitor_analyses').insert({
+        await db.from('competitor_analyses').insert({
           brand_id: brandId,
           user_id: userId,
           primary_url: normalizedPrimary,
-          competitors: { primary, competitors },
+          competitors: { primary, competitors } as unknown as Json,
           summary: `Analyzed ${normalizedPrimary} against ${competitorUrls.length} competitors`,
-          raw_response: { primary, competitors },
+          raw_response: { primary, competitors } as unknown as Json,
         })
       } catch (dbError) {
         console.error('[/api/competitor] Failed to save result:', dbError)

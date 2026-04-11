@@ -39,70 +39,70 @@ export async function GET(req: NextRequest) {
 
   try {
     // Get total queries count
-    const { count: totalQueries } = (await db
-      .from('research_archives' as any)
+    const { count: totalQueries } = await db
+      .from('research_archives')
       .select('*', { count: 'exact', head: true })
       .eq('brand_id', brandId)
-      .eq('status', 'active')) as any
+      .eq('status', 'active')
 
     // Get query breakdown by type
-    const { data: toolBreakdown } = (await db
-      .from('research_archives' as any)
+    const { data: toolBreakdown } = await db
+      .from('research_archives')
       .select('query_type')
       .eq('brand_id', brandId)
-      .eq('status', 'active')) as any
+      .eq('status', 'active')
 
-    const breakdown = (toolBreakdown || []).reduce((acc: Record<string, number>, item: any) => {
+    const breakdown = (toolBreakdown || []).reduce((acc: Record<string, number>, item) => {
       acc[item.query_type] = (acc[item.query_type] || 0) + 1
       return acc
     }, {})
 
     // Get total active recommendations
-    const { count: totalRecs } = (await db
-      .from('recommendation_tracking' as any)
+    const { count: totalRecs } = await db
+      .from('recommendation_tracking')
       .select('*', { count: 'exact', head: true })
       .eq('brand_id', brandId)
-      .eq('status', 'active')) as any
+      .eq('status', 'active')
 
     // Get date range
-    const { data: dateRange } = (await db
-      .from('research_archives' as any)
+    const { data: dateRange } = await db
+      .from('research_archives')
       .select('created_at')
       .eq('brand_id', brandId)
       .eq('status', 'active')
       .order('created_at', { ascending: true })
       .limit(1)
-      .single()) as any
+      .single()
 
     // Get last query
-    const { data: lastQuery } = (await db
-      .from('research_archives' as any)
+    const { data: lastQuery } = await db
+      .from('research_archives')
       .select('created_at, query_type')
       .eq('brand_id', brandId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single()) as any
+      .single()
 
     // Get latest health score
-    const { data: latestSnapshot } = (await db
-      .from('brand_snapshots' as any)
+    const { data: latestSnapshot } = await db
+      .from('brand_snapshots')
       .select('health_score, sentiment_score, snapshot_date')
       .eq('brand_id', brandId)
       .order('snapshot_date', { ascending: false })
       .limit(1)
-      .single()) as any
+      .single()
 
     // Get top recommendations
-    const { data: topRecs } = (await db
-      .from('recommendation_tracking' as any)
+    const { data: topRecs } = await db
+      .from('recommendation_tracking')
       .select(
         'id, recommendation_text, priority, last_seen_date, occurrence_count, consistency_score',
       )
       .eq('brand_id', brandId)
       .eq('status', 'active')
       .order('consistency_score', { ascending: false })
-      .limit(5)) as any
+      .limit(5)
 
     return NextResponse.json({
       success: true,

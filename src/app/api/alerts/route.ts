@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
     return err('Brand not found or access denied', 404)
   }
 
-  const { data, error } = await (db as any)
+  const { data, error } = await db
     .from('alert_rules')
     .insert({ ...parsed.data, user_id: userId, id: crypto.randomUUID() })
     .select()
@@ -244,7 +244,7 @@ export async function PUT(req: NextRequest) {
   if (!id) return err('id query parameter is required', 400)
 
   if (action === 'read') {
-    const { error } = await (db as any)
+    const { error } = await db
       .from('alert_events')
       .update({ is_read: true })
       .eq('id', id)
@@ -255,7 +255,7 @@ export async function PUT(req: NextRequest) {
   }
 
   if (action === 'toggle') {
-    const { data: rule } = await (db as any)
+    const { data: rule } = await db
       .from('alert_rules')
       .select('is_active')
       .eq('id', id)
@@ -264,7 +264,7 @@ export async function PUT(req: NextRequest) {
 
     if (!rule) return err('Alert rule not found', 404)
 
-    const { data, error } = await (db as any)
+    const { data, error } = await db
       .from('alert_rules')
       .update({ is_active: !rule.is_active })
       .eq('id', id)
@@ -295,7 +295,7 @@ export async function PUT(req: NextRequest) {
     )
   }
 
-  const { data, error } = await (db as any)
+  const { data, error } = await db
     .from('alert_rules')
     .update(parsed.data)
     .eq('id', id)

@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Check user's subscription status
-    const { data: subscription, error: subError } = await (db as any)
+    const { data: subscription, error: subError } = await db
       .from('subscriptions')
       .select('plan, status')
       .eq('user_id', userId)
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
-      const { data: todayUsage } = await (db as any)
+      const { data: todayUsage } = await db
         .from('credit_usage')
         .select('count')
         .eq('user_id', userId)
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check credit balance for paid users or free users who exceeded free limit
-    const { data: credits, error: creditsError } = await (db as any)
+    const { data: credits, error: creditsError } = await db
       .from('credits')
       .select('amount')
       .eq('user_id', userId)
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
     // Insert both in sequence — if deduction fails, usage is not recorded
     const description = `Query with ${engines.join(', ')}`
 
-    const { error: deductError } = await (db as any).from('credits').insert({
+    const { error: deductError } = await db.from('credits').insert({
       user_id: userId,
       amount: -creditsNeeded,
       source: 'query_usage',
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
     if (deductError) throw deductError
 
     // Record usage (non-critical — log errors but don't fail the request)
-    await (db as any)
+    await db
       .from('credit_usage')
       .insert({
         user_id: userId,

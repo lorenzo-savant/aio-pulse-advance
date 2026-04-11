@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           const totalCredits = parseInt(credits) + (parseInt(bonus) || 0)
 
           // Add credits to user account
-          await (db as any).from('credits').insert({
+          await db.from('credits').insert({
             user_id: userId,
             amount: totalCredits,
             source: 'stripe_purchase',
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
         // Handle subscription purchases
         if (userId && plan) {
-          await (db as any).from('subscriptions').upsert(
+          await db.from('subscriptions').upsert(
             {
               user_id: userId,
               stripe_customer_id: customerId,
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object
         const customerId = subscription.customer
 
-        const { data: sub } = await (db as any)
+        const { data: sub } = await db
           .from('subscriptions')
           .select('user_id')
           .eq('stripe_customer_id', customerId)
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
             ? new Date(subscription.current_period_end * 1000).toISOString()
             : null
 
-          await (db as any)
+          await db
             .from('subscriptions')
             .update({
               status: subscription.status === 'active' ? 'active' : subscription.status,
@@ -130,14 +130,14 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object
         const customerId = subscription.customer
 
-        const { data: sub } = await (db as any)
+        const { data: sub } = await db
           .from('subscriptions')
           .select('user_id')
           .eq('stripe_customer_id', customerId)
           .single()
 
         if (sub) {
-          await (db as any)
+          await db
             .from('subscriptions')
             .update({
               plan: 'free',
@@ -155,14 +155,14 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object
         const customerId = invoice.customer
 
-        const { data: sub } = await (db as any)
+        const { data: sub } = await db
           .from('subscriptions')
           .select('user_id')
           .eq('stripe_customer_id', customerId)
           .single()
 
         if (sub) {
-          await (db as any)
+          await db
             .from('subscriptions')
             .update({ status: 'past_due' })
             .eq('user_id', sub.user_id)

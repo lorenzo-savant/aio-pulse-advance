@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const db = createServerClient()
     if (db) {
       try {
-        await (db as any).from('security_logs').insert({
+        await db.from('security_logs').insert({
           event_type: 'csp_violation',
           event_data: logEntry,
           severity: 'warning',

@@ -15,20 +15,12 @@ if (!isConfigured && process.env.NODE_ENV === 'production') {
   )
 }
 
-export const supabase = isConfigured
+// Internal client for bearer token auth in getCurrentUserId — not exported
+const supabase = isConfigured
   ? createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
+      auth: { persistSession: false, autoRefreshToken: false },
     })
   : null
-
-/**
- * @deprecated Use createSupabaseBrowserClient from '@/lib/supabase-browser' instead.
- * This client stores sessions in localStorage, which doesn't work with middleware cookie auth.
- * The browser client uses cookies, matching the server client's behavior.
- */
 
 export type TypedSupabaseClient = SupabaseClient<Database>
 

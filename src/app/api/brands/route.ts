@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError, dbNotConfigured } from '@/lib/supabase'
 import { slugify } from '@/lib/utils'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ export async function GET(req: NextRequest) {
 
     // If no database configured, return empty array (dev mode without DB)
     if (!db) {
-      console.warn('[API /brands] No database configured, returning empty array')
+      logger.warn('No database configured, returning empty array', { route: '/api/brands' })
       return NextResponse.json({ success: true, data: [], timestamp: Date.now() })
     }
 
@@ -112,13 +113,13 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('[API /brands] Database error:', error)
+      logger.error('Database error', { route: '/api/brands', error })
       return err(error.message)
     }
 
     return NextResponse.json({ success: true, data, timestamp: Date.now() })
   } catch (e) {
-    console.error('[API /brands] GET error:', e)
+    logger.error('GET error', { route: '/api/brands', error: e })
     return err(e instanceof Error ? e.message : 'Internal server error')
   }
 }

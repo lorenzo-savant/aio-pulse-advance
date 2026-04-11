@@ -1,5 +1,6 @@
 // PATH: src/lib/services/email.ts
 import { Resend } from 'resend'
+import { logger } from '@/lib/logger'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -21,7 +22,7 @@ export async function sendInvitationEmail({
   acceptUrl,
 }: InvitationEmailParams) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn('[email] Resend not configured, skipping invitation email')
+    logger.warn('Resend not configured, skipping invitation email', { service: 'email' })
     return { success: false, error: 'Resend not configured' }
   }
 
@@ -91,7 +92,7 @@ export async function sendInvitationEmail({
     })
     return { success: true }
   } catch (error) {
-    console.error('[email] Error sending invitation:', error)
+    logger.error('Error sending invitation email', { service: 'email', error })
     return { success: false, error }
   }
 }
@@ -114,7 +115,7 @@ export async function sendAlertEmail({
   data,
 }: AlertEmailParams) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn('[email] Resend not configured, skipping email')
+    logger.warn('Resend not configured, skipping alert email', { service: 'email' })
     return { success: false, error: 'Resend not configured' }
   }
 
@@ -210,7 +211,7 @@ export async function sendAlertEmail({
     })
     return { success: true }
   } catch (error) {
-    console.error('[email] Error sending email:', error)
+    logger.error('Error sending alert email', { service: 'email', error })
     return { success: false, error }
   }
 }
@@ -233,7 +234,7 @@ interface WelcomeEmailParams {
 
 export async function sendWelcomeEmail({ to, name }: WelcomeEmailParams) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn('[email] Resend not configured, skipping welcome email')
+    logger.warn('Resend not configured, skipping welcome email', { service: 'email' })
     return { success: false, error: 'Resend not configured' }
   }
 
@@ -328,7 +329,7 @@ export async function sendWelcomeEmail({ to, name }: WelcomeEmailParams) {
     })
     return { success: true }
   } catch (error) {
-    console.error('[email] Error sending welcome email:', error)
+    logger.error('Error sending welcome email', { service: 'email', error })
     return { success: false, error }
   }
 }
@@ -341,7 +342,7 @@ interface PasswordResetEmailParams {
 
 export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordResetEmailParams) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn('[email] Resend not configured, skipping password reset email')
+    logger.warn('Resend not configured, skipping password reset email', { service: 'email' })
     return { success: false, error: 'Resend not configured' }
   }
 
@@ -401,7 +402,7 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
     })
     return { success: true }
   } catch (error) {
-    console.error('[email] Error sending password reset email:', error)
+    logger.error('Error sending password reset email', { service: 'email', error })
     return { success: false, error }
   }
 }
@@ -429,7 +430,7 @@ export async function sendWebhookNotification(
 
     return { success: true }
   } catch (error) {
-    console.error('[webhook] Error:', error)
+    logger.error('Webhook notification error', { service: 'email', error })
     return { success: false, error }
   }
 }

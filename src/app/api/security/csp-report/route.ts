@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 interface CSPReport {
   'csp-report'?: {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
       ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip'),
     }
 
-    console.warn('[CSP VIOLATION]', JSON.stringify(logEntry))
+    logger.warn('CSP violation detected', logEntry)
 
     const db = createServerClient()
     if (db) {
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[CSP Reporting Error]', error)
+    logger.error('CSP reporting error', { error })
     return NextResponse.json({ success: false, message: 'Internal error' }, { status: 500 })
   }
 }

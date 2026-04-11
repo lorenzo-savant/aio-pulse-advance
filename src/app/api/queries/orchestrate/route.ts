@@ -8,6 +8,7 @@ import { calculateOrchestratedCost } from '@/lib/services/cost-calculator'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { checkRateLimit } from '@/lib/ratelimit'
 import type { MonitoringEngine } from '@/types'
+import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Execute orchestrated query
-  console.log(`[orchestrate] Executing query with engines:`, engines)
+  logger.info('Executing orchestrated query', { route: '/api/queries/orchestrate', engines })
 
   const result = await queryOrchestrator.orchestrateQuery(prompt, engines as MonitoringEngine[], {
     useCache: use_cache,
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[orchestrate] Failed to save result:', error)
+      logger.error('Failed to save orchestrated result', { route: '/api/queries/orchestrate', error })
     } else {
       savedResult = data
     }

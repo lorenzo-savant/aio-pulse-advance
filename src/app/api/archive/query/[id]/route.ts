@@ -2,6 +2,7 @@
 // GET /api/archive/query/[id]
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let userId: string
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       },
     })
   } catch (error) {
-    console.error('[archive/query] Error:', error)
+    logger.error('Error fetching archive query', { route: '/api/archive/query/[id]', error })
     return NextResponse.json(
       { success: false, message: 'Failed to fetch archive query' },
       { status: 500 },
@@ -152,7 +153,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     return NextResponse.json({ success: true, message: 'Archive deleted' })
   } catch (error) {
-    console.error('[archive/query] Delete error:', error)
+    logger.error('Error deleting archive query', { route: '/api/archive/query/[id]', error })
     return NextResponse.json(
       { success: false, message: 'Failed to delete archive' },
       { status: 500 },

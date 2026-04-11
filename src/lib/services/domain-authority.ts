@@ -1,4 +1,5 @@
 import { createServerClient, type TypedSupabaseClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 interface BrandMetrics {
   brandId: string
@@ -29,7 +30,7 @@ const WEIGHTS = {
 export async function calculateDomainAuthority(brandId: string, userId: string): Promise<number> {
   const db = createServerClient()
   if (!db) {
-    console.warn('[domain-authority] Database not configured')
+    logger.warn('Database not configured', { service: 'domain-authority' })
     return 0
   }
 
@@ -44,7 +45,7 @@ export async function calculateDomainAuthority(brandId: string, userId: string):
 
     return score
   } catch (error) {
-    console.error('[domain-authority] Error calculating:', error)
+    logger.error('Error calculating domain authority', { service: 'domain-authority', error })
     return 0
   }
 }
@@ -78,7 +79,7 @@ async function fetchBrandMetrics(db: TypedSupabaseClient, brandId: string): Prom
     .gte('created_at', thirtyDaysAgo.toISOString())
 
   if (resultsError) {
-    console.error('[domain-authority] Results error:', resultsError)
+    logger.error('Error fetching monitoring results', { service: 'domain-authority', error: resultsError })
   }
 
   // Get latest snapshot for competitor rates

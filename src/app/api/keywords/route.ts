@@ -7,6 +7,7 @@ import {
   getTopCorrelatedKeywords,
 } from '@/lib/services/keyword-tracker'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
     const keywords = await getKeywords(brandId, limit)
     return NextResponse.json({ success: true, data: keywords })
   } catch (error) {
-    console.error('[keywords] GET error:', error)
+    logger.error('Keywords GET error', { route: '/api/keywords', error })
     return err('Failed to fetch keywords')
   }
 }
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     return err('Invalid action', 400)
   } catch (error) {
-    console.error('[keywords] POST error:', error)
+    logger.error('Keywords POST error', { route: '/api/keywords', error })
     return err('Failed to process keywords')
   }
 }

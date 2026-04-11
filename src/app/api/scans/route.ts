@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { parsePaginationParams, paginatedResponse } from '@/lib/api-utils'
+import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
   const { data, error, count } = await query
 
   if (error) {
-    console.error('[/api/scans] Load error:', error)
+    logger.error('Scan load error', { route: '/api/scans', error })
     return err(error.message)
   }
 
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) {
-    console.error('[/api/scans] Save error:', error)
+    logger.error('Scan save error', { route: '/api/scans', error })
     return err(error.message)
   }
 
@@ -147,7 +148,7 @@ export async function DELETE(req: NextRequest) {
     .eq('user_id', userId)
 
   if (error) {
-    console.error('[/api/scans] Delete error:', error)
+    logger.error('Scan delete error', { route: '/api/scans', error })
     return err(error.message)
   }
 

@@ -15,6 +15,7 @@ import {
   simulateEngineResponse as routerSimulate,
   analyzeResponseForBrand as routerAnalyze,
 } from './ai-router'
+import { logger } from '@/lib/logger'
 
 function parseJson<T>(raw: string): T {
   const cleaned = raw
@@ -113,11 +114,11 @@ export async function runMonitoringCheck(
     prompt.text,
     engine,
   )
-  console.log(`[monitoring] ${engine} simulato con: ${simulationProvider}`)
+  logger.info('Engine simulation completed', { service: 'monitoring', engine, provider: simulationProvider })
 
   const analysisPrompt = buildAnalysisPrompt(responseText, brand, prompt.text)
   const { text: analysisRaw, provider: analysisProvider } = await routerAnalyze(analysisPrompt)
-  console.log(`[monitoring] ${engine} analisi con: ${analysisProvider}`)
+  logger.info('Brand analysis completed', { service: 'monitoring', engine, provider: analysisProvider })
 
   let analysis: AnalysisOutput
   try {
@@ -188,7 +189,7 @@ Respond ONLY with valid JSON (no markdown):
 }`
 
   const { text: raw, provider } = await routerAnalyze(prompt)
-  console.log(`[monitoring] analyzeSentiment con: ${provider}`)
+  logger.info('Sentiment analysis completed', { service: 'monitoring', provider })
   return parseJson<SentimentResult>(raw)
 }
 
@@ -235,7 +236,7 @@ Respond ONLY with valid JSON (no markdown):
 }`
 
   const { text: raw, provider } = await routerAnalyze(prompt)
-  console.log(`[monitoring] detectHallucinations con: ${provider}`)
+  logger.info('Hallucination detection completed', { service: 'monitoring', provider })
   return parseJson<HallucinationResult>(raw)
 }
 

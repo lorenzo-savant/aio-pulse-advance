@@ -1,6 +1,7 @@
 import type { AlertEvent, AlertRule, Brand, MonitoringResult } from '@/types'
 import { Resend } from 'resend'
 import { deliverWebhook, buildWebhookPayload } from './webhook-delivery'
+import { logger } from '@/lib/logger'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -16,7 +17,7 @@ interface EmailPayload {
 
 async function sendEmail(payload: EmailPayload): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) {
-    console.warn('[alerts] RESEND_API_KEY not set — skipping email')
+    logger.warn('RESEND_API_KEY not set, skipping email', { service: 'alerts' })
     return false
   }
 
@@ -29,7 +30,7 @@ async function sendEmail(payload: EmailPayload): Promise<boolean> {
     })
     return true
   } catch (error) {
-    console.error('[alerts] Resend error:', error)
+    logger.error('Resend email error', { service: 'alerts', error })
     return false
   }
 }

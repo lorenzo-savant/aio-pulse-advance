@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   let userId: string
@@ -93,7 +94,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[archive/sentiment] Error:', error)
+    logger.error('Error fetching sentiment data', { route: '/api/archive/sentiment', error })
     return NextResponse.json(
       { success: false, message: 'Failed to fetch sentiment data' },
       { status: 500 },

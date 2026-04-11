@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { callGemini } from '@/lib/services/gemini'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -162,7 +163,7 @@ Respond ONLY with valid JSON (no markdown):
         based_on_count: (results?.length || 0) + (keywords?.length || 0),
       })
     } catch (dbError) {
-      console.error('[/api/recommendations] Failed to save result:', dbError)
+      logger.error('Failed to save recommendation result', { route: '/api/recommendations', error: dbError })
     }
 
     return NextResponse.json({
@@ -171,7 +172,7 @@ Respond ONLY with valid JSON (no markdown):
       timestamp: Date.now(),
     })
   } catch (error) {
-    console.error('[/api/recommendations] Error:', error)
+    logger.error('Error generating recommendations', { route: '/api/recommendations', error })
     return err(error instanceof Error ? error.message : 'Failed to generate recommendations')
   }
 }

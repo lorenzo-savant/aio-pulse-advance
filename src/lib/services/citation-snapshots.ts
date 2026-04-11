@@ -1,5 +1,6 @@
 // PATH: src/lib/services/citation-snapshots.ts
 import { createServerClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 interface MonitoringResultRow {
   id: string
@@ -170,9 +171,7 @@ export async function calculateCitationSnapshots(
     }
   }
 
-  console.log(
-    `[citation-snapshots] Brand ${brandId} @ ${scanDate}: ${inserted} snapshots saved, ${errors.length} errors`,
-  )
+  logger.info('Citation snapshots calculated', { service: 'citation-snapshots', brandId, scanDate, inserted, errorCount: errors.length })
 
   return { inserted, errors }
 }

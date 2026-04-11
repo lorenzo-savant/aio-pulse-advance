@@ -14,6 +14,7 @@ import { callCerebras, isCerebrasAvailable, CEREBRAS_MODELS } from './cerebras'
 import { isOpenAIAvailable, callOpenAI } from './openai'
 import { isPerplexityAvailable, callPerplexity } from './perplexity'
 import { isAnthropicAvailable, callAnthropic } from './anthropic'
+import { logger } from '@/lib/logger'
 
 async function callGeminiFallback(prompt: string): Promise<string> {
   const apiKey = process.env['GEMINI_API_KEY']
@@ -67,7 +68,7 @@ export async function simulateEngineResponse(
       const text = await callOpenAI(fullPrompt)
       return { text, provider: 'openai:gpt-4o-mini' }
     } catch (e) {
-      console.warn('[ai-router] OpenAI direct call failed, falling back to simulation:', e)
+      logger.warn('OpenAI direct call failed, falling back to simulation', { service: 'ai-router', engine, error: e })
     }
   }
 
@@ -76,7 +77,7 @@ export async function simulateEngineResponse(
       const text = await callGeminiFallback(fullPrompt)
       return { text, provider: 'gemini:flash-2.0' }
     } catch (e) {
-      console.warn('[ai-router] Gemini direct call failed:', e)
+      logger.warn('Gemini direct call failed', { service: 'ai-router', engine, error: e })
     }
   }
 
@@ -85,7 +86,7 @@ export async function simulateEngineResponse(
       const text = await callPerplexity(fullPrompt)
       return { text, provider: 'perplexity:sonar' }
     } catch (e) {
-      console.warn('[ai-router] Perplexity direct call failed, falling back:', e)
+      logger.warn('Perplexity direct call failed, falling back', { service: 'ai-router', engine, error: e })
     }
   }
 
@@ -94,7 +95,7 @@ export async function simulateEngineResponse(
       const text = await callAnthropic(fullPrompt)
       return { text, provider: 'anthropic:claude-sonnet' }
     } catch (e) {
-      console.warn('[ai-router] Anthropic direct call failed, falling back:', e)
+      logger.warn('Anthropic direct call failed, falling back', { service: 'ai-router', engine, error: e })
     }
   }
 
@@ -108,7 +109,7 @@ export async function simulateEngineResponse(
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`OpenRouter: ${msg}`)
-      console.warn(`[ai-router] OpenRouter fallito per ${engine}:`, msg)
+      logger.warn('OpenRouter failed for engine', { service: 'ai-router', engine, error: msg })
     }
   }
 
@@ -124,7 +125,7 @@ export async function simulateEngineResponse(
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Groq: ${msg}`)
-      console.warn(`[ai-router] Groq fallito per ${engine}:`, msg)
+      logger.warn('Groq failed for engine', { service: 'ai-router', engine, error: msg })
     }
   }
 
@@ -163,7 +164,7 @@ export async function analyzeResponseForBrand(
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Cerebras: ${msg}`)
-      console.warn('[ai-router] Cerebras fallito per analisi:', msg)
+      logger.warn('Cerebras failed for analysis', { service: 'ai-router', error: msg })
     }
   }
 
@@ -179,7 +180,7 @@ export async function analyzeResponseForBrand(
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Groq: ${msg}`)
-      console.warn('[ai-router] Groq fallito per analisi:', msg)
+      logger.warn('Groq failed for analysis', { service: 'ai-router', error: msg })
     }
   }
 

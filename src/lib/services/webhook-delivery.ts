@@ -1,6 +1,7 @@
 // PATH: src/lib/services/webhook-delivery.ts
 import { createServerClient } from '@/lib/supabase'
 import crypto from 'crypto'
+import { logger } from '@/lib/logger'
 
 const MAX_ATTEMPTS = 3
 const RETRY_DELAYS_MS = [0, 30_000, 120_000] // immediate, 30s, 2min
@@ -59,7 +60,7 @@ export async function deliverWebhook(
         .single()
       logId = data?.id || null
     } catch (err) {
-      console.error('[webhook] Failed to create delivery log:', err)
+      logger.error('Failed to create webhook delivery log', { service: 'webhook-delivery', error: err })
     }
   }
 
@@ -130,7 +131,7 @@ export async function deliverWebhook(
       }
 
       if (attempt + 1 >= MAX_ATTEMPTS) {
-        console.error(`[webhook] All ${MAX_ATTEMPTS} attempts failed for ${url}: ${errorMsg}`)
+        logger.error('All webhook delivery attempts failed', { service: 'webhook-delivery', url, attempts: MAX_ATTEMPTS, error: errorMsg })
         return { success: false, logId }
       }
     }

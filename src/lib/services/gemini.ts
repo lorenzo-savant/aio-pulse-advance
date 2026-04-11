@@ -1,5 +1,6 @@
 import type { AnalysisResult, EngineId, IntentType } from '@/types'
 import { generateId } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 // ─── SSRF Protection ───────────────────────────────────────────────────────────
 
@@ -282,8 +283,7 @@ export async function analyzeContent(
   const prompt = buildAnalysisPrompt(contentToAnalyze, engine)
   const rawResponse = await callGemini(prompt)
 
-  // Debug: log raw response (first 200 chars)
-  console.log('Raw Gemini response:', rawResponse.slice(0, 200))
+  logger.debug('Raw Gemini response', { service: 'gemini', responsePreview: rawResponse.slice(0, 200) })
 
   // Clean and parse JSON - handle multiple formats
   let cleaned = rawResponse
@@ -309,7 +309,7 @@ export async function analyzeContent(
       const fixed = repairTruncatedJson(cleaned)
       parsed = JSON.parse(fixed) as typeof parsed
     } catch (e2) {
-      console.error('Failed to parse AI response:', cleaned.slice(0, 500))
+      logger.error('Failed to parse AI response', { service: 'gemini', rawPreview: cleaned.slice(0, 500) })
       throw new Error(
         `Failed to parse AI response: ${e2 instanceof Error ? e2.message : 'Invalid JSON'}. Please try again.`,
       )

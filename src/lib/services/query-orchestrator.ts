@@ -10,6 +10,7 @@
 
 import type { MonitoringEngine } from '@/types'
 import { createServerClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 interface QueryResponse {
   provider: string
@@ -59,13 +60,13 @@ class QueryOrchestrator {
     if (useCache) {
       const cached = this.responseCache.get(cacheKey)
       if (cached && Date.now() - cached.timestamp.getTime() < CACHE_TTL_MS) {
-        console.log(`[orchestrator] Cache HIT: ${cacheKey.slice(0, 40)}...`)
+        logger.debug('Cache hit', { service: 'query-orchestrator', cacheKey: cacheKey.slice(0, 40) })
         return cached
       }
     }
 
     // 2. Execute all providers in parallel
-    console.log(`[orchestrator] Executing ${engines.length} providers in parallel:`, engines)
+    logger.info('Executing providers in parallel', { service: 'query-orchestrator', providerCount: engines.length, engines })
     const startTime = Date.now()
 
     const promises = engines.map((engine) => this.executeProvider(engine, promptText, requestId))
@@ -77,7 +78,7 @@ class QueryOrchestrator {
       if (result.status === 'fulfilled') {
         return result.value
       } else {
-        console.error(`[orchestrator] Provider ${engines[index]} failed:`, result.reason)
+        logger.error('Provider failed', { service: 'query-orchestrator', provider: engines[index], error: result.reason })
         return {
           provider: engines[index],
           engine: engines[index],
@@ -132,9 +133,7 @@ class QueryOrchestrator {
     }
 
     // 6. Log results
-    console.log(
-      `[orchestrator] Complete: ${successCount}/${engines.length} succeeded in ${totalTimeMs}ms`,
-    )
+    logger.info('Orchestration complete', { service: 'query-orchestrator', successCount, totalEngines: engines.length, totalTimeMs })
 
     return orchestratedResult
   }
@@ -173,7 +172,7 @@ class QueryOrchestrator {
       }
     } catch (error) {
       const responseTimeMs = Date.now() - startTime
-      console.error(`[orchestrator] ${providerName} failed:`, error)
+      logger.error('Provider execution failed', { service: 'query-orchestrator', provider: providerName, error })
 
       return {
         provider: providerName,
@@ -289,7 +288,7 @@ if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const cleared = queryOrchestrator.clearExpiredCache()
     if (cleared > 0) {
-      console.log(`[orchestrator] Cleared ${cleared} expired cache entries`)
+      logger.debug('Cleared expired cache entries', { service: 'query-orchestrator', cleared })
     }
   }, 300000) // Every 5 minutes
 }

@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   let userId: string
@@ -119,7 +120,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[archive/overview] Error:', error)
+    logger.error('Error fetching archive overview', { route: '/api/archive/overview', error })
     return NextResponse.json(
       { success: false, message: 'Failed to fetch overview' },
       { status: 500 },

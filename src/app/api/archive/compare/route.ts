@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   let userId: string
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[archive/compare] Error:', error)
+    logger.error('Error comparing periods', { route: '/api/archive/compare', error })
     return NextResponse.json(
       { success: false, message: 'Failed to compare periods' },
       { status: 500 },

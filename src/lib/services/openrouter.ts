@@ -5,6 +5,7 @@
 // Aggiungi in .env.local: OPENROUTER_API_KEY=sk-or-v1-...
 
 import type { MonitoringEngine } from '@/types'
+import { logger } from '@/lib/logger'
 
 interface OpenRouterMessage {
   role: 'user' | 'assistant' | 'system'
@@ -115,10 +116,7 @@ export async function callOpenRouterForEngine(
     return await callOpenRouter(prompt, { model: primaryModel, temperature })
   } catch (err) {
     const fallbackModel = ENGINE_TO_FALLBACK_MODEL[engine]
-    console.warn(
-      `[openrouter] "${primaryModel}" fallito, provo fallback "${fallbackModel}": ` +
-        (err instanceof Error ? err.message : err),
-    )
+    logger.warn('Primary model failed, trying fallback', { service: 'openrouter', primaryModel, fallbackModel, error: err instanceof Error ? err.message : err })
     return await callOpenRouter(prompt, { model: fallbackModel, temperature })
   }
 }

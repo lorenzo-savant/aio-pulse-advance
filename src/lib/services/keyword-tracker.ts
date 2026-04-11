@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 interface KeywordData {
   keyword: string
@@ -186,7 +187,7 @@ function extractKeywords(text: string): string[] {
 export async function trackKeywords(brandId: string): Promise<void> {
   const db = createServerClient()
   if (!db) {
-    console.warn('[keywords] Database not configured')
+    logger.warn('Database not configured', { service: 'keyword-tracker' })
     return
   }
 
@@ -271,15 +272,13 @@ export async function trackKeywords(brandId: string): Promise<void> {
       )
 
       if (upsertError) {
-        console.error('[keywords] Upsert error:', keyword, upsertError)
+        logger.error('Keyword upsert error', { service: 'keyword-tracker', keyword, error: upsertError })
       }
     }
 
-    console.log(
-      `[keywords] Tracked ${Object.keys(keywordData).length} keywords for brand ${brandId}`,
-    )
+    logger.info('Keywords tracked', { service: 'keyword-tracker', brandId, keywordCount: Object.keys(keywordData).length })
   } catch (error) {
-    console.error('[keywords] Error tracking keywords:', error)
+    logger.error('Error tracking keywords', { service: 'keyword-tracker', error })
   }
 }
 
@@ -295,7 +294,7 @@ export async function getKeywords(brandId: string, limit = 50) {
     .limit(limit)
 
   if (error) {
-    console.error('[keywords] Fetch error:', error)
+    logger.error('Keyword fetch error', { service: 'keyword-tracker', error })
     return []
   }
 
@@ -315,7 +314,7 @@ export async function getTopCorrelatedKeywords(brandId: string, limit = 20) {
     .limit(limit)
 
   if (error) {
-    console.error('[keywords] Fetch error:', error)
+    logger.error('Correlated keyword fetch error', { service: 'keyword-tracker', error })
     return []
   }
 

@@ -7,6 +7,7 @@ import { buildAnalysisPrompt, callGemini } from './gemini'
 import { callGroq, GROQ_MODELS } from './groq'
 import { callCerebras, CEREBRAS_MODELS } from './cerebras'
 import { callOpenRouter, OPENROUTER_MODELS } from './openrouter'
+import { logger } from '@/lib/logger'
 
 // ─── Truncated JSON Repair (shared logic) ────────────────────────────────────
 
@@ -154,7 +155,7 @@ export async function analyzeWithProvider(
       const fixed = repairTruncatedJson(cleaned)
       parsed = JSON.parse(fixed) as typeof parsed
     } catch (e2) {
-      console.error('Failed to parse AI response:', cleaned.slice(0, 500))
+      logger.error('Failed to parse AI response', { service: 'analysis', rawPreview: cleaned.slice(0, 500) })
       throw new Error(
         `Failed to parse AI response: ${e2 instanceof Error ? e2.message : 'Invalid JSON'}. Please try again.`,
       )

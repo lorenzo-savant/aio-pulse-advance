@@ -11,8 +11,11 @@ export async function POST(req: NextRequest) {
   }
 
   const db = createServerClient()
+  if (!db) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+  }
 
-  const { data: brands } = await (db as any)
+  const { data: brands } = await db
     .from('brands')
     .select('id, name, user_id')
     .eq('is_active', true)
@@ -34,8 +37,8 @@ export async function POST(req: NextRequest) {
     try {
       const review = await generateWeeklyReview(db, brand.id, brand.name, brand.user_id)
 
-      // Save to recommendation_histories (legacy)
-      await (db as any).from('recommendation_histories').insert({
+      // Save to recommendation_history (legacy)
+      await db.from('recommendation_history').insert({
         brand_id: brand.id,
         user_id: brand.user_id,
         recommendations: [{ type: 'weekly-review', ...review.metrics }],
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
       })
 
       // Save to weekly_reviews (structured persistence)
-      await (db as any).from('weekly_reviews').upsert(
+      await db.from('weekly_reviews').upsert(
         {
           brand_id: brand.id,
           user_id: brand.user_id,

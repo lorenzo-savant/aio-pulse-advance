@@ -14,9 +14,24 @@ export async function GET(req: NextRequest) {
   const brandId = searchParams.get('brandId')
 
   const db = createServerClient()
+  if (!db) {
+    return NextResponse.json({
+      avi: 0,
+      delta: 0,
+      components: {
+        citationRate: 0,
+        mentionRate: 0,
+        sentimentScore: 0,
+        recommendationRate: 0,
+        positionAvg: 0,
+        hallucinationRate: 0,
+      },
+      previousAvi: 0,
+    })
+  }
 
   // Get latest health score
-  let query = (db as any)
+  let query = db
     .from('brand_health_scores')
     .select('*')
     .eq('user_id', userId)
@@ -45,17 +60,17 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  const current = latest[0]
+  const current = latest[0]!
 
   // Get previous period score (7 days ago)
   const prevDate = new Date()
   prevDate.setDate(prevDate.getDate() - 7)
 
-  let prevQuery = (db as any)
+  let prevQuery = db
     .from('brand_health_scores')
     .select('avi_score, health_score')
     .eq('user_id', userId)
-    .lte('date', prevDate.toISOString().split('T')[0])
+    .lte('date', prevDate.toISOString().split('T')[0] ?? '')
     .order('date', { ascending: false })
     .limit(1)
 

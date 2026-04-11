@@ -95,8 +95,10 @@ export type Database = {
       }
       brand_health_scores: {
         Row: {
+          avi_score: number
           brand_id: string | null
           citation_count: number
+          citation_rate: number
           created_at: string
           date: string
           engine_breakdown: Json
@@ -104,14 +106,19 @@ export type Database = {
           health_score: number
           id: string
           mention_count: number
+          mention_rate: number
           metadata: Json | null
+          position_avg: number
+          recommendation_rate: number
           sentiment_score: number
           user_id: string
           visibility_score: number
         }
         Insert: {
+          avi_score?: number
           brand_id?: string | null
           citation_count?: number
+          citation_rate?: number
           created_at?: string
           date?: string
           engine_breakdown?: Json
@@ -119,14 +126,19 @@ export type Database = {
           health_score?: number
           id?: string
           mention_count?: number
+          mention_rate?: number
           metadata?: Json | null
+          position_avg?: number
+          recommendation_rate?: number
           sentiment_score?: number
           user_id: string
           visibility_score?: number
         }
         Update: {
+          avi_score?: number
           brand_id?: string | null
           citation_count?: number
+          citation_rate?: number
           created_at?: string
           date?: string
           engine_breakdown?: Json
@@ -134,7 +146,10 @@ export type Database = {
           health_score?: number
           id?: string
           mention_count?: number
+          mention_rate?: number
           metadata?: Json | null
+          position_avg?: number
+          recommendation_rate?: number
           sentiment_score?: number
           user_id?: string
           visibility_score?: number
@@ -864,6 +879,303 @@ export type Database = {
           summary?: string | null
           title?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      brand_invitations: {
+        Row: {
+          id: string
+          brand_id: string
+          email: string
+          role: string
+          invited_by: string | null
+          token: string
+          status: string
+          expires_at: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          email: string
+          role?: string
+          invited_by?: string | null
+          token?: string
+          status?: string
+          expires_at: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          email?: string
+          role?: string
+          invited_by?: string | null
+          token?: string
+          status?: string
+          expires_at?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      credits: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          source: string
+          stripe_payment_id: string | null
+          description: string | null
+          expires_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount: number
+          source: string
+          stripe_payment_id?: string | null
+          description?: string | null
+          expires_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount?: number
+          source?: string
+          stripe_payment_id?: string | null
+          description?: string | null
+          expires_at?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      credit_usage: {
+        Row: {
+          id: string
+          user_id: string
+          query_id: string | null
+          credits_used: number
+          provider: string | null
+          engine: string | null
+          brand_id: string | null
+          description: string | null
+          cost_credits: number | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          query_id?: string | null
+          credits_used: number
+          provider?: string | null
+          engine?: string | null
+          brand_id?: string | null
+          description?: string | null
+          cost_credits?: number | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          query_id?: string | null
+          credits_used?: number
+          provider?: string | null
+          engine?: string | null
+          brand_id?: string | null
+          description?: string | null
+          cost_credits?: number | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      security_logs: {
+        Row: {
+          id: string
+          event_type: string
+          user_id: string | null
+          brand_id: string | null
+          ip_address: string | null
+          user_agent: string | null
+          event_data: Json | null
+          severity: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          event_type: string
+          user_id?: string | null
+          brand_id?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          event_data?: Json | null
+          severity?: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          event_type?: string
+          user_id?: string | null
+          brand_id?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          event_data?: Json | null
+          severity?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      seo_audit_results: {
+        Row: {
+          id: string
+          brand_id: string | null
+          user_id: string
+          url: string
+          overall_score: number
+          results: Json
+          cached_at: string
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id?: string | null
+          user_id: string
+          url: string
+          overall_score?: number
+          results?: Json
+          cached_at?: string
+          expires_at: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          brand_id?: string | null
+          user_id?: string
+          url?: string
+          overall_score?: number
+          results?: Json
+          cached_at?: string
+          expires_at?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      llms_txt_versions: {
+        Row: {
+          id: string
+          brand_id: string
+          user_id: string
+          llms_txt: string
+          llms_full_txt: string
+          input_data: Json
+          version: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          user_id: string
+          llms_txt: string
+          llms_full_txt: string
+          input_data?: Json
+          version?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          user_id?: string
+          llms_txt?: string
+          llms_full_txt?: string
+          input_data?: Json
+          version?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      weekly_reviews: {
+        Row: {
+          id: string
+          brand_id: string
+          user_id: string
+          week_number: number
+          year: number
+          week_start: string
+          week_end: string
+          metrics: Json
+          markdown: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          user_id: string
+          week_number: number
+          year: number
+          week_start: string
+          week_end: string
+          metrics?: Json
+          markdown?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          user_id?: string
+          week_number?: number
+          year?: number
+          week_start?: string
+          week_end?: string
+          metrics?: Json
+          markdown?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      webhook_delivery_logs: {
+        Row: {
+          id: string
+          alert_event_id: string
+          alert_rule_id: string
+          url: string
+          status: string
+          http_status: number | null
+          attempts: number
+          last_attempt_at: string | null
+          next_retry_at: string | null
+          response_body: string | null
+          error: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          alert_event_id: string
+          alert_rule_id: string
+          url: string
+          status?: string
+          http_status?: number | null
+          attempts?: number
+          last_attempt_at?: string | null
+          next_retry_at?: string | null
+          response_body?: string | null
+          error?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          alert_event_id?: string
+          alert_rule_id?: string
+          url?: string
+          status?: string
+          http_status?: number | null
+          attempts?: number
+          last_attempt_at?: string | null
+          next_retry_at?: string | null
+          response_body?: string | null
+          error?: string | null
+          created_at?: string
         }
         Relationships: []
       }

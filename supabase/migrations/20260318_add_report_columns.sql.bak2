@@ -1,4 +1,0 @@
--- Add missing report columns to brands table
-ALTER TABLE brands ADD COLUMN IF NOT EXISTS report_logo_url text;
-ALTER TABLE brands ADD COLUMN IF NOT EXISTS report_brand_name text;
-ALTER TABLE brands ADD COLUMN IF NOT EXISTS report_primary_color text;

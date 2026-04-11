@@ -4,6 +4,10 @@ import dynamic from 'next/dynamic'
 import { useTheme } from 'next-themes'
 import { useMemo, useEffect, useState } from 'react'
 import type { ApexOptions } from 'apexcharts'
+import type ApexCharts from 'apexcharts'
+
+type ApexAxisChartSeries = ApexCharts.ApexOptions['series'] extends infer S ? S : never
+type ApexNonAxisChartSeries = number[]
 import {
   getHorizonChartOptions,
   getHorizonBarOptions,

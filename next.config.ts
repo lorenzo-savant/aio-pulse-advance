@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-icons'],
   },
 
+  turbopack: {
+    root: './',
+  },
+
   // Compiler optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',

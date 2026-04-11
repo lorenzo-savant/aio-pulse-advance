@@ -48,9 +48,13 @@ export interface ProviderManagerConfig {
 }
 
 function generateJobKey(request: AIProviderRequest, providerId?: AIProviderId): string {
+  // Use a longer prompt slice + simple hash to avoid collisions
+  const promptKey = request.prompt.length <= 200
+    ? request.prompt
+    : request.prompt.slice(0, 100) + '|' + request.prompt.length + '|' + request.prompt.slice(-50)
   const parts = [
     providerId || 'all',
-    request.prompt.slice(0, 100),
+    promptKey,
     request.temperature ?? 0.3,
     request.maxTokens ?? 4096,
   ]

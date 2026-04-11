@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
-function safeRedirect(url: string, fallback = '/dashboard'): string {
+export function safeRedirect(url: string, fallback = '/dashboard'): string {
   if (
     url &&
     url.startsWith('/') &&
@@ -29,7 +29,7 @@ function safeRedirect(url: string, fallback = '/dashboard'): string {
  * 'unsafe-inline' is kept as a fallback for older browsers — it is ignored
  * when a nonce or hash is present (per CSP Level 2+).
  */
-function buildCspHeader(nonce: string): string {
+export function buildCspHeader(nonce: string): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval'`,

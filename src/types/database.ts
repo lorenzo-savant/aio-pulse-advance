@@ -624,6 +624,207 @@ export type Database = {
         }
         Relationships: []
       }
+      recommendation_tracking: {
+        Row: {
+          id: string
+          brand_id: string
+          category: string | null
+          priority: string | null
+          recommendation_text: string
+          source: string | null
+          first_seen_date: string | null
+          last_seen_date: string | null
+          occurrence_count: number
+          implementation_status: string
+          implementation_completion_date: string | null
+          notes: string | null
+          status: string
+          user_last_updated_id: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          category?: string | null
+          priority?: string | null
+          recommendation_text: string
+          source?: string | null
+          first_seen_date?: string | null
+          last_seen_date?: string | null
+          occurrence_count?: number
+          implementation_status?: string
+          implementation_completion_date?: string | null
+          notes?: string | null
+          status?: string
+          user_last_updated_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          category?: string | null
+          priority?: string | null
+          recommendation_text?: string
+          source?: string | null
+          first_seen_date?: string | null
+          last_seen_date?: string | null
+          occurrence_count?: number
+          implementation_status?: string
+          implementation_completion_date?: string | null
+          notes?: string | null
+          status?: string
+          user_last_updated_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      research_archives: {
+        Row: {
+          id: string
+          brand_id: string
+          query_type: string
+          tool_section: string | null
+          query_text: string | null
+          query_date: string | null
+          ai_model_used: string | null
+          response_text: string | null
+          metadata: Json | null
+          status: string
+          deleted_at: string | null
+          created_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          query_type: string
+          tool_section?: string | null
+          query_text?: string | null
+          query_date?: string | null
+          ai_model_used?: string | null
+          response_text?: string | null
+          metadata?: Json | null
+          status?: string
+          deleted_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          query_type?: string
+          tool_section?: string | null
+          query_text?: string | null
+          query_date?: string | null
+          ai_model_used?: string | null
+          response_text?: string | null
+          metadata?: Json | null
+          status?: string
+          deleted_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sentiment_history: {
+        Row: {
+          id: string
+          brand_id: string
+          snapshot_date: string
+          sentiment_score: number
+          positive_count: number
+          neutral_count: number
+          negative_count: number
+          total_mentions: number
+          top_positive_topics: Json | null
+          top_negative_topics: Json | null
+          metadata: Json | null
+          deleted_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          snapshot_date: string
+          sentiment_score?: number
+          positive_count?: number
+          neutral_count?: number
+          negative_count?: number
+          total_mentions?: number
+          top_positive_topics?: Json | null
+          top_negative_topics?: Json | null
+          metadata?: Json | null
+          deleted_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          snapshot_date?: string
+          sentiment_score?: number
+          positive_count?: number
+          neutral_count?: number
+          negative_count?: number
+          total_mentions?: number
+          top_positive_topics?: Json | null
+          top_negative_topics?: Json | null
+          metadata?: Json | null
+          deleted_at?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      workflow_executions: {
+        Row: {
+          id: string
+          workflow_type: string
+          brand_id: string | null
+          prompt_id: string | null
+          user_id: string | null
+          status: string
+          steps: Json
+          error: string | null
+          metadata: Json
+          started_at: string | null
+          completed_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          workflow_type: string
+          brand_id?: string | null
+          prompt_id?: string | null
+          user_id?: string | null
+          status?: string
+          steps?: Json
+          error?: string | null
+          metadata?: Json
+          started_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          workflow_type?: string
+          brand_id?: string | null
+          prompt_id?: string | null
+          user_id?: string | null
+          status?: string
+          steps?: Json
+          error?: string | null
+          metadata?: Json
+          started_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       recommendation_history: {
         Row: {
           based_on_count: number | null

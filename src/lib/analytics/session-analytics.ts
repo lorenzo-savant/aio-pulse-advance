@@ -68,7 +68,7 @@ export async function getSessionAnalytics(
       totalCitations += row.cited_urls?.length || 0
       uniqueProviders.add(provider)
 
-      if (!lastQueryAt || row.created_at > lastQueryAt) {
+      if (row.created_at && (!lastQueryAt || row.created_at > lastQueryAt)) {
         lastQueryAt = row.created_at
       }
     }

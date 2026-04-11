@@ -228,7 +228,7 @@ export async function POST(req: NextRequest) {
 
         // ── Evaluate alert rules (usa rules già fetchate) ───────────────────
         if (rules && rules.length > 0) {
-          const previousResult = (previousResults as MonitoringResult[])?.find(
+          const previousResult = (previousResults as unknown as MonitoringResult[])?.find(
             (r) => r.engine === engine,
           )
 

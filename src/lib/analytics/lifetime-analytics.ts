@@ -51,16 +51,6 @@ export async function getLifetimeAnalytics(brandId: string): Promise<LifetimeAna
       const citedUrls = row.cited_urls || []
       totalCitations += citedUrls.length
 
-      const brandDomains = row.brand?.domains || []
-      for (const url of citedUrls) {
-        for (const domain of brandDomains) {
-          if (url.includes(domain)) {
-            domainCitations++
-            break
-          }
-        }
-      }
-
       const provider = row.engine || 'unknown'
       providerDistribution[provider] = (providerDistribution[provider] || 0) + 1
       if ((providerDistribution[provider] || 0) > topProviderCount) {
@@ -71,13 +61,13 @@ export async function getLifetimeAnalytics(brandId: string): Promise<LifetimeAna
       const sentiment = row.sentiment || 'neutral'
       sentimentBreakdown[sentiment] = (sentimentBreakdown[sentiment] || 0) + 1
 
-      const category = row.query_category || 'unknown'
+      const category = (row.mention_type as string) || 'unknown'
       queryCategoryBreakdown[category] = (queryCategoryBreakdown[category] || 0) + 1
 
-      if (!firstQueryAt || row.created_at < firstQueryAt) {
+      if (row.created_at && (!firstQueryAt || row.created_at < firstQueryAt)) {
         firstQueryAt = row.created_at
       }
-      if (!lastQueryAt || row.created_at > lastQueryAt) {
+      if (row.created_at && (!lastQueryAt || row.created_at > lastQueryAt)) {
         lastQueryAt = row.created_at
       }
     }

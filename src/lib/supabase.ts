@@ -10,7 +10,9 @@ const supabaseServiceKey = process.env['SUPABASE_SERVICE_KEY']
 const isConfigured = !!supabaseUrl && !!supabaseAnonKey
 
 if (!isConfigured && process.env.NODE_ENV === 'production') {
-  console.warn('⚠️ Warning: Supabase environment variables are missing in production.')
+  throw new Error(
+    'FATAL: Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY) are missing in production. Aborting.',
+  )
 }
 
 export const supabase = isConfigured
@@ -28,12 +30,19 @@ export const supabase = isConfigured
  * The browser client uses cookies, matching the server client's behavior.
  */
 
-export function createServerClient() {
+export type TypedSupabaseClient = SupabaseClient<Database>
+
+export function createServerClient(): TypedSupabaseClient | null {
   if (!supabaseServiceKey || !supabaseUrl) {
-    console.warn('⚠️ SUPABASE_SERVICE_KEY not set - database features disabled')
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'FATAL: SUPABASE_SERVICE_KEY or SUPABASE_URL not set in production. All database operations will fail.',
+      )
+    }
+    console.warn('⚠️ SUPABASE_SERVICE_KEY not set - database features disabled (dev mode)')
     return null
   }
-  return createClient(supabaseUrl, supabaseServiceKey, {
+  return createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 }

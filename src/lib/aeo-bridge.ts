@@ -375,10 +375,9 @@ export async function aggregateBrandData(
         .limit(10),
 
       db
-        .from('recommendation_histories')
+        .from('recommendation_history')
         .select('*')
         .eq('brand_id', brandId)
-        .neq('status', 'dismissed')
         .order('created_at', { ascending: false })
         .limit(20),
 

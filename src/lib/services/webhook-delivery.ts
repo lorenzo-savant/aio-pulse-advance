@@ -5,7 +5,17 @@ import crypto from 'crypto'
 const MAX_ATTEMPTS = 3
 const RETRY_DELAYS_MS = [0, 30_000, 120_000] // immediate, 30s, 2min
 const WEBHOOK_TIMEOUT_MS = 10_000
-const WEBHOOK_SECRET = process.env.WEBHOOK_SIGNING_SECRET || 'aio-pulse-webhook-default'
+const WEBHOOK_SECRET = process.env.WEBHOOK_SIGNING_SECRET
+
+function getWebhookSecret(): string {
+  if (!WEBHOOK_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('WEBHOOK_SIGNING_SECRET must be set in production')
+    }
+    return 'dev-only-webhook-secret-do-not-use-in-production'
+  }
+  return WEBHOOK_SECRET
+}
 
 interface WebhookPayload {
   event_type: string
@@ -19,7 +29,7 @@ interface WebhookPayload {
 }
 
 function signPayload(payload: string): string {
-  return crypto.createHmac('sha256', WEBHOOK_SECRET).update(payload).digest('hex')
+  return crypto.createHmac('sha256', getWebhookSecret()).update(payload).digest('hex')
 }
 
 export async function deliverWebhook(

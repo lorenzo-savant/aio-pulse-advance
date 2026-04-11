@@ -290,7 +290,8 @@ export async function generateObsidianExport(
       .order('date', { ascending: false })
 
     if (healthScores && healthScores.length > 0) {
-      const latest = healthScores[0]
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const latest = healthScores[0]!
       const engineBreakdown: Record<string, { citations: number; rate: number }> = {}
       const breakdown = latest.engine_breakdown as Record<
         string,
@@ -347,10 +348,12 @@ export async function generateObsidianExport(
       let promptTestSeq = 1
 
       for (const result of monitoringResults) {
-        const date = new Date(result.created_at).toISOString().split('T')[0] ?? dateTo
+        const date = result.created_at
+          ? (new Date(result.created_at).toISOString().split('T')[0] ?? dateTo)
+          : dateTo
 
         if (types.includes('hallucination') && result.has_hallucination) {
-          const flags = (result.hallucination_flags as HallucinationFlag[]) || []
+          const flags = (result.hallucination_flags as unknown as HallucinationFlag[]) || []
           for (const flag of flags) {
             notes.push(
               generateHallucinationNote({
@@ -373,7 +376,8 @@ export async function generateObsidianExport(
           const citedUrls = (result.cited_urls as string[]) || []
           const competitors = result.competitor_mentions as Array<{ name: string }> | null
           const competitorNames = competitors?.map((c) => c.name) || []
-          const hallucinationFlags = (result.hallucination_flags as HallucinationFlag[]) || []
+          const hallucinationFlags =
+            (result.hallucination_flags as unknown as HallucinationFlag[]) || []
 
           notes.push(
             generatePromptTestNote({

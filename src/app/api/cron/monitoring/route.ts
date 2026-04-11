@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 min (Vercel Pro) or 60s (Hobby)
 
 export async function POST(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET
+  const cronSecret = process.env.CRON_SECRET_TOKEN
   if (!cronSecret) {
     return NextResponse.json({ success: false, message: 'Server misconfigured' }, { status: 500 })
   }

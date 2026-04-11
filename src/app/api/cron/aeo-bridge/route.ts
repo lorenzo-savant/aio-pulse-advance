@@ -19,10 +19,12 @@ interface BrandResult {
 }
 
 export async function POST(req: NextRequest) {
-  const cronSecret = req.headers.get('x-cron-secret')
-  const expectedSecret = process.env.CRON_SECRET
-
-  if (expectedSecret && cronSecret !== expectedSecret) {
+  const cronSecret = process.env.CRON_SECRET_TOKEN
+  if (!cronSecret) {
+    return NextResponse.json({ success: false, message: 'Server misconfigured' }, { status: 500 })
+  }
+  const authHeader = req.headers.get('authorization')
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
   }
 

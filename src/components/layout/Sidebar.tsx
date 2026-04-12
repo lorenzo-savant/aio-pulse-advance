@@ -39,48 +39,109 @@ import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import type { User } from '@supabase/supabase-js'
 import { motion, AnimatePresence } from 'framer-motion'
 import { sidebarVariants, backdropVariants } from '@/lib/motion'
+import { useOverviewStats, type OverviewStats } from '@/hooks/useOverviewStats'
 
-const NAV_SECTIONS = [
+type NavBadgeKind = 'count' | 'alert' | 'setup' | 'lock'
+
+interface NavItem {
+  href: string
+  icon: React.ElementType
+  label: string
+  /** Dynamic badge computed from OverviewStats */
+  badge?: (stats: OverviewStats) => { text: string; kind: NavBadgeKind } | null
+  /** If returns true, item is shown as disabled/locked (data not ready) */
+  lockedUntil?: (stats: OverviewStats) => boolean
+}
+
+interface NavSection {
+  step: number
+  label: string
+  description?: string
+  items: NavItem[]
+}
+
+const NAV_SECTIONS: NavSection[] = [
   {
-    label: 'Getting Started',
+    step: 1,
+    label: 'Setup',
+    description: 'Configure what you monitor',
     items: [
-      { href: '/dashboard/onboarding', icon: Sparkle, label: 'Start Here', badge: 'Setup' },
-      { href: '/dashboard/brands', icon: Building2, label: 'Brands' },
-      { href: '/dashboard/prompts', icon: MessageSquare, label: 'Prompts' },
+      {
+        href: '/dashboard/onboarding',
+        icon: Sparkle,
+        label: 'Start Here',
+        badge: (s) => (s.brands === 0 ? { text: 'Begin', kind: 'setup' } : null),
+      },
+      {
+        href: '/dashboard/brands',
+        icon: Building2,
+        label: 'Brands',
+        badge: (s) => ({ text: String(s.brands), kind: 'count' }),
+      },
+      {
+        href: '/dashboard/prompts',
+        icon: MessageSquare,
+        label: 'Prompts',
+        badge: (s) => ({ text: String(s.prompts), kind: 'count' }),
+      },
     ],
   },
   {
-    label: 'Monitoring',
+    step: 2,
+    label: 'Monitor',
+    description: 'Run AI visibility checks',
     items: [
-      { href: '/dashboard/monitoring', icon: Radio, label: 'Live Monitoring' },
-      { href: '/dashboard/sentiment', icon: Smile, label: 'Sentiment' },
-      { href: '/dashboard/citations', icon: BarChart3, label: 'Citations' },
-      { href: '/dashboard/snapshots', icon: Camera, label: 'Snapshots' },
-      { href: '/dashboard/keywords', icon: Tag, label: 'Keywords' },
-      { href: '/dashboard/alerts', icon: Bell, label: 'Alerts' },
-      { href: '/dashboard/reports', icon: FileText, label: 'Reports' },
+      {
+        href: '/dashboard/monitoring',
+        icon: Radio,
+        label: 'Live Monitoring',
+        badge: (s) =>
+          s.prompts === 0
+            ? { text: 'Setup first', kind: 'lock' }
+            : s.monitoringRuns === 0
+              ? { text: 'Run first check', kind: 'alert' }
+              : null,
+        lockedUntil: (s) => s.prompts === 0,
+      },
+      { href: '/dashboard/workflows', icon: GitBranch, label: 'Workflows' },
+      {
+        href: '/dashboard/alerts',
+        icon: Bell,
+        label: 'Alerts',
+        badge: (s) =>
+          s.unreadAlerts > 0 ? { text: String(s.unreadAlerts), kind: 'alert' } : null,
+      },
     ],
   },
   {
-    label: 'Overview',
+    step: 3,
+    label: 'Insights',
+    description: 'Analyze monitoring results',
     items: [
       { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { href: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
+      { href: '/dashboard/analytics', icon: BarChart3, label: 'Analytics', lockedUntil: (s) => !s.hasData },
+      { href: '/dashboard/sentiment', icon: Smile, label: 'Sentiment', lockedUntil: (s) => !s.hasData },
+      { href: '/dashboard/citations', icon: BarChart3, label: 'Citations', lockedUntil: (s) => !s.hasData },
+      { href: '/dashboard/keywords', icon: Tag, label: 'Keywords', lockedUntil: (s) => !s.hasData },
+      { href: '/dashboard/snapshots', icon: Camera, label: 'Snapshots', lockedUntil: (s) => !s.hasData },
+      { href: '/dashboard/reports', icon: FileText, label: 'Reports', lockedUntil: (s) => !s.hasData },
+      { href: '/dashboard/competitor', icon: GitCompare, label: 'Competitor' },
+      { href: '/dashboard/history', icon: Clock, label: 'Scan History' },
     ],
   },
   {
-    label: 'Content Tools',
+    step: 4,
+    label: 'Optimize',
+    description: 'Improve content for AI search',
     items: [
       { href: '/dashboard/optimizer', icon: FileSearch, label: 'Content Optimizer' },
       { href: '/dashboard/audit', icon: ClipboardCheck, label: 'Content Audit' },
       { href: '/dashboard/recommendations', icon: Lightbulb, label: 'Recommendations' },
       { href: '/dashboard/monitor', icon: Globe, label: 'Engine Info' },
-      { href: '/dashboard/competitor', icon: GitCompare, label: 'Competitor Analysis' },
-      { href: '/dashboard/history', icon: Clock, label: 'Scan History' },
-      { href: '/dashboard/workflows', icon: GitBranch, label: 'Workflows' },
     ],
   },
   {
+    step: 5,
     label: 'Account',
     items: [
       { href: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
@@ -90,8 +151,6 @@ const NAV_SECTIONS = [
     ],
   },
 ]
-
-const EXTRA_ITEMS: Array<{ href: string; icon: typeof Sparkle; label: string; badge?: string }> = []
 
 function SidebarContent({
   onClose,
@@ -154,13 +213,32 @@ function SidebarContent({
   )
 }
 
+function BadgePill({ text, kind }: { text: string; kind: NavBadgeKind }) {
+  const styles: Record<NavBadgeKind, string> = {
+    count: 'bg-secondary text-muted-foreground',
+    alert: 'bg-amber-500/20 text-amber-300',
+    setup: 'bg-primary/20 text-primary',
+    lock: 'bg-secondary text-muted-foreground opacity-70',
+  }
+  return (
+    <span
+      className={cn(
+        'ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold',
+        styles[kind],
+      )}
+    >
+      {text}
+    </span>
+  )
+}
+
 function NavSection({
-  label,
-  items,
+  section,
+  stats,
   onItemClick,
 }: {
-  label: string
-  items: { href: string; icon: React.ElementType; label: string; badge?: string }[]
+  section: NavSection
+  stats: OverviewStats
   onItemClick?: () => void
 }) {
   const pathname = usePathname()
@@ -172,13 +250,23 @@ function NavSection({
   }
 
   return (
-    <div className="mb-6">
-      <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
+    <div className="mb-5">
+      <div className="mb-2.5 flex items-center gap-2 px-4">
+        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/15 text-[10px] font-black text-primary">
+          {section.step}
+        </span>
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          {section.label}
+        </p>
+      </div>
+      {section.description && (
+        <p className="mb-2 px-4 text-[10px] text-muted-foreground/70">{section.description}</p>
+      )}
       <div className="space-y-0.5">
-        {items.map((item) => {
+        {section.items.map((item) => {
           const active = isActive(item.href)
+          const badge = item.badge?.(stats) ?? null
+          const locked = item.lockedUntil?.(stats) ?? false
           return (
             <Link
               key={item.href}
@@ -186,19 +274,17 @@ function NavSection({
               className={cn(
                 'nav-link-horizon',
                 active && 'active',
+                locked && !active && 'opacity-50',
               )}
               onClick={onItemClick}
+              title={locked ? 'Requires data from an earlier step' : undefined}
             >
               <item.icon className="h-5 w-5 shrink-0" />
               {item.label}
               {active && (
                 <span className="nav-link-indicator absolute right-0 top-1/2 h-9 w-1 -translate-y-1/2 rounded-full bg-brand" />
               )}
-              {item.badge && !active && (
-                <span className="ml-auto rounded bg-brand/20 px-1.5 py-0.5 text-[10px] font-bold text-brand">
-                  {item.badge}
-                </span>
-              )}
+              {badge && !active && <BadgePill text={badge.text} kind={badge.kind} />}
             </Link>
           )
         })}
@@ -214,6 +300,7 @@ export function Sidebar() {
   const supabase = createSupabaseBrowserClient()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const { stats } = useOverviewStats(60_000)
 
   useEffect(() => {
     const getUser = async () => {
@@ -259,12 +346,8 @@ export function Sidebar() {
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {NAV_SECTIONS.map((section) => (
-            <NavSection key={section.label} label={section.label} items={section.items} />
+            <NavSection key={section.label} section={section} stats={stats} />
           ))}
-
-          {EXTRA_ITEMS.length > 0 && (
-            <NavSection label="Tools" items={EXTRA_ITEMS} />
-          )}
         </nav>
 
         {/* Footer */}
@@ -318,19 +401,11 @@ export function Sidebar() {
               {NAV_SECTIONS.map((section) => (
                 <NavSection
                   key={section.label}
-                  label={section.label}
-                  items={section.items}
+                  section={section}
+                  stats={stats}
                   onItemClick={() => setSidebarOpen(false)}
                 />
               ))}
-
-              {EXTRA_ITEMS.length > 0 && (
-                <NavSection
-                  label="Tools"
-                  items={EXTRA_ITEMS}
-                  onItemClick={() => setSidebarOpen(false)}
-                />
-              )}
             </nav>
 
             {/* Footer */}

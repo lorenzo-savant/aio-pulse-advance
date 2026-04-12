@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/index'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand, AlertRule, AlertEvent, AlertType } from '@/types'
+import { JourneyGuide } from '@/components/JourneyGuide'
 
 // ─── Alert type config ────────────────────────────────────────────────────────
 
@@ -488,6 +489,35 @@ export default function AlertsPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <JourneyGuide
+        step={2}
+        title="Get notified when your AI visibility changes"
+        lead="Alerts watch your monitoring data and fire when something worth your attention happens — new mentions, sentiment drops, hallucinations, competitor moves."
+        persistKey="alerts"
+        steps={[
+          {
+            label: 'Click "New Rule"',
+            description: 'Pick the brand to watch.',
+          },
+          {
+            label: 'Choose an alert type',
+            description: 'Mention gained/lost, sentiment drop, competitor ahead, hallucination detected, visibility change.',
+          },
+          {
+            label: 'Set threshold + channels',
+            description: 'Threshold: e.g. "sentiment < 0.3". Channels: email (Resend) and/or webhook URL.',
+          },
+          {
+            label: 'Events show up on this page',
+            description: 'Unread events get a red badge in the sidebar — click to mark as read.',
+          },
+        ]}
+        outcomes={[
+          'Proactive notifications — no need to check dashboards every day',
+          'Event history for audit & weekly review',
+          'Webhook integration for Slack / Linear / custom tools',
+        ]}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-foreground">Alerts</h1>

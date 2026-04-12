@@ -74,32 +74,9 @@ const MARKETS = [
   { id: 'SE', label: 'Sweden (National)' },
   { id: 'NO', label: 'Norway' },
   { id: 'DK', label: 'Denmark' },
+  { id: 'IT', label: 'Italy' },
   { id: 'International', label: 'International' },
 ]
-
-const PROMPT_TEMPLATES = {
-  local: [
-    'Bästa {industry} i {city}',
-    '{brand} {city} rekommendation',
-    'Rekommenderad {industry} {city}',
-    'Billig {industry} {city}',
-    'Bästa {industry} nära {city}',
-  ],
-  national: [
-    'Bästa {industry} i Sverige',
-    'Hur väljer jag {industry}?',
-    'Vad kostar {industry}?',
-    '{industry} jämförelse',
-    'Bästa {industry} företag',
-  ],
-  industry: [
-    'Best {industry} for small businesses',
-    '{brand} vs competitors',
-    '{industry} pricing comparison',
-    '{industry} review',
-    'Top {industry} companies',
-  ],
-}
 
 interface Prompt {
   text: string

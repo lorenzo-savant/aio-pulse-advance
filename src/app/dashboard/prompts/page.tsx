@@ -12,15 +12,34 @@ import toast from 'react-hot-toast'
 import type { Brand, Prompt, MonitoringEngine } from '@/types'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PromptLibrarySelector } from '@/components/PromptLibrarySelector'
+import { JourneyGuide } from '@/components/JourneyGuide'
 
-const PROMPT_TEMPLATES = [
-  { category: 'awareness', text: 'What is [brand]?' },
-  { category: 'awareness', text: 'Tell me about [brand]' },
-  { category: 'comparison', text: 'Compare [brand] vs competitors' },
-  { category: 'alternative', text: 'Best alternatives to [brand]' },
-  { category: 'features', text: 'What are the main features of [brand]?' },
-  { category: 'comparison', text: 'Is [brand] better than [competitor]?' },
-]
+const PROMPT_TEMPLATES = {
+  en: [
+    { category: 'awareness', text: 'What is [brand]?' },
+    { category: 'awareness', text: 'Tell me about [brand]' },
+    { category: 'comparison', text: 'Compare [brand] vs competitors' },
+    { category: 'alternative', text: 'Best alternatives to [brand]' },
+    { category: 'features', text: 'What are the main features of [brand]?' },
+    { category: 'comparison', text: 'Is [brand] better than [competitor]?' },
+  ],
+  it: [
+    { category: 'awareness', text: "Cos'è [brand]?" },
+    { category: 'awareness', text: 'Parlami di [brand]' },
+    { category: 'comparison', text: 'Confronta [brand] con i concorrenti' },
+    { category: 'alternative', text: 'Migliori alternative a [brand]' },
+    { category: 'features', text: 'Quali sono le principali funzionalità di [brand]?' },
+    { category: 'comparison', text: '[brand] è migliore di [competitor]?' },
+  ],
+  sv: [
+    { category: 'awareness', text: 'Vad är [brand]?' },
+    { category: 'awareness', text: 'Berätta om [brand]' },
+    { category: 'comparison', text: 'Jämför [brand] med konkurrenter' },
+    { category: 'alternative', text: 'Bästa alternativ till [brand]' },
+    { category: 'features', text: 'Vilka är de viktigaste funktionerna i [brand]?' },
+    { category: 'comparison', text: 'Är [brand] bättre än [competitor]?' },
+  ],
+}
 
 const CATEGORY_COLORS: Record<string, 'brand' | 'info' | 'warning' | 'success' | 'default'> = {
   awareness: 'brand',
@@ -117,6 +136,7 @@ function PromptsPageContent() {
   })
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [templateLang, setTemplateLang] = useState<'en' | 'it' | 'sv'>('en')
   const [showLibrary, setShowLibrary] = useState(false)
 
   const loadData = useCallback(async () => {
@@ -258,6 +278,35 @@ function PromptsPageContent() {
 
   return (
     <div className="animate-in space-y-8">
+      <JourneyGuide
+        step={1}
+        title="Define what to ask the AI engines about your brand"
+        lead="Prompts are the questions your real customers might type into ChatGPT, Gemini, Perplexity, or Claude. Each prompt runs across all 4 engines on your schedule."
+        persistKey="prompts"
+        steps={[
+          {
+            label: 'Open the library',
+            description: 'Click "Add from Library" to seed from our 70 pre-written templates (translated to IT/SV/EN).',
+          },
+          {
+            label: 'Or write your own',
+            description: '"New Prompt" lets you type a custom query — e.g. "best CRM for small business in {country}".',
+          },
+          {
+            label: 'Pick engines',
+            description: 'Default: all 4 (ChatGPT, Gemini, Perplexity, Claude). Deselect if you want to save credits.',
+          },
+          {
+            label: 'Set frequency',
+            description: 'Daily is recommended for active brands. Weekly is fine for slower markets.',
+          },
+        ]}
+        outcomes={[
+          'Prompts ready to run in monitoring',
+          'Each response captured: brand mentions, sentiment, citations',
+          'AVI score computed from these runs',
+        ]}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-foreground">Prompts</h1>
@@ -334,8 +383,24 @@ function PromptsPageContent() {
               <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Quick Templates
               </label>
+              <div className="mb-2 flex gap-2">
+                {(['en', 'it', 'sv'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    className={cn(
+                      'rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
+                      templateLang === lang
+                        ? 'bg-primary/10 border-primary text-foreground'
+                        : 'border-input bg-input text-muted-foreground hover:border-primary',
+                    )}
+                    onClick={() => setTemplateLang(lang)}
+                  >
+                    {lang === 'en' ? '🇬🇧 EN' : lang === 'it' ? '🇮🇹 IT' : '🇸🇪 SV'}
+                  </button>
+                ))}
+              </div>
               <div className="flex flex-wrap gap-2">
-                {PROMPT_TEMPLATES.map((t, i) => (
+                {PROMPT_TEMPLATES[templateLang].map((t, i) => (
                   <button
                     key={i}
                     className="rounded-lg border border-input bg-input px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-brand"

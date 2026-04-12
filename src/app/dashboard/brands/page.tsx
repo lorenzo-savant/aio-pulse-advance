@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand, BrandLanguage } from '@/types'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { JourneyGuide } from '@/components/JourneyGuide'
 
 const LANGUAGE_FLAGS: Record<BrandLanguage, string> = {
   en: '🇬🇧 EN',
@@ -207,6 +208,33 @@ export default function BrandsPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <JourneyGuide
+        step={1}
+        title="Add the brand you want to track"
+        lead="A brand is who you're monitoring. AIO Pulse will ask AI engines questions about it to measure your visibility."
+        persistKey="brands"
+        steps={[
+          { label: 'Click "New Brand"', description: 'Top-right button on this page.' },
+          {
+            label: 'Fill name, domain, industry',
+            description: 'These help the AI engines understand the context of your brand.',
+          },
+          {
+            label: 'Pick your Primary Market Language',
+            description: 'IT, SV, or EN — all prompts and responses will use this language.',
+          },
+          {
+            label: 'Add 1-3 competitors',
+            description: 'Optional but strongly recommended — used in comparison prompts.',
+          },
+        ]}
+        outcomes={[
+          'A brand card on this page',
+          'Auto-generated prompts library (step 2)',
+          'Dashboards unlock once you run monitoring',
+        ]}
+        cta={{ label: 'Go to the guided setup instead', href: '/dashboard/onboarding' }}
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-foreground">Your Brands</h1>

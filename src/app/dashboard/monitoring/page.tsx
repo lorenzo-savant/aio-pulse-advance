@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { JourneyGuide } from '@/components/JourneyGuide'
 import type { Brand, MonitoringResult } from '@/types'
 import { useRealtimeResults } from '@/hooks/use-realtime'
 
@@ -251,6 +252,36 @@ export default function MonitoringPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <JourneyGuide
+        step={2}
+        title="Run AI engine checks and watch results stream in"
+        lead="For every prompt, AIO Pulse sends the query to all 4 AI engines, captures their responses, and extracts brand mentions, sentiment, citations, and hallucinations."
+        persistKey="monitoring"
+        steps={[
+          {
+            label: 'Go to Prompts and click "Run" on one',
+            description: 'Or use the brand detail page — each brand has a "Run all prompts" button.',
+          },
+          {
+            label: 'Wait 20-40 seconds per engine',
+            description: 'Each engine call is real (not cached). Costs ~1 credit per engine per prompt.',
+          },
+          {
+            label: 'Results appear in this page live',
+            description: 'Sentiment label, brand mention position, cited URLs, competitor mentions — all automatic.',
+          },
+          {
+            label: 'Schedule recurring runs',
+            description: 'Cron already runs daily prompts automatically once configured on the brand.',
+          },
+        ]}
+        outcomes={[
+          'Historic tracking of how your brand appears in AI',
+          'AVI score computed from these results',
+          'Sentiment / Citations / Keywords dashboards populated',
+          'Alerts fire when thresholds trip',
+        ]}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-foreground">Monitoring Results</h1>

@@ -2,7 +2,25 @@
 import { Resend } from 'resend'
 import { logger } from '@/lib/logger'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy init — see alerts.ts for rationale
+let _resend: Resend | null = null
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY
+  if (!key || key === 're_...' || key.startsWith('re_placeholder')) return null
+  if (!_resend) _resend = new Resend(key)
+  return _resend
+}
+const resend = {
+  emails: {
+    send: async (args: Parameters<Resend['emails']['send']>[0]) => {
+      const client = getResend()
+      if (!client) {
+        return { data: null, error: { message: 'Resend not configured' } as { message: string } }
+      }
+      return client.emails.send(args)
+    },
+  },
+} as unknown as Resend
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AIO Pulse <onboarding@resend.dev>'
 

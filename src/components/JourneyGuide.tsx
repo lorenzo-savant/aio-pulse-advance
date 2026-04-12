@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, Lightbulb, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useTranslations } from 'next-intl'
 
 export interface JourneyStep {
   label: string
@@ -11,21 +12,13 @@ export interface JourneyStep {
 }
 
 export interface JourneyGuideProps {
-  /** Step number in the overall journey (1-5), shown as a pill. */
   step: number
-  /** Short title, e.g. "Set up your brand" */
   title: string
-  /** One-line description of what this page is for */
   lead: string
-  /** Concrete numbered actions the user should take here */
   steps: JourneyStep[]
-  /** Optional "What you'll get" list — expected outcomes */
   outcomes?: string[]
-  /** Optional call-to-action link shown at the bottom */
   cta?: { label: string; href: string }
-  /** If true, start collapsed. Default false (open on first visit). */
   defaultCollapsed?: boolean
-  /** localStorage key for persisting collapsed state per-page */
   persistKey?: string
 }
 
@@ -39,6 +32,8 @@ export function JourneyGuide({
   defaultCollapsed = false,
   persistKey,
 }: JourneyGuideProps) {
+  const t = useTranslations('journey_guide')
+
   const initial = persistKey
     ? typeof window !== 'undefined' &&
       window.localStorage.getItem(`journey-guide-${persistKey}`) === 'collapsed'
@@ -49,15 +44,12 @@ export function JourneyGuide({
     const next = !collapsed
     setCollapsed(next)
     if (persistKey && typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        `journey-guide-${persistKey}`,
-        next ? 'collapsed' : 'expanded',
-      )
+      window.localStorage.setItem(`journey-guide-${persistKey}`, next ? 'collapsed' : 'expanded')
     }
   }
 
   return (
-    <div className="mb-6 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-brand/5 p-5">
+    <div className="border-primary/20 from-primary/5 to-brand/5 mb-6 rounded-2xl border bg-gradient-to-br p-5">
       <button
         onClick={toggle}
         className="flex w-full items-start justify-between gap-4 text-left"
@@ -71,7 +63,7 @@ export function JourneyGuide({
             <div className="flex items-center gap-2">
               <Lightbulb className="h-3.5 w-3.5 text-primary" />
               <span className="text-[10px] font-black uppercase tracking-widest text-primary">
-                Step {step} · Guide
+                {t('step_prefix')} {step} · {t('guide_label')}
               </span>
             </div>
             <h2 className="mt-0.5 text-lg font-bold text-foreground">{title}</h2>
@@ -87,14 +79,14 @@ export function JourneyGuide({
         <div className="mt-4 grid gap-5 sm:grid-cols-2">
           <div>
             <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              What to do
+              {t('what_to_do')}
             </p>
             <ol className="space-y-2">
               {steps.map((s, i) => (
                 <li key={i} className="flex gap-2.5 text-sm">
                   <span
                     className={cn(
-                      'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-primary/20 text-[10px] font-black text-primary',
+                      'bg-primary/20 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-black text-primary',
                     )}
                   >
                     {i + 1}
@@ -113,7 +105,7 @@ export function JourneyGuide({
           {outcomes && outcomes.length > 0 && (
             <div>
               <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                What you&apos;ll get
+                {t('what_youll_get')}
               </p>
               <ul className="space-y-1.5">
                 {outcomes.map((o, i) => (

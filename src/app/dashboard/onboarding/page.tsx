@@ -3,17 +3,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import {
   Building2,
-  Globe,
   MessageSquare,
   Rocket,
   ArrowRight,
   ArrowLeft,
   Check,
   Sparkles,
-  Tag,
-  Users,
   Zap,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -102,10 +100,10 @@ const BRAND_COLORS = [
 ]
 
 const STEPS = [
-  { id: 'welcome', icon: Sparkles, label: 'Welcome' },
-  { id: 'brand', icon: Building2, label: 'Brand' },
-  { id: 'prompts', icon: MessageSquare, label: 'Prompts' },
-  { id: 'launch', icon: Rocket, label: 'Launch' },
+  { id: 'welcome', icon: Sparkles, labelKey: 'onboarding.steps.welcome' },
+  { id: 'brand', icon: Building2, labelKey: 'onboarding.steps.brand' },
+  { id: 'prompts', icon: MessageSquare, labelKey: 'onboarding.steps.prompts' },
+  { id: 'launch', icon: Rocket, labelKey: 'onboarding.steps.launch' },
 ]
 
 // ─── Prompt Templates ────────────────────────────────────────────────────────
@@ -204,6 +202,7 @@ function generatePromptTemplates(
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
+  const t = useTranslations()
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -327,18 +326,19 @@ export default function OnboardingPage() {
           })
           const mData = await mRes.json().catch(() => ({}))
           if (!mRes.ok) {
-            // Non-fatal: brand & prompts are created, only first run failed
             toast.error(
-              `Setup complete, but first monitoring run failed: ${mData.message || mRes.statusText}. You can retry from the brand page.`,
+              t('onboarding.toast.monitoring_setup_complete', {
+                error: mData.message || mRes.statusText,
+              }),
             )
           } else {
-            toast.success(
-              `🚀 Brand, ${createdPromptIds.length} prompts, and first monitoring run launched!`,
-            )
+            toast.success(t('onboarding.toast.launch_success', { count: createdPromptIds.length }))
           }
         } catch (mErr) {
           toast.error(
-            `Setup complete, but first monitoring run failed: ${mErr instanceof Error ? mErr.message : 'network error'}. You can retry from the brand page.`,
+            t('onboarding.toast.monitoring_setup_complete', {
+              error: mErr instanceof Error ? mErr.message : 'network error',
+            }),
           )
         }
       }
@@ -346,7 +346,7 @@ export default function OnboardingPage() {
       setLaunchStage('done')
       setTimeout(() => router.push(`/dashboard/brands/${newBrandId}`), 1200)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Setup failed')
+      toast.error(err instanceof Error ? err.message : t('onboarding.toast.setup_failed'))
       setLaunchStage('idle')
     } finally {
       setLoading(false)
@@ -356,15 +356,15 @@ export default function OnboardingPage() {
   const launchStageLabel = () => {
     switch (launchStage) {
       case 'brand':
-        return 'Creating brand...'
+        return t('onboarding.launch_stages.creating_brand')
       case 'prompts':
-        return `Creating ${prompts.length} prompts...`
+        return t('onboarding.launch_stages.creating_prompts', { count: prompts.length })
       case 'monitoring':
-        return 'Launching first monitoring run...'
+        return t('onboarding.launch_stages.launching_monitoring')
       case 'done':
-        return 'Done! Redirecting...'
+        return t('onboarding.launch_stages.done_redirecting')
       default:
-        return 'Launch Monitoring'
+        return t('onboarding.launch_stages.launch_button')
     }
   }
 
@@ -405,6 +405,7 @@ export default function OnboardingPage() {
                     : 'bg-secondary text-muted-foreground',
               )}
               onClick={() => i < step && setStep(i)}
+              title={t(s.labelKey)}
             >
               {i < step ? <Check className="h-4 w-4" /> : <s.icon className="h-4 w-4" />}
             </button>
@@ -421,26 +422,39 @@ export default function OnboardingPage() {
           <div className="bg-primary/20 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl">
             <Sparkles className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-3xl font-black text-foreground">Welcome to AIO Pulse</h1>
+          <h1 className="text-3xl font-black text-foreground">
+            {t('onboarding.welcome_screen.title')}
+          </h1>
           <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-            Let&apos;s set up your first brand for AI visibility monitoring. This takes about 2
-            minutes.
+            {t('onboarding.welcome_screen.subtitle')}
           </p>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              { icon: Building2, title: 'Add your brand', desc: 'Name, domain, competitors' },
-              { icon: MessageSquare, title: 'Set up prompts', desc: 'What questions to monitor' },
-              { icon: Zap, title: 'Start monitoring', desc: 'Track across AI engines' },
+              {
+                icon: Building2,
+                titleKey: 'onboarding.welcome_screen.add_brand',
+                descKey: 'onboarding.welcome_screen.add_brand_desc',
+              },
+              {
+                icon: MessageSquare,
+                titleKey: 'onboarding.welcome_screen.set_up_prompts',
+                descKey: 'onboarding.welcome_screen.set_up_prompts_desc',
+              },
+              {
+                icon: Zap,
+                titleKey: 'onboarding.welcome_screen.start_monitoring',
+                descKey: 'onboarding.welcome_screen.start_monitoring_desc',
+              },
             ].map((item) => (
-              <div key={item.title} className="rounded-xl border border-border p-4 text-left">
+              <div key={item.titleKey} className="rounded-xl border border-border p-4 text-left">
                 <item.icon className="mb-2 h-5 w-5 text-primary" />
-                <p className="text-sm font-bold text-foreground">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
+                <p className="text-sm font-bold text-foreground">{t(item.titleKey)}</p>
+                <p className="text-xs text-muted-foreground">{t(item.descKey)}</p>
               </div>
             ))}
           </div>
           <Button className="mt-8" size="lg" onClick={goNext}>
-            Get Started <ArrowRight className="h-4 w-4" />
+            {t('onboarding.welcome_screen.get_started')} <ArrowRight className="h-4 w-4" />
           </Button>
         </Card>
       )}
@@ -448,20 +462,22 @@ export default function OnboardingPage() {
       {/* Step 1: Brand Setup */}
       {step === 1 && (
         <Card className="p-8">
-          <h2 className="text-2xl font-black text-foreground">Set up your brand</h2>
+          <h2 className="text-2xl font-black text-foreground">
+            {t('onboarding.brand_form.title')}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Tell us about the brand you want to monitor.
+            {t('onboarding.brand_form.subtitle')}
           </p>
 
           <div className="mt-6 space-y-5">
             {/* Name */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Brand Name <span className="text-red-400">*</span>
+                {t('onboarding.brand_form.name_label')} <span className="text-red-400">*</span>
               </label>
               <input
                 className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                placeholder="e.g. Ekonomirådgivarna"
+                placeholder={t('onboarding.brand_form.name_placeholder')}
                 value={brand.name}
                 onChange={(e) => setBrand({ ...brand, name: e.target.value })}
               />
@@ -470,11 +486,11 @@ export default function OnboardingPage() {
             {/* Domain */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Website Domain
+                {t('onboarding.brand_form.domain_label')}
               </label>
               <input
                 className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                placeholder="e.g. ekonomiradgivarna.se"
+                placeholder={t('onboarding.brand_form.domain_placeholder')}
                 value={brand.domain}
                 onChange={(e) => setBrand({ ...brand, domain: e.target.value })}
               />
@@ -483,14 +499,14 @@ export default function OnboardingPage() {
             {/* Industry */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Industry
+                {t('onboarding.brand_form.industry_label')}
               </label>
               <select
                 className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
                 value={brand.industry}
                 onChange={(e) => setBrand({ ...brand, industry: e.target.value })}
               >
-                <option value="">Select industry...</option>
+                <option value="">{t('onboarding.brand_form.industry_placeholder')}</option>
                 {INDUSTRIES.map((i) => (
                   <option key={i} value={i}>
                     {i}
@@ -502,14 +518,14 @@ export default function OnboardingPage() {
             {/* Language */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Primary Market Language <span className="text-red-400">*</span>
+                {t('onboarding.brand_form.language_label')} <span className="text-red-400">*</span>
               </label>
               <select
                 className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
                 value={brand.language}
                 onChange={(e) => setBrand({ ...brand, language: e.target.value as BrandLanguage })}
               >
-                <option value="">Select language...</option>
+                <option value="">{t('onboarding.brand_form.language_placeholder')}</option>
                 {LANGUAGES.map((l) => (
                   <option key={l.value} value={l.value}>
                     {l.label}
@@ -517,19 +533,18 @@ export default function OnboardingPage() {
                 ))}
               </select>
               <p className="bg-primary/10 mt-1.5 rounded-lg px-3 py-2 text-[11px] text-primary">
-                Prompts and AI simulations will run in this language to reflect how your customers
-                search.
+                {t('onboarding.brand_form.language_helper')}
               </p>
             </div>
 
             {/* Description */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Description
+                {t('onboarding.brand_form.description_label')}
               </label>
               <textarea
                 className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                placeholder="Brief description of what your brand does..."
+                placeholder={t('onboarding.brand_form.description_placeholder')}
                 rows={2}
                 value={brand.description}
                 onChange={(e) => setBrand({ ...brand, description: e.target.value })}
@@ -540,34 +555,38 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Aliases / Variants
+                  {t('onboarding.brand_form.aliases_label')}
                 </label>
                 <input
-                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
-                  placeholder="e.g. ERG, Ekonomi AB"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  placeholder={t('onboarding.brand_form.aliases_placeholder')}
                   value={brand.aliases}
                   onChange={(e) => setBrand({ ...brand, aliases: e.target.value })}
                 />
-                <p className="mt-1 text-[10px] text-muted-foreground">Comma-separated</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  {t('onboarding.brand_form.aliases_helper')}
+                </p>
               </div>
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Competitors
+                  {t('onboarding.brand_form.competitors_label')}
                 </label>
                 <input
-                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
-                  placeholder="e.g. Fortnox, Visma"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  placeholder={t('onboarding.brand_form.competitors_placeholder')}
                   value={brand.competitors}
                   onChange={(e) => setBrand({ ...brand, competitors: e.target.value })}
                 />
-                <p className="mt-1 text-[10px] text-muted-foreground">Comma-separated</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  {t('onboarding.brand_form.competitors_helper')}
+                </p>
               </div>
             </div>
 
             {/* Color */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Brand Color
+                {t('onboarding.brand_form.color_label')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {BRAND_COLORS.map((c) => (
@@ -592,10 +611,11 @@ export default function OnboardingPage() {
       {/* Step 2: Prompts */}
       {step === 2 && (
         <Card className="p-8">
-          <h2 className="text-2xl font-black text-foreground">Monitoring Prompts</h2>
+          <h2 className="text-2xl font-black text-foreground">
+            {t('onboarding.prompts_form.title')}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            These are the questions we&apos;ll ask AI engines about your brand. We auto-generated
-            some based on your brand — edit or add more.
+            {t('onboarding.prompts_form.subtitle')}
           </p>
 
           <div className="mt-6 space-y-3">
@@ -628,13 +648,13 @@ export default function OnboardingPage() {
             <div className="flex gap-2">
               <input
                 className="flex-1 rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
-                placeholder="Add a custom prompt..."
+                placeholder={t('onboarding.prompts_form.add_custom_placeholder')}
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addCustomPrompt()}
               />
               <Button variant="secondary" onClick={addCustomPrompt} disabled={!customPrompt.trim()}>
-                Add
+                {t('onboarding.prompts_form.add_button')}
               </Button>
             </div>
           </div>
@@ -647,10 +667,11 @@ export default function OnboardingPage() {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-600/20">
             <Rocket className="h-10 w-10 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-black text-foreground">Ready to launch!</h2>
+          <h2 className="text-2xl font-black text-foreground">
+            {t('onboarding.launch_screen.title')}
+          </h2>
           <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-            We&apos;ll create your brand and {prompts.length} monitoring prompts. You can always add
-            more later.
+            {t('onboarding.launch_screen.subtitle', { count: prompts.length })}
           </p>
 
           {/* Summary */}
@@ -660,18 +681,21 @@ export default function OnboardingPage() {
               <div>
                 <p className="text-sm font-bold text-foreground">{brand.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {brand.domain || 'No domain'} · {brand.industry || 'No industry'}
+                  {brand.domain || t('onboarding.launch_screen.no_domain')} ·{' '}
+                  {brand.industry || t('onboarding.launch_screen.no_industry')}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border p-3">
               <MessageSquare className="h-5 w-5 text-primary" />
-              <p className="text-sm text-muted-foreground">{prompts.length} monitoring prompts</p>
+              <p className="text-sm text-muted-foreground">
+                {prompts.length} {t('onboarding.launch_screen.monitoring_prompts')}
+              </p>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border p-3">
               <Zap className="h-5 w-5 text-amber-400" />
               <p className="text-sm text-muted-foreground">
-                4 AI engines (ChatGPT, Gemini, Perplexity, Claude)
+                {t('onboarding.launch_screen.ai_engines')}
               </p>
             </div>
           </div>
@@ -682,10 +706,10 @@ export default function OnboardingPage() {
           </Button>
           {loading && launchStage !== 'idle' && (
             <p className="mt-3 text-xs text-muted-foreground">
-              {launchStage === 'brand' && 'Step 1 of 3 · Brand'}
-              {launchStage === 'prompts' && 'Step 2 of 3 · Prompts'}
-              {launchStage === 'monitoring' && 'Step 3 of 3 · First AI check (may take 20-40s)'}
-              {launchStage === 'done' && 'All set!'}
+              {launchStage === 'brand' && t('onboarding.launch_progress.step1_brand')}
+              {launchStage === 'prompts' && t('onboarding.launch_progress.step2_prompts')}
+              {launchStage === 'monitoring' && t('onboarding.launch_progress.step3_check')}
+              {launchStage === 'done' && t('onboarding.launch_progress.all_set')}
             </p>
           )}
         </Card>
@@ -695,17 +719,17 @@ export default function OnboardingPage() {
       {step > 0 && step < 3 && (
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={goBack}>
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-4 w-4" /> {t('onboarding.buttons.back')}
           </Button>
           <Button onClick={goNext} disabled={!canProceed()}>
-            Continue <ArrowRight className="h-4 w-4" />
+            {t('onboarding.buttons.continue')} <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       )}
       {step === 3 && (
         <div className="flex justify-center">
           <Button variant="ghost" onClick={goBack}>
-            <ArrowLeft className="h-4 w-4" /> Go back and edit
+            <ArrowLeft className="h-4 w-4" /> {t('onboarding.launch_screen.go_back_edit')}
           </Button>
         </div>
       )}

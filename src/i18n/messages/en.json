@@ -192,10 +192,84 @@
   "onboarding": {
     "page_title": "Welcome to AIO Pulse",
     "page_subtitle": "Set up your first brand in just a few steps",
-    "step_brand": "Brand Info",
-    "step_prompts": "Prompts",
-    "step_configure": "Configure",
-    "step_review": "Review",
+    "steps": {
+      "welcome": "Welcome",
+      "brand": "Brand",
+      "prompts": "Prompts",
+      "launch": "Launch"
+    },
+    "welcome_screen": {
+      "title": "Welcome to AIO Pulse",
+      "subtitle": "Let's set up your first brand for AI visibility monitoring. This takes about 2 minutes.",
+      "add_brand": "Add your brand",
+      "add_brand_desc": "Name, domain, competitors",
+      "set_up_prompts": "Set up prompts",
+      "set_up_prompts_desc": "What questions to monitor",
+      "start_monitoring": "Start monitoring",
+      "start_monitoring_desc": "Track across AI engines",
+      "get_started": "Get Started"
+    },
+    "brand_form": {
+      "title": "Set up your brand",
+      "subtitle": "Tell us about the brand you want to monitor.",
+      "name_label": "Brand Name",
+      "name_required": "Required",
+      "name_placeholder": "e.g. Ekonomirådgivarna",
+      "domain_label": "Website Domain",
+      "domain_placeholder": "e.g. ekonomiradgivarna.se",
+      "industry_label": "Industry",
+      "industry_placeholder": "Select industry...",
+      "language_label": "Primary Market Language",
+      "language_required": "Required",
+      "language_placeholder": "Select language...",
+      "language_helper": "Prompts and AI simulations will run in this language to reflect how your customers search.",
+      "description_label": "Description",
+      "description_placeholder": "Brief description of what your brand does...",
+      "aliases_label": "Aliases / Variants",
+      "aliases_placeholder": "e.g. ERG, Ekonomi AB",
+      "aliases_helper": "Comma-separated",
+      "competitors_label": "Competitors",
+      "competitors_placeholder": "e.g. Fortnox, Visma",
+      "competitors_helper": "Comma-separated",
+      "color_label": "Brand Color"
+    },
+    "prompts_form": {
+      "title": "Monitoring Prompts",
+      "subtitle": "These are the questions we'll ask AI engines about your brand. We auto-generated some based on your brand — edit or add more.",
+      "add_custom_placeholder": "Add a custom prompt...",
+      "add_button": "Add"
+    },
+    "launch_screen": {
+      "title": "Ready to launch!",
+      "subtitle": "We'll create your brand and {count} monitoring prompts. You can always add more later.",
+      "no_domain": "No domain",
+      "no_industry": "No industry",
+      "monitoring_prompts": "monitoring prompts",
+      "ai_engines": "4 AI engines (ChatGPT, Gemini, Perplexity, Claude)",
+      "go_back_edit": "Go back and edit"
+    },
+    "launch_stages": {
+      "creating_brand": "Creating brand...",
+      "creating_prompts": "Creating {count} prompts...",
+      "launching_monitoring": "Launching first monitoring run...",
+      "done_redirecting": "Done! Redirecting...",
+      "launch_button": "Launch Monitoring"
+    },
+    "launch_progress": {
+      "step1_brand": "Step 1 of 3 · Brand",
+      "step2_prompts": "Step 2 of 3 · Prompts",
+      "step3_check": "Step 3 of 3 · First AI check (may take 20-40s)",
+      "all_set": "All set!"
+    },
+    "toast": {
+      "monitoring_setup_complete": "Setup complete, but first monitoring run failed: {error}. You can retry from the brand page.",
+      "launch_success": "Brand, {count} prompts, and first monitoring run launched!",
+      "setup_failed": "Setup failed"
+    },
+    "buttons": {
+      "back": "Back",
+      "continue": "Continue"
+    },
     "form": {
       "name_label": "Brand Name",
       "name_placeholder": "e.g. AIO Pulse",
@@ -259,8 +333,53 @@
     }
   },
   "brands": {
-    "page_title": "Brands",
-    "page_subtitle": "Manage your monitored brands",
+    "page_title": "Your Brands",
+    "page_subtitle": "Manage brands monitored in AI search engines.",
+    "new_brand": "New Brand",
+    "refresh": "Refresh",
+    "status": {
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "confirm_delete": {
+      "title": "Delete \"{name}\"?",
+      "description": "All monitoring data will also be removed. This action cannot be undone.",
+      "confirm": "Delete"
+    },
+    "toast": {
+      "deleted": "\"{name}\" deleted",
+      "delete_failed": "Delete failed"
+    },
+    "empty_state": {
+      "title": "No brands found",
+      "description": "Create your first brand to start monitoring visibility.",
+      "guided_setup": "Guided Setup"
+    },
+    "error_state": {
+      "title": "An error occurred",
+      "retry": "Try again",
+      "connection_error": "Unable to connect to server. Is the dev server running?"
+    },
+    "journey_guide": {
+      "title": "Add the brand you want to track",
+      "lead": "A brand is who you're monitoring. AIO Pulse will ask AI engines questions about it to measure your visibility.",
+      "steps": {
+        "click_new_brand": "Click \"New Brand\"",
+        "click_new_brand_desc": "Top-right button on this page.",
+        "fill_details": "Fill name, domain, industry",
+        "fill_details_desc": "These help the AI engines understand the context of your brand.",
+        "pick_language": "Pick your Primary Market Language",
+        "pick_language_desc": "IT, SV, or EN — all prompts and responses will use this language.",
+        "add_competitors": "Add 1-3 competitors",
+        "add_competitors_desc": "Optional but strongly recommended — used in comparison prompts."
+      },
+      "outcomes": {
+        "brand_card": "A brand card on this page",
+        "prompts_library": "Auto-generated prompts library (step 2)",
+        "dashboards_unlock": "Dashboards unlock once you run monitoring"
+      },
+      "cta": "Go to the guided setup instead"
+    },
     "add_brand": "Add Brand",
     "new_brand": "New Brand",
     "edit_brand": "Edit Brand",
@@ -335,6 +454,67 @@
   "prompts": {
     "page_title": "Prompts",
     "page_subtitle": "Configure the queries to monitor across AI engines.",
+    "add_from_library": "Add from Library",
+    "new_prompt": "New Prompt",
+    "filter_by_brand": "Brand",
+    "all_brands": "All",
+    "form": {
+      "create_title": "Create New Prompt",
+      "brand_label": "Brand",
+      "brand_placeholder": "Select brand...",
+      "text_label": "Prompt Text",
+      "text_placeholder": "e.g. What are the best AI monitoring tools?",
+      "quick_templates": "Quick Templates",
+      "category_label": "Category",
+      "frequency_label": "Run Frequency",
+      "engines_label": "Engines to Monitor",
+      "language_label": "Language",
+      "create_button": "Create Prompt",
+      "cancel": "Cancel"
+    },
+    "card": {
+      "run": "Run",
+      "delete": "Delete",
+      "last_run": "Last run",
+      "never_run": "Never run",
+      "schedule": "schedule"
+    },
+    "library": {
+      "title": "Add Prompts from Library",
+      "select_brand_first": "Select a brand to add prompts from the library."
+    },
+    "toast": {
+      "created": "Prompt created",
+      "deleted": "Prompt deleted",
+      "no_brands_error": "No brands found. Please create a brand first.",
+      "select_brand_error": "Select a brand and enter a prompt text",
+      "select_engine_error": "Select at least one AI engine",
+      "load_failed": "Failed to load data",
+      "monitoring_complete": "Monitoring complete: {count} results saved"
+    },
+    "empty_state": {
+      "title": "No prompts yet",
+      "description": "Create your first prompt to start monitoring AI responses."
+    },
+    "journey_guide": {
+      "title": "Define what to ask the AI engines about your brand",
+      "lead": "Prompts are the questions your real customers might type into ChatGPT, Gemini, Perplexity, or Claude. Each prompt runs across all 4 engines on your schedule.",
+      "steps": {
+        "open_library": "Open the library",
+        "open_library_desc": "Click \"Add from Library\" to seed from our 70 pre-written templates (translated to IT/SV/EN).",
+        "write_own": "Or write your own",
+        "write_own_desc": "\"New Prompt\" lets you type a custom query — e.g. \"best CRM for small business in {country}\".",
+        "pick_engines": "Pick engines",
+        "pick_engines_desc": "Default: all 4 (ChatGPT, Gemini, Perplexity, Claude). Deselect if you want to save credits.",
+        "set_frequency": "Set frequency",
+        "set_frequency_desc": "Daily is recommended for active brands. Weekly is fine for slower markets."
+      },
+      "outcomes": {
+        "prompts_ready": "Prompts ready to run in monitoring",
+        "responses_captured": "Each response captured: brand mentions, sentiment, citations",
+        "avi_computed": "AVI score computed from these runs"
+      }
+    },
     "add_from_library": "Add from Library",
     "new_prompt": "New Prompt",
     "form": {

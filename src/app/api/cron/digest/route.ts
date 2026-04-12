@@ -3,7 +3,23 @@ import { createServerClient } from '@/lib/supabase'
 import { Resend } from 'resend'
 import { logger } from '@/lib/logger'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy init — see src/lib/services/alerts.ts for rationale
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY
+  if (!key || key === 're_...' || key.startsWith('re_placeholder')) return null
+  return new Resend(key)
+}
+const resend = {
+  emails: {
+    send: async (args: Parameters<Resend['emails']['send']>[0]) => {
+      const client = getResend()
+      if (!client) {
+        return { data: null, error: { message: 'Resend not configured' } as { message: string } }
+      }
+      return client.emails.send(args)
+    },
+  },
+} as unknown as Resend
 
 interface BrandData {
   id: string

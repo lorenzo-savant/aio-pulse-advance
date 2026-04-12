@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import { Inter as GeistSans, JetBrains_Mono as GeistMono } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'react-hot-toast'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 import { QueryProvider } from '@/providers'
 import '@/styles/globals.css'
 import { APP_NAME, APP_DESCRIPTION, APP_URL } from '@/lib/constants'
@@ -66,41 +68,46 @@ interface RootLayoutProps {
   children: React.ReactNode
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+  const locale = await getLocale()
+  const messages = await getMessages()
+
   return (
     <html
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable}`}
-      lang="en"
+      lang={locale}
     >
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <Analytics />
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <QueryProvider>{children}</QueryProvider>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              className: 'glass !text-sm !font-medium pop-success',
-              duration: 4000,
-              success: {
-                icon: '✨',
-                style: {
-                  background: '#EFF6FF',
-                  border: '1px solid #BFDBFE',
-                  color: '#0070F3',
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Analytics />
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <QueryProvider>{children}</QueryProvider>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                className: 'glass !text-sm !font-medium pop-success',
+                duration: 4000,
+                success: {
+                  icon: '✨',
+                  style: {
+                    background: '#EFF6FF',
+                    border: '1px solid #BFDBFE',
+                    color: '#0070F3',
+                  },
                 },
-              },
-              error: {
-                icon: '😅',
-                style: {
-                  background: '#FEF2F2',
-                  border: '1px solid #FECACA',
-                  color: '#EE0000',
+                error: {
+                  icon: '😅',
+                  style: {
+                    background: '#FEF2F2',
+                    border: '1px solid #FECACA',
+                    color: '#EE0000',
+                  },
                 },
-              },
-            }}
-          />
-        </ThemeProvider>
+              }}
+            />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

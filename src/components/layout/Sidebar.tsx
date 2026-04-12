@@ -40,61 +40,63 @@ import type { User } from '@supabase/supabase-js'
 import { motion, AnimatePresence } from 'framer-motion'
 import { sidebarVariants, backdropVariants } from '@/lib/motion'
 import { useOverviewStats, type OverviewStats } from '@/hooks/useOverviewStats'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useTranslations } from 'next-intl'
 
 type NavBadgeKind = 'count' | 'alert' | 'setup' | 'lock'
 
 interface NavItem {
   href: string
   icon: React.ElementType
-  label: string
-  /** Dynamic badge computed from OverviewStats */
+  labelKey: string
+  badgeKey?: string
+  lockedTooltipKey?: string
   badge?: (stats: OverviewStats) => { text: string; kind: NavBadgeKind } | null
-  /** If returns true, item is shown as disabled/locked (data not ready) */
   lockedUntil?: (stats: OverviewStats) => boolean
 }
 
 interface NavSection {
   step: number
-  label: string
-  description?: string
+  labelKey: string
+  descriptionKey?: string
   items: NavItem[]
 }
 
 const NAV_SECTIONS: NavSection[] = [
   {
     step: 1,
-    label: 'Setup',
-    description: 'Configure what you monitor',
+    labelKey: 'sidebar.sections.setup.label',
+    descriptionKey: 'sidebar.sections.setup.description',
     items: [
       {
         href: '/dashboard/onboarding',
         icon: Sparkle,
-        label: 'Start Here',
+        labelKey: 'sidebar.items.start_here',
         badge: (s) => (s.brands === 0 ? { text: 'Begin', kind: 'setup' } : null),
       },
       {
         href: '/dashboard/brands',
         icon: Building2,
-        label: 'Brands',
+        labelKey: 'sidebar.items.brands',
         badge: (s) => ({ text: String(s.brands), kind: 'count' }),
       },
       {
         href: '/dashboard/prompts',
         icon: MessageSquare,
-        label: 'Prompts',
+        labelKey: 'sidebar.items.prompts',
         badge: (s) => ({ text: String(s.prompts), kind: 'count' }),
       },
     ],
   },
   {
     step: 2,
-    label: 'Monitor',
-    description: 'Run AI visibility checks',
+    labelKey: 'sidebar.sections.monitor.label',
+    descriptionKey: 'sidebar.sections.monitor.description',
     items: [
       {
         href: '/dashboard/monitoring',
         icon: Radio,
-        label: 'Live Monitoring',
+        labelKey: 'sidebar.items.live_monitoring',
         badge: (s) =>
           s.prompts === 0
             ? { text: 'Setup first', kind: 'lock' }
@@ -103,51 +105,88 @@ const NAV_SECTIONS: NavSection[] = [
               : null,
         lockedUntil: (s) => s.prompts === 0,
       },
-      { href: '/dashboard/workflows', icon: GitBranch, label: 'Workflows' },
+      { href: '/dashboard/workflows', icon: GitBranch, labelKey: 'sidebar.items.workflows' },
       {
         href: '/dashboard/alerts',
         icon: Bell,
-        label: 'Alerts',
-        badge: (s) =>
-          s.unreadAlerts > 0 ? { text: String(s.unreadAlerts), kind: 'alert' } : null,
+        labelKey: 'sidebar.items.alerts',
+        badge: (s) => (s.unreadAlerts > 0 ? { text: String(s.unreadAlerts), kind: 'alert' } : null),
       },
     ],
   },
   {
     step: 3,
-    label: 'Insights',
-    description: 'Analyze monitoring results',
+    labelKey: 'sidebar.sections.insights.label',
+    descriptionKey: 'sidebar.sections.insights.description',
     items: [
-      { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { href: '/dashboard/analytics', icon: BarChart3, label: 'Analytics', lockedUntil: (s) => !s.hasData },
-      { href: '/dashboard/sentiment', icon: Smile, label: 'Sentiment', lockedUntil: (s) => !s.hasData },
-      { href: '/dashboard/citations', icon: BarChart3, label: 'Citations', lockedUntil: (s) => !s.hasData },
-      { href: '/dashboard/keywords', icon: Tag, label: 'Keywords', lockedUntil: (s) => !s.hasData },
-      { href: '/dashboard/snapshots', icon: Camera, label: 'Snapshots', lockedUntil: (s) => !s.hasData },
-      { href: '/dashboard/reports', icon: FileText, label: 'Reports', lockedUntil: (s) => !s.hasData },
-      { href: '/dashboard/competitor', icon: GitCompare, label: 'Competitor' },
-      { href: '/dashboard/history', icon: Clock, label: 'Scan History' },
+      { href: '/dashboard', icon: LayoutDashboard, labelKey: 'sidebar.items.dashboard' },
+      {
+        href: '/dashboard/analytics',
+        icon: BarChart3,
+        labelKey: 'sidebar.items.analytics',
+        lockedUntil: (s) => !s.hasData,
+      },
+      {
+        href: '/dashboard/sentiment',
+        icon: Smile,
+        labelKey: 'sidebar.items.sentiment',
+        lockedUntil: (s) => !s.hasData,
+      },
+      {
+        href: '/dashboard/citations',
+        icon: BarChart3,
+        labelKey: 'sidebar.items.citations',
+        lockedUntil: (s) => !s.hasData,
+      },
+      {
+        href: '/dashboard/keywords',
+        icon: Tag,
+        labelKey: 'sidebar.items.keywords',
+        lockedUntil: (s) => !s.hasData,
+      },
+      {
+        href: '/dashboard/snapshots',
+        icon: Camera,
+        labelKey: 'sidebar.items.snapshots',
+        lockedUntil: (s) => !s.hasData,
+      },
+      {
+        href: '/dashboard/reports',
+        icon: FileText,
+        labelKey: 'sidebar.items.reports',
+        lockedUntil: (s) => !s.hasData,
+      },
+      { href: '/dashboard/competitor', icon: GitCompare, labelKey: 'sidebar.items.competitor' },
+      { href: '/dashboard/history', icon: Clock, labelKey: 'sidebar.items.scan_history' },
     ],
   },
   {
     step: 4,
-    label: 'Optimize',
-    description: 'Improve content for AI search',
+    labelKey: 'sidebar.sections.optimize.label',
+    descriptionKey: 'sidebar.sections.optimize.description',
     items: [
-      { href: '/dashboard/optimizer', icon: FileSearch, label: 'Content Optimizer' },
-      { href: '/dashboard/audit', icon: ClipboardCheck, label: 'Content Audit' },
-      { href: '/dashboard/recommendations', icon: Lightbulb, label: 'Recommendations' },
-      { href: '/dashboard/monitor', icon: Globe, label: 'Engine Info' },
+      {
+        href: '/dashboard/optimizer',
+        icon: FileSearch,
+        labelKey: 'sidebar.items.content_optimizer',
+      },
+      { href: '/dashboard/audit', icon: ClipboardCheck, labelKey: 'sidebar.items.content_audit' },
+      {
+        href: '/dashboard/recommendations',
+        icon: Lightbulb,
+        labelKey: 'sidebar.items.recommendations',
+      },
+      { href: '/dashboard/monitor', icon: Globe, labelKey: 'sidebar.items.engine_info' },
     ],
   },
   {
     step: 5,
-    label: 'Account',
+    labelKey: 'sidebar.sections.account.label',
     items: [
-      { href: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
-      { href: '/dashboard/credits', icon: Coins, label: 'Credits' },
-      { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
-      { href: '/dashboard/docs', icon: BookOpen, label: 'Documentation' },
+      { href: '/dashboard/billing', icon: CreditCard, labelKey: 'sidebar.items.billing' },
+      { href: '/dashboard/credits', icon: Coins, labelKey: 'sidebar.items.credits' },
+      { href: '/dashboard/settings', icon: Settings, labelKey: 'sidebar.items.settings' },
+      { href: '/dashboard/docs', icon: BookOpen, labelKey: 'sidebar.items.documentation' },
     ],
   },
 ]
@@ -193,11 +232,13 @@ function SidebarContent({
   return (
     <div className="flex h-16 items-center justify-between px-5">
       <Link className="flex items-center gap-2.5" href="/dashboard">
-        <div className="flex h-[34px] w-[34px] items-center justify-center rounded-xl bg-brand-gradient">
+        <div className="bg-brand-gradient flex h-[34px] w-[34px] items-center justify-center rounded-xl">
           <span className="text-sm font-black text-white">A</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-[20px] font-extrabold tracking-tight text-foreground">AIO Pulse</span>
+          <span className="text-[20px] font-extrabold tracking-tight text-foreground">
+            AIO Pulse
+          </span>
           <span className="text-[10px] font-medium text-muted-foreground">FREE</span>
         </div>
       </Link>
@@ -221,12 +262,7 @@ function BadgePill({ text, kind }: { text: string; kind: NavBadgeKind }) {
     lock: 'bg-secondary text-muted-foreground opacity-70',
   }
   return (
-    <span
-      className={cn(
-        'ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold',
-        styles[kind],
-      )}
-    >
+    <span className={cn('ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold', styles[kind])}>
       {text}
     </span>
   )
@@ -242,6 +278,7 @@ function NavSection({
   onItemClick?: () => void
 }) {
   const pathname = usePathname()
+  const t = useTranslations()
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
@@ -252,15 +289,17 @@ function NavSection({
   return (
     <div className="mb-5">
       <div className="mb-2.5 flex items-center gap-2 px-4">
-        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/15 text-[10px] font-black text-primary">
+        <span className="bg-primary/15 flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black text-primary">
           {section.step}
         </span>
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          {section.label}
+          {t(section.labelKey)}
         </p>
       </div>
-      {section.description && (
-        <p className="mb-2 px-4 text-[10px] text-muted-foreground/70">{section.description}</p>
+      {section.descriptionKey && (
+        <p className="text-muted-foreground/70 mb-2 px-4 text-[10px]">
+          {t(section.descriptionKey)}
+        </p>
       )}
       <div className="space-y-0.5">
         {section.items.map((item) => {
@@ -277,10 +316,10 @@ function NavSection({
                 locked && !active && 'opacity-50',
               )}
               onClick={onItemClick}
-              title={locked ? 'Requires data from an earlier step' : undefined}
+              title={locked ? t('sidebar.badges.locked_tooltip') : undefined}
             >
               <item.icon className="h-5 w-5 shrink-0" />
-              {item.label}
+              {t(item.labelKey)}
               {active && (
                 <span className="nav-link-indicator absolute right-0 top-1/2 h-9 w-1 -translate-y-1/2 rounded-full bg-brand" />
               )}
@@ -346,18 +385,19 @@ export function Sidebar() {
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {NAV_SECTIONS.map((section) => (
-            <NavSection key={section.label} section={section} stats={stats} />
+            <NavSection key={section.labelKey} section={section} stats={stats} />
           ))}
         </nav>
 
         {/* Footer */}
         <div className="border-t border-border p-4">
-          <div className="mb-3 flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5">
+          <LanguageSwitcher />
+          <div className="mb-3 mt-2 flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5">
             {loading ? (
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             ) : (
               <>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/20 text-xs font-black text-brand">
+                <div className="bg-brand/20 flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black text-brand">
                   {userInitial}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -400,7 +440,7 @@ export function Sidebar() {
             <nav className="flex-1 overflow-y-auto px-3 py-4">
               {NAV_SECTIONS.map((section) => (
                 <NavSection
-                  key={section.label}
+                  key={section.labelKey}
                   section={section}
                   stats={stats}
                   onItemClick={() => setSidebarOpen(false)}
@@ -410,12 +450,13 @@ export function Sidebar() {
 
             {/* Footer */}
             <div className="border-t border-border p-4">
-              <div className="mb-3 flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5">
+              <LanguageSwitcher />
+              <div className="mb-3 mt-2 flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5">
                 {loading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : (
                   <>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/20 text-xs font-black text-brand">
+                    <div className="bg-brand/20 flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black text-brand">
                       {userInitial}
                     </div>
                     <div className="min-w-0 flex-1">

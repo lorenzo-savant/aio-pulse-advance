@@ -121,13 +121,16 @@ export async function POST(req: NextRequest) {
   const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
   type Engine = (typeof validEngines)[number]
 
-  const requestedEngines = parsed.data.engines ?? (prompt.engines as string[])
-  const engines = requestedEngines.filter((e): e is Engine =>
+  const promptEngines = Array.isArray(prompt.engines) ? (prompt.engines as string[]) : []
+  const requestedEngines = parsed.data.engines ?? promptEngines
+  let engines = requestedEngines.filter((e): e is Engine =>
     (validEngines as readonly string[]).includes(e),
   )
 
+  // If the prompt has no engines set (legacy seed or manual insert), default
+  // to all 4 core engines rather than rejecting the request.
   if (engines.length === 0) {
-    return err('No valid engines specified', 400)
+    engines = [...validEngines]
   }
 
   // ── Check/deduct credits before running ───────────────────────────────────

@@ -42,6 +42,26 @@ import { sidebarVariants, backdropVariants } from '@/lib/motion'
 
 const NAV_SECTIONS = [
   {
+    label: 'Getting Started',
+    items: [
+      { href: '/dashboard/onboarding', icon: Sparkle, label: 'Start Here', badge: 'Setup' },
+      { href: '/dashboard/brands', icon: Building2, label: 'Brands' },
+      { href: '/dashboard/prompts', icon: MessageSquare, label: 'Prompts' },
+    ],
+  },
+  {
+    label: 'Monitoring',
+    items: [
+      { href: '/dashboard/monitoring', icon: Radio, label: 'Live Monitoring' },
+      { href: '/dashboard/sentiment', icon: Smile, label: 'Sentiment' },
+      { href: '/dashboard/citations', icon: BarChart3, label: 'Citations' },
+      { href: '/dashboard/snapshots', icon: Camera, label: 'Snapshots' },
+      { href: '/dashboard/keywords', icon: Tag, label: 'Keywords' },
+      { href: '/dashboard/alerts', icon: Bell, label: 'Alerts' },
+      { href: '/dashboard/reports', icon: FileText, label: 'Reports' },
+    ],
+  },
+  {
     label: 'Overview',
     items: [
       { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -57,19 +77,7 @@ const NAV_SECTIONS = [
       { href: '/dashboard/monitor', icon: Globe, label: 'Engine Info' },
       { href: '/dashboard/competitor', icon: GitCompare, label: 'Competitor Analysis' },
       { href: '/dashboard/history', icon: Clock, label: 'Scan History' },
-    ],
-  },
-  {
-    label: 'AI Monitoring',
-    items: [
-      { href: '/dashboard/brands', icon: Building2, label: 'Brands' },
-      { href: '/dashboard/prompts', icon: MessageSquare, label: 'Prompts' },
-      { href: '/dashboard/sentiment', icon: Smile, label: 'Sentiment' },
-      { href: '/dashboard/citations', icon: BarChart3, label: 'Citations' },
-      { href: '/dashboard/snapshots', icon: Camera, label: 'Snapshots' },
-      { href: '/dashboard/keywords', icon: Tag, label: 'Keywords' },
-      { href: '/dashboard/alerts', icon: Bell, label: 'Alerts' },
-      { href: '/dashboard/reports', icon: FileText, label: 'Reports' },
+      { href: '/dashboard/workflows', icon: GitBranch, label: 'Workflows' },
     ],
   },
   {
@@ -83,11 +91,7 @@ const NAV_SECTIONS = [
   },
 ]
 
-const EXTRA_ITEMS = [
-  { href: '/dashboard/monitoring', icon: Radio, label: 'Live Monitoring' },
-  { href: '/dashboard/workflows', icon: GitBranch, label: 'Workflows' },
-  { href: '/dashboard/onboarding', icon: Sparkle, label: 'Guided Setup', badge: 'Start' },
-]
+const EXTRA_ITEMS: Array<{ href: string; icon: typeof Sparkle; label: string; badge?: string }> = []
 
 function SidebarContent({
   onClose,

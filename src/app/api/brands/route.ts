@@ -16,6 +16,7 @@ const brandSchema = z.object({
   domains: z.array(z.string().max(200)).max(20).optional().default([]),
   competitors: z.array(z.string().max(100)).max(20).optional().default([]),
   industry: z.string().max(100).optional(),
+  language: z.enum(['en', 'it', 'sv']).optional().default('en'),
   color: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color')
@@ -25,7 +26,7 @@ const brandSchema = z.object({
 
 // Safe columns that always exist — avoid report_* to prevent schema cache errors
 const BRAND_LIST_COLS =
-  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, color, logo_url, is_active, created_at, updated_at'
+  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })

@@ -24,6 +24,8 @@ import toast from 'react-hot-toast'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+type BrandLanguage = 'en' | 'it' | 'sv'
+
 interface BrandForm {
   name: string
   domain: string
@@ -32,6 +34,7 @@ interface BrandForm {
   aliases: string
   competitors: string
   color: string
+  language: BrandLanguage
 }
 
 interface PromptForm {
@@ -60,12 +63,9 @@ const INDUSTRIES = [
 ]
 
 const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'sv', label: 'Svenska' },
-  { value: 'it', label: 'Italiano' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'fr', label: 'Français' },
-  { value: 'es', label: 'Español' },
+  { value: 'en', label: '🇬🇧 English' },
+  { value: 'it', label: '🇮🇹 Italiano' },
+  { value: 'sv', label: '🇸🇪 Svenska' },
 ]
 
 const ENGINES = [
@@ -159,6 +159,7 @@ export default function OnboardingPage() {
     aliases: '',
     competitors: '',
     color: '#6366f1',
+    language: 'en',
   })
 
   // Prompts
@@ -171,7 +172,7 @@ export default function OnboardingPage() {
   // ─── Step navigation ─────────────────────────────────────────────────────
 
   const canProceed = () => {
-    if (step === 1) return brand.name.trim().length > 0
+    if (step === 1) return brand.name.trim().length > 0 && brand.language.trim().length > 0
     if (step === 2) return prompts.length > 0
     return true
   }
@@ -206,12 +207,19 @@ export default function OnboardingPage() {
           description: brand.description || undefined,
           industry: brand.industry || undefined,
           aliases: brand.aliases
-            ? brand.aliases.split(',').map((s) => s.trim()).filter(Boolean)
+            ? brand.aliases
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [],
           competitors: brand.competitors
-            ? brand.competitors.split(',').map((s) => s.trim()).filter(Boolean)
+            ? brand.competitors
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [],
           color: brand.color,
+          language: brand.language,
         }),
       })
 
@@ -333,7 +341,7 @@ export default function OnboardingPage() {
                 i < step
                   ? 'bg-primary text-foreground'
                   : i === step
-                    ? 'bg-primary/20 text-primary ring-2 ring-brand-500'
+                    ? 'bg-primary/20 ring-brand-500 text-primary ring-2'
                     : 'bg-secondary text-muted-foreground',
               )}
               onClick={() => i < step && setStep(i)}
@@ -341,9 +349,7 @@ export default function OnboardingPage() {
               {i < step ? <Check className="h-4 w-4" /> : <s.icon className="h-4 w-4" />}
             </button>
             {i < STEPS.length - 1 && (
-              <div
-                className={cn('h-0.5 w-8 rounded', i < step ? 'bg-primary' : 'bg-secondary')}
-              />
+              <div className={cn('h-0.5 w-8 rounded', i < step ? 'bg-primary' : 'bg-secondary')} />
             )}
           </div>
         ))}
@@ -352,7 +358,7 @@ export default function OnboardingPage() {
       {/* Step 0: Welcome */}
       {step === 0 && (
         <Card className="p-8 text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/20">
+          <div className="bg-primary/20 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl">
             <Sparkles className="h-10 w-10 text-primary" />
           </div>
           <h1 className="text-3xl font-black text-foreground">Welcome to AIO Pulse</h1>
@@ -433,6 +439,29 @@ export default function OnboardingPage() {
               </select>
             </div>
 
+            {/* Language */}
+            <div>
+              <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Primary Market Language <span className="text-red-400">*</span>
+              </label>
+              <select
+                className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+                value={brand.language}
+                onChange={(e) => setBrand({ ...brand, language: e.target.value as BrandLanguage })}
+              >
+                <option value="">Select language...</option>
+                {LANGUAGES.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+              <p className="bg-primary/10 mt-1.5 rounded-lg px-3 py-2 text-[11px] text-primary">
+                Prompts and AI simulations will run in this language to reflect how your customers
+                search.
+              </p>
+            </div>
+
             {/* Description */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
@@ -487,7 +516,7 @@ export default function OnboardingPage() {
                     className={cn(
                       'h-8 w-8 rounded-lg transition-all',
                       brand.color === c
-                        ? 'ring-2 ring-white ring-offset-2 ring-offset-background900'
+                        ? 'ring-offset-background900 ring-2 ring-white ring-offset-2'
                         : 'opacity-60 hover:opacity-100',
                     )}
                     style={{ backgroundColor: c }}
@@ -511,10 +540,7 @@ export default function OnboardingPage() {
 
           <div className="mt-6 space-y-3">
             {prompts.map((p, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 rounded-xl border border-border p-3"
-              >
+              <div key={i} className="flex items-start gap-3 rounded-xl border border-border p-3">
                 <MessageSquare className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="flex-1">
                   <p className="text-sm text-foreground">{p.text}</p>

@@ -8,11 +8,13 @@ export type PromptCategory =
   | 'negative'
   | 'expert'
 
+export type PromptLang = 'en' | 'it' | 'sv'
+
 export interface PromptTemplate {
   id: string
   category: PromptCategory
-  text: string
   description: string
+  texts: Record<PromptLang, string>
 }
 
 export interface HydrationParams {
@@ -46,441 +48,726 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
   {
     id: 'D01',
     category: 'discovery',
-    text: 'What is {brand}?',
     description: 'Basic brand identity query',
+    texts: {
+      en: 'What is {brand}?',
+      it: "Cos'è {brand}?",
+      sv: 'Vad är {brand}?',
+    },
   },
   {
     id: 'D02',
     category: 'discovery',
-    text: 'Tell me about {brand} and what they do',
     description: 'Brand overview request',
+    texts: {
+      en: 'Tell me about {brand} and what they do',
+      it: 'Parlami di {brand} e di cosa si occupa',
+      sv: 'Berätta om {brand} och vad de gör',
+    },
   },
   {
     id: 'D03',
     category: 'discovery',
-    text: 'What are the best {category} companies?',
     description: 'Top companies in category',
+    texts: {
+      en: 'What are the best {category} companies?',
+      it: 'Quali sono le migliori aziende di {category}?',
+      sv: 'Vilka är de bästa {category}-företagen?',
+    },
   },
   {
     id: 'D04',
     category: 'discovery',
-    text: 'List the top 10 {category} providers in {location}',
     description: 'Top providers in location',
+    texts: {
+      en: 'List the top 10 {category} providers in {location}',
+      it: 'Elenca i migliori 10 fornitori di {category} a {location}',
+      sv: 'Lista de 10 bästa {category}-leverantörerna i {location}',
+    },
   },
   {
     id: 'D05',
     category: 'discovery',
-    text: 'Who is the market leader in {category}?',
     description: 'Market leader identification',
+    texts: {
+      en: 'Who is the market leader in {category}?',
+      it: 'Chi è il leader di mercato nel settore {category}?',
+      sv: 'Vem är marknadsledaren inom {category}?',
+    },
   },
   {
     id: 'D06',
     category: 'discovery',
-    text: 'What companies should I know about in {category}?',
     description: 'Notable companies in sector',
+    texts: {
+      en: 'What companies should I know about in {category}?',
+      it: 'Quali aziende dovrei conoscere nel settore {category}?',
+      sv: 'Vilka företag bör jag känna till inom {category}?',
+    },
   },
   {
     id: 'D07',
     category: 'discovery',
-    text: 'What is {brand} known for?',
     description: 'Brand specialization query',
+    texts: {
+      en: 'What is {brand} known for?',
+      it: 'Per cosa è conosciuta {brand}?',
+      sv: 'Vad är {brand} känt för?',
+    },
   },
   {
     id: 'D08',
     category: 'discovery',
-    text: 'Is {brand} a good company?',
     description: 'General quality assessment',
+    texts: {
+      en: 'Is {brand} a good company?',
+      it: "{brand} è un'azienda affidabile?",
+      sv: 'Är {brand} ett bra företag?',
+    },
   },
   {
     id: 'D09',
     category: 'discovery',
-    text: 'What does {brand} specialize in?',
     description: 'Brand expertise query',
+    texts: {
+      en: 'What does {brand} specialize in?',
+      it: 'In cosa si specializza {brand}?',
+      sv: 'Vad specialiserar sig {brand} på?',
+    },
   },
   {
     id: 'D10',
     category: 'discovery',
-    text: 'Give me an overview of the {category} industry and key players',
     description: 'Industry overview request',
+    texts: {
+      en: 'Give me an overview of the {category} industry and key players',
+      it: 'Fammi una panoramica del settore {category} e dei principali attori',
+      sv: 'Ge mig en överblick av {category}-branschen och viktiga aktörer',
+    },
   },
 
   // Comparison (C01-C10)
   {
     id: 'C01',
     category: 'comparison',
-    text: 'Compare {brand} vs {competitor}',
     description: 'Direct brand comparison',
+    texts: {
+      en: 'Compare {brand} vs {competitor}',
+      it: 'Confronta {brand} con {competitor}',
+      sv: 'Jämför {brand} med {competitor}',
+    },
   },
   {
     id: 'C02',
     category: 'comparison',
-    text: '{brand} or {competitor}, which is better for {use_case}?',
     description: 'Use-case comparison',
+    texts: {
+      en: '{brand} or {competitor}, which is better for {use_case}?',
+      it: '{brand} o {competitor}, quale è migliore per {use_case}?',
+      sv: '{brand} eller {competitor}, vilket är bättre för {use_case}?',
+    },
   },
   {
     id: 'C03',
     category: 'comparison',
-    text: 'What are the pros and cons of {brand}?',
     description: 'Brand pros and cons',
+    texts: {
+      en: 'What are the pros and cons of {brand}?',
+      it: 'Quali sono i pro e i contro di {brand}?',
+      sv: 'Vilka är för- och nackdelarna med {brand}?',
+    },
   },
   {
     id: 'C04',
     category: 'comparison',
-    text: 'How does {brand} compare to alternatives?',
     description: 'Alternative comparison',
+    texts: {
+      en: 'How does {brand} compare to alternatives?',
+      it: 'Come si confronta {brand} con le alternative?',
+      sv: 'Hur står sig {brand} mot alternativen?',
+    },
   },
   {
     id: 'C05',
     category: 'comparison',
-    text: 'Is {brand} worth it compared to {competitor}?',
     description: 'Value comparison',
+    texts: {
+      en: 'Is {brand} worth it compared to {competitor}?',
+      it: '{brand} vale la pena rispetto a {competitor}?',
+      sv: 'Är {brand} värt det jämfört med {competitor}?',
+    },
   },
   {
     id: 'C06',
     category: 'comparison',
-    text: 'What is the difference between {brand} and {competitor}?',
     description: 'Brand differentiation',
+    texts: {
+      en: 'What is the difference between {brand} and {competitor}?',
+      it: 'Qual è la differenza tra {brand} e {competitor}?',
+      sv: 'Vad är skillnaden mellan {brand} och {competitor}?',
+    },
   },
   {
     id: 'C07',
     category: 'comparison',
-    text: '{brand} vs {competitor} vs {competitor2} — which should I choose?',
     description: 'Multi-brand comparison',
+    texts: {
+      en: '{brand} vs {competitor} vs {competitor2} — which should I choose?',
+      it: '{brand} vs {competitor} vs {competitor2} — quale dovrei scegliere?',
+      sv: '{brand} mot {competitor} mot {competitor2} — vilket ska jag välja?',
+    },
   },
   {
     id: 'C08',
     category: 'comparison',
-    text: 'Rate {brand} on a scale of 1-10 for {category}',
     description: 'Brand rating request',
+    texts: {
+      en: 'Rate {brand} on a scale of 1-10 for {category}',
+      it: 'Valuta {brand} su una scala da 1 a 10 per {category}',
+      sv: 'Betygsätt {brand} på en skala 1-10 för {category}',
+    },
   },
   {
     id: 'C09',
     category: 'comparison',
-    text: 'What are the advantages of {brand} over {competitor}?',
     description: 'Competitive advantage query',
+    texts: {
+      en: 'What are the advantages of {brand} over {competitor}?',
+      it: 'Quali sono i vantaggi di {brand} rispetto a {competitor}?',
+      sv: 'Vilka fördelar har {brand} framför {competitor}?',
+    },
   },
   {
     id: 'C10',
     category: 'comparison',
-    text: 'Which {category} tool has the best value for money?',
     description: 'Value for money comparison',
+    texts: {
+      en: 'Which {category} tool has the best value for money?',
+      it: 'Quale strumento {category} ha il miglior rapporto qualità-prezzo?',
+      sv: 'Vilket {category}-verktyg ger bäst valuta för pengarna?',
+    },
   },
 
   // Recommendation (R01-R10)
   {
     id: 'R01',
     category: 'recommendation',
-    text: 'Recommend a {category} for a small business',
     description: 'Small business recommendation',
+    texts: {
+      en: 'Recommend a {category} for a small business',
+      it: 'Consiglia un {category} per una piccola azienda',
+      sv: 'Rekommendera en {category} för ett litet företag',
+    },
   },
   {
     id: 'R02',
     category: 'recommendation',
-    text: 'What is the best {category} for {use_case}?',
     description: 'Best category for use case',
+    texts: {
+      en: 'What is the best {category} for {use_case}?',
+      it: 'Qual è il miglior {category} per {use_case}?',
+      sv: 'Vad är det bästa {category} för {use_case}?',
+    },
   },
   {
     id: 'R03',
     category: 'recommendation',
-    text: 'I need a {category} that is reliable. What should I use?',
     description: 'Reliability-focused recommendation',
+    texts: {
+      en: 'I need a {category} that is reliable. What should I use?',
+      it: 'Ho bisogno di un {category} affidabile. Cosa dovrei usare?',
+      sv: 'Jag behöver en {category} som är pålitlig. Vad ska jag använda?',
+    },
   },
   {
     id: 'R04',
     category: 'recommendation',
-    text: 'What {category} do experts recommend?',
     description: 'Expert recommendation request',
+    texts: {
+      en: 'What {category} do experts recommend?',
+      it: 'Quale {category} consigliano gli esperti?',
+      sv: 'Vilken {category} rekommenderar experterna?',
+    },
   },
   {
     id: 'R05',
     category: 'recommendation',
-    text: 'Best {category} for small businesses in {location}',
     description: 'Local small business recommendation',
+    texts: {
+      en: 'Best {category} for small businesses in {location}',
+      it: 'Migliori {category} per piccole aziende a {location}',
+      sv: 'Bästa {category} för små företag i {location}',
+    },
   },
   {
     id: 'R06',
     category: 'recommendation',
-    text: 'What {category} should I choose in 2026?',
     description: 'Future-proof recommendation',
+    texts: {
+      en: 'What {category} should I choose in 2026?',
+      it: 'Quale {category} dovrei scegliere nel 2026?',
+      sv: 'Vilken {category} ska jag välja 2026?',
+    },
   },
   {
     id: 'R07',
     category: 'recommendation',
-    text: 'If I want to grow my business, what {category} should I use?',
     description: 'Growth-oriented recommendation',
+    texts: {
+      en: 'If I want to grow my business, what {category} should I use?',
+      it: 'Se voglio far crescere la mia azienda, quale {category} dovrei usare?',
+      sv: 'Om jag vill växa mitt företag, vilken {category} ska jag använda?',
+    },
   },
   {
     id: 'R08',
     category: 'recommendation',
-    text: 'What is the most recommended {category} right now?',
     description: 'Current top recommendation',
+    texts: {
+      en: 'What is the most recommended {category} right now?',
+      it: 'Qual è il {category} più consigliato in questo momento?',
+      sv: 'Vilken {category} är mest rekommenderad just nu?',
+    },
   },
   {
     id: 'R09',
     category: 'recommendation',
-    text: 'Help me choose between {brand}, {competitor}, and {competitor2}',
     description: 'Multi-choice recommendation',
+    texts: {
+      en: 'Help me choose between {brand}, {competitor}, and {competitor2}',
+      it: 'Aiutami a scegliere tra {brand}, {competitor} e {competitor2}',
+      sv: 'Hjälp mig välja mellan {brand}, {competitor} och {competitor2}',
+    },
   },
   {
     id: 'R10',
     category: 'recommendation',
-    text: 'What would you recommend for someone new to {category}?',
     description: 'Beginner recommendation',
+    texts: {
+      en: 'What would you recommend for someone new to {category}?',
+      it: 'Cosa consiglieresti a chi è nuovo nel settore {category}?',
+      sv: 'Vad skulle du rekommendera för någon ny inom {category}?',
+    },
   },
 
   // Problem (P01-P10)
   {
     id: 'P01',
     category: 'problem',
-    text: 'I need help with {category}, what should I use?',
     description: 'Help-seeking query',
+    texts: {
+      en: 'I need help with {category}, what should I use?',
+      it: 'Ho bisogno di aiuto con {category}, cosa dovrei usare?',
+      sv: 'Jag behöver hjälp med {category}, vad ska jag använda?',
+    },
   },
   {
     id: 'P02',
     category: 'problem',
-    text: 'How do I improve my {category} strategy?',
     description: 'Strategy improvement query',
+    texts: {
+      en: 'How do I improve my {category} strategy?',
+      it: 'Come posso migliorare la mia strategia di {category}?',
+      sv: 'Hur förbättrar jag min {category}-strategi?',
+    },
   },
   {
     id: 'P03',
     category: 'problem',
-    text: 'What is the best way to handle {category} for a growing company?',
     description: 'Growing company challenge',
+    texts: {
+      en: 'What is the best way to handle {category} for a growing company?',
+      it: "Qual è il modo migliore per gestire {category} per un'azienda in crescita?",
+      sv: 'Vad är det bästa sättet att hantera {category} för ett växande företag?',
+    },
   },
   {
     id: 'P04',
     category: 'problem',
-    text: 'I am struggling with {category}. Any solutions?',
     description: 'Struggling with category',
+    texts: {
+      en: 'I am struggling with {category}. Any solutions?',
+      it: 'Sto avendo problemi con {category}. Qualche soluzione?',
+      sv: 'Jag har problem med {category}. Några lösningar?',
+    },
   },
   {
     id: 'P05',
     category: 'problem',
-    text: 'How can {brand} help with {category}?',
     description: 'Brand assistance query',
+    texts: {
+      en: 'How can {brand} help with {category}?',
+      it: 'Come può {brand} aiutare con {category}?',
+      sv: 'Hur kan {brand} hjälpa till med {category}?',
+    },
   },
   {
     id: 'P06',
     category: 'problem',
-    text: 'What tools exist for {category}?',
     description: 'Tool discovery query',
+    texts: {
+      en: 'What tools exist for {category}?',
+      it: 'Quali strumenti esistono per {category}?',
+      sv: 'Vilka verktyg finns för {category}?',
+    },
   },
   {
     id: 'P07',
     category: 'problem',
-    text: 'I need help with {category}. Where should I start?',
     description: 'Getting started query',
+    texts: {
+      en: 'I need help with {category}. Where should I start?',
+      it: 'Ho bisogno di aiuto con {category}. Da dove dovrei iniziare?',
+      sv: 'Jag behöver hjälp med {category}. Var ska jag börja?',
+    },
   },
   {
     id: 'P08',
     category: 'problem',
-    text: 'What is the fastest way to improve {category}?',
     description: 'Quick improvement query',
+    texts: {
+      en: 'What is the fastest way to improve {category}?',
+      it: 'Qual è il modo più veloce per migliorare {category}?',
+      sv: 'Vad är det snabbaste sättet att förbättra {category}?',
+    },
   },
   {
     id: 'P09',
     category: 'problem',
-    text: 'Best practices for {category} in 2026',
     description: 'Current best practices',
+    texts: {
+      en: 'Best practices for {category} in 2026',
+      it: 'Migliori pratiche per {category} nel 2026',
+      sv: 'Bästa praxis för {category} 2026',
+    },
   },
   {
     id: 'P10',
     category: 'problem',
-    text: 'How do companies typically handle {category}?',
     description: 'Common approach query',
+    texts: {
+      en: 'How do companies typically handle {category}?',
+      it: 'Come gestiscono tipicamente {category} le aziende?',
+      sv: 'Hur hanterar företag typiskt {category}?',
+    },
   },
 
   // Reputation (T01-T10)
   {
     id: 'T01',
     category: 'reputation',
-    text: 'What do people think about {brand}?',
     description: 'Public perception query',
+    texts: {
+      en: 'What do people think about {brand}?',
+      it: 'Cosa pensano le persone di {brand}?',
+      sv: 'Vad tycker folk om {brand}?',
+    },
   },
   {
     id: 'T02',
     category: 'reputation',
-    text: 'Is {brand} trustworthy?',
     description: 'Trust assessment query',
+    texts: {
+      en: 'Is {brand} trustworthy?',
+      it: '{brand} è affidabile?',
+      sv: 'Är {brand} pålitlig?',
+    },
   },
   {
     id: 'T03',
     category: 'reputation',
-    text: '{brand} reviews — is it legit?',
     description: 'Legitimacy verification',
+    texts: {
+      en: '{brand} reviews — is it legit?',
+      it: 'Recensioni di {brand} — è affidabile?',
+      sv: '{brand} recensioner — är det legitimt?',
+    },
   },
   {
     id: 'T04',
     category: 'reputation',
-    text: 'Has {brand} had any controversies?',
     description: 'Controversy check',
+    texts: {
+      en: 'Has {brand} had any controversies?',
+      it: '{brand} ha avuto polemiche o scandali?',
+      sv: 'Har {brand} haft några kontroverser?',
+    },
   },
   {
     id: 'T05',
     category: 'reputation',
-    text: 'What are common complaints about {brand}?',
     description: 'Common complaints query',
+    texts: {
+      en: 'What are common complaints about {brand}?',
+      it: 'Quali sono i reclami più comuni su {brand}?',
+      sv: 'Vilka är vanliga klagomål på {brand}?',
+    },
   },
   {
     id: 'T06',
     category: 'reputation',
-    text: 'Why do some people dislike {brand}?',
     description: 'Negative sentiment query',
+    texts: {
+      en: 'Why do some people dislike {brand}?',
+      it: 'Perché ad alcune persone non piace {brand}?',
+      sv: 'Varför ogillar vissa {brand}?',
+    },
   },
   {
     id: 'T07',
     category: 'reputation',
-    text: 'Is {brand} good for small businesses?',
     description: 'Small business suitability',
+    texts: {
+      en: 'Is {brand} good for small businesses?',
+      it: '{brand} è adatta alle piccole aziende?',
+      sv: 'Är {brand} bra för små företag?',
+    },
   },
   {
     id: 'T08',
     category: 'reputation',
-    text: "What is {brand}'s reputation in the industry?",
     description: 'Industry reputation',
+    texts: {
+      en: "What is {brand}'s reputation in the industry?",
+      it: 'Qual è la reputazione di {brand} nel settore?',
+      sv: 'Vilket rykte har {brand} i branschen?',
+    },
   },
   {
     id: 'T09',
     category: 'reputation',
-    text: 'Should I trust {brand} with my business?',
     description: 'Business trust query',
+    texts: {
+      en: 'Should I trust {brand} with my business?',
+      it: 'Dovrei fidarmi di {brand} per la mia attività?',
+      sv: 'Ska jag lita på {brand} med mitt företag?',
+    },
   },
   {
     id: 'T10',
     category: 'reputation',
-    text: 'What are the risks of using {brand}?',
     description: 'Risk assessment query',
+    texts: {
+      en: 'What are the risks of using {brand}?',
+      it: "Quali sono i rischi nell'usare {brand}?",
+      sv: 'Vilka är riskerna med att använda {brand}?',
+    },
   },
 
   // Local (L01-L10)
   {
     id: 'L01',
     category: 'local',
-    text: 'Best {category} in {location}',
     description: 'Best in location',
+    texts: {
+      en: 'Best {category} in {location}',
+      it: 'Migliore {category} a {location}',
+      sv: 'Bästa {category} i {location}',
+    },
   },
   {
     id: 'L02',
     category: 'local',
-    text: '{category} providers near {location}',
     description: 'Local providers',
+    texts: {
+      en: '{category} providers near {location}',
+      it: 'Fornitori di {category} vicino a {location}',
+      sv: '{category}-leverantörer i närheten av {location}',
+    },
   },
   {
     id: 'L03',
     category: 'local',
-    text: 'Top rated {category} in {location}',
     description: 'Top-rated local',
+    texts: {
+      en: 'Top rated {category} in {location}',
+      it: '{category} più votati a {location}',
+      sv: 'Högst rankad {category} i {location}',
+    },
   },
   {
     id: 'L04',
     category: 'local',
-    text: 'Where can I find {category} services in {location}?',
     description: 'Service location query',
+    texts: {
+      en: 'Where can I find {category} services in {location}?',
+      it: 'Dove posso trovare servizi di {category} a {location}?',
+      sv: 'Var kan jag hitta {category}-tjänster i {location}?',
+    },
   },
   {
     id: 'L05',
     category: 'local',
-    text: 'Local {category} recommendations in {location}',
     description: 'Local recommendations',
+    texts: {
+      en: 'Local {category} recommendations in {location}',
+      it: 'Raccomandazioni locali di {category} a {location}',
+      sv: 'Lokala {category}-rekommendationer i {location}',
+    },
   },
   {
     id: 'L06',
     category: 'local',
-    text: 'Best {category} in Sweden for {use_case}',
     description: 'Sweden-specific recommendation',
+    texts: {
+      en: 'Best {category} in Sweden for {use_case}',
+      it: 'Migliori {category} in Svezia per {use_case}',
+      sv: 'Bästa {category} i Sverige för {use_case}',
+    },
   },
   {
     id: 'L07',
     category: 'local',
-    text: '{brand} locations in {location}',
     description: 'Brand locations query',
+    texts: {
+      en: '{brand} locations in {location}',
+      it: 'Punti vendita di {brand} a {location}',
+      sv: '{brand}-platser i {location}',
+    },
   },
   {
     id: 'L08',
     category: 'local',
-    text: 'Is {brand} available in {location}?',
     description: 'Availability check',
+    texts: {
+      en: 'Is {brand} available in {location}?',
+      it: '{brand} è disponibile a {location}?',
+      sv: 'Finns {brand} i {location}?',
+    },
   },
   {
     id: 'L09',
     category: 'local',
-    text: 'Alternatives to {brand} in {location}',
     description: 'Local alternatives',
+    texts: {
+      en: 'Alternatives to {brand} in {location}',
+      it: 'Alternative a {brand} a {location}',
+      sv: 'Alternativ till {brand} i {location}',
+    },
   },
   {
     id: 'L10',
     category: 'local',
-    text: 'Who provides {category} in {location}?',
     description: 'Local provider identification',
+    texts: {
+      en: 'Who provides {category} in {location}?',
+      it: 'Chi offre {category} a {location}?',
+      sv: 'Vem erbjuder {category} i {location}?',
+    },
   },
 
   // Negative (N01-N05)
   {
     id: 'N01',
     category: 'negative',
-    text: 'What are the biggest problems with {brand}?',
     description: 'Major problems query',
+    texts: {
+      en: 'What are the biggest problems with {brand}?',
+      it: 'Quali sono i maggiori problemi di {brand}?',
+      sv: 'Vilka är de största problemen med {brand}?',
+    },
   },
   {
     id: 'N02',
     category: 'negative',
-    text: 'Why should I NOT use {brand}?',
     description: 'Anti-recommendation query',
+    texts: {
+      en: 'Why should I NOT use {brand}?',
+      it: 'Perché NON dovrei usare {brand}?',
+      sv: 'Varför ska jag INTE använda {brand}?',
+    },
   },
   {
     id: 'N03',
     category: 'negative',
-    text: 'Has {brand} ever failed a customer?',
     description: 'Customer failure query',
+    texts: {
+      en: 'Has {brand} ever failed a customer?',
+      it: '{brand} ha mai deluso un cliente?',
+      sv: 'Har {brand} någonsin misslyckats med en kund?',
+    },
   },
   {
     id: 'N04',
     category: 'negative',
-    text: '{brand} scam — is it real?',
     description: 'Scam verification query',
+    texts: {
+      en: '{brand} scam — is it real?',
+      it: '{brand} è una truffa — è vero?',
+      sv: '{brand} bluff — är det sant?',
+    },
   },
   {
     id: 'N05',
     category: 'negative',
-    text: 'What does {brand} do wrong?',
     description: 'Brand criticism query',
+    texts: {
+      en: 'What does {brand} do wrong?',
+      it: 'Cosa fa di sbagliato {brand}?',
+      sv: 'Vad gör {brand} fel?',
+    },
   },
 
   // Expert (E01-E05)
   {
     id: 'E01',
     category: 'expert',
-    text: 'Who is the leading expert in {category}?',
     description: 'Industry expert query',
+    texts: {
+      en: 'Who is the leading expert in {category}?',
+      it: 'Chi è il principale esperto di {category}?',
+      sv: 'Vem är ledande expert inom {category}?',
+    },
   },
   {
     id: 'E02',
     category: 'expert',
-    text: 'What companies are innovating in {category}?',
     description: 'Innovation leaders query',
+    texts: {
+      en: 'What companies are innovating in {category}?',
+      it: 'Quali aziende stanno innovando nel settore {category}?',
+      sv: 'Vilka företag innoverar inom {category}?',
+    },
   },
   {
     id: 'E03',
     category: 'expert',
-    text: 'What does {brand} think about the future of {category}?',
     description: 'Future vision query',
+    texts: {
+      en: 'What does {brand} think about the future of {category}?',
+      it: 'Cosa pensa {brand} del futuro di {category}?',
+      sv: 'Vad tycker {brand} om framtiden för {category}?',
+    },
   },
   {
     id: 'E04',
     category: 'expert',
-    text: 'Which {category} company has the best technology?',
     description: 'Technology leadership query',
+    texts: {
+      en: 'Which {category} company has the best technology?',
+      it: 'Quale azienda {category} ha la migliore tecnologia?',
+      sv: 'Vilket {category}-företag har bäst teknik?',
+    },
   },
   {
     id: 'E05',
     category: 'expert',
-    text: 'What awards has {brand} won?',
     description: 'Awards and recognition query',
+    texts: {
+      en: 'What awards has {brand} won?',
+      it: 'Quali premi ha vinto {brand}?',
+      sv: 'Vilka priser har {brand} vunnit?',
+    },
   },
 ]
 
-export function hydratePrompt(template: string, params: HydrationParams): string {
-  return template
+export function hydratePrompt(
+  template: PromptTemplate,
+  language: PromptLang,
+  params: HydrationParams,
+): string {
+  const raw = template.texts[language] ?? template.texts.en
+  return raw
     .replace(/{brand}/g, params.brand || '')
     .replace(/{category}/g, params.category || '')
     .replace(/{competitor}/g, params.competitor || '')

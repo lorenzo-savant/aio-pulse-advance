@@ -19,8 +19,14 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import type { Brand } from '@/types'
+import type { Brand, BrandLanguage } from '@/types'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
+
+const LANGUAGE_FLAGS: Record<BrandLanguage, string> = {
+  en: '🇬🇧 EN',
+  it: '🇮🇹 IT',
+  sv: '🇸🇪 SV',
+}
 
 function BrandCard({
   brand,
@@ -40,7 +46,14 @@ function BrandCard({
             {brand.name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <h3 className="truncate font-bold text-foreground">{brand.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="truncate font-bold text-foreground">{brand.name}</h3>
+              {brand.language && (
+                <span className="shrink-0 rounded-md border border-input bg-input px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {LANGUAGE_FLAGS[brand.language as BrandLanguage] || '🇬🇧 EN'}
+                </span>
+              )}
+            </div>
             {brand.domain && (
               <a
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"

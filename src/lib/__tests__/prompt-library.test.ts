@@ -6,18 +6,36 @@ import {
   getTemplatesByCategory,
   getTemplatesByCategories,
   type PromptCategory,
+  type PromptLang,
+  type PromptTemplate,
 } from '../prompt-library'
+
+const SUPPORTED_LANGS: PromptLang[] = ['en', 'it', 'sv']
 
 describe('PROMPT_TEMPLATES catalogue', () => {
   it('contains exactly 70 templates', () => {
     expect(PROMPT_TEMPLATES.length).toBe(70)
   })
 
-  it('every template has non-empty id, text and description', () => {
+  it('every template has non-empty id, description, and all 3 language texts', () => {
     for (const t of PROMPT_TEMPLATES) {
       expect(t.id.length).toBeGreaterThan(0)
-      expect(t.text.length).toBeGreaterThan(0)
       expect(t.description.length).toBeGreaterThan(0)
+      for (const lang of SUPPORTED_LANGS) {
+        expect(t.texts[lang]).toBeDefined()
+        expect(t.texts[lang].length).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('placeholders present in EN are preserved in IT and SV translations', () => {
+    const PLACEHOLDERS = /{(brand|category|competitor|competitor2|location|use_case)}/g
+    for (const t of PROMPT_TEMPLATES) {
+      const enPlaceholders = (t.texts.en.match(PLACEHOLDERS) || []).sort()
+      for (const lang of ['it', 'sv'] as PromptLang[]) {
+        const langPlaceholders = (t.texts[lang].match(PLACEHOLDERS) || []).sort()
+        expect(langPlaceholders).toEqual(enPlaceholders)
+      }
     }
   })
 
@@ -43,13 +61,46 @@ describe('PROMPT_TEMPLATES catalogue', () => {
   })
 })
 
+function makeTemplate(
+  en: string,
+  it: string = en,
+  sv: string = en,
+): PromptTemplate {
+  return {
+    id: 'TEST',
+    category: 'discovery',
+    description: 'test',
+    texts: { en, it, sv },
+  }
+}
+
 describe('hydratePrompt', () => {
-  it('replaces {brand} placeholder', () => {
-    expect(hydratePrompt('What is {brand}?', { brand: 'Acme' })).toBe('What is Acme?')
+  it('replaces {brand} placeholder in EN', () => {
+    const t = makeTemplate('What is {brand}?')
+    expect(hydratePrompt(t, 'en', { brand: 'Acme' })).toBe('What is Acme?')
+  })
+
+  it('uses the selected language variant', () => {
+    const t = makeTemplate('What is {brand}?', "Cos'è {brand}?", 'Vad är {brand}?')
+    expect(hydratePrompt(t, 'it', { brand: 'Acme' })).toBe("Cos'è Acme?")
+    expect(hydratePrompt(t, 'sv', { brand: 'Acme' })).toBe('Vad är Acme?')
+  })
+
+  it('falls back to EN when language variant is missing', () => {
+    const t: PromptTemplate = {
+      id: 'T',
+      category: 'discovery',
+      description: 'test',
+      texts: { en: 'Hello {brand}', it: '', sv: '' } as unknown as PromptTemplate['texts'],
+    }
+    // Passing an invalid lang falls back via nullish on undefined variant
+    const result = hydratePrompt(t, 'xx' as PromptLang, { brand: 'Acme' })
+    expect(result).toBe('Hello Acme')
   })
 
   it('replaces multiple placeholders', () => {
-    const out = hydratePrompt('{brand} vs {competitor} in {location}', {
+    const t = makeTemplate('{brand} vs {competitor} in {location}')
+    const out = hydratePrompt(t, 'en', {
       brand: 'Acme',
       competitor: 'Zapier',
       location: 'Stockholm',
@@ -58,17 +109,18 @@ describe('hydratePrompt', () => {
   })
 
   it('replaces all occurrences of the same placeholder', () => {
-    expect(hydratePrompt('{brand} and {brand}', { brand: 'Acme' })).toBe('Acme and Acme')
+    const t = makeTemplate('{brand} and {brand}')
+    expect(hydratePrompt(t, 'en', { brand: 'Acme' })).toBe('Acme and Acme')
   })
 
   it('replaces missing params with empty string', () => {
-    expect(hydratePrompt('Hello {brand} from {location}', { brand: 'Acme' })).toBe(
-      'Hello Acme from ',
-    )
+    const t = makeTemplate('Hello {brand} from {location}')
+    expect(hydratePrompt(t, 'en', { brand: 'Acme' })).toBe('Hello Acme from ')
   })
 
   it('leaves unknown placeholders untouched', () => {
-    expect(hydratePrompt('Hi {unknown}', {})).toBe('Hi {unknown}')
+    const t = makeTemplate('Hi {unknown}')
+    expect(hydratePrompt(t, 'en', {})).toBe('Hi {unknown}')
   })
 })
 

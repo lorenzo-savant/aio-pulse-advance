@@ -81,6 +81,8 @@ create table if not exists brands (
   is_active    boolean default true,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now(),
+  -- Primary market language for localized prompt generation (en/it/sv)
+  language     text not null default 'en' check (language in ('en', 'it', 'sv')),
   -- White-label report settings
   report_logo_url     text,
   report_brand_name   text,

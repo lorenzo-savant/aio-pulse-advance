@@ -7,6 +7,13 @@ import { isOpenAIAvailable, callOpenAI } from './openai'
 import { isPerplexityAvailable, callPerplexity } from './perplexity'
 import { isAnthropicAvailable, callAnthropic } from './anthropic'
 import { logger } from '@/lib/logger'
+import type { PromptLang } from '@/lib/prompt-library'
+
+const LANGUAGE_LABEL: Record<PromptLang, string> = {
+  en: 'English',
+  it: 'Italian (Italiano)',
+  sv: 'Swedish (Svenska)',
+}
 
 async function callGeminiFallback(prompt: string): Promise<string> {
   const apiKey = process.env['GEMINI_API_KEY']
@@ -43,16 +50,13 @@ function isGeminiAvailable(): boolean {
 export async function simulateEngineResponse(
   promptText: string,
   engine: MonitoringEngine,
+  language: PromptLang = 'en',
 ): Promise<{ text: string; provider: string }> {
   const enginePersona: Record<MonitoringEngine, string> = {
-    chatgpt:
-      'You are ChatGPT, a helpful AI assistant by OpenAI. Answer conversationally and helpfully. Include relevant brands, products, and services where appropriate.',
-    gemini:
-      'You are Google Gemini, a helpful AI assistant by Google. Answer factually with well-structured information. Include relevant brands and services where appropriate.',
-    perplexity:
-      'You are Perplexity AI, a search-focused AI assistant. Answer with verified facts, include brand mentions naturally, and reference sources where possible.',
-    claude:
-      'You are Claude, a helpful AI assistant by Anthropic. Answer thoughtfully with nuanced analysis. Include relevant brands and services where appropriate, with emphasis on factual accuracy.',
+    chatgpt: `You are ChatGPT. Respond in ${LANGUAGE_LABEL[language]} naturally and fluently, as if answering a user from that market. Include relevant brands, products, and services that would be recognized locally.`,
+    gemini: `You are Google Gemini. Respond in ${LANGUAGE_LABEL[language]} with well-structured, factual information. Include brands and services relevant to that language's market.`,
+    perplexity: `You are Perplexity AI. Respond in ${LANGUAGE_LABEL[language]} with verified facts and local sources where possible.`,
+    claude: `You are Claude. Respond in ${LANGUAGE_LABEL[language]} with nuanced analysis and locally relevant brands.`,
   }
 
   const fullPrompt = `${enginePersona[engine]}\n\nUser question: "${promptText}"\n\nProvide a realistic, helpful response (150-300 words).`

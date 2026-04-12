@@ -81,6 +81,8 @@ export interface ScanHistoryEntry extends AnalysisResult {
 }
 
 // ─── BRANDS ───────────────────────────────────────────────────────────────────
+export type BrandLanguage = 'en' | 'it' | 'sv'
+
 export interface Brand {
   id: string
   user_id: string
@@ -97,6 +99,7 @@ export interface Brand {
   is_active: boolean
   created_at: string
   updated_at: string
+  language: BrandLanguage
   // White-label report settings
   report_logo_url?: string | null
   report_brand_name?: string | null
@@ -112,6 +115,7 @@ export interface BrandCreateInput {
   competitors?: string[]
   industry?: string
   color?: string
+  language?: BrandLanguage
 }
 
 // ─── QUERY CATEGORIES (User Journey) ──────────────────────────────────────────

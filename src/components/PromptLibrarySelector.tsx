@@ -10,6 +10,7 @@ import {
   PROMPT_CATEGORIES,
   hydratePrompt,
   type PromptCategory,
+  type PromptLang,
 } from '@/lib/prompt-library'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
@@ -19,6 +20,7 @@ interface Props {
   brandName: string
   industry?: string
   competitors?: string[]
+  language?: PromptLang
   onComplete?: (stats: { created: number; skipped: number }) => void
 }
 
@@ -27,6 +29,7 @@ export function PromptLibrarySelector({
   brandName,
   industry,
   competitors = [],
+  language = 'en',
   onComplete,
 }: Props) {
   const [selectedCategories, setSelectedCategories] = useState<Set<PromptCategory>>(
@@ -41,7 +44,7 @@ export function PromptLibrarySelector({
     category: industry || 'your industry',
     competitor: competitors[0] || 'competitor',
     competitor2: competitors[1] || 'another competitor',
-    location: 'Sweden',
+    location: language === 'sv' ? 'Sweden' : language === 'it' ? 'Italy' : 'your market',
     use_case: industry ? `${industry} solutions` : 'business solutions',
   }
 
@@ -204,7 +207,7 @@ export function PromptLibrarySelector({
                           {t.id}
                         </Badge>
                         <p className="text-muted-foreground">
-                          {hydratePrompt(t.text, hydrationParams)}
+                          {hydratePrompt(t, language, hydrationParams)}
                         </p>
                       </div>
                     ))}

@@ -170,6 +170,7 @@ export type Database = {
           id: string
           industry: string | null
           is_active: boolean | null
+          language: string
           logo_url: string | null
           name: string
           organization_id: string | null
@@ -193,6 +194,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_active?: boolean | null
+          language?: string
           logo_url?: string | null
           name: string
           organization_id?: string | null
@@ -216,6 +218,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_active?: boolean | null
+          language?: string
           logo_url?: string | null
           name?: string
           organization_id?: string | null

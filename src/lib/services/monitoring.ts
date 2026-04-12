@@ -9,7 +9,9 @@ import type {
   MentionType,
   CompetitorMention,
   HallucinationFlag,
+  BrandLanguage,
 } from '@/types'
+import type { PromptLang } from '@/lib/prompt-library'
 
 import {
   simulateEngineResponse as routerSimulate,
@@ -110,15 +112,27 @@ export async function runMonitoringCheck(
   engine: MonitoringEngine,
   userId: string,
 ): Promise<Omit<MonitoringResult, 'id' | 'created_at'>> {
+  const language: PromptLang =
+    (brand.language as BrandLanguage) || (prompt.language as BrandLanguage) || 'en'
+
   const { text: responseText, provider: simulationProvider } = await routerSimulate(
     prompt.text,
     engine,
+    language,
   )
-  logger.info('Engine simulation completed', { service: 'monitoring', engine, provider: simulationProvider })
+  logger.info('Engine simulation completed', {
+    service: 'monitoring',
+    engine,
+    provider: simulationProvider,
+  })
 
   const analysisPrompt = buildAnalysisPrompt(responseText, brand, prompt.text)
   const { text: analysisRaw, provider: analysisProvider } = await routerAnalyze(analysisPrompt)
-  logger.info('Brand analysis completed', { service: 'monitoring', engine, provider: analysisProvider })
+  logger.info('Brand analysis completed', {
+    service: 'monitoring',
+    engine,
+    provider: analysisProvider,
+  })
 
   let analysis: AnalysisOutput
   try {

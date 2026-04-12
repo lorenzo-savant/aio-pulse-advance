@@ -46,7 +46,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ObsidianExportButton } from '@/components/ObsidianExportButton'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import type { Brand, MonitoringResult } from '@/types'
+import type { Brand, MonitoringResult, BrandLanguage } from '@/types'
 import { useChartTheme } from '@/hooks/useChartTheme'
 
 const ENGINE_COLORS: Record<string, string> = {
@@ -503,6 +503,25 @@ export default function BrandDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Language Nudge Banner - for brands without language set */}
+      {(!brand.language || brand.language === 'en') &&
+        brand.created_at &&
+        new Date(brand.created_at) < new Date('2026-04-13') && (
+          <div className="border-primary/30 bg-primary/10 flex items-center justify-between rounded-xl border p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">📍</span>
+              <p className="text-sm text-foreground">
+                Set the primary market for this brand to get more accurate AI monitoring results.
+              </p>
+            </div>
+            <Link href={`/dashboard/brands/${brand.id}/edit`}>
+              <Button size="sm" variant="outline">
+                Set Language
+              </Button>
+            </Link>
+          </div>
+        )}
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">

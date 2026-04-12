@@ -3,11 +3,12 @@ import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 import {
-  PROMPT_TEMPLATES,
   getTemplatesByCategories,
   hydratePrompt,
   type PromptCategory,
+  type PromptLang,
 } from '@/lib/prompt-library'
+import type { BrandLanguage } from '@/types'
 
 const seedSchema = z.object({
   brandId: z.string().uuid(),
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   const { data: brand, error: brandError } = await db
     .from('brands')
-    .select('id, name, industry, competitors, domain')
+    .select('id, name, industry, competitors, domain, language')
     .eq('id', brandId)
     .eq('user_id', userId)
     .single()
@@ -68,16 +69,15 @@ export async function POST(req: NextRequest) {
   const competitors = (brand.competitors as string[]) || []
   const competitor = competitors[0] || 'alternatives'
   const competitor2 = competitors[1] || 'others'
-  const location = 'Sweden'
-  const useCase = `${category} solutions`
+  const brandLanguage: PromptLang = (brand.language as BrandLanguage) || 'en'
 
   const hydrationParams = {
     brand: brandName,
     category,
     competitor,
     competitor2,
-    location,
-    use_case: useCase,
+    location: brandLanguage === 'sv' ? 'Sweden' : brandLanguage === 'it' ? 'Italy' : 'global',
+    use_case: `${category} solutions`,
   }
 
   const validCategories = (categories as PromptCategory[] | undefined)?.filter(
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
   }> = []
 
   for (const template of templates) {
-    const hydratedText = hydratePrompt(template.text, hydrationParams).trim()
+    const hydratedText = hydratePrompt(template, brandLanguage, hydrationParams).trim()
     const textKey = hydratedText.toLowerCase()
 
     if (existingTexts.has(textKey)) continue
@@ -130,8 +130,8 @@ export async function POST(req: NextRequest) {
       brand_id: brandId,
       user_id: userId,
       text: hydratedText,
-      language: 'en',
-      market: 'global',
+      language: brandLanguage,
+      market: brandLanguage === 'sv' ? 'Sweden' : brandLanguage === 'it' ? 'Italy' : 'global',
       category: template.category,
       engines: selectedEngines as unknown as string[],
       run_frequency: 'monthly',

@@ -14,6 +14,7 @@ const updateBrandSchema = z.object({
   domains: z.array(z.string().max(200)).max(20).optional(),
   competitors: z.array(z.string().max(100)).max(20).optional(),
   industry: z.string().max(100).optional().nullable(),
+  language: z.enum(['en', 'it', 'sv']).optional(),
   color: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
@@ -31,9 +32,9 @@ const updateBrandSchema = z.object({
 
 // Explicit column list — try full list first, fallback to safe list
 const BRAND_ALL_COLS =
-  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, color, logo_url, is_active, created_at, updated_at, report_logo_url, report_brand_name, report_primary_color'
+  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at, report_logo_url, report_brand_name, report_primary_color'
 const BRAND_SAFE_COLS =
-  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, color, logo_url, is_active, created_at, updated_at'
+  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
 
 interface Params {
   params: Promise<{ id: string }>

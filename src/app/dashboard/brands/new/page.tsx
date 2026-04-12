@@ -261,6 +261,7 @@ export default function NewBrandWizard() {
           color: form.color,
           aliases: form.aliases,
           competitors: form.competitors,
+          language: form.primaryLanguage,
         }),
       })
 
@@ -329,7 +330,7 @@ export default function NewBrandWizard() {
   }
 
   const canProceed = () => {
-    if (step === 1) return form.name.trim().length > 0
+    if (step === 1) return form.name.trim().length > 0 && form.primaryLanguage.trim().length > 0
     if (step === 2) return prompts.length > 0
     if (step === 3) return form.engines.length > 0
     return true
@@ -435,6 +436,26 @@ export default function NewBrandWizard() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Primary Market Language *
+                </label>
+                <select
+                  className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+                  value={form.primaryLanguage}
+                  onChange={(e) => set('primaryLanguage', e.target.value)}
+                >
+                  <option value="">Select...</option>
+                  {LANGUAGES.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Prompts and AI simulations will run in this language.
+                </p>
               </div>
             </div>
           </div>

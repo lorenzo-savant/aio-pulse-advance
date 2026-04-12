@@ -1,0 +1,551 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "back": "Back",
+    "continue": "Continue",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "required": "Required",
+    "optional": "Optional",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "copy": "Copy",
+    "download": "Download",
+    "export": "Export",
+    "import": "Import",
+    "create": "Create",
+    "update": "Update",
+    "remove": "Remove",
+    "view": "View",
+    "add": "Add",
+    "select": "Select",
+    "selected": "Selected",
+    "all": "All",
+    "none": "None",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "submit": "Submit",
+    "reset": "Reset",
+    "apply": "Apply",
+    "clear": "Clear",
+    "retry": "Retry",
+    "skip": "Skip",
+    "done": "Done",
+    "active": "Active",
+    "inactive": "Inactive",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "pending": "Pending",
+    "completed": "Completed",
+    "failed": "Failed",
+    "running": "Running",
+    "idle": "Idle",
+    "status": "Status",
+    "name": "Name",
+    "description": "Description",
+    "email": "Email",
+    "phone": "Phone",
+    "website": "Website",
+    "address": "Address",
+    "date": "Date",
+    "time": "Time",
+    "type": "Type",
+    "category": "Category",
+    "action": "Action",
+    "actions": "Actions",
+    "settings": "Settings",
+    "help": "Help",
+    "documentation": "Documentation",
+    "sign_out": "Sign Out",
+    "sign_in": "Sign In",
+    "sign_up": "Sign Up",
+    "log_in": "Log In",
+    "log_out": "Log Out",
+    "welcome": "Welcome",
+    "goodbye": "Goodbye",
+    "hello": "Hello",
+    "thanks": "Thanks",
+    "please": "Please",
+    "sorry": "Sorry",
+    "confirm_password": "Confirm Password",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "forgot_password": "Forgot Password",
+    "reset_password": "Reset Password",
+    "change_password": "Change Password",
+    "update_profile": "Update Profile",
+    "profile_settings": "Profile Settings",
+    "api_key": "API Key",
+    "api_keys": "API Keys",
+    "generate_key": "Generate Key",
+    "revoke_key": "Revoke Key",
+    "no_results": "No results found",
+    "loading_results": "Loading results...",
+    "show_more": "Show More",
+    "show_less": "Show Less",
+    "last_updated": "Last Updated",
+    "created_at": "Created At",
+    "updated_at": "Updated At",
+    "ago": "ago",
+    "from_now": "from now",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "this_week": "This Week",
+    "this_month": "This Month",
+    "last_week": "Last Week",
+    "last_month": "Last Month",
+    "never": "Never",
+    "always": "Always",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "hourly": "Hourly"
+  },
+  "sidebar": {
+    "title": "AIO Pulse",
+    "sections": {
+      "setup": {
+        "label": "Setup",
+        "description": "Configure what you monitor"
+      },
+      "monitor": {
+        "label": "Monitor",
+        "description": "Run AI visibility checks"
+      },
+      "insights": {
+        "label": "Insights",
+        "description": "Analyze monitoring results"
+      },
+      "optimize": {
+        "label": "Optimize",
+        "description": "Improve content for AI search"
+      },
+      "account": {
+        "label": "Account",
+        "description": "Manage your account"
+      }
+    },
+    "items": {
+      "start_here": "Start Here",
+      "brands": "Brands",
+      "prompts": "Prompts",
+      "live_monitoring": "Live Monitoring",
+      "workflows": "Workflows",
+      "alerts": "Alerts",
+      "dashboard": "Dashboard",
+      "analytics": "Analytics",
+      "sentiment": "Sentiment",
+      "citations": "Citations",
+      "keywords": "Keywords",
+      "snapshots": "Snapshots",
+      "reports": "Reports",
+      "competitor": "Competitor",
+      "scan_history": "Scan History",
+      "content_optimizer": "Content Optimizer",
+      "content_audit": "Content Audit",
+      "recommendations": "Recommendations",
+      "engine_info": "Engine Info",
+      "billing": "Billing",
+      "credits": "Credits",
+      "settings": "Settings",
+      "documentation": "Documentation"
+    },
+    "badges": {
+      "begin": "Begin",
+      "setup_first": "Setup first",
+      "run_first_check": "Run first check",
+      "locked_tooltip": "Requires data from an earlier step"
+    },
+    "language_switcher": {
+      "label": "Interface language",
+      "applied": "Language updated"
+    },
+    "sign_out": "Sign Out"
+  },
+  "journey_guide": {
+    "step_prefix": "Step",
+    "guide_label": "Guide",
+    "what_to_do": "What to do",
+    "what_youll_get": "What you'll get",
+    "optional_label": "Optional",
+    "duration_label": "Duration",
+    "minutes": "minutes",
+    "estimated_time": "Estimated time",
+    "recommended_action": "Recommended action",
+    "learn_more": "Learn more",
+    "start_now": "Start now",
+    "continue_step": "Continue",
+    "complete_step": "Complete",
+    "skipped_step": "Skipped"
+  },
+  "onboarding": {
+    "page_title": "Welcome to AIO Pulse",
+    "page_subtitle": "Set up your first brand in just a few steps",
+    "step_brand": "Brand Info",
+    "step_prompts": "Prompts",
+    "step_configure": "Configure",
+    "step_review": "Review",
+    "form": {
+      "name_label": "Brand Name",
+      "name_placeholder": "e.g. AIO Pulse",
+      "description_label": "Description",
+      "description_placeholder": "Brief description of your brand...",
+      "domain_label": "Primary Domain",
+      "domain_placeholder": "yourdomain.com",
+      "industry_label": "Industry",
+      "industry_placeholder": "Select industry...",
+      "aliases_label": "Aliases",
+      "aliases_placeholder": "Alternative names...",
+      "competitors_label": "Competitors",
+      "competitors_placeholder": "Competitor names...",
+      "color_label": "Brand Color",
+      "language_label": "Primary Market Language",
+      "language_required": "Required",
+      "language_helper": "Prompts and AI simulations will run in this language to reflect how your customers search."
+    },
+    "prompt_section": {
+      "title": "Monitoring Prompts",
+      "subtitle": "These are the questions we'll ask AI engines about your brand. We auto-generated some based on your brand — edit or add more.",
+      "add_prompt": "Add Prompt",
+      "edit_prompt": "Edit Prompt",
+      "prompt_text": "Prompt Text",
+      "prompt_category": "Category",
+      "prompt_engines": "Engines",
+      "no_prompts": "No prompts yet",
+      "auto_generated": "Auto-generated"
+    },
+    "configure_section": {
+      "title": "Configure Monitoring",
+      "engines_title": "AI Engines",
+      "engines_subtitle": "Select which AI engines to monitor",
+      "frequency_title": "Scan Frequency",
+      "frequency_subtitle": "How often should we check?",
+      "alert_title": "Alert Email",
+      "alert_placeholder": "your@email.com",
+      "alert_helper": "Get notified when your brand visibility changes significantly."
+    },
+    "review_section": {
+      "title": "Review & Launch",
+      "subtitle": "Ready to start monitoring?",
+      "brand_card": "Brand",
+      "stats_prompts": "Prompts",
+      "stats_engines": "Engines",
+      "stats_frequency": "Frequency"
+    },
+    "buttons": {
+      "next": "Next",
+      "back": "Back",
+      "cancel": "Cancel",
+      "save_continue": "Save & Continue",
+      "generate_prompts": "Generate Prompts",
+      "start_monitoring": "Start Monitoring"
+    },
+    "toast": {
+      "brand_created": "Brand created successfully!",
+      "prompts_created": "{count} prompts created",
+      "setup_complete": "Setup complete!",
+      "error_occurred": "An error occurred"
+    }
+  },
+  "brands": {
+    "page_title": "Brands",
+    "page_subtitle": "Manage your monitored brands",
+    "add_brand": "Add Brand",
+    "new_brand": "New Brand",
+    "edit_brand": "Edit Brand",
+    "delete_brand": "Delete Brand",
+    "form": {
+      "name_label": "Brand Name",
+      "name_placeholder": "Enter brand name...",
+      "domain_label": "Domain",
+      "domain_placeholder": "example.com",
+      "description_label": "Description",
+      "description_placeholder": "Brief description...",
+      "industry_label": "Industry",
+      "industry_placeholder": "Select industry...",
+      "language_label": "Primary Market Language",
+      "language_helper": "Prompts and AI simulations will run in this language.",
+      "color_label": "Brand Color",
+      "save_button": "Save Brand",
+      "update_button": "Update Brand"
+    },
+    "card": {
+      "view_details": "View Details",
+      "run_monitoring": "Run Monitoring",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "language_nudge": {
+      "title": "Set primary market",
+      "description": "Set the primary market for this brand to get more accurate AI monitoring results.",
+      "cta": "Set Language"
+    },
+    "white_label": {
+      "title": "White-label Report Settings",
+      "subtitle": "Customize how your brand appears in PDF reports. Leave empty to use default AIO Pulse branding.",
+      "report_brand_name": "Report Brand Name",
+      "report_brand_name_placeholder": "Your Company Name",
+      "primary_color": "Primary Color (Hex)",
+      "logo_url": "Logo URL",
+      "logo_url_placeholder": "https://your-company.com/logo.png",
+      "configure": "Configure",
+      "save": "Save"
+    },
+    "team": {
+      "title": "Team Members",
+      "subtitle": "Invite team members to collaborate on this brand.",
+      "invite_email": "colleague@company.com",
+      "role_viewer": "Viewer",
+      "role_editor": "Editor",
+      "invite": "Invite",
+      "inviting": "Sending...",
+      "pending_invitations": "Pending Invitations",
+      "no_members": "No team members yet.",
+      "expires": "Expires"
+    },
+    "toast": {
+      "created": "Brand created successfully!",
+      "updated": "Brand updated successfully!",
+      "deleted": "Brand deleted successfully!",
+      "error": "Failed to {action} brand"
+    },
+    "empty_state": {
+      "title": "No brands yet",
+      "description": "Add your first brand to start monitoring AI visibility.",
+      "cta": "Add brand"
+    },
+    "confirm_delete": {
+      "title": "Delete brand?",
+      "description": "This will permanently delete the brand and all associated monitoring data. This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  },
+  "prompts": {
+    "page_title": "Prompts",
+    "page_subtitle": "Configure the queries to monitor across AI engines.",
+    "add_from_library": "Add from Library",
+    "new_prompt": "New Prompt",
+    "form": {
+      "brand_label": "Brand",
+      "brand_placeholder": "Select brand...",
+      "text_label": "Prompt Text",
+      "text_placeholder": "e.g. What are the best AI monitoring tools?",
+      "quick_templates": "Quick Templates",
+      "category_label": "Category",
+      "frequency_label": "Run Frequency",
+      "engines_label": "Engines to Monitor",
+      "language_label": "Language",
+      "create_button": "Create Prompt"
+    },
+    "card": {
+      "run": "Run",
+      "delete": "Delete",
+      "last_run": "Last run",
+      "never_run": "Never run",
+      "schedule": "schedule"
+    },
+    "library": {
+      "title": "Add Prompts from Library",
+      "select_all": "Select All",
+      "select_none": "Select None",
+      "seed_button": "Seed {count} Prompts",
+      "created": "Created {created}, {skipped} skipped",
+      "categories_selected": "{count} categories selected ({prompts} prompts)"
+    },
+    "toast": {
+      "created": "Prompt created",
+      "deleted": "Prompt deleted",
+      "error": "Failed to {action} prompt"
+    },
+    "empty_state": {
+      "title": "No prompts yet",
+      "description": "Create your first prompt to start monitoring AI responses.",
+      "cta": "New Prompt"
+    }
+  },
+  "monitoring": {
+    "page_title": "Live Monitoring",
+    "page_subtitle": "Real-time AI visibility checks",
+    "run_check": "Run Check",
+    "running": "Running...",
+    "results": "Results",
+    "no_results": "No results yet",
+    "stats": {
+      "visibility": "Visibility",
+      "mentions": "Mentions",
+      "sentiment": "Sentiment",
+      "last_scan": "Last Scan"
+    },
+    "toast": {
+      "started": "Monitoring started",
+      "completed": "Monitoring complete: {count} results saved",
+      "error": "Monitoring failed: {error}"
+    }
+  },
+  "alerts": {
+    "page_title": "Alerts",
+    "page_subtitle": "Get notified when something changes",
+    "new_alert": "New Alert",
+    "no_alerts": "No alerts triggered",
+    "empty_description": "Good news — nothing needs your attention right now.",
+    "toast": {
+      "created": "Alert created",
+      "deleted": "Alert deleted",
+      "error": "Failed to {action} alert"
+    }
+  },
+  "analytics": {
+    "page_title": "Analytics",
+    "page_subtitle": "Monitor your AI visibility trends",
+    "time_range": "Time Range",
+    "date_range": "Date Range",
+    "metrics": {
+      "visibility_score": "Visibility Score",
+      "citation_rate": "Citation Rate",
+      "avg_position": "Avg Position",
+      "total_scans": "Total Scans"
+    },
+    "charts": {
+      "citation_trend": "Citation Trend",
+      "engine_breakdown": "Engine Breakdown",
+      "sentiment_distribution": "Sentiment Distribution"
+    },
+    "empty_state": {
+      "title": "No analytics data yet",
+      "description": "Run some monitoring checks to see your analytics."
+    }
+  },
+  "settings": {
+    "page_title": "Settings",
+    "sections": {
+      "profile": "Profile",
+      "interface_language": "Interface Language",
+      "notifications": "Notifications",
+      "api_keys": "API Keys",
+      "danger_zone": "Danger Zone"
+    },
+    "profile": {
+      "name_label": "Full Name",
+      "email_label": "Email",
+      "save_button": "Save Profile"
+    },
+    "interface_language": {
+      "title": "Interface Language",
+      "description": "Choose your preferred language for the dashboard interface.",
+      "helper": "This changes the language of menus, buttons, and labels. Prompt content and AI responses are controlled by brand settings."
+    },
+    "notifications": {
+      "title": "Email Notifications",
+      "alerts_label": "Alert Notifications",
+      "reports_label": "Weekly Reports",
+      "marketing_label": "Product Updates"
+    },
+    "api_keys": {
+      "title": "API Keys",
+      "description": "Manage your API keys for external integrations.",
+      "add_key": "Add API Key",
+      "key_name": "Key Name",
+      "created": "Created",
+      "last_used": "Last Used",
+      "revoke": "Revoke"
+    },
+    "toast": {
+      "saved": "Settings saved",
+      "error": "Failed to save settings"
+    }
+  },
+  "billing": {
+    "page_title": "Billing",
+    "page_subtitle": "Manage your subscription and payments",
+    "current_plan": "Current Plan",
+    "usage": "Usage",
+    "payment_method": "Payment Method",
+    "invoices": "Invoices",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "cancel": "Cancel Subscription",
+    "toast": {
+      "updated": "Billing updated",
+      "error": "Failed to update billing"
+    }
+  },
+  "credits": {
+    "page_title": "Credits",
+    "page_subtitle": "Monitor your credit usage",
+    "available": "Available Credits",
+    "used": "Used Credits",
+    "total": "Total Credits",
+    "history": "Credit History",
+    "purchase": "Purchase Credits",
+    "toast": {
+      "purchased": "Credits purchased successfully",
+      "error": "Failed to purchase credits"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "auth_failed": "Authentication failed",
+    "not_found": "Not found",
+    "validation_failed": "Validation failed",
+    "rate_limited": "Too many requests — slow down",
+    "insufficient_credits": "Not enough credits — top up in Billing",
+    "missing_ai_key": "This AI engine is not configured — add the API key in Settings",
+    "network_error": "Network error. Please try again.",
+    "unauthorized": "You are not authorized to perform this action",
+    "server_error": "Server error. Please try again later.",
+    "bad_request": "Invalid request",
+    "conflict": "A conflict occurred",
+    "gone": "This resource no longer exists",
+    "too_many_requests": "Too many requests",
+    "internal_error": "Internal server error"
+  },
+  "empty_states": {
+    "no_brands": {
+      "title": "No brands yet",
+      "description": "Add your first brand to start monitoring AI visibility.",
+      "cta": "Add brand"
+    },
+    "no_prompts": {
+      "title": "No prompts configured",
+      "description": "Add queries to monitor across AI engines.",
+      "cta": "Browse library"
+    },
+    "no_monitoring_data": {
+      "title": "No monitoring data yet",
+      "description": "Run your first check from the Prompts page.",
+      "cta": "Go to Prompts"
+    },
+    "no_alerts": {
+      "title": "No alerts triggered",
+      "description": "Good news — nothing needs your attention right now."
+    },
+    "no_results": {
+      "title": "No results found",
+      "description": "Try adjusting your filters or search criteria."
+    },
+    "no_data": {
+      "title": "No data available",
+      "description": "There's no data to display at the moment."
+    }
+  },
+  "confirm_dialog": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete_title": "Delete {item}?",
+    "delete_description": "This action cannot be undone.",
+    "proceed": "Proceed",
+    "abort": "Abort"
+  }
+}

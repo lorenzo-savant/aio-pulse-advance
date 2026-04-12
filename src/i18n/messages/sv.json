@@ -1,0 +1,551 @@
+{
+  "common": {
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "delete": "Ta bort",
+    "edit": "Redigera",
+    "loading": "Laddar...",
+    "saving": "Sparar...",
+    "back": "Tillbaka",
+    "continue": "Fortsätt",
+    "confirm": "Bekräfta",
+    "yes": "Ja",
+    "no": "Nej",
+    "required": "Obligatoriskt",
+    "optional": "Valfritt",
+    "close": "Stäng",
+    "search": "Sök",
+    "filter": "Filtrera",
+    "refresh": "Uppdatera",
+    "copy": "Kopiera",
+    "download": "Ladda ner",
+    "export": "Exportera",
+    "import": "Importera",
+    "create": "Skapa",
+    "update": "Uppdatera",
+    "remove": "Ta bort",
+    "view": "Visa",
+    "add": "Lägg till",
+    "select": "Välj",
+    "selected": "Vald",
+    "all": "Alla",
+    "none": "Ingen",
+    "error": "Fel",
+    "success": "Lyckades",
+    "warning": "Varning",
+    "info": "Info",
+    "submit": "Skicka",
+    "reset": "Återställ",
+    "apply": "Tillämpa",
+    "clear": "Rensa",
+    "retry": "Försök igen",
+    "skip": "Hoppa över",
+    "done": "Klart",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "enabled": "Aktiverad",
+    "disabled": "Inaktiverad",
+    "pending": "Väntar",
+    "completed": "Avklarad",
+    "failed": "Misslyckad",
+    "running": "Kör",
+    "idle": "Vilande",
+    "status": "Status",
+    "name": "Namn",
+    "description": "Beskrivning",
+    "email": "E-post",
+    "phone": "Telefon",
+    "website": "Webbplats",
+    "address": "Adress",
+    "date": "Datum",
+    "time": "Tid",
+    "type": "Typ",
+    "category": "Kategori",
+    "action": "Åtgärd",
+    "actions": "Åtgärder",
+    "settings": "Inställningar",
+    "help": "Hjälp",
+    "documentation": "Dokumentation",
+    "sign_out": "Logga ut",
+    "sign_in": "Logga in",
+    "sign_up": "Registrera",
+    "log_in": "Logga in",
+    "log_out": "Logga ut",
+    "welcome": "Välkommen",
+    "goodbye": "Hejdå",
+    "hello": "Hej",
+    "thanks": "Tack",
+    "please": "Snälla",
+    "sorry": "Förlåt",
+    "confirm_password": "Bekräfta lösenord",
+    "current_password": "Nuvarande lösenord",
+    "new_password": "Nytt lösenord",
+    "forgot_password": "Glömt lösenord",
+    "reset_password": "Återställ lösenord",
+    "change_password": "Byt lösenord",
+    "update_profile": "Uppdatera profil",
+    "profile_settings": "Profilinställningar",
+    "api_key": "API-nyckel",
+    "api_keys": "API-nycklar",
+    "generate_key": "Generera nyckel",
+    "revoke_key": "Återkalla nyckel",
+    "no_results": "Inga resultat hittades",
+    "loading_results": "Laddar resultat...",
+    "show_more": "Visa mer",
+    "show_less": "Visa mindre",
+    "last_updated": "Senast uppdaterad",
+    "created_at": "Skapad",
+    "updated_at": "Uppdaterad",
+    "ago": "sedan",
+    "from_now": "från nu",
+    "today": "Idag",
+    "yesterday": "Igår",
+    "tomorrow": "Imorgon",
+    "this_week": "Denna vecka",
+    "this_month": "Denna månad",
+    "last_week": "Förra veckan",
+    "last_month": "Förra månaden",
+    "never": "Aldrig",
+    "always": "Alltid",
+    "daily": "Dagligen",
+    "weekly": "Veckovis",
+    "monthly": "Månadsvis",
+    "hourly": "Varje timme"
+  },
+  "sidebar": {
+    "title": "AIO Pulse",
+    "sections": {
+      "setup": {
+        "label": "Konfiguration",
+        "description": "Konfigurera vad du övervakar"
+      },
+      "monitor": {
+        "label": "Övervakning",
+        "description": "Kör AI-synlighetskontroller"
+      },
+      "insights": {
+        "label": "Insikter",
+        "description": "Analysera övervakningsresultat"
+      },
+      "optimize": {
+        "label": "Optimera",
+        "description": "Förbättra innehåll för AI-sökning"
+      },
+      "account": {
+        "label": "Konto",
+        "description": "Hantera ditt konto"
+      }
+    },
+    "items": {
+      "start_here": "Börja här",
+      "brands": "Varumärken",
+      "prompts": "Prompts",
+      "live_monitoring": "Live-övervakning",
+      "workflows": "Arbetsflöden",
+      "alerts": "Aviseringar",
+      "dashboard": "Dashboard",
+      "analytics": "Analys",
+      "sentiment": "Sentiment",
+      "citations": "Citat",
+      "keywords": "Nyckelord",
+      "snapshots": "Ögonblicksbilder",
+      "reports": "Rapporter",
+      "competitor": "Konkurrent",
+      "scan_history": "Skanningshistorik",
+      "content_optimizer": "Innehållsoptimering",
+      "content_audit": "Innehållsgranskning",
+      "recommendations": "Rekommendationer",
+      "engine_info": "Motorinfo",
+      "billing": "Fakturering",
+      "credits": "Krediter",
+      "settings": "Inställningar",
+      "documentation": "Dokumentation"
+    },
+    "badges": {
+      "begin": "Starta",
+      "setup_first": "Konfigurera först",
+      "run_first_check": "Kör första kontroll",
+      "locked_tooltip": "Kräver data från tidigare steg"
+    },
+    "language_switcher": {
+      "label": "Gränssnittsspråk",
+      "applied": "Språk uppdaterat"
+    },
+    "sign_out": "Logga ut"
+  },
+  "journey_guide": {
+    "step_prefix": "Steg",
+    "guide_label": "Guide",
+    "what_to_do": "Vad du ska göra",
+    "what_youll_get": "Vad du får",
+    "optional_label": "Valfritt",
+    "duration_label": "Tid",
+    "minutes": "minuter",
+    "estimated_time": "Beräknad tid",
+    "recommended_action": "Rekommenderad åtgärd",
+    "learn_more": "Läs mer",
+    "start_now": "Starta nu",
+    "continue_step": "Fortsätt",
+    "complete_step": "Klart",
+    "skipped_step": "Överhoppat"
+  },
+  "onboarding": {
+    "page_title": "Välkommen till AIO Pulse",
+    "page_subtitle": "Konfigurera ditt första varumärke på bara några steg",
+    "step_brand": "Varumärkesinfo",
+    "step_prompts": "Prompts",
+    "step_configure": "Konfigurera",
+    "step_review": "Granska",
+    "form": {
+      "name_label": "Varumärkesnamn",
+      "name_placeholder": "t.ex. AIO Pulse",
+      "description_label": "Beskrivning",
+      "description_placeholder": "Kort beskrivning av ditt varumärke...",
+      "domain_label": "Huvuddomän",
+      "domain_placeholder": "dindoman.se",
+      "industry_label": "Bransch",
+      "industry_placeholder": "Välj bransch...",
+      "aliases_label": "Alias",
+      "aliases_placeholder": "Alternativa namn...",
+      "competitors_label": "Konkurrenter",
+      "competitors_placeholder": "Konkurrentnamn...",
+      "color_label": "Varumärkesfärg",
+      "language_label": "Primärt marknadsspråk",
+      "language_required": "Obligatoriskt",
+      "language_helper": "Prompts och AI-simuleringar körs på detta språk för att spegla hur dina kunder faktiskt söker."
+    },
+    "prompt_section": {
+      "title": "Övervakningsprompts",
+      "subtitle": "Detta är frågorna vi kommer att ställa till AI-motorer om ditt varumärke. Vi har auto-genererat några baserat på ditt varumärke — redigera eller lägg till fler.",
+      "add_prompt": "Lägg till Prompt",
+      "edit_prompt": "Redigera Prompt",
+      "prompt_text": "Prompt-text",
+      "prompt_category": "Kategori",
+      "prompt_engines": "Motorer",
+      "no_prompts": "Inga prompts ännu",
+      "auto_generated": "Auto-genererad"
+    },
+    "configure_section": {
+      "title": "Konfigurera Övervakning",
+      "engines_title": "AI-motorer",
+      "engines_subtitle": "Välj vilka AI-motorer att övervaka",
+      "frequency_title": "Skanningsfrekvens",
+      "frequency_subtitle": "Hur ofta ska vi kontrollera?",
+      "alert_title": "Aviserings-e-post",
+      "alert_placeholder": "din@email.se",
+      "alert_helper": "Få ett meddelande när ditt varumärkes synlighet förändras markant."
+    },
+    "review_section": {
+      "title": "Granska & Starta",
+      "subtitle": "Redo att börja övervaka?",
+      "brand_card": "Varumärke",
+      "stats_prompts": "Prompts",
+      "stats_engines": "Motorer",
+      "stats_frequency": "Frekvens"
+    },
+    "buttons": {
+      "next": "Nästa",
+      "back": "Tillbaka",
+      "cancel": "Avbryt",
+      "save_continue": "Spara & Fortsätt",
+      "generate_prompts": "Generera Prompts",
+      "start_monitoring": "Starta Övervakning"
+    },
+    "toast": {
+      "brand_created": "Varumärke skapat!",
+      "prompts_created": "{count} prompts skapade",
+      "setup_complete": "Konfiguration klar!",
+      "error_occurred": "Ett fel uppstod"
+    }
+  },
+  "brands": {
+    "page_title": "Varumärken",
+    "page_subtitle": "Hantera dina övervakade varumärken",
+    "add_brand": "Lägg till Varumärke",
+    "new_brand": "Nytt Varumärke",
+    "edit_brand": "Redigera Varumärke",
+    "delete_brand": "Ta bort Varumärke",
+    "form": {
+      "name_label": "Varumärkesnamn",
+      "name_placeholder": "Ange varumärkesnamn...",
+      "domain_label": "Domän",
+      "domain_placeholder": "exempel.se",
+      "description_label": "Beskrivning",
+      "description_placeholder": "Kort beskrivning...",
+      "industry_label": "Bransch",
+      "industry_placeholder": "Välj bransch...",
+      "language_label": "Primärt Marknadsspråk",
+      "language_helper": "Prompts och AI-simuleringar körs på detta språk.",
+      "color_label": "Varumärkesfärg",
+      "save_button": "Spara Varumärke",
+      "update_button": "Uppdatera Varumärke"
+    },
+    "card": {
+      "view_details": "Visa Detaljer",
+      "run_monitoring": "Kör Övervakning",
+      "edit": "Redigera",
+      "delete": "Ta bort"
+    },
+    "language_nudge": {
+      "title": "Ange primär marknad",
+      "description": "Ange den primära marknaden för detta varumärke för mer exakta AI-övervakningsresultat.",
+      "cta": "Ange Språk"
+    },
+    "white_label": {
+      "title": "White-label Rapportinställningar",
+      "subtitle": "Anpassa hur ditt varumärke visas i PDF-rapporter. Lämna tomt för att använda AIO Pulses standardvarumärke.",
+      "report_brand_name": "Rapportvarumärkesnamn",
+      "report_brand_name_placeholder": "Ditt Företagsnamn",
+      "primary_color": "Primär Färg (Hex)",
+      "logo_url": "Logo-URL",
+      "logo_url_placeholder": "https://ditt-företag.se/logo.png",
+      "configure": "Konfigurera",
+      "save": "Spara"
+    },
+    "team": {
+      "title": "Teammedlemmar",
+      "subtitle": "Bjud in teammedlemmar att samarbeta på detta varumärke.",
+      "invite_email": "kollega@foretag.se",
+      "role_viewer": "Visare",
+      "role_editor": "Redigerare",
+      "invite": "Bjud in",
+      "inviting": "Skickar...",
+      "pending_invitations": "Inväntande Inbjudningar",
+      "no_members": "Inga teammedlemmar ännu.",
+      "expires": "Går ut"
+    },
+    "toast": {
+      "created": "Varumärke skapat!",
+      "updated": "Varumärke uppdaterat!",
+      "deleted": "Varumärke raderat!",
+      "error": "Misslyckades att {action} varumärke"
+    },
+    "empty_state": {
+      "title": "Inga varumärken ännu",
+      "description": "Lägg till ditt första varumärke för att börja övervaka AI-synlighet.",
+      "cta": "Lägg till varumärke"
+    },
+    "confirm_delete": {
+      "title": "Ta bort varumärke?",
+      "description": "Detta kommer permanent ta bort varumärket och all associerad övervakningsdata. Detta kan inte ångras.",
+      "confirm": "Ta bort",
+      "cancel": "Avbryt"
+    }
+  },
+  "prompts": {
+    "page_title": "Prompts",
+    "page_subtitle": "Konfigurera frågorna att övervaka över AI-motorer.",
+    "add_from_library": "Lägg från Bibliotek",
+    "new_prompt": "Ny Prompt",
+    "form": {
+      "brand_label": "Varumärke",
+      "brand_placeholder": "Välj varumärke...",
+      "text_label": "Prompt-text",
+      "text_placeholder": "t.ex. Vilka är de bästa AI-övervakningsverktygen?",
+      "quick_templates": "Snabbmallar",
+      "category_label": "Kategori",
+      "frequency_label": "Körfrekvens",
+      "engines_label": "Motorer att Övervaka",
+      "language_label": "Språk",
+      "create_button": "Skapa Prompt"
+    },
+    "card": {
+      "run": "Kör",
+      "delete": "Ta bort",
+      "last_run": "Senast kör",
+      "never_run": "Aldrig körd",
+      "schedule": "schema"
+    },
+    "library": {
+      "title": "Lägg Prompts från Bibliotek",
+      "select_all": "Välj Alla",
+      "select_none": "Välj Inga",
+      "seed_button": "Skapa {count} Prompts",
+      "created": "Skapade {created}, {skipped} överhoppade",
+      "categories_selected": "{count} kategorier valda ({prompts} prompts)"
+    },
+    "toast": {
+      "created": "Prompt skapad",
+      "deleted": "Prompt raderad",
+      "error": "Misslyckades att {action} prompt"
+    },
+    "empty_state": {
+      "title": "Inga prompts ännu",
+      "description": "Skapa din första prompt för att börja övervaka AI-svar.",
+      "cta": "Ny Prompt"
+    }
+  },
+  "monitoring": {
+    "page_title": "Live-övervakning",
+    "page_subtitle": "Realtids AI-synlighetskontroller",
+    "run_check": "Kör Kontroll",
+    "running": "Kör...",
+    "results": "Resultat",
+    "no_results": "Inga resultat ännu",
+    "stats": {
+      "visibility": "Synlighet",
+      "mentions": "Nämnanden",
+      "sentiment": "Sentiment",
+      "last_scan": "Senaste Skanning"
+    },
+    "toast": {
+      "started": "Övervakning startad",
+      "completed": "Övervakning klar: {count} resultat sparade",
+      "error": "Övervakning misslyckades: {error}"
+    }
+  },
+  "alerts": {
+    "page_title": "Aviseringar",
+    "page_subtitle": "Få meddelanden när något förändras",
+    "new_alert": "Ny Avisering",
+    "no_alerts": "Inga aviseringar utlösta",
+    "empty_description": "Goda nyheter — inget kräver din uppmärksamhet just nu.",
+    "toast": {
+      "created": "Avisering skapad",
+      "deleted": "Avisering raderad",
+      "error": "Misslyckades att {action} avisering"
+    }
+  },
+  "analytics": {
+    "page_title": "Analys",
+    "page_subtitle": "Övervaka dina AI-synlighetstrender",
+    "time_range": "Tidsperiod",
+    "date_range": "Datumintervall",
+    "metrics": {
+      "visibility_score": "Synlighetspoäng",
+      "citation_rate": "Citatfrekvens",
+      "avg_position": "Genomsnittlig Position",
+      "total_scans": "Totala Skanningar"
+    },
+    "charts": {
+      "citation_trend": "Citattrend",
+      "engine_breakdown": "Motorfördelning",
+      "sentiment_distribution": "Sentimentfördelning"
+    },
+    "empty_state": {
+      "title": "Inga analysdata ännu",
+      "description": "Kör några övervakningskontroller för att se din analys."
+    }
+  },
+  "settings": {
+    "page_title": "Inställningar",
+    "sections": {
+      "profile": "Profil",
+      "interface_language": "Gränssnittsspråk",
+      "notifications": "Aviseringar",
+      "api_keys": "API-nycklar",
+      "danger_zone": "Fara-zon"
+    },
+    "profile": {
+      "name_label": "Fullständigt Namn",
+      "email_label": "E-post",
+      "save_button": "Spara Profil"
+    },
+    "interface_language": {
+      "title": "Gränssnittsspråk",
+      "description": "Välj ditt föredragna språk för dashboard-gränssnittet.",
+      "helper": "Detta ändrar språket på menyer, knappar och etiketter. Prompt-innehåll och AI-svar styrs av varumärkesinställningar."
+    },
+    "notifications": {
+      "title": "E-postaviseringar",
+      "alerts_label": "Aviseringsaviseringar",
+      "reports_label": "Veckorapporter",
+      "marketing_label": "Produktuppdateringar"
+    },
+    "api_keys": {
+      "title": "API-nycklar",
+      "description": "Hantera dina API-nycklar för externa integrationer.",
+      "add_key": "Lägg till API-nyckel",
+      "key_name": "Nyckelnamn",
+      "created": "Skapad",
+      "last_used": "Senast använd",
+      "revoke": "Återkalla"
+    },
+    "toast": {
+      "saved": "Inställningar sparade",
+      "error": "Misslyckades att spara inställningar"
+    }
+  },
+  "billing": {
+    "page_title": "Fakturering",
+    "page_subtitle": "Hantera din prenumeration och betalningar",
+    "current_plan": "Nuvarande Plan",
+    "usage": "Användning",
+    "payment_method": "Betalningsmetod",
+    "invoices": "Fakturor",
+    "upgrade": "Uppgradera",
+    "downgrade": "Nedgradera",
+    "cancel": "Avbryt Prenumeration",
+    "toast": {
+      "updated": "Fakturering uppdaterad",
+      "error": "Misslyckades att uppdatera fakturering"
+    }
+  },
+  "credits": {
+    "page_title": "Krediter",
+    "page_subtitle": "Övervaka din kredit användning",
+    "available": "Tillgängliga Krediter",
+    "used": "Använda Krediter",
+    "total": "Totala Krediter",
+    "history": "Kredit Historik",
+    "purchase": "Köp Krediter",
+    "toast": {
+      "purchased": "Krediter köpta framgångsrikt",
+      "error": "Misslyckades att köpa krediter"
+    }
+  },
+  "errors": {
+    "generic": "Något gick fel",
+    "auth_failed": "Autentisering misslyckades",
+    "not_found": "Hittades inte",
+    "validation_failed": "Validering misslyckades",
+    "rate_limited": "För många förfrågningar — sakta ner",
+    "insufficient_credits": "Inte tillräckligt med krediter — ladda upp i Fakturering",
+    "missing_ai_key": "Denna AI-motor är inte konfigurerad — lägg till API-nyckeln i Inställningar",
+    "network_error": "Nätverksfel. Försök igen.",
+    "unauthorized": "Du är inte behörig att utföra denna åtgärd",
+    "server_error": "Serverfel. Försök igen senare.",
+    "bad_request": "Ogiltig förfrågan",
+    "conflict": "En konflikt uppstod",
+    "gone": "Denna resurs finns inte längre",
+    "too_many_requests": "För många förfrågningar",
+    "internal_error": "Internt serverfel"
+  },
+  "empty_states": {
+    "no_brands": {
+      "title": "Inga varumärken ännu",
+      "description": "Lägg till ditt första varumärke för att börja övervaka AI-synlighet.",
+      "cta": "Lägg till varumärke"
+    },
+    "no_prompts": {
+      "title": "Inga prompts konfigurerade",
+      "description": "Lägg till frågor att övervaka över AI-motorer.",
+      "cta": "Bläddra bibliotek"
+    },
+    "no_monitoring_data": {
+      "title": "Inga övervakningsdata ännu",
+      "description": "Kör din första kontroll från Prompts-sidan.",
+      "cta": "Gå till Prompts"
+    },
+    "no_alerts": {
+      "title": "Inga aviseringar utlösta",
+      "description": "Goda nyheter — inget kräver din uppmärksamhet just nu."
+    },
+    "no_results": {
+      "title": "Inga resultat hittades",
+      "description": "Försök att justera dina filter eller sökriterier."
+    },
+    "no_data": {
+      "title": "Inga data tillgängliga",
+      "description": "Det finns inga data att visa just nu."
+    }
+  },
+  "confirm_dialog": {
+    "confirm": "Bekräfta",
+    "cancel": "Avbryt",
+    "delete_title": "Ta bort {item}?",
+    "delete_description": "Detta kan inte ångras.",
+    "proceed": "Fortsätt",
+    "abort": "Avbryt"
+  }
+}

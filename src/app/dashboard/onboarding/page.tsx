@@ -186,12 +186,17 @@ export default function OnboardingPage() {
 
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
 
-  // ─── Create brand + prompts ──────────────────────────────────────────────
+  // ─── Create brand + prompts + first monitoring run ────────────────────────
+
+  const [launchStage, setLaunchStage] = useState<
+    'idle' | 'brand' | 'prompts' | 'monitoring' | 'done'
+  >('idle')
 
   const handleLaunch = async () => {
     setLoading(true)
     try {
-      // 1. Create brand
+      // ── 1. Create brand ──────────────────────────────────────────────────
+      setLaunchStage('brand')
       const brandRes = await fetch('/api/brands', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,31 +206,27 @@ export default function OnboardingPage() {
           description: brand.description || undefined,
           industry: brand.industry || undefined,
           aliases: brand.aliases
-            ? brand.aliases
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean)
+            ? brand.aliases.split(',').map((s) => s.trim()).filter(Boolean)
             : [],
           competitors: brand.competitors
-            ? brand.competitors
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean)
+            ? brand.competitors.split(',').map((s) => s.trim()).filter(Boolean)
             : [],
           color: brand.color,
         }),
       })
 
       const brandData = await brandRes.json()
-      if (!brandData.success && !brandData.data?.id && !brandData.id) {
+      const newBrandId = brandData.data?.id || brandData.id
+      if (!brandRes.ok || !newBrandId) {
         throw new Error(brandData.message || 'Failed to create brand')
       }
-      const newBrandId = brandData.data?.id || brandData.id
       setBrandId(newBrandId)
 
-      // 2. Create prompts
-      for (const p of prompts) {
-        await fetch('/api/prompts', {
+      // ── 2. Create prompts (fail-fast on first error) ─────────────────────
+      setLaunchStage('prompts')
+      const createdPromptIds: string[] = []
+      for (const [idx, p] of prompts.entries()) {
+        const pRes = await fetch('/api/prompts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -236,14 +237,66 @@ export default function OnboardingPage() {
             run_frequency: 'daily',
           }),
         })
+        const pData = await pRes.json()
+        const newPromptId = pData.data?.id || pData.id
+        if (!pRes.ok || !newPromptId) {
+          throw new Error(
+            `Failed to create prompt ${idx + 1}/${prompts.length}: ${pData.message || 'unknown error'}`,
+          )
+        }
+        createdPromptIds.push(newPromptId)
       }
 
-      toast.success('Brand and prompts created! Redirecting...')
-      setTimeout(() => router.push(`/dashboard/brands/${newBrandId}`), 1500)
+      // ── 3. Launch first monitoring run (best-effort — don't block) ───────
+      setLaunchStage('monitoring')
+      const firstPromptId = createdPromptIds[0]
+      if (firstPromptId) {
+        try {
+          const mRes = await fetch('/api/monitoring', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt_id: firstPromptId }),
+          })
+          const mData = await mRes.json().catch(() => ({}))
+          if (!mRes.ok) {
+            // Non-fatal: brand & prompts are created, only first run failed
+            toast.error(
+              `Setup complete, but first monitoring run failed: ${mData.message || mRes.statusText}. You can retry from the brand page.`,
+            )
+          } else {
+            toast.success(
+              `🚀 Brand, ${createdPromptIds.length} prompts, and first monitoring run launched!`,
+            )
+          }
+        } catch (mErr) {
+          toast.error(
+            `Setup complete, but first monitoring run failed: ${mErr instanceof Error ? mErr.message : 'network error'}. You can retry from the brand page.`,
+          )
+        }
+      }
+
+      setLaunchStage('done')
+      setTimeout(() => router.push(`/dashboard/brands/${newBrandId}`), 1200)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Setup failed')
+      setLaunchStage('idle')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const launchStageLabel = () => {
+    switch (launchStage) {
+      case 'brand':
+        return 'Creating brand...'
+      case 'prompts':
+        return `Creating ${prompts.length} prompts...`
+      case 'monitoring':
+        return 'Launching first monitoring run...'
+      case 'done':
+        return 'Done! Redirecting...'
+      default:
+        return 'Launch Monitoring'
     }
   }
 
@@ -539,8 +592,16 @@ export default function OnboardingPage() {
 
           <Button className="mt-8" size="lg" loading={loading} onClick={handleLaunch}>
             <Rocket className="h-5 w-5" />
-            {loading ? 'Creating...' : 'Launch Monitoring'}
+            {launchStageLabel()}
           </Button>
+          {loading && launchStage !== 'idle' && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              {launchStage === 'brand' && 'Step 1 of 3 · Brand'}
+              {launchStage === 'prompts' && 'Step 2 of 3 · Prompts'}
+              {launchStage === 'monitoring' && 'Step 3 of 3 · First AI check (may take 20-40s)'}
+              {launchStage === 'done' && 'All set!'}
+            </p>
+          )}
         </Card>
       )}
 

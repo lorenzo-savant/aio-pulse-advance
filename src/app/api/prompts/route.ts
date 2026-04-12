@@ -19,7 +19,7 @@ const promptSchema = z.object({
   engines: z
     .array(z.enum(['chatgpt', 'gemini', 'perplexity', 'claude']))
     .min(1)
-    .default(['chatgpt', 'gemini', 'perplexity']),
+    .default(['chatgpt', 'gemini', 'perplexity', 'claude']),
   run_frequency: z.enum(['hourly', 'daily', 'weekly']).default('daily'),
 })
 

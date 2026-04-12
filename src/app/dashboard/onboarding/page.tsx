@@ -110,9 +110,67 @@ const STEPS = [
 
 // ─── Prompt Templates ────────────────────────────────────────────────────────
 
-function generatePromptTemplates(brandName: string, industry: string): PromptForm[] {
-  const templates: Record<string, PromptForm[]> = {
-    default: [
+function generatePromptTemplates(
+  brandName: string,
+  industry: string,
+  language: BrandLanguage,
+): PromptForm[] {
+  const templatesByLang: Record<BrandLanguage, PromptForm[]> = {
+    sv: [
+      {
+        text: `Vilket är det bästa ${industry.toLowerCase()}-företaget?`,
+        language: 'sv',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+      {
+        text: `Kan du rekommendera ${brandName}?`,
+        language: 'sv',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+      {
+        text: `Vilka alternativ finns till ${brandName}?`,
+        language: 'sv',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+      {
+        text: `${brandName} omdömen och rykte`,
+        language: 'sv',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+      {
+        text: `Jämför ${brandName} med konkurrenter`,
+        language: 'sv',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+    ],
+    it: [
+      {
+        text: `Qual è la migliore azienda di ${industry.toLowerCase()}?`,
+        language: 'it',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+      {
+        text: `Puoi consigliare ${brandName}?`,
+        language: 'it',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+      {
+        text: `Quali alternative ci sono a ${brandName}?`,
+        language: 'it',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+      {
+        text: `${brandName} recensioni e reputazione`,
+        language: 'it',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+      {
+        text: `Confronta ${brandName} con i concorrenti`,
+        language: 'it',
+        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+      },
+    ],
+    en: [
       {
         text: `What is the best ${industry.toLowerCase()} company?`,
         language: 'en',
@@ -140,7 +198,7 @@ function generatePromptTemplates(brandName: string, industry: string): PromptFor
       },
     ],
   }
-  return templates.default ?? []
+  return templatesByLang[language] || templatesByLang.en
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────

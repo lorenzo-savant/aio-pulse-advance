@@ -72,6 +72,7 @@ CREATE TABLE brands (
   domains text[] DEFAULT '{}',
   competitors text[] DEFAULT '{}',
   industry text,
+  language text NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'it', 'sv')),
   color text DEFAULT '#636f6f1',
   logo_url text,
   is_active boolean DEFAULT true,
@@ -84,6 +85,7 @@ CREATE TABLE brands (
 
 CREATE INDEX brands_user_id_idx ON brands(user_id);
 CREATE INDEX brands_slug_idx ON brands(slug);
+CREATE INDEX brands_language_idx ON brands(language);
 
 -- ─── PROMPTS ──────────────────────────────────────────────────────────────────
 CREATE TABLE prompts (

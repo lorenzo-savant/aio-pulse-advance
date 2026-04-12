@@ -94,3 +94,10 @@ coverage/
 *.bak
 *.orig
 *.rej
+
+# ─── Dev artifacts ───────────────────────────────────────────────────────────
+.claude/
+.supabase/
+supabase/.temp/
+test-results/
+playwright-report/

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
-import { User, Key, Bell, Shield, Save, Loader2, Eye, EyeOff, Check, X, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { User, Key, Bell, Save, Loader2, Eye, EyeOff, Trash2, Globe } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
@@ -9,6 +9,9 @@ import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useLocale, useTranslations } from 'next-intl'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { locales, localeLabels, type Locale } from '@/i18n/config'
 
 type Provider = 'openai' | 'gemini' | 'perplexity' | 'anthropic'
 
@@ -52,6 +55,7 @@ const PROVIDER_INFO: Record<
 }
 
 function ApiKeysSection() {
+  const t = useTranslations('settings.api_keys')
   const supabase = createSupabaseBrowserClient()
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
@@ -91,7 +95,7 @@ function ApiKeysSection() {
   const handleSave = async (provider: Provider) => {
     const key = newKeys[provider]
     if (!key.trim()) {
-      toast.error('Please enter an API key')
+      toast.error(t('enter_key'))
       return
     }
 
@@ -127,11 +131,11 @@ function ApiKeysSection() {
         if (error) throw error
       }
 
-      toast.success(`${PROVIDER_INFO[provider].label} API key saved`)
+      toast.success(t('saved', { name: PROVIDER_INFO[provider].label }))
       setNewKeys((prev) => ({ ...prev, [provider]: '' }))
       await loadKeys()
     } catch (err) {
-      toast.error('Failed to save API key')
+      toast.error(t('save_failed'))
       console.error(err)
     } finally {
       setSaving(null)
@@ -143,9 +147,9 @@ function ApiKeysSection() {
     if (!existing) return
 
     const confirmed = await confirm({
-      title: `Remove ${PROVIDER_INFO[provider].label} API key?`,
-      description: 'This action cannot be undone.',
-      confirmLabel: 'Remove',
+      title: t('remove_confirm', { name: PROVIDER_INFO[provider].label }),
+      description: t('remove_confirm_desc'),
+      confirmLabel: t('remove'),
       destructive: true,
     })
     if (!confirmed) return
@@ -158,10 +162,10 @@ function ApiKeysSection() {
     try {
       const { error } = await supabase.from('user_api_keys').delete().eq('id', existing.id)
       if (error) throw error
-      toast.success('API key removed')
+      toast.success(t('removed'))
       await loadKeys()
     } catch (err) {
-      toast.error('Failed to delete API key')
+      toast.error(t('save_failed'))
     }
   }
 
@@ -182,7 +186,7 @@ function ApiKeysSection() {
       if (error) throw error
       await loadKeys()
     } catch (err) {
-      toast.error('Failed to update API key')
+      toast.error(t('save_failed'))
     }
   }
 
@@ -192,12 +196,10 @@ function ApiKeysSection() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
-              <Key className="text-muted-foreground h-5 w-5" />
-              API Keys
+              <Key className="h-5 w-5 text-muted-foreground" />
+              {t('title')}
             </h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Configure your AI provider API keys. Keys are stored securely.
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
           </div>
         </div>
 
@@ -214,10 +216,7 @@ function ApiKeysSection() {
               const isShowing = showKey === provider
 
               return (
-                <div
-                  key={provider}
-                  className="rounded-xl border border-input bg-secondaryrow p-4"
-                >
+                <div key={provider} className="bg-secondaryrow rounded-xl border border-input p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span
@@ -227,20 +226,20 @@ function ApiKeysSection() {
                       </span>
                       {existing && (
                         <Badge variant={existing.is_active ? 'success' : 'default'}>
-                          {existing.is_active ? 'Active' : 'Inactive'}
+                          {existing.is_active ? t('active') : t('inactive')}
                         </Badge>
                       )}
                     </div>
                     {existing && (
                       <Button size="sm" variant="ghost" onClick={() => handleToggle(provider)}>
-                        {existing.is_active ? 'Disable' : 'Enable'}
+                        {existing.is_active ? t('disable') : t('enable')}
                       </Button>
                     )}
                   </div>
 
                   {existing ? (
                     <div className="flex items-center gap-2">
-                      <div className="text-foreground flex-1 rounded-lg bg-input px-3 py-2 font-mono text-sm">
+                      <div className="flex-1 rounded-lg bg-input px-3 py-2 font-mono text-sm text-foreground">
                         {isShowing ? existing.encrypted_key : '••••••••••••••••••••••••••••••'}
                       </div>
                       <Button
@@ -258,7 +257,7 @@ function ApiKeysSection() {
                     <div className="flex gap-2">
                       <input
                         type="password"
-                        className="text-foreground placeholder-text-muted-ui flex-1 rounded-xl border border-input bg-input px-4 py-2 text-sm outline-none focus:border-primary"
+                        className="placeholder-text-muted-ui flex-1 rounded-xl border border-input bg-input px-4 py-2 text-sm text-foreground outline-none focus:border-primary"
                         placeholder={info.placeholder}
                         value={newKeys[provider]}
                         onChange={(e) =>
@@ -277,7 +276,7 @@ function ApiKeysSection() {
                     rel="noopener noreferrer"
                     className="mt-2 inline-block text-xs text-primary hover:underline"
                   >
-                    Get {info.label} API key →
+                    {t('get_key', { name: info.label })} →
                   </a>
                 </div>
               )
@@ -291,6 +290,7 @@ function ApiKeysSection() {
 }
 
 function ProfileSection() {
+  const t = useTranslations('settings.profile')
   const supabase = createSupabaseBrowserClient()
   const [loading, setLoading] = useState(false)
   const [profile, setProfile] = useState<{
@@ -330,7 +330,7 @@ function ProfileSection() {
         data: { full_name: name },
       })
       if (error) throw error
-      toast.success('Profile updated')
+      toast.success(t('save_button') + ' (dev mode)')
     } catch (err) {
       toast.error('Failed to update profile')
     } finally {
@@ -342,33 +342,33 @@ function ProfileSection() {
     <Card className="border border-input bg-card p-6">
       <div className="mb-6">
         <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
-          <User className="text-muted-foreground h-5 w-5" />
-          Profile
+          <User className="h-5 w-5 text-muted-foreground" />
+          {t('title')}
         </h2>
-        <p className="text-muted-foreground mt-1 text-sm">Manage your account information.</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="text-muted-foreground mb-2 block text-xs font-bold uppercase tracking-widest">
-            Email
+          <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {t('email')}
           </label>
           <input
             type="email"
             disabled
-            className="text-foreground w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm"
+            className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground"
             value={profile.email || ''}
           />
         </div>
 
         <div>
-          <label className="text-muted-foreground mb-2 block text-xs font-bold uppercase tracking-widest">
-            Full Name
+          <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {t('full_name')}
           </label>
           <input
             type="text"
-            className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm outline-none focus:border-primary"
-            placeholder="Your name"
+            className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+            placeholder={t('full_name_placeholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -376,7 +376,7 @@ function ProfileSection() {
 
         <Button loading={loading} onClick={handleSave}>
           <Save className="h-4 w-4" />
-          Save Changes
+          {t('save_button')}
         </Button>
       </div>
     </Card>
@@ -384,6 +384,7 @@ function ProfileSection() {
 }
 
 function NotificationsSection() {
+  const t = useTranslations('settings.notifications')
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -391,48 +392,74 @@ function NotificationsSection() {
     <Card className="border border-input bg-card p-6">
       <div className="mb-6">
         <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
-          <Bell className="text-muted-foreground h-5 w-5" />
-          Notifications
+          <Bell className="h-5 w-5 text-muted-foreground" />
+          {t('title')}
         </h2>
-        <p className="text-muted-foreground mt-1 text-sm">Configure how you receive alerts.</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="text-muted-foreground mb-2 block text-xs font-bold uppercase tracking-widest">
-            Alert Email
+          <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {t('alert_email')}
           </label>
           <input
             type="email"
-            className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm outline-none focus:border-primary"
-            placeholder="alerts@yourdomain.com"
+            className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+            placeholder={t('alert_email_placeholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <p className="text-muted-foreground mt-2 text-xs">
-            Alerts will be sent via Resend when triggered.
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{t('alert_email_helper')}</p>
         </div>
 
         <Button loading={saving}>
           <Save className="h-4 w-4" />
-          Save Preferences
+          {t('save_button')}
         </Button>
       </div>
     </Card>
   )
 }
 
+function InterfaceLanguageSection() {
+  const t = useTranslations('settings.interface_language')
+  const currentLocale = useLocale() as Locale
+
+  return (
+    <Card className="border border-input bg-card p-6">
+      <div className="mb-6">
+        <h2 className="text-text-secondary-ui flex items-center gap-2 text-lg font-bold">
+          <Globe className="h-5 w-5 text-muted-foreground" />
+          {t('title')}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">{t('current')}:</span>
+          <span className="text-sm font-bold text-foreground">{localeLabels[currentLocale]}</span>
+        </div>
+        <LanguageSwitcher />
+      </div>
+    </Card>
+  )
+}
+
 export default function SettingsPage() {
+  const t = useTranslations('settings')
+
   return (
     <div className="animate-in space-y-8 bg-background">
       <div>
-        <h1 className="text-3xl font-black tracking-tight text-foreground">Settings</h1>
-        <p className="mt-1 text-muted-foreground">Manage your account, API keys, and preferences.</p>
+        <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+        <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
       </div>
 
       <div className="grid max-w-3xl gap-6">
         <ProfileSection />
+        <InterfaceLanguageSection />
         <ApiKeysSection />
         <NotificationsSection />
       </div>

@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { JourneyGuide } from '@/components/JourneyGuide'
 import type { Brand, MonitoringResult } from '@/types'
 import { useRealtimeResults } from '@/hooks/use-realtime'
+import { useTranslations } from 'next-intl'
 
 const ENGINE_COLORS: Record<string, string> = {
   chatgpt: '#10b981',
@@ -30,6 +31,7 @@ const ENGINE_COLORS: Record<string, string> = {
 }
 
 function ResultCard({ result }: { result: MonitoringResult }) {
+  const t = useTranslations('monitoring')
   const [expanded, setExpanded] = useState(false)
   const engineColor = ENGINE_COLORS[result.engine] ?? '#6366f1'
 
@@ -58,11 +60,11 @@ function ResultCard({ result }: { result: MonitoringResult }) {
             )}
             {result.brand_mentioned ? (
               <Badge dot variant="success">
-                Mentioned
+                {t('mentioned')}
               </Badge>
             ) : (
               <Badge dot variant="danger">
-                Not found
+                {t('not_found')}
               </Badge>
             )}
             {result.sentiment && (
@@ -83,7 +85,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
               <Badge variant="info">Position #{result.mention_position}</Badge>
             )}
           </div>
-          <p className="text-muted-foreground truncate text-xs">"{result.prompt_text}"</p>
+          <p className="truncate text-xs text-muted-foreground">"{result.prompt_text}"</p>
         </div>
 
         {/* Score */}
@@ -100,10 +102,10 @@ function ResultCard({ result }: { result: MonitoringResult }) {
           >
             {result.visibility_score}
           </p>
-          <p className="text-muted-foreground text-[9px] uppercase tracking-wider">score</p>
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">score</p>
         </div>
 
-        <button className="hover:text-muted-foreground ml-2" onClick={() => setExpanded((v) => !v)}>
+        <button className="ml-2 hover:text-muted-foreground" onClick={() => setExpanded((v) => !v)}>
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
       </div>
@@ -113,19 +115,21 @@ function ResultCard({ result }: { result: MonitoringResult }) {
         <div className="animate-in space-y-4 border-t px-4 pb-4 pt-3">
           {/* AI Response */}
           <div>
-            <p className="text-muted-foreground mb-2 text-[10px] font-black uppercase tracking-widest">
-              AI Response
+            <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              {t('ai_response')}
             </p>
-            <div className="max-h-48 overflow-y-auto rounded-xl border bg-input/50 p-3">
-              <p className="text-muted-foreground text-sm leading-relaxed">{result.response_text}</p>
+            <div className="bg-input/50 max-h-48 overflow-y-auto rounded-xl border p-3">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {result.response_text}
+              </p>
             </div>
           </div>
 
           {/* Competitor mentions */}
           {result.competitor_mentions.length > 0 && (
             <div>
-              <p className="text-muted-foreground mb-2 text-[10px] font-black uppercase tracking-widest">
-                Competitor Mentions
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                {t('competitor_mentions')}
               </p>
               <div className="flex flex-wrap gap-2">
                 {result.competitor_mentions.map((c) => (
@@ -134,7 +138,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
                     className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-1.5 text-xs"
                   >
                     <span className="font-bold text-amber-400">{c.name}</span>
-                    <span className="text-muted-foreground ml-2">
+                    <span className="ml-2 text-muted-foreground">
                       pos #{c.position} · {c.count}x
                     </span>
                   </div>
@@ -147,7 +151,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
           {result.hallucination_flags.length > 0 && (
             <div>
               <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-red-700">
-                Hallucination Flags
+                {t('hallucination_flags')}
               </p>
               <div className="space-y-2">
                 {result.hallucination_flags.map((flag, i) => (
@@ -158,7 +162,7 @@ function ResultCard({ result }: { result: MonitoringResult }) {
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
                     <div className="text-xs">
                       <p className="text-red-300">"{flag.text}"</p>
-                      <p className="text-muted-foreground mt-0.5">
+                      <p className="mt-0.5 text-muted-foreground">
                         {flag.type.replace(/_/g, ' ')} · severity: {flag.severity}
                       </p>
                     </div>
@@ -171,14 +175,14 @@ function ResultCard({ result }: { result: MonitoringResult }) {
           {/* Cited URLs */}
           {result.cited_urls.length > 0 && (
             <div>
-              <p className="text-muted-foreground mb-2 text-[10px] font-black uppercase tracking-widest">
-                Cited URLs
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                {t('cited_urls')}
               </p>
               <div className="space-y-1">
                 {result.cited_urls.map((url, i) => (
                   <a
                     key={i}
-                    className="block truncate text-xs text-brand-400 hover:underline"
+                    className="text-brand-400 block truncate text-xs hover:underline"
                     href={url}
                     rel="noopener noreferrer"
                     target="_blank"
@@ -190,7 +194,9 @@ function ResultCard({ result }: { result: MonitoringResult }) {
             </div>
           )}
 
-          <p className="text-muted-foreground text-[10px]">{formatRelativeTime(result.created_at)}</p>
+          <p className="text-[10px] text-muted-foreground">
+            {formatRelativeTime(result.created_at)}
+          </p>
         </div>
       )}
     </div>
@@ -198,6 +204,8 @@ function ResultCard({ result }: { result: MonitoringResult }) {
 }
 
 export default function MonitoringPage() {
+  const t = useTranslations('monitoring')
+  const tc = useTranslations('common')
   const [brands, setBrands] = useState<Brand[]>([])
   const [results, setResults] = useState<MonitoringResult[]>([])
   const [loading, setLoading] = useState(true)
@@ -206,11 +214,14 @@ export default function MonitoringPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('')
   const [pagination, setPagination] = useState({ total: 0, page: 1, totalPages: 1 })
 
-  const handleNewResult = useCallback((newResult: Record<string, unknown>) => {
-    setResults((prev) => [newResult as unknown as MonitoringResult, ...prev])
-    setPagination((prev) => ({ ...prev, total: prev.total + 1 }))
-    toast.success('New monitoring result received!')
-  }, [])
+  const handleNewResult = useCallback(
+    (newResult: Record<string, unknown>) => {
+      setResults((prev) => [newResult as unknown as MonitoringResult, ...prev])
+      setPagination((prev) => ({ ...prev, total: prev.total + 1 }))
+      toast.success(t('new_result_received'))
+    },
+    [t],
+  )
 
   const { isConnected } = useRealtimeResults(selectedBrand || '', handleNewResult)
 
@@ -233,7 +244,7 @@ export default function MonitoringPage() {
       setResults(rJson.data ?? [])
       if (rJson.pagination) setPagination(rJson.pagination)
     } catch {
-      toast.error('Failed to load monitoring data')
+      toast.error(t('failed_to_load_data'))
     } finally {
       setLoading(false)
     }
@@ -260,19 +271,23 @@ export default function MonitoringPage() {
         steps={[
           {
             label: 'Go to Prompts and click "Run" on one',
-            description: 'Or use the brand detail page — each brand has a "Run all prompts" button.',
+            description:
+              'Or use the brand detail page — each brand has a "Run all prompts" button.',
           },
           {
             label: 'Wait 20-40 seconds per engine',
-            description: 'Each engine call is real (not cached). Costs ~1 credit per engine per prompt.',
+            description:
+              'Each engine call is real (not cached). Costs ~1 credit per engine per prompt.',
           },
           {
             label: 'Results appear in this page live',
-            description: 'Sentiment label, brand mention position, cited URLs, competitor mentions — all automatic.',
+            description:
+              'Sentiment label, brand mention position, cited URLs, competitor mentions — all automatic.',
           },
           {
             label: 'Schedule recurring runs',
-            description: 'Cron already runs daily prompts automatically once configured on the brand.',
+            description:
+              'Cron already runs daily prompts automatically once configured on the brand.',
           },
         ]}
         outcomes={[
@@ -284,26 +299,26 @@ export default function MonitoringPage() {
       />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Monitoring Results</h1>
-          <p className="mt-1">Live AI engine response analysis for your brands.</p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+          <p className="mt-1">{t('page_subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs">
             {isConnected ? (
               <>
                 <Wifi className="h-3.5 w-3.5 text-emerald-400 text-emerald-600" />
-                <span className="text-emerald-400 text-emerald-600">Live</span>
+                <span className="text-emerald-400 text-emerald-600">{t('live')}</span>
               </>
             ) : (
               <>
-                <WifiOff className="text-muted-foreground h-3.5 w-3.5" />
-                <span className="text-muted-foreground">Offline</span>
+                <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-muted-foreground">{t('offline')}</span>
               </>
             )}
           </div>
           <Button variant="outline" onClick={loadData}>
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-            Refresh
+            {t('refresh')}
           </Button>
         </div>
       </div>
@@ -312,25 +327,25 @@ export default function MonitoringPage() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           {
-            label: 'Total Results',
+            label: t('total_results'),
             value: pagination.total,
             icon: Shield,
             color: 'text-primary',
           },
           {
-            label: 'Mention Rate',
+            label: t('mention_rate'),
             value: `${mentionRate}%`,
             icon: CheckCircle2,
             color: 'text-emerald-400',
           },
           {
-            label: 'Hallucinations',
+            label: t('hallucinations'),
             value: hallucinationCount,
             icon: AlertTriangle,
             color: 'text-red-400',
           },
           {
-            label: 'Engines Active',
+            label: t('engines_active'),
             value: 3,
             icon: XCircle,
             color: 'text-purple-600 text-purple-400',
@@ -339,7 +354,7 @@ export default function MonitoringPage() {
           <Card key={s.label} className="p-5 text-center">
             <s.icon className={cn('mx-auto mb-2 h-6 w-6', s.color)} />
             <p className="text-2xl font-black text-foreground">{s.value}</p>
-            <p className="text-muted-foreground text-xs">{s.label}</p>
+            <p className="text-xs text-muted-foreground">{s.label}</p>
           </Card>
         ))}
       </div>
@@ -347,13 +362,13 @@ export default function MonitoringPage() {
       {/* Filters */}
       <Card className="flex flex-wrap items-center gap-3 p-4">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-widest">Brand:</span>
+          <span className="text-xs font-bold uppercase tracking-widest">{t('brand_filter')}</span>
           <select
             className="rounded-xl border px-3 py-1.5 text-xs text-foreground outline-none focus:border-primary"
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
           >
-            <option value="">All brands</option>
+            <option value="">{t('all_brands')}</option>
             {brands.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -362,7 +377,28 @@ export default function MonitoringPage() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Engine:</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {t('engine_filter')}
+          </span>
+          {['', 'chatgpt', 'gemini', 'perplexity'].map((e) => (
+            <button
+              key={e}
+              className={cn(
+                'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all',
+                selectedEngine === e
+                  ? 'border-brand-500/50 bg-primary/15 text-brand-400'
+                  : 'hover:text-muted-foreground',
+              )}
+              onClick={() => setSelectedEngine(e)}
+            >
+              {e || t('all_engines')}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {t('language_filter')}
+          </span>
           {['', 'chatgpt', 'gemini', 'perplexity'].map((e) => (
             <button
               key={e}
@@ -379,7 +415,7 @@ export default function MonitoringPage() {
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
             Language:
           </span>
           <select
@@ -402,15 +438,13 @@ export default function MonitoringPage() {
       {/* Results */}
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+          <Loader2 className="text-brand-400 h-8 w-8 animate-spin" />
         </div>
       ) : results.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Shield className="mb-4 h-16 w-16" />
-          <h2 className="mb-2 text-xl font-bold text-foreground">No results yet</h2>
-          <p className="">
-            Run a prompt from the Prompts page to start collecting monitoring data.
-          </p>
+          <h2 className="mb-2 text-xl font-bold text-foreground">{t('no_results_yet')}</h2>
+          <p className="">{t('no_results_desc')}</p>
         </div>
       ) : (
         <div className="space-y-3">

@@ -23,6 +23,7 @@ import { formatRelativeTime, cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand, AlertRule, AlertEvent, AlertType } from '@/types'
 import { JourneyGuide } from '@/components/JourneyGuide'
+import { useTranslations } from 'next-intl'
 
 // ─── Alert type config ────────────────────────────────────────────────────────
 
@@ -113,6 +114,7 @@ function EventCard({
   onMarkRead: (id: string) => void
   onDelete: (id: string) => void
 }) {
+  const t = useTranslations('alerts')
   const typeConf = ALERT_TYPES.find((t) => t.type === event.type)
   const Icon = typeConf?.icon ?? Bell
 
@@ -120,9 +122,7 @@ function EventCard({
     <div
       className={cn(
         'group flex items-start gap-4 rounded-2xl border p-4 transition-all',
-        event.is_read
-          ? 'border-border bg-secondary/20'
-          : 'border-brand-500/20 bg-primary/5',
+        event.is_read ? 'bg-secondary/20 border-border' : 'border-brand-500/20 bg-primary/5',
       )}
     >
       <div
@@ -136,7 +136,7 @@ function EventCard({
 
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2">
-          {!event.is_read && <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />}
+          {!event.is_read && <span className="bg-brand-400 h-1.5 w-1.5 rounded-full" />}
           <p className="text-sm font-bold text-foreground">{event.title}</p>
           <Badge
             variant={
@@ -149,14 +149,18 @@ function EventCard({
         <p className="text-xs text-muted-foreground">{event.message}</p>
         <div className="mt-2 flex items-center gap-3">
           {event.brand && (
-            <span className="text-[10px] text-muted-foreground">Brand: {event.brand.name}</span>
+            <span className="text-[10px] text-muted-foreground">
+              {t('brand_prefix')} {event.brand.name}
+            </span>
           )}
           {event.channels_sent.length > 0 && (
             <span className="text-[10px] text-muted-foreground">
-              Sent via: {event.channels_sent.join(', ')}
+              {t('sent_via')}: {event.channels_sent.join(', ')}
             </span>
           )}
-          <span className="text-[10px] text-foreground">{formatRelativeTime(event.created_at)}</span>
+          <span className="text-[10px] text-foreground">
+            {formatRelativeTime(event.created_at)}
+          </span>
         </div>
       </div>
 
@@ -185,11 +189,12 @@ function RuleCard({
   onToggle: (id: string) => void
   onDelete: (id: string) => void
 }) {
+  const t = useTranslations('alerts')
   const typeConf = ALERT_TYPES.find((t) => t.type === rule.type)
   const Icon = typeConf?.icon ?? Bell
 
   return (
-    <div className="group flex items-center gap-4 rounded-2xl border border-border bg-secondary/40 p-4 transition-all hover:border-border">
+    <div className="bg-secondary/40 group flex items-center gap-4 rounded-2xl border border-border p-4 transition-all hover:border-border">
       <div
         className={cn(
           'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
@@ -212,7 +217,9 @@ function RuleCard({
         <p className="text-xs text-muted-foreground">{typeConf?.desc}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           {rule.brand && (
-            <span className="text-[10px] text-muted-foreground">Brand: {rule.brand.name}</span>
+            <span className="text-[10px] text-muted-foreground">
+              {t('brand_prefix')} {rule.brand.name}
+            </span>
           )}
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
             {rule.channels.includes('email') && <Mail className="h-3 w-3" />}
@@ -221,7 +228,7 @@ function RuleCard({
           </div>
           {rule.last_fired_at && (
             <span className="text-[10px] text-foreground">
-              Last fired {formatRelativeTime(rule.last_fired_at)}
+              {t('last_fired')} {formatRelativeTime(rule.last_fired_at)}
             </span>
           )}
         </div>
@@ -233,7 +240,7 @@ function RuleCard({
           variant={rule.is_active ? 'outline' : 'ghost'}
           onClick={() => onToggle(rule.id)}
         >
-          {rule.is_active ? 'Pause' : 'Enable'}
+          {rule.is_active ? t('paused') : t('enabled')}
         </Button>
         <Button size="icon" variant="ghost" onClick={() => onDelete(rule.id)}>
           <Trash2 className="h-3.5 w-3.5 text-red-400" />
@@ -252,6 +259,7 @@ function CreateRuleForm({
   brands: Brand[]
   onCreated: (rule: AlertRule) => void
 }) {
+  const t = useTranslations('alerts')
   const [form, setForm] = useState({
     brand_id: '',
     name: '',
@@ -265,7 +273,7 @@ function CreateRuleForm({
 
   const handleCreate = async () => {
     if (!form.brand_id || !form.name || !form.email) {
-      toast.error('Fill in brand, rule name, and email')
+      toast.error(t('fill_required_fields'))
       return
     }
     setCreating(true)
@@ -289,7 +297,7 @@ function CreateRuleForm({
       const json = (await res.json()) as { success: boolean; data?: AlertRule; message?: string }
       if (!json.success) throw new Error(json.message)
       onCreated(json.data!)
-      toast.success('Alert rule created')
+      toast.success(t('alert_rule_created'))
       setForm({
         brand_id: '',
         name: '',
@@ -300,7 +308,7 @@ function CreateRuleForm({
         competitor: '',
       })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create rule')
+      toast.error(err instanceof Error ? err.message : t('failed_to_create_rule'))
     } finally {
       setCreating(false)
     }
@@ -309,19 +317,19 @@ function CreateRuleForm({
   return (
     <Card className="animate-in border-brand-500/20 p-6">
       <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-foreground">
-        <Plus className="h-4 w-4 text-brand-400" /> New Alert Rule
+        <Plus className="text-brand-400 h-4 w-4" /> {t('create_alert_rule')}
       </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Brand *
+            {t('brand_required')}
           </label>
           <select
             className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
             value={form.brand_id}
             onChange={(e) => setForm((f) => ({ ...f, brand_id: e.target.value }))}
           >
-            <option value="">Select brand...</option>
+            <option value="">{t('select_brand_placeholder')}</option>
             {brands.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -332,11 +340,11 @@ function CreateRuleForm({
 
         <div>
           <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Rule Name *
+            {t('rule_name_required')}
           </label>
           <input
             className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
-            placeholder="e.g. New mention alert"
+            placeholder={t('rule_name_placeholder')}
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           />
@@ -344,7 +352,7 @@ function CreateRuleForm({
 
         <div className="sm:col-span-2">
           <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Alert Type *
+            {t('alert_type_required')}
           </label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {ALERT_TYPES.map((t) => (
@@ -354,7 +362,7 @@ function CreateRuleForm({
                   'rounded-xl border p-3 text-left transition-all',
                   form.type === t.type
                     ? 'border-brand-500/50 bg-primary/10'
-                    : 'border-border bg-secondary/40 hover:border-border',
+                    : 'bg-secondary/40 border-border hover:border-border',
                 )}
                 onClick={() => setForm((f) => ({ ...f, type: t.type }))}
               >
@@ -369,11 +377,11 @@ function CreateRuleForm({
         {form.type === 'competitor_ahead' && (
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Competitor Name
+              {t('competitor_name_label')}
             </label>
             <input
               className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
-              placeholder="e.g. GetCito"
+              placeholder={t('competitor_name_placeholder')}
               value={form.competitor}
               onChange={(e) => setForm((f) => ({ ...f, competitor: e.target.value }))}
             />
@@ -383,10 +391,8 @@ function CreateRuleForm({
         {['sentiment_drop', 'visibility_change', 'citation_rate_change'].includes(form.type) && (
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Threshold{' '}
-              {form.type === 'sentiment_drop'
-                ? '(0-1, e.g. 0.3)'
-                : '(score points, e.g. 10 for 10%)'}
+              {t('threshold_label')}{' '}
+              {form.type === 'sentiment_drop' ? t('threshold_sentiment') : t('threshold_score')}
             </label>
             <input
               className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
@@ -400,11 +406,11 @@ function CreateRuleForm({
 
         <div>
           <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Email *
+            {t('email_required')}
           </label>
           <input
             className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
-            placeholder="alerts@yourdomain.com"
+            placeholder={t('email_placeholder')}
             type="email"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
@@ -414,7 +420,7 @@ function CreateRuleForm({
 
       <div className="mt-5 flex justify-end gap-3 border-t border-border pt-4">
         <Button loading={creating} onClick={handleCreate}>
-          <Bell className="h-4 w-4" /> Create Alert Rule
+          <Bell className="h-4 w-4" /> {t('create_alert_rule')}
         </Button>
       </div>
     </Card>
@@ -424,6 +430,8 @@ function CreateRuleForm({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AlertsPage() {
+  const t = useTranslations('alerts')
+  const tc = useTranslations('common')
   const [brands, setBrands] = useState<Brand[]>([])
   const [rules, setRules] = useState<AlertRule[]>([])
   const [events, setEvents] = useState<AlertEvent[]>([])
@@ -448,7 +456,7 @@ export default function AlertsPage() {
       setRules(rJson.data ?? [])
       setEvents(eJson.data ?? [])
     } catch {
-      toast.error('Failed to load alerts')
+      toast.error(t('failed_to_load_alerts'))
     } finally {
       setLoading(false)
     }
@@ -466,7 +474,7 @@ export default function AlertsPage() {
   const handleDeleteEvent = async (id: string) => {
     await fetch(`/api/alerts?id=${id}&type=event`, { method: 'DELETE' })
     setEvents((prev) => prev.filter((e) => e.id !== id))
-    toast.success('Event deleted')
+    toast.success(t('event_deleted'))
   }
 
   const handleToggleRule = async (id: string) => {
@@ -480,7 +488,7 @@ export default function AlertsPage() {
   const handleDeleteRule = async (id: string) => {
     await fetch(`/api/alerts?id=${id}&type=rule`, { method: 'DELETE' })
     setRules((prev) => prev.filter((r) => r.id !== id))
-    toast.success('Rule deleted')
+    toast.success(t('rule_deleted'))
   }
 
   const markAllRead = async () => {
@@ -501,11 +509,13 @@ export default function AlertsPage() {
           },
           {
             label: 'Choose an alert type',
-            description: 'Mention gained/lost, sentiment drop, competitor ahead, hallucination detected, visibility change.',
+            description:
+              'Mention gained/lost, sentiment drop, competitor ahead, hallucination detected, visibility change.',
           },
           {
             label: 'Set threshold + channels',
-            description: 'Threshold: e.g. "sentiment < 0.3". Channels: email (Resend) and/or webhook URL.',
+            description:
+              'Threshold: e.g. "sentiment < 0.3". Channels: email (Resend) and/or webhook URL.',
           },
           {
             label: 'Events show up on this page',
@@ -520,13 +530,11 @@ export default function AlertsPage() {
       />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Alerts</h1>
-          <p className="mt-1 text-muted-foreground">
-            Real-time notifications when your brand visibility changes.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <Button onClick={() => setShowForm((v) => !v)}>
-          <Plus className="h-5 w-5" /> New Rule
+          <Plus className="h-5 w-5" /> {t('new_rule')}
         </Button>
       </div>
 
@@ -534,12 +542,12 @@ export default function AlertsPage() {
       <div className="grid grid-cols-3 gap-4">
         {[
           {
-            label: 'Active Rules',
+            label: t('active_rules'),
             value: rules.filter((r) => r.is_active).length,
             color: 'text-emerald-400',
           },
-          { label: 'Unread Events', value: unreadCount, color: 'text-brand-400' },
-          { label: 'Total Events', value: events.length, color: 'text-muted-foreground' },
+          { label: t('unread_events'), value: unreadCount, color: 'text-brand-400' },
+          { label: t('total_events'), value: events.length, color: 'text-muted-foreground' },
         ].map((s) => (
           <Card key={s.label} className="p-5 text-center">
             <p className={cn('text-2xl font-black', s.color)}>{s.value}</p>
@@ -561,44 +569,42 @@ export default function AlertsPage() {
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border pb-0">
         {[
-          { id: 'events', label: `Events${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
-          { id: 'rules', label: `Rules (${rules.length})` },
-        ].map((t) => (
+          { id: 'events', label: `${t('events')}${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
+          { id: 'rules', label: `${t('rules')} (${rules.length})` },
+        ].map((tabItem) => (
           <button
-            key={t.id}
+            key={tabItem.id}
             className={cn(
               'border-b-2 px-4 pb-3 text-sm font-bold transition-colors',
-              tab === t.id
+              tab === tabItem.id
                 ? 'border-brand-500 text-brand-400'
                 : 'border-transparent text-muted-foreground hover:text-muted-foreground',
             )}
-            onClick={() => setTab(t.id as typeof tab)}
+            onClick={() => setTab(tabItem.id as typeof tab)}
           >
-            {t.label}
+            {tabItem.label}
           </button>
         ))}
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+          <Loader2 className="text-brand-400 h-8 w-8 animate-spin" />
         </div>
       ) : tab === 'events' ? (
         <div className="space-y-3">
           {events.length > 0 && unreadCount > 0 && (
             <div className="flex justify-end">
               <Button size="sm" variant="ghost" onClick={markAllRead}>
-                <CheckCircle2 className="h-4 w-4" /> Mark all read
+                <CheckCircle2 className="h-4 w-4" /> {t('mark_all_read')}
               </Button>
             </div>
           )}
           {events.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <Bell className="200 mb-4 h-16 w-16 text-muted-foreground" />
-              <h2 className="mb-2 text-xl font-bold text-foreground">No events yet</h2>
-              <p className="text-muted-foreground">
-                Alert events will appear here when your monitoring rules trigger.
-              </p>
+              <h2 className="mb-2 text-xl font-bold text-foreground">{t('no_events_yet')}</h2>
+              <p className="text-muted-foreground">{t('no_events_desc')}</p>
             </div>
           ) : (
             events.map((event) => (
@@ -616,12 +622,10 @@ export default function AlertsPage() {
           {rules.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <Bell className="mb-4 h-16 w-16 text-muted-foreground" />
-              <h2 className="mb-2 text-xl font-bold text-foreground">No alert rules</h2>
-              <p className="mb-6 text-muted-foreground">
-                Create a rule to get notified when brand metrics change.
-              </p>
+              <h2 className="mb-2 text-xl font-bold text-foreground">{t('no_alert_rules')}</h2>
+              <p className="mb-6 text-muted-foreground">{t('no_rules_desc')}</p>
               <Button onClick={() => setShowForm(true)}>
-                <Plus className="h-4 w-4" /> Create first rule
+                <Plus className="h-4 w-4" /> {t('create_first_rule')}
               </Button>
             </div>
           ) : (

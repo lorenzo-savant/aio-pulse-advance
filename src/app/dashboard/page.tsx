@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/index'
 import { formatRelativeTime, cn } from '@/lib/utils'
@@ -46,6 +47,7 @@ const WORKFLOW_TYPE_LABELS: Record<string, string> = {
 }
 
 export default function WorkflowStatusPage() {
+  const t = useTranslations('dashboard')
   const [workflows, setWorkflows] = useState<WorkflowExecution[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
@@ -107,10 +109,10 @@ export default function WorkflowStatusPage() {
   const completedCount = workflows.filter((w) => w.status === 'completed').length
 
   const stats = [
-    { label: 'Total', value: workflows.length, icon: Activity, color: 'brand' },
-    { label: 'Running', value: runningCount, icon: Loader2, color: 'brand' },
-    { label: 'Failed', value: failedCount, icon: XCircle, color: 'error' },
-    { label: 'Completed', value: completedCount, icon: CheckCircle2, color: 'success' },
+    { label: t('total'), value: workflows.length, icon: Activity, color: 'brand' },
+    { label: t('running'), value: runningCount, icon: Loader2, color: 'brand' },
+    { label: t('failed'), value: failedCount, icon: XCircle, color: 'error' },
+    { label: t('completed'), value: completedCount, icon: CheckCircle2, color: 'success' },
   ]
 
   return (
@@ -120,7 +122,7 @@ export default function WorkflowStatusPage() {
           <div>
             <p className="text-sm font-medium text-muted-foreground">Pages / Dashboard</p>
             <h1 className="mt-1 text-[34px] font-bold tracking-tight text-foreground">
-              Workflow Status
+              {t('page_subtitle')}
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -129,7 +131,7 @@ export default function WorkflowStatusPage() {
               value={selectedBrand}
               onChange={(e) => setSelectedBrand(e.target.value)}
             >
-              <option value="">All Brands</option>
+              <option value="">{t('all_brands')}</option>
               {brands.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -176,9 +178,7 @@ export default function WorkflowStatusPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-brand" />
               </div>
             ) : workflows.length === 0 ? (
-              <div className="p-12 text-center text-muted-foreground">
-                No workflow executions found
-              </div>
+              <div className="p-12 text-center text-muted-foreground">{t('no_workflows')}</div>
             ) : (
               workflows.map((workflow) => {
                 const statusConfig = getStatusConfig(workflow.status)
@@ -231,7 +231,7 @@ export default function WorkflowStatusPage() {
                             className="hover:bg-brand-muted/80 flex items-center gap-1 rounded-lg bg-brand-muted px-3 py-1.5 text-xs font-medium text-brand"
                           >
                             <RotateCcw className="h-3 w-3" />
-                            Re-run
+                            {t('rerun')}
                           </button>
                           {workflow.status === 'running' && (
                             <button
@@ -242,7 +242,7 @@ export default function WorkflowStatusPage() {
                               className="hover:bg-error-muted/80 flex items-center gap-1 rounded-lg bg-error-muted px-3 py-1.5 text-xs font-medium text-error"
                             >
                               <Pause className="h-3 w-3" />
-                              Cancel
+                              {t('cancel')}
                             </button>
                           )}
                         </div>
@@ -256,7 +256,7 @@ export default function WorkflowStatusPage() {
                         {/* Steps */}
                         <div className="space-y-2">
                           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                            Steps
+                            {t('steps')}
                           </p>
                           {workflow.steps.map((step, i) => {
                             const stepStatus = getStatusConfig(step.status)

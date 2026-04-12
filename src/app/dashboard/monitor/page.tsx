@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/index'
 import { Button } from '@/components/ui/Button'
 import { getEngineSignals } from '@/lib/services/gemini'
 import { cn } from '@/lib/utils'
+import { useTranslations } from 'next-intl'
 
 const ENGINES = [
   {
@@ -111,6 +112,7 @@ const OPTIMIZATION_MATRIX = [
 ]
 
 function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
+  const t = useTranslations('monitor')
   const [expanded, setExpanded] = useState(false)
   const status = STATUS_MAP[engine.status as EngineStatus]
   const signals = getEngineSignals(engine.id)
@@ -145,26 +147,26 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
 
         <div className="mb-4 grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-input bg-input p-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary-surface">
-              Indexing
+            <p className="text-text-secondary-surface text-[10px] font-bold uppercase tracking-wider">
+              {t('indexing')}
             </p>
-            <p className="mt-0.5 text-xs font-semibold text-text-secondary-surface">
+            <p className="text-text-secondary-surface mt-0.5 text-xs font-semibold">
               {engine.indexingSpeed}
             </p>
           </div>
           <div className="rounded-lg border border-input bg-input p-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary-surface">
-              Citations
+            <p className="text-text-secondary-surface text-[10px] font-bold uppercase tracking-wider">
+              {t('citations')}
             </p>
-            <p className="mt-0.5 text-xs font-semibold text-text-secondary-surface">
+            <p className="text-text-secondary-surface mt-0.5 text-xs font-semibold">
               {engine.citationStyle}
             </p>
           </div>
         </div>
 
         <div className="mb-4">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-text-secondary-surface">
-            Strengths
+          <p className="text-text-secondary-surface mb-2 text-[10px] font-black uppercase tracking-widest">
+            {t('strengths')}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {engine.strengths.map((s) => (
@@ -187,7 +189,7 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
           className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-left text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           onClick={() => setExpanded((v) => !v)}
         >
-          {expanded ? '↑ Hide' : '↓ Show'} optimization signals ({signals.length})
+          {expanded ? t('hide') : t('show')} {t('optimization_signals')} ({signals.length})
         </button>
 
         {expanded && (
@@ -195,15 +197,15 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
             {signals.map((s, i) => (
               <div key={i} className="flex items-start gap-2 rounded-lg bg-secondary px-3 py-2">
                 <span className={cn('mt-0.5 text-xs font-black', engine.accent)}>→</span>
-                <p className="text-xs text-text-secondary-surface">{s}</p>
+                <p className="text-text-secondary-surface text-xs">{s}</p>
               </div>
             ))}
           </div>
         )}
 
         <div className="mt-4 flex items-center justify-between border-t border-input pt-3">
-          <span className="text-[10px] text-text-secondary-surface">
-            Checked {engine.lastChecked}
+          <span className="text-text-secondary-surface text-[10px]">
+            {t('checked')} {engine.lastChecked}
           </span>
           <a
             className={cn(
@@ -214,7 +216,7 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
             rel="noopener noreferrer"
             target="_blank"
           >
-            Docs <ExternalLink className="h-2.5 w-2.5" />
+            {t('docs')} <ExternalLink className="h-2.5 w-2.5" />
           </a>
         </div>
       </div>
@@ -223,6 +225,8 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
 }
 
 export default function MonitorPage() {
+  const t = useTranslations('monitor')
+  const tc = useTranslations('common')
   const [refreshing, setRefreshing] = useState(false)
 
   const handleRefresh = () => {
@@ -236,16 +240,12 @@ export default function MonitorPage() {
     <div className="animate-in space-y-8">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">
-            Engine Monitor
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            Live status and optimization intelligence for all AI search engines.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <Button loading={refreshing} size="sm" variant="outline" onClick={handleRefresh}>
           <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-          Refresh Status
+          {t('refresh_status')}
         </Button>
       </div>
 
@@ -262,11 +262,13 @@ export default function MonitorPage() {
         />
         <div>
           <p className={cn('font-bold', allOperational ? 'text-emerald-300' : 'text-amber-300')}>
-            {allOperational ? 'All Systems Operational' : 'Partial Disruption Detected'}
+            {allOperational ? t('all_systems_operational') : t('partial_disruption')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {ENGINES.filter((e) => e.status === 'operational').length}/{ENGINES.length} engines
-            fully operational
+            {t('engines_operational', {
+              operational: ENGINES.filter((e) => e.status === 'operational').length,
+              total: ENGINES.length,
+            })}
           </p>
         </div>
       </div>
@@ -278,15 +280,13 @@ export default function MonitorPage() {
       </div>
 
       <Card className="p-6">
-        <h2 className="mb-6 text-lg font-bold text-foreground">
-          Content Factor Importance by Engine
-        </h2>
+        <h2 className="mb-6 text-lg font-bold text-foreground">{t('content_factor_importance')}</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-input">
                 <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Factor
+                  {t('factor')}
                 </th>
                 {ENGINES.map((e) => (
                   <th
@@ -303,8 +303,8 @@ export default function MonitorPage() {
             </thead>
             <tbody>
               {OPTIMIZATION_MATRIX.map((row) => (
-                <tr key={row.category} className="border-b border-input/50">
-                  <td className="py-3 font-semibold text-text-secondary-surface">{row.category}</td>
+                <tr key={row.category} className="border-input/50 border-b">
+                  <td className="text-text-secondary-surface py-3 font-semibold">{row.category}</td>
                   {[row.chatgpt, row.gemini, row.perplexity, row.claude].map((score, i) => (
                     <td key={i} className="py-3 text-center">
                       <div className="inline-flex flex-col items-center gap-1">
@@ -320,7 +320,7 @@ export default function MonitorPage() {
                         >
                           {score}%
                         </span>
-                        <div className="h-1 w-12 rounded-full bg-input-border">
+                        <div className="bg-input-border h-1 w-12 rounded-full">
                           <div
                             className={cn(
                               'h-full rounded-full',

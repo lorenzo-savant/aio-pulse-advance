@@ -75,42 +75,42 @@ export const AI_PROVIDERS: Array<{
     label: 'Gemini',
     color: 'bg-blue-500',
     accent: 'text-blue-400',
-    description: 'Google Gemini 1.5 Flash (default)',
+    description: 'Google Gemini (default, cost-efficient)',
   },
   {
-    id: 'openrouter',
-    label: 'OpenRouter',
+    id: 'openai',
+    label: 'ChatGPT',
+    color: 'bg-emerald-500',
+    accent: 'text-emerald-400',
+    description: 'OpenAI GPT-4o / GPT-4o Mini',
+  },
+  {
+    id: 'perplexity',
+    label: 'Perplexity',
     color: 'bg-purple-500',
     accent: 'text-purple-400',
-    description: 'Access to GPT-4o, Claude, Llama and more',
+    description: 'Sonar — real-time answer engine with citations',
   },
   {
-    id: 'groq',
-    label: 'Groq',
+    id: 'anthropic',
+    label: 'Claude',
     color: 'bg-orange-500',
     accent: 'text-orange-400',
-    description: 'Ultra-fast Llama & Mixtral inference',
-  },
-  {
-    id: 'cerebras',
-    label: 'Cerebras',
-    color: 'bg-cyan-500',
-    accent: 'text-cyan-400',
-    description: 'Fastest inference - 1M tokens/day free',
+    description: 'Anthropic Claude Sonnet / Haiku',
   },
 ]
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 export const ANALYSIS_MODELS: Array<{ id: ModelId; label: string; provider: AIProvider }> = [
-  { id: 'default', label: 'AIO Pulse Standard (Gemini)', provider: 'gemini' },
-  { id: 'gemini-flash', label: 'Gemini 1.5 Flash', provider: 'gemini' },
-  { id: 'gpt-4o-mini', label: 'GPT-4o Mini (OpenRouter)', provider: 'openrouter' },
-  { id: 'gpt-4o', label: 'GPT-4o (OpenRouter)', provider: 'openrouter' },
-  { id: 'claude-sonnet', label: 'Claude 3.5 Sonnet (OpenRouter)', provider: 'openrouter' },
-  { id: 'llama-70b', label: 'Llama 3.3 70B (Groq)', provider: 'groq' },
-  { id: 'mixtral-8x7b', label: 'Mixtral 8x7B (Groq)', provider: 'groq' },
-  { id: 'llama-cerebras', label: 'Llama 3.3 70B (Cerebras)', provider: 'cerebras' },
+  { id: 'default', label: 'AIO Pulse Standard (Gemini Flash)', provider: 'gemini' },
+  { id: 'gemini-flash', label: 'Gemini 2.5 Flash', provider: 'gemini' },
+  { id: 'gemini-pro', label: 'Gemini 2.5 Pro', provider: 'gemini' },
+  { id: 'gpt-4o-mini', label: 'GPT-4o Mini', provider: 'openai' },
+  { id: 'gpt-4o', label: 'GPT-4o', provider: 'openai' },
+  { id: 'claude-sonnet', label: 'Claude Sonnet 4.5', provider: 'anthropic' },
+  { id: 'claude-haiku', label: 'Claude Haiku 4.5', provider: 'anthropic' },
+  { id: 'perplexity-sonar', label: 'Perplexity Sonar', provider: 'perplexity' },
 ]
 
 // ─── Limits ───────────────────────────────────────────────────────────────────

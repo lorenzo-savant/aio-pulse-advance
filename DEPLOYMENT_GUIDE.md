@@ -69,13 +69,14 @@ Value: (paste your Service Role Key from Step 1)
 
 Add any other variables your app needs:
 - `STRIPE_SECRET_KEY` (if using billing)
-- `GEMINI_API_KEY` (if using Gemini)
-- `OPENROUTER_API_KEY` (if using OpenRouter)
-- `GROQ_API_KEY` (if using Groq)
-- `CEREBRAS_API_KEY` (if using Cerebras)
+- `OPENAI_API_KEY` (ChatGPT — core AI)
+- `GEMINI_API_KEY` (Google Gemini — core AI)
+- `PERPLEXITY_API_KEY` (Perplexity — core AI)
+- `ANTHROPIC_API_KEY` (Claude — core AI)
 - `RESEND_API_KEY` (if using email)
 - `ENCRYPTION_KEY` (for exports)
 - `CRON_SECRET_TOKEN` (for scheduled jobs)
+- `WEBHOOK_SIGNING_SECRET` (for outbound webhooks)
 
 See `.env.example` for all available variables.
 
@@ -327,13 +328,14 @@ SUPABASE_SERVICE_KEY
 ### Optional Features
 ```
 STRIPE_SECRET_KEY              # Billing
-GEMINI_API_KEY                # AI
-OPENROUTER_API_KEY            # AI
-GROQ_API_KEY                  # AI
-CEREBRAS_API_KEY              # AI
+OPENAI_API_KEY                # AI — ChatGPT
+GEMINI_API_KEY                # AI — Google Gemini
+PERPLEXITY_API_KEY            # AI — Perplexity
+ANTHROPIC_API_KEY             # AI — Claude
 RESEND_API_KEY                # Email
 ENCRYPTION_KEY                # Export security
 CRON_SECRET_TOKEN             # Scheduled jobs
+WEBHOOK_SIGNING_SECRET        # Outbound webhook signing
 ```
 
 See `.env.example` for all options.

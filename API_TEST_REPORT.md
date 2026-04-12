@@ -75,10 +75,10 @@
   "success": true,
   "data": {
     "providers": {
-      "openrouter": { "configured": true },
-      "groq": { "configured": true },
-      "cerebras": { "configured": true },
-      "gemini": { "configured": true }
+      "chatgpt": { "configured": true },
+      "gemini": { "configured": true },
+      "perplexity": { "configured": true },
+      "claude": { "configured": true }
     }
   }
 }

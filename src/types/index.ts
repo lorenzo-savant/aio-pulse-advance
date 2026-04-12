@@ -23,16 +23,16 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 // ─── AIO Pulse — Analysis ─────────────────────────────────────────────────────
 export type EngineId = 'all' | 'chatgpt' | 'gemini' | 'perplexity' | 'claude'
 export type MonitoringEngine = 'chatgpt' | 'gemini' | 'perplexity' | 'claude'
-export type AIProvider = 'gemini' | 'openrouter' | 'groq' | 'cerebras'
+export type AIProvider = 'gemini' | 'openai' | 'perplexity' | 'anthropic'
 export type ModelId =
   | 'default'
   | 'gemini-flash'
+  | 'gemini-pro'
   | 'gpt-4o-mini'
   | 'gpt-4o'
   | 'claude-sonnet'
-  | 'llama-70b'
-  | 'mixtral-8x7b'
-  | 'llama-cerebras'
+  | 'claude-haiku'
+  | 'perplexity-sonar'
 export type IntentType = 'Informational' | 'Navigational' | 'Transactional' | 'Commercial' | 'Mixed'
 export type AnalysisMode = 'text' | 'url'
 

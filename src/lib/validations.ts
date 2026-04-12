@@ -6,17 +6,17 @@ export const analyzeTextSchema = z.object({
   input: z.string().min(1, 'Content is required').max(15_000, 'Content too long'),
   mode: z.enum(['text', 'url']),
   engine: z.enum(['all', 'chatgpt', 'gemini', 'perplexity', 'claude']).default('all'),
-  provider: z.enum(['gemini', 'openrouter', 'groq', 'cerebras']).default('gemini'),
+  provider: z.enum(['gemini', 'openai', 'perplexity', 'anthropic']).default('gemini'),
   model: z
     .enum([
       'default',
       'gemini-flash',
+      'gemini-pro',
       'gpt-4o-mini',
       'gpt-4o',
       'claude-sonnet',
-      'llama-70b',
-      'mixtral-8x7b',
-      'llama-cerebras',
+      'claude-haiku',
+      'perplexity-sonar',
     ])
     .default('default'),
 })

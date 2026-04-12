@@ -99,30 +99,31 @@ describe('Model Provider Mapping', () => {
   const MODEL_PROVIDER_MAP: Record<string, string> = {
     default: 'gemini',
     'gemini-flash': 'gemini',
-    'gpt-4o-mini': 'openrouter',
-    'gpt-4o': 'openrouter',
-    'claude-sonnet': 'openrouter',
-    'llama-70b': 'groq',
-    'mixtral-8x7b': 'groq',
-    'llama-cerebras': 'cerebras',
+    'gemini-pro': 'gemini',
+    'gpt-4o-mini': 'openai',
+    'gpt-4o': 'openai',
+    'claude-sonnet': 'anthropic',
+    'claude-haiku': 'anthropic',
+    'perplexity-sonar': 'perplexity',
   }
 
-  it('maps gemini-flash to gemini', () => {
+  it('maps gemini models to gemini', () => {
     expect(MODEL_PROVIDER_MAP['gemini-flash']).toBe('gemini')
+    expect(MODEL_PROVIDER_MAP['gemini-pro']).toBe('gemini')
   })
 
-  it('maps gpt models to openrouter', () => {
-    expect(MODEL_PROVIDER_MAP['gpt-4o-mini']).toBe('openrouter')
-    expect(MODEL_PROVIDER_MAP['gpt-4o']).toBe('openrouter')
+  it('maps gpt models to openai', () => {
+    expect(MODEL_PROVIDER_MAP['gpt-4o-mini']).toBe('openai')
+    expect(MODEL_PROVIDER_MAP['gpt-4o']).toBe('openai')
   })
 
-  it('maps llama models to groq', () => {
-    expect(MODEL_PROVIDER_MAP['llama-70b']).toBe('groq')
-    expect(MODEL_PROVIDER_MAP['mixtral-8x7b']).toBe('groq')
+  it('maps claude models to anthropic', () => {
+    expect(MODEL_PROVIDER_MAP['claude-sonnet']).toBe('anthropic')
+    expect(MODEL_PROVIDER_MAP['claude-haiku']).toBe('anthropic')
   })
 
-  it('maps cerebras models', () => {
-    expect(MODEL_PROVIDER_MAP['llama-cerebras']).toBe('cerebras')
+  it('maps perplexity-sonar to perplexity', () => {
+    expect(MODEL_PROVIDER_MAP['perplexity-sonar']).toBe('perplexity')
   })
 
   it('defaults to gemini', () => {

@@ -1,16 +1,8 @@
 // PATH: src/lib/services/ai-router.ts
-// AI Router — seleziona automaticamente il provider disponibile.
-//
-// SIMULAZIONE engine (step 1):
-//   1° OpenRouter (modelli reali) → 2° Groq (Llama 70B) → 3° Gemini (fallback)
-//
-// ANALISI brand (step 2):
-//   1° Cerebras (ultra veloce) → 2° Groq → 3° Gemini (fallback)
+// AI Router — routes engine simulation and brand analysis to the 4 core providers.
+// Core providers: ChatGPT (OpenAI), Gemini (Google), Perplexity, Claude (Anthropic).
 
 import type { MonitoringEngine } from '@/types'
-import { callOpenRouterForEngine, isOpenRouterAvailable } from './openrouter'
-import { callGroq, isGroqAvailable, GROQ_MODELS } from './groq'
-import { callCerebras, isCerebrasAvailable, CEREBRAS_MODELS } from './cerebras'
 import { isOpenAIAvailable, callOpenAI } from './openai'
 import { isPerplexityAvailable, callPerplexity } from './perplexity'
 import { isAnthropicAvailable, callAnthropic } from './anthropic'
@@ -40,9 +32,13 @@ async function callGeminiFallback(prompt: string): Promise<string> {
   return text
 }
 
+function isGeminiAvailable(): boolean {
+  return Boolean(process.env['GEMINI_API_KEY'])
+}
+
 // ─── simulateEngineResponse ────────────────────────────────────────────────────
-// Step 1: simula la risposta dell'engine al prompt.
-// Provider: OpenRouter → Groq → Gemini
+// Calls the real API for the requested engine. Falls back to Gemini if that
+// engine's provider is not configured or fails.
 
 export async function simulateEngineResponse(
   promptText: string,
@@ -62,22 +58,25 @@ export async function simulateEngineResponse(
   const fullPrompt = `${enginePersona[engine]}\n\nUser question: "${promptText}"\n\nProvide a realistic, helpful response (150-300 words).`
   const errors: string[] = []
 
-  // Try REAL API first for each engine
   if (engine === 'chatgpt' && isOpenAIAvailable()) {
     try {
       const text = await callOpenAI(fullPrompt)
       return { text, provider: 'openai:gpt-4o-mini' }
     } catch (e) {
-      logger.warn('OpenAI direct call failed, falling back to simulation', { service: 'ai-router', engine, error: e })
+      const msg = e instanceof Error ? e.message : String(e)
+      errors.push(`OpenAI: ${msg}`)
+      logger.warn('OpenAI call failed', { service: 'ai-router', engine, error: msg })
     }
   }
 
-  if (engine === 'gemini') {
+  if (engine === 'gemini' && isGeminiAvailable()) {
     try {
       const text = await callGeminiFallback(fullPrompt)
       return { text, provider: 'gemini:flash-2.0' }
     } catch (e) {
-      logger.warn('Gemini direct call failed', { service: 'ai-router', engine, error: e })
+      const msg = e instanceof Error ? e.message : String(e)
+      errors.push(`Gemini: ${msg}`)
+      logger.warn('Gemini call failed', { service: 'ai-router', engine, error: msg })
     }
   }
 
@@ -86,7 +85,9 @@ export async function simulateEngineResponse(
       const text = await callPerplexity(fullPrompt)
       return { text, provider: 'perplexity:sonar' }
     } catch (e) {
-      logger.warn('Perplexity direct call failed, falling back', { service: 'ai-router', engine, error: e })
+      const msg = e instanceof Error ? e.message : String(e)
+      errors.push(`Perplexity: ${msg}`)
+      logger.warn('Perplexity call failed', { service: 'ai-router', engine, error: msg })
     }
   }
 
@@ -95,46 +96,20 @@ export async function simulateEngineResponse(
       const text = await callAnthropic(fullPrompt)
       return { text, provider: 'anthropic:claude-sonnet' }
     } catch (e) {
-      logger.warn('Anthropic direct call failed, falling back', { service: 'ai-router', engine, error: e })
-    }
-  }
-
-  // FALLBACK to simulation (existing logic with Groq/OpenRouter/Gemini)
-
-  // Tentativo 1: OpenRouter (modelli reali per ogni engine)
-  if (isOpenRouterAvailable()) {
-    try {
-      const text = await callOpenRouterForEngine(fullPrompt, engine)
-      return { text, provider: `openrouter:${engine}` }
-    } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      errors.push(`OpenRouter: ${msg}`)
-      logger.warn('OpenRouter failed for engine', { service: 'ai-router', engine, error: msg })
+      errors.push(`Anthropic: ${msg}`)
+      logger.warn('Anthropic call failed', { service: 'ai-router', engine, error: msg })
     }
   }
 
-  // Tentativo 2: Groq (Llama 70B)
-  if (isGroqAvailable()) {
+  // Final fallback: Gemini (cheapest, most widely configured)
+  if (isGeminiAvailable()) {
     try {
-      const text = await callGroq(fullPrompt, {
-        model: GROQ_MODELS.LLAMA_70B,
-        temperature: 0.3,
-        systemPrompt: enginePersona[engine],
-      })
-      return { text, provider: 'groq:llama-3.3-70b' }
+      const text = await callGeminiFallback(fullPrompt)
+      return { text, provider: 'gemini:flash-2.0' }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      errors.push(`Groq: ${msg}`)
-      logger.warn('Groq failed for engine', { service: 'ai-router', engine, error: msg })
+      errors.push(`Gemini fallback: ${e instanceof Error ? e.message : String(e)}`)
     }
-  }
-
-  // Tentativo 3: Gemini (fallback finale)
-  try {
-    const text = await callGeminiFallback(fullPrompt)
-    return { text, provider: 'gemini:flash-2.0' }
-  } catch (e) {
-    errors.push(`Gemini: ${e instanceof Error ? e.message : String(e)}`)
   }
 
   throw new Error(
@@ -144,52 +119,45 @@ export async function simulateEngineResponse(
 }
 
 // ─── analyzeResponseForBrand ──────────────────────────────────────────────────
-// Step 2: analizza la risposta per metriche brand.
-// Provider: Cerebras → Groq → Gemini
+// Analyzes a response for brand metrics. Uses Gemini as primary (cheapest
+// reasoning), falls back to Claude and ChatGPT.
 
 export async function analyzeResponseForBrand(
   analysisPrompt: string,
 ): Promise<{ text: string; provider: string }> {
   const errors: string[] = []
 
-  // Tentativo 1: Cerebras (ultra veloce, 1M token/giorno)
-  if (isCerebrasAvailable()) {
+  if (isGeminiAvailable()) {
     try {
-      const text = await callCerebras(analysisPrompt, {
-        model: CEREBRAS_MODELS.LLAMA_8B,
-        temperature: 0.1,
-        maxTokens: 1024,
-      })
-      return { text, provider: 'cerebras:llama-3.1-8b' }
+      const text = await callGeminiFallback(analysisPrompt)
+      return { text, provider: 'gemini:flash-2.0' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      errors.push(`Cerebras: ${msg}`)
-      logger.warn('Cerebras failed for analysis', { service: 'ai-router', error: msg })
+      errors.push(`Gemini: ${msg}`)
+      logger.warn('Gemini failed for analysis', { service: 'ai-router', error: msg })
     }
   }
 
-  // Tentativo 2: Groq
-  if (isGroqAvailable()) {
+  if (isAnthropicAvailable()) {
     try {
-      const text = await callGroq(analysisPrompt, {
-        model: GROQ_MODELS.LLAMA_70B,
-        temperature: 0.1,
-        maxTokens: 1024,
-      })
-      return { text, provider: 'groq:llama-3.3-70b' }
+      const text = await callAnthropic(analysisPrompt)
+      return { text, provider: 'anthropic:claude-sonnet' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      errors.push(`Groq: ${msg}`)
-      logger.warn('Groq failed for analysis', { service: 'ai-router', error: msg })
+      errors.push(`Anthropic: ${msg}`)
+      logger.warn('Anthropic failed for analysis', { service: 'ai-router', error: msg })
     }
   }
 
-  // Tentativo 3: Gemini (fallback finale)
-  try {
-    const text = await callGeminiFallback(analysisPrompt)
-    return { text, provider: 'gemini:flash-2.0' }
-  } catch (e) {
-    errors.push(`Gemini: ${e instanceof Error ? e.message : String(e)}`)
+  if (isOpenAIAvailable()) {
+    try {
+      const text = await callOpenAI(analysisPrompt)
+      return { text, provider: 'openai:gpt-4o-mini' }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      errors.push(`OpenAI: ${msg}`)
+      logger.warn('OpenAI failed for analysis', { service: 'ai-router', error: msg })
+    }
   }
 
   throw new Error(
@@ -202,34 +170,25 @@ export async function analyzeResponseForBrand(
 
 export function getProviderStatus() {
   return {
-    openrouter: {
-      configured: isOpenRouterAvailable(),
-      freeLimit: '50 req/giorno',
-      bestFor: 'Simulazione con modelli reali (ChatGPT, Gemini, Perplexity)',
-      signupUrl: 'https://openrouter.ai',
-    },
-    groq: {
-      configured: isGroqAvailable(),
-      freeLimit: '500 000 token/giorno',
-      bestFor: 'Simulazione fallback, veloce e affidabile',
-      signupUrl: 'https://console.groq.com',
-    },
-    cerebras: {
-      configured: isCerebrasAvailable(),
-      freeLimit: '1 000 000 token/giorno',
-      bestFor: 'Analisi brand (ultra veloce, JSON parsing)',
-      signupUrl: 'https://cloud.cerebras.ai',
+    chatgpt: {
+      configured: isOpenAIAvailable(),
+      bestFor: 'Simulazione ChatGPT / SearchGPT',
+      signupUrl: 'https://platform.openai.com',
     },
     gemini: {
-      configured: Boolean(process.env['GEMINI_API_KEY']),
-      freeLimit: '10-20 req/giorno (Google AI Studio)',
-      bestFor: 'Fallback finale, già integrato',
+      configured: isGeminiAvailable(),
+      bestFor: 'Simulazione Gemini + analisi brand (fallback primario)',
       signupUrl: 'https://aistudio.google.com',
+    },
+    perplexity: {
+      configured: isPerplexityAvailable(),
+      bestFor: 'Simulazione Perplexity con citazioni',
+      signupUrl: 'https://www.perplexity.ai/settings/api',
+    },
+    claude: {
+      configured: isAnthropicAvailable(),
+      bestFor: 'Simulazione Claude + analisi ragionata',
+      signupUrl: 'https://console.anthropic.com',
     },
   }
 }
-
-// ─── Orchestrator Integration ─────────────────────────────────────────────────
-// For multi-provider parallel execution, use query-orchestrator.ts directly:
-// import { queryOrchestrator } from './query-orchestrator'
-// const result = await queryOrchestrator.orchestrateQuery(promptText, ['chatgpt', 'gemini', 'perplexity'])

@@ -30,11 +30,12 @@ export function safeRedirect(url: string, fallback = '/dashboard'): string {
  * when a nonce or hash is present (per CSP Level 2+).
  */
 export function buildCspHeader(nonce: string): string {
+  const isDev = process.env.NODE_ENV === 'development'
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval'`,
+    `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
-    "connect-src 'self' https://*.supabase.co https://*.vercel.com https://*.vercel.app https://*.openrouter.ai https://*.groq.com https://*.cerebras.ai",
+    "connect-src 'self' https://*.supabase.co https://*.vercel.com https://*.vercel.app https://api.openai.com https://generativelanguage.googleapis.com https://api.perplexity.ai https://api.anthropic.com",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
     "frame-ancestors 'none'",

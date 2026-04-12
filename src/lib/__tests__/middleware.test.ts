@@ -159,9 +159,10 @@ describe('buildCspHeader', () => {
 
   it('includes connect-src for AI providers', () => {
     const csp = buildCspHeader('n')
-    expect(csp).toContain('https://*.openrouter.ai')
-    expect(csp).toContain('https://*.groq.com')
-    expect(csp).toContain('https://*.cerebras.ai')
+    expect(csp).toContain('https://api.openai.com')
+    expect(csp).toContain('https://generativelanguage.googleapis.com')
+    expect(csp).toContain('https://api.perplexity.ai')
+    expect(csp).toContain('https://api.anthropic.com')
   })
 })
 

@@ -1,13 +1,11 @@
 // PATH: src/lib/services/cost-calculator.ts
 // Cost Calculator — tracks query costs and credits
 //
-// Pricing model (approximate):
-// - OpenAI GPT-4o-mini: $0.003 per 1K input tokens
-// - Google Gemini: $0.0005 per 1K input tokens
-// - Perplexity: $0.005 per 1K input tokens
-// - Anthropic Claude: $0.008 per 1K input tokens
-// - Groq: $0.0001 per 1K input tokens (very cheap)
-// - Cerebras: $0.00006 per 1K input tokens (free!)
+// Pricing model (approximate, per 1K tokens):
+// - OpenAI GPT-4o-mini: $0.003 input
+// - Google Gemini:      $0.0005 input
+// - Perplexity Sonar:   $0.005 input
+// - Anthropic Claude:   $0.003-0.015 input (Haiku/Sonnet)
 
 export interface CostBreakdown {
   provider: string
@@ -33,11 +31,8 @@ const PROVIDER_PRICING: Record<string, { inputPer1K: number; outputPer1K: number
   'gemini:pro-2.0': { inputPer1K: 0.0075, outputPer1K: 0.015 },
   'perplexity:llama-3.1-sonar': { inputPer1K: 0.005, outputPer1K: 0.005 },
   'perplexity:llama-3.1-sonar-large': { inputPer1K: 0.005, outputPer1K: 0.005 },
-  'anthropic:claude-3-haiku': { inputPer1K: 0.002, outputPer1K: 0.01 },
-  'anthropic:claude-3-sonnet': { inputPer1K: 0.015, outputPer1K: 0.075 },
-  'groq:llama-70b': { inputPer1K: 0.0001, outputPer1K: 0.0001 },
-  'groq:mixtral-8x7b': { inputPer1K: 0.0001, outputPer1K: 0.0001 },
-  'cerebras:llama-8b': { inputPer1K: 0.00006, outputPer1K: 0.00006 },
+  'anthropic:claude-haiku': { inputPer1K: 0.0008, outputPer1K: 0.004 },
+  'anthropic:claude-sonnet': { inputPer1K: 0.003, outputPer1K: 0.015 },
 }
 
 const CREDIT_CONVERSION_RATE = 1000 // 1 credit = $0.001
@@ -176,7 +171,7 @@ export function getProviderCostInfo(provider: string): {
     name: provider,
     inputPer1K: `$${pricing.inputPer1K.toFixed(4)}`,
     outputPer1K: `$${pricing.outputPer1K.toFixed(4)}`,
-    isFree: pricing.inputPer1K === 0.00006,
+    isFree: false,
   }
 }
 

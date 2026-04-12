@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 
-type Provider = 'groq' | 'cerebras' | 'openrouter' | 'gemini'
+type Provider = 'openai' | 'gemini' | 'perplexity' | 'anthropic'
 
 interface ApiKey {
   id: string
@@ -25,29 +25,29 @@ const PROVIDER_INFO: Record<
   Provider,
   { label: string; color: string; placeholder: string; docs: string }
 > = {
-  groq: {
-    label: 'Groq',
-    color: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    placeholder: 'gsk_...',
-    docs: 'https://console.groq.com',
-  },
-  cerebras: {
-    label: 'Cerebras',
-    color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-    placeholder: 'csk_...',
-    docs: 'https://cloud.cerebras.ai',
-  },
-  openrouter: {
-    label: 'OpenRouter',
-    color: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    placeholder: 'sk-or-v1-...',
-    docs: 'https://openrouter.ai/keys',
+  openai: {
+    label: 'ChatGPT (OpenAI)',
+    color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    placeholder: 'sk-...',
+    docs: 'https://platform.openai.com/api-keys',
   },
   gemini: {
     label: 'Gemini',
     color: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     placeholder: 'AIzaSy...',
     docs: 'https://aistudio.google.com/app/apikey',
+  },
+  perplexity: {
+    label: 'Perplexity',
+    color: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    placeholder: 'pplx-...',
+    docs: 'https://www.perplexity.ai/settings/api',
+  },
+  anthropic: {
+    label: 'Claude (Anthropic)',
+    color: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    placeholder: 'sk-ant-...',
+    docs: 'https://console.anthropic.com/settings/keys',
   },
 }
 
@@ -58,10 +58,10 @@ function ApiKeysSection() {
   const [saving, setSaving] = useState<Provider | null>(null)
   const [showKey, setShowKey] = useState<Provider | null>(null)
   const [newKeys, setNewKeys] = useState<Record<Provider, string>>({
-    groq: '',
-    cerebras: '',
-    openrouter: '',
+    openai: '',
     gemini: '',
+    perplexity: '',
+    anthropic: '',
   })
   const { confirm, ConfirmDialog } = useConfirmDialog()
 

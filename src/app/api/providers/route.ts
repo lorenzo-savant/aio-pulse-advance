@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isOpenAIAvailable, callOpenAI } from '@/lib/services/openai'
 import { isPerplexityAvailable, callPerplexity } from '@/lib/services/perplexity'
 import { isAnthropicAvailable, callAnthropic } from '@/lib/services/anthropic'
-import { isOpenRouterAvailable, callOpenRouterForEngine } from '@/lib/services/openrouter'
-import { isGroqAvailable, callGroq } from '@/lib/services/groq'
-import { isCerebrasAvailable, callCerebras } from '@/lib/services/cerebras'
 import { callGemini } from '@/lib/services/gemini'
 import { getCurrentUserId, AuthError } from '@/lib/supabase'
 
@@ -59,13 +56,6 @@ export async function POST(req: NextRequest) {
     ),
     testProvider('perplexity', async () => callPerplexity(TEST_PROMPT), isPerplexityAvailable),
     testProvider('claude', async () => callAnthropic(TEST_PROMPT), isAnthropicAvailable),
-    testProvider(
-      'openrouter',
-      async () => callOpenRouterForEngine(TEST_PROMPT, 'chatgpt'),
-      isOpenRouterAvailable,
-    ),
-    testProvider('groq', async () => callGroq(TEST_PROMPT), isGroqAvailable),
-    testProvider('cerebras', async () => callCerebras(TEST_PROMPT), isCerebrasAvailable),
   ])
 
   return NextResponse.json({
@@ -79,6 +69,6 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     message: 'POST to test AI providers',
-    providers: ['chatgpt', 'gemini', 'perplexity', 'claude', 'openrouter', 'groq', 'cerebras'],
+    providers: ['chatgpt', 'gemini', 'perplexity', 'claude'],
   })
 }

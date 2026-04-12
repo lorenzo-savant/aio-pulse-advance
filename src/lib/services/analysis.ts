@@ -1,15 +1,13 @@
 // PATH: src/lib/services/analysis.ts
-// Unified analysis service that routes to different AI providers
+// Unified analysis service — routes to the 4 core providers (OpenAI, Gemini, Perplexity, Anthropic).
 
 import type { AnalysisResult, EngineId, AIProvider, ModelId } from '@/types'
 import { generateId } from '@/lib/utils'
 import { buildAnalysisPrompt, callGemini } from './gemini'
-import { callGroq, GROQ_MODELS } from './groq'
-import { callCerebras, CEREBRAS_MODELS } from './cerebras'
-import { callOpenRouter, OPENROUTER_MODELS } from './openrouter'
+import { callOpenAI } from './openai'
+import { callPerplexity } from './perplexity'
+import { callAnthropic } from './anthropic'
 import { logger } from '@/lib/logger'
-
-// ─── Truncated JSON Repair (shared logic) ────────────────────────────────────
 
 function repairTruncatedJson(raw: string): string {
   let s = raw.trim()
@@ -47,26 +45,26 @@ function repairTruncatedJson(raw: string): string {
   return s
 }
 
-const MODEL_PROVIDER_MAP: Record<ModelId, AIProvider> = {
+export const MODEL_PROVIDER_MAP: Record<ModelId, AIProvider> = {
   default: 'gemini',
   'gemini-flash': 'gemini',
-  'gpt-4o-mini': 'openrouter',
-  'gpt-4o': 'openrouter',
-  'claude-sonnet': 'openrouter',
-  'llama-70b': 'groq',
-  'mixtral-8x7b': 'groq',
-  'llama-cerebras': 'cerebras',
+  'gemini-pro': 'gemini',
+  'gpt-4o-mini': 'openai',
+  'gpt-4o': 'openai',
+  'claude-sonnet': 'anthropic',
+  'claude-haiku': 'anthropic',
+  'perplexity-sonar': 'perplexity',
 }
 
 const MODEL_MAP: Record<ModelId, string> = {
   default: 'gemini-2.5-flash',
   'gemini-flash': 'gemini-2.5-flash',
-  'gpt-4o-mini': OPENROUTER_MODELS.GPT4O_MINI,
-  'gpt-4o': OPENROUTER_MODELS.GPT4O,
-  'claude-sonnet': OPENROUTER_MODELS.CLAUDE_SONNET,
-  'llama-70b': GROQ_MODELS.LLAMA_70B,
-  'mixtral-8x7b': GROQ_MODELS.MIXTRAL,
-  'llama-cerebras': CEREBRAS_MODELS.LLAMA_8B,
+  'gemini-pro': 'gemini-2.5-pro',
+  'gpt-4o-mini': 'gpt-4o-mini',
+  'gpt-4o': 'gpt-4o',
+  'claude-sonnet': 'claude-sonnet-4-5',
+  'claude-haiku': 'claude-haiku-4-5-20251001',
+  'perplexity-sonar': 'sonar',
 }
 
 async function callAIProvider(
@@ -80,24 +78,14 @@ async function callAIProvider(
     case 'gemini':
       return callGemini(prompt)
 
-    case 'openrouter':
-      return callOpenRouter(prompt, {
-        model: modelId,
-        temperature: 0.3,
-      })
+    case 'openai':
+      return callOpenAI(prompt, { model: modelId, temperature: 0.3 })
 
-    case 'groq':
-      return callGroq(prompt, {
-        model: modelId as typeof GROQ_MODELS.LLAMA_70B,
-        temperature: 0.3,
-      })
+    case 'anthropic':
+      return callAnthropic(prompt)
 
-    case 'cerebras':
-      return callCerebras(prompt, {
-        model: modelId as typeof CEREBRAS_MODELS.LLAMA_70B,
-        temperature: 0.3,
-        maxTokens: 2048,
-      })
+    case 'perplexity':
+      return callPerplexity(prompt)
 
     default:
       return callGemini(prompt)

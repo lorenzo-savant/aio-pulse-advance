@@ -1,10 +1,8 @@
 export type AIProviderId =
   | 'gemini'
-  | 'groq'
-  | 'cerebras'
-  | 'openrouter'
   | 'chatgpt'
   | 'perplexity'
+  | 'claude'
   | 'dataforseo'
   | 'azure-openai'
 
@@ -51,45 +49,37 @@ export interface ProviderTimeoutConfig {
 }
 
 export const DEFAULT_TIMEOUT_CONFIG: Record<AIProviderId, ProviderTimeoutConfig> = {
-  openrouter: { warningMs: 1000, timeoutMs: 30000, maxRetries: 2 },
   perplexity: { warningMs: 1500, timeoutMs: 45000, maxRetries: 1 },
-  cerebras: { warningMs: 1500, timeoutMs: 45000, maxRetries: 1 },
   gemini: { warningMs: 2000, timeoutMs: 60000, maxRetries: 2 },
   'azure-openai': { warningMs: 2000, timeoutMs: 60000, maxRetries: 2 },
-  groq: { warningMs: 2000, timeoutMs: 60000, maxRetries: 2 },
+  claude: { warningMs: 2500, timeoutMs: 60000, maxRetries: 1 },
   chatgpt: { warningMs: 3000, timeoutMs: 90000, maxRetries: 1 },
   dataforseo: { warningMs: 3000, timeoutMs: 120000, maxRetries: 1 },
 }
 
 export const DEFAULT_PROVIDER_PRIORITY: AIProviderId[] = [
-  'openrouter',
   'perplexity',
-  'cerebras',
   'gemini',
+  'claude',
   'azure-openai',
-  'groq',
   'chatgpt',
   'dataforseo',
 ]
 
 export const PROVIDER_PRIORITY: AIProviderId[] = [
-  'openrouter',
   'perplexity',
-  'cerebras',
   'gemini',
+  'claude',
   'azure-openai',
-  'groq',
   'chatgpt',
   'dataforseo',
 ]
 
 export const PROVIDER_NAMES: Record<AIProviderId, string> = {
   gemini: 'Google Gemini',
-  groq: 'Groq (Llama)',
-  cerebras: 'Cerebras',
-  openrouter: 'OpenRouter',
   chatgpt: 'ChatGPT Search',
   perplexity: 'Perplexity',
+  claude: 'Anthropic Claude',
   dataforseo: 'Google AI Overview',
   'azure-openai': 'Azure OpenAI',
 }

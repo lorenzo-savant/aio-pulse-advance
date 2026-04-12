@@ -30,7 +30,7 @@ create table if not exists profiles (
 create table if not exists user_api_keys (
   id uuid primary key default uuid_generate_v4(),
   user_id text not null,
-  provider text not null check (provider in ('groq', 'cerebras', 'openrouter', 'gemini')),
+  provider text not null check (provider in ('openai', 'gemini', 'perplexity', 'anthropic')),
   encrypted_key text not null,
   label text,
   is_active boolean default true,

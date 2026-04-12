@@ -269,67 +269,6 @@
     "buttons": {
       "back": "Back",
       "continue": "Continue"
-    },
-    "form": {
-      "name_label": "Brand Name",
-      "name_placeholder": "e.g. AIO Pulse",
-      "description_label": "Description",
-      "description_placeholder": "Brief description of your brand...",
-      "domain_label": "Primary Domain",
-      "domain_placeholder": "yourdomain.com",
-      "industry_label": "Industry",
-      "industry_placeholder": "Select industry...",
-      "aliases_label": "Aliases",
-      "aliases_placeholder": "Alternative names...",
-      "competitors_label": "Competitors",
-      "competitors_placeholder": "Competitor names...",
-      "color_label": "Brand Color",
-      "language_label": "Primary Market Language",
-      "language_required": "Required",
-      "language_helper": "Prompts and AI simulations will run in this language to reflect how your customers search."
-    },
-    "prompt_section": {
-      "title": "Monitoring Prompts",
-      "subtitle": "These are the questions we'll ask AI engines about your brand. We auto-generated some based on your brand — edit or add more.",
-      "add_prompt": "Add Prompt",
-      "edit_prompt": "Edit Prompt",
-      "prompt_text": "Prompt Text",
-      "prompt_category": "Category",
-      "prompt_engines": "Engines",
-      "no_prompts": "No prompts yet",
-      "auto_generated": "Auto-generated"
-    },
-    "configure_section": {
-      "title": "Configure Monitoring",
-      "engines_title": "AI Engines",
-      "engines_subtitle": "Select which AI engines to monitor",
-      "frequency_title": "Scan Frequency",
-      "frequency_subtitle": "How often should we check?",
-      "alert_title": "Alert Email",
-      "alert_placeholder": "your@email.com",
-      "alert_helper": "Get notified when your brand visibility changes significantly."
-    },
-    "review_section": {
-      "title": "Review & Launch",
-      "subtitle": "Ready to start monitoring?",
-      "brand_card": "Brand",
-      "stats_prompts": "Prompts",
-      "stats_engines": "Engines",
-      "stats_frequency": "Frequency"
-    },
-    "buttons": {
-      "next": "Next",
-      "back": "Back",
-      "cancel": "Cancel",
-      "save_continue": "Save & Continue",
-      "generate_prompts": "Generate Prompts",
-      "start_monitoring": "Start Monitoring"
-    },
-    "toast": {
-      "brand_created": "Brand created successfully!",
-      "prompts_created": "{count} prompts created",
-      "setup_complete": "Setup complete!",
-      "error_occurred": "An error occurred"
     }
   },
   "brands": {
@@ -347,7 +286,7 @@
       "confirm": "Delete"
     },
     "toast": {
-      "deleted": "\"{name}\" deleted",
+      "deleted": "\"{name}\" deleted successfully!",
       "delete_failed": "Delete failed"
     },
     "empty_state": {
@@ -443,12 +382,6 @@
       "title": "No brands yet",
       "description": "Add your first brand to start monitoring AI visibility.",
       "cta": "Add brand"
-    },
-    "confirm_delete": {
-      "title": "Delete brand?",
-      "description": "This will permanently delete the brand and all associated monitoring data. This action cannot be undone.",
-      "confirm": "Delete",
-      "cancel": "Cancel"
     }
   },
   "prompts": {
@@ -481,7 +414,12 @@
     },
     "library": {
       "title": "Add Prompts from Library",
-      "select_brand_first": "Select a brand to add prompts from the library."
+      "select_brand_first": "Select a brand to add prompts from the library.",
+      "select_all": "Select All",
+      "select_none": "Select None",
+      "seed_button": "Seed {count} Prompts",
+      "created": "Created {created}, {skipped} skipped",
+      "categories_selected": "{count} categories selected ({prompts} prompts)"
     },
     "toast": {
       "created": "Prompt created",
@@ -494,7 +432,8 @@
     },
     "empty_state": {
       "title": "No prompts yet",
-      "description": "Create your first prompt to start monitoring AI responses."
+      "description": "Create your first prompt to start monitoring AI responses.",
+      "cta": "New Prompt"
     },
     "journey_guide": {
       "title": "Define what to ask the AI engines about your brand",
@@ -514,45 +453,6 @@
         "responses_captured": "Each response captured: brand mentions, sentiment, citations",
         "avi_computed": "AVI score computed from these runs"
       }
-    },
-    "add_from_library": "Add from Library",
-    "new_prompt": "New Prompt",
-    "form": {
-      "brand_label": "Brand",
-      "brand_placeholder": "Select brand...",
-      "text_label": "Prompt Text",
-      "text_placeholder": "e.g. What are the best AI monitoring tools?",
-      "quick_templates": "Quick Templates",
-      "category_label": "Category",
-      "frequency_label": "Run Frequency",
-      "engines_label": "Engines to Monitor",
-      "language_label": "Language",
-      "create_button": "Create Prompt"
-    },
-    "card": {
-      "run": "Run",
-      "delete": "Delete",
-      "last_run": "Last run",
-      "never_run": "Never run",
-      "schedule": "schedule"
-    },
-    "library": {
-      "title": "Add Prompts from Library",
-      "select_all": "Select All",
-      "select_none": "Select None",
-      "seed_button": "Seed {count} Prompts",
-      "created": "Created {created}, {skipped} skipped",
-      "categories_selected": "{count} categories selected ({prompts} prompts)"
-    },
-    "toast": {
-      "created": "Prompt created",
-      "deleted": "Prompt deleted",
-      "error": "Failed to {action} prompt"
-    },
-    "empty_state": {
-      "title": "No prompts yet",
-      "description": "Create your first prompt to start monitoring AI responses.",
-      "cta": "New Prompt"
     }
   },
   "monitoring": {

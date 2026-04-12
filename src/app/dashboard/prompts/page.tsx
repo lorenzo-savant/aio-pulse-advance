@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Plus, X, Play, Loader2, MessageSquare, Clock, Library } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -55,12 +56,14 @@ function PromptCard({
   onRun,
   running,
   deleting,
+  t,
 }: {
   prompt: Prompt
   onDelete: (id: string) => void
   onRun: (promptId: string) => void
   running: boolean
   deleting: boolean
+  t: ReturnType<typeof useTranslations>
 }) {
   const categoryColor = CATEGORY_COLORS[prompt.category ?? 'custom'] ?? 'default'
 
@@ -88,7 +91,7 @@ function PromptCard({
             onClick={() => onRun(prompt.id)}
           >
             {!running && <Play className="h-3.5 w-3.5 text-emerald-500" />}
-            Run
+            {t('prompts.card.run')}
           </Button>
           <Button
             size="icon"
@@ -108,15 +111,20 @@ function PromptCard({
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3 w-3" />
-          {prompt.last_run_at ? `Last run ${formatRelativeTime(prompt.last_run_at)}` : 'Never run'}
+          {prompt.last_run_at
+            ? `${t('prompts.card.last_run')} ${formatRelativeTime(prompt.last_run_at)}`
+            : t('prompts.card.never_run')}
         </div>
-        <span className="capitalize">{prompt.run_frequency} schedule</span>
+        <span className="capitalize">
+          {t(`common.${prompt.run_frequency}`)} {t('prompts.card.schedule')}
+        </span>
       </div>
     </Card>
   )
 }
 
 function PromptsPageContent() {
+  const t = useTranslations()
   const searchParams = useSearchParams()
   const preselectedBrandId = searchParams.get('brand_id')
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -150,20 +158,20 @@ function PromptsPageContent() {
       const pJson = await promptsRes.json()
 
       if (!bJson.success) {
-        toast.error(`Failed to load brands: ${bJson.message}`)
+        toast.error(t('prompts.toast.load_failed'))
       }
       if (!pJson.success) {
-        toast.error(`Failed to load prompts: ${pJson.message}`)
+        toast.error(t('prompts.toast.load_failed'))
       }
 
       setBrands(bJson.data ?? [])
       setPrompts(pJson.data ?? [])
-    } catch (err) {
-      toast.error('Failed to load data')
+    } catch {
+      toast.error(t('prompts.toast.load_failed'))
     } finally {
       setLoading(false)
     }
-  }, [selectedBrandId])
+  }, [selectedBrandId, t])
 
   useEffect(() => {
     void loadData()
@@ -171,17 +179,17 @@ function PromptsPageContent() {
 
   useEffect(() => {
     if (!loading && brands.length === 0) {
-      toast.error('No brands found. Please create a brand first.')
+      toast.error(t('prompts.toast.no_brands_error'))
     }
-  }, [loading, brands])
+  }, [loading, brands, t])
 
   const handleCreate = async () => {
     if (!form.text.trim() || !selectedBrandId) {
-      toast.error('Select a brand and enter a prompt text')
+      toast.error(t('prompts.toast.select_brand_error'))
       return
     }
     if (form.engines.length === 0) {
-      toast.error('Select at least one AI engine')
+      toast.error(t('prompts.toast.select_engine_error'))
       return
     }
     setCreating(true)
@@ -193,9 +201,7 @@ function PromptsPageContent() {
       })
       const json = await res.json()
       if (!res.ok || !json.success) {
-        throw new Error(
-          json.message || json.details?.text?.[0] || `Failed to create prompt (${res.status})`,
-        )
+        throw new Error(json.message || json.details?.text?.[0] || t('errors.bad_request'))
       }
       setPrompts((prev) => [json.data!, ...prev])
       setShowForm(false)
@@ -206,9 +212,9 @@ function PromptsPageContent() {
         language: 'en',
         run_frequency: 'daily',
       })
-      toast.success('Prompt created')
+      toast.success(t('prompts.toast.created'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create prompt')
+      toast.error(err instanceof Error ? err.message : t('errors.server_error'))
     } finally {
       setCreating(false)
     }
@@ -216,9 +222,9 @@ function PromptsPageContent() {
 
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
-      title: 'Delete prompt?',
-      description: 'This action cannot be undone.',
-      confirmLabel: 'Delete',
+      title: t('confirm_dialog.delete_title', { item: 'prompt' }),
+      description: t('confirm_dialog.delete_description'),
+      confirmLabel: t('common.delete'),
       destructive: true,
     })
     if (!confirmed) return
@@ -227,12 +233,12 @@ function PromptsPageContent() {
       const res = await fetch(`/api/prompts?id=${id}`, { method: 'DELETE' })
       const json = await res.json()
       if (!res.ok || !json.success) {
-        throw new Error(json.message || `Failed to delete (${res.status})`)
+        throw new Error(json.message || t('errors.server_error'))
       }
       setPrompts((prev) => prev.filter((p) => p.id !== id))
-      toast.success('Prompt deleted')
+      toast.success(t('prompts.toast.deleted'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete prompt')
+      toast.error(err instanceof Error ? err.message : t('errors.server_error'))
     } finally {
       setDeletingId(null)
     }
@@ -247,21 +253,21 @@ function PromptsPageContent() {
         body: JSON.stringify({ prompt_id: promptId }),
       })
       const json = await res.json()
-      console.log('[handleRun] Response:', json)
 
       if (!res.ok || !json.success) {
-        throw new Error(json.message || `Monitoring failed (${res.status})`)
+        throw new Error(json.message || t('errors.server_error'))
       }
 
       if (json.data?.errors?.length > 0) {
-        console.error('[handleRun] Engine errors:', json.data.errors)
-        toast.error(`Monitoring failed: ${json.data.errors.join(', ')}`)
+        toast.error(`${t('errors.generic')}: ${json.data.errors.join(', ')}`)
       } else {
-        toast.success(`Monitoring complete: ${json.data?.results?.length ?? 0} results saved`)
+        toast.success(
+          t('prompts.toast.monitoring_complete', { count: json.data?.results?.length ?? 0 }),
+        )
       }
       void loadData()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Monitoring failed')
+      toast.error(err instanceof Error ? err.message : t('errors.server_error'))
     } finally {
       setRunningId(null)
     }
@@ -280,46 +286,46 @@ function PromptsPageContent() {
     <div className="animate-in space-y-8">
       <JourneyGuide
         step={1}
-        title="Define what to ask the AI engines about your brand"
-        lead="Prompts are the questions your real customers might type into ChatGPT, Gemini, Perplexity, or Claude. Each prompt runs across all 4 engines on your schedule."
+        title={t('prompts.journey_guide.title')}
+        lead={t('prompts.journey_guide.lead')}
         persistKey="prompts"
         steps={[
           {
-            label: 'Open the library',
-            description: 'Click "Add from Library" to seed from our 70 pre-written templates (translated to IT/SV/EN).',
+            label: t('prompts.journey_guide.steps.open_library'),
+            description: t('prompts.journey_guide.steps.open_library_desc'),
           },
           {
-            label: 'Or write your own',
-            description: '"New Prompt" lets you type a custom query — e.g. "best CRM for small business in {country}".',
+            label: t('prompts.journey_guide.steps.write_own'),
+            description: t('prompts.journey_guide.steps.write_own_desc'),
           },
           {
-            label: 'Pick engines',
-            description: 'Default: all 4 (ChatGPT, Gemini, Perplexity, Claude). Deselect if you want to save credits.',
+            label: t('prompts.journey_guide.steps.pick_engines'),
+            description: t('prompts.journey_guide.steps.pick_engines_desc'),
           },
           {
-            label: 'Set frequency',
-            description: 'Daily is recommended for active brands. Weekly is fine for slower markets.',
+            label: t('prompts.journey_guide.steps.set_frequency'),
+            description: t('prompts.journey_guide.steps.set_frequency_desc'),
           },
         ]}
         outcomes={[
-          'Prompts ready to run in monitoring',
-          'Each response captured: brand mentions, sentiment, citations',
-          'AVI score computed from these runs',
+          t('prompts.journey_guide.outcomes.prompts_ready'),
+          t('prompts.journey_guide.outcomes.responses_captured'),
+          t('prompts.journey_guide.outcomes.avi_computed'),
         ]}
       />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Prompts</h1>
-          <p className="mt-1 text-muted-foreground">
-            Configure the queries to monitor across AI engines.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
+            {t('prompts.page_title')}
+          </h1>
+          <p className="mt-1 text-muted-foreground">{t('prompts.page_subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowLibrary(true)}>
-            <Library className="h-5 w-5" /> Add from Library
+            <Library className="h-5 w-5" /> {t('prompts.add_from_library')}
           </Button>
           <Button onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-5 w-5" /> New Prompt
+            <Plus className="h-5 w-5" /> {t('prompts.new_prompt')}
           </Button>
         </div>
       </div>
@@ -327,7 +333,7 @@ function PromptsPageContent() {
       <Card className="border-border bg-secondary p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Brand:
+            {t('prompts.filter_by_brand')}:
           </span>
           <button
             className={cn(
@@ -338,7 +344,7 @@ function PromptsPageContent() {
             )}
             onClick={() => setSelectedBrandId('')}
           >
-            All
+            {t('prompts.all_brands')}
           </button>
           {brands.map((b) => (
             <button
@@ -359,18 +365,20 @@ function PromptsPageContent() {
 
       {showForm && (
         <Card className="border-brand-500/30 p-6">
-          <h2 className="mb-5 text-base font-bold text-foreground">Create New Prompt</h2>
+          <h2 className="mb-5 text-base font-bold text-foreground">
+            {t('prompts.form.create_title')}
+          </h2>
           <div className="space-y-4">
             <div>
               <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Brand *
+                {t('prompts.form.brand_label')} *
               </label>
               <select
                 className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
                 value={selectedBrandId}
                 onChange={(e) => setSelectedBrandId(e.target.value)}
               >
-                <option value="">Select brand...</option>
+                <option value="">{t('prompts.form.brand_placeholder')}</option>
                 {brands.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -381,7 +389,7 @@ function PromptsPageContent() {
 
             <div>
               <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Quick Templates
+                {t('prompts.form.quick_templates')}
               </label>
               <div className="mb-2 flex gap-2">
                 {(['en', 'it', 'sv'] as const).map((lang) => (
@@ -400,7 +408,7 @@ function PromptsPageContent() {
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
-                {PROMPT_TEMPLATES[templateLang].map((t, i) => (
+                {PROMPT_TEMPLATES[templateLang].map((template, i) => (
                   <button
                     key={i}
                     className="rounded-lg border border-input bg-input px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-brand"
@@ -409,14 +417,14 @@ function PromptsPageContent() {
                         brands.find((b) => b.id === selectedBrandId)?.name ?? 'YourBrand'
                       setForm((f) => ({
                         ...f,
-                        text: t.text
+                        text: template.text
                           .replace('[brand]', brandName)
                           .replace('[competitor]', 'competitor'),
-                        category: t.category as Prompt['category'],
+                        category: template.category as Prompt['category'],
                       }))
                     }}
                   >
-                    {t.text}
+                    {template.text}
                   </button>
                 ))}
               </div>
@@ -424,11 +432,11 @@ function PromptsPageContent() {
 
             <div>
               <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Prompt Text *
+                {t('prompts.form.text_label')} *
               </label>
               <textarea
                 className="placeholder-text-muted-surface w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
-                placeholder="e.g. What are the best AI monitoring tools?"
+                placeholder={t('prompts.form.text_placeholder')}
                 rows={3}
                 value={form.text}
                 onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
@@ -438,7 +446,7 @@ function PromptsPageContent() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Category
+                  {t('prompts.form.category_label')}
                 </label>
                 <select
                   className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
@@ -457,7 +465,7 @@ function PromptsPageContent() {
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Run Frequency
+                  {t('prompts.form.frequency_label')}
                 </label>
                 <select
                   className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
@@ -471,7 +479,7 @@ function PromptsPageContent() {
                 >
                   {['hourly', 'daily', 'weekly'].map((f) => (
                     <option key={f} value={f}>
-                      {f}
+                      {t(`common.${f}`)}
                     </option>
                   ))}
                 </select>
@@ -480,7 +488,7 @@ function PromptsPageContent() {
 
             <div>
               <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Engines to Monitor
+                {t('prompts.form.engines_label')}
               </label>
               <div className="flex gap-2">
                 {(['chatgpt', 'gemini', 'perplexity'] as MonitoringEngine[]).map((engine) => (
@@ -502,7 +510,7 @@ function PromptsPageContent() {
 
             <div>
               <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Language
+                {t('prompts.form.language_label')}
               </label>
               <div className="flex gap-2">
                 {[
@@ -528,10 +536,10 @@ function PromptsPageContent() {
 
             <div className="flex justify-end gap-3 border-t border-border pt-4">
               <Button variant="ghost" onClick={() => setShowForm(false)}>
-                Cancel
+                {t('prompts.form.cancel')}
               </Button>
               <Button loading={creating} onClick={handleCreate}>
-                <Plus className="h-4 w-4" /> Create Prompt
+                <Plus className="h-4 w-4" /> {t('prompts.form.create_button')}
               </Button>
             </div>
           </div>
@@ -545,10 +553,10 @@ function PromptsPageContent() {
       ) : prompts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <MessageSquare className="mb-4 h-16 w-16 text-muted-foreground" />
-          <h2 className="mb-2 text-xl font-bold text-foreground">No prompts yet</h2>
-          <p className="text-muted-foreground">
-            Create your first prompt to start monitoring AI responses.
-          </p>
+          <h2 className="mb-2 text-xl font-bold text-foreground">
+            {t('prompts.empty_state.title')}
+          </h2>
+          <p className="text-muted-foreground">{t('prompts.empty_state.description')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -560,6 +568,7 @@ function PromptsPageContent() {
               deleting={deletingId === prompt.id}
               onDelete={handleDelete}
               onRun={handleRun}
+              t={t}
             />
           ))}
         </div>
@@ -568,7 +577,7 @@ function PromptsPageContent() {
 
       <Modal open={showLibrary} onOpenChange={setShowLibrary}>
         <ModalHeader>
-          <ModalTitle>Add Prompts from Library</ModalTitle>
+          <ModalTitle>{t('prompts.library.title')}</ModalTitle>
         </ModalHeader>
         <ModalBody>
           {selectedBrandId ? (
@@ -592,7 +601,7 @@ function PromptsPageContent() {
             />
           ) : (
             <p className="py-8 text-center text-muted-foreground">
-              Select a brand to add prompts from the library.
+              {t('prompts.library.select_brand_first')}
             </p>
           )}
         </ModalBody>

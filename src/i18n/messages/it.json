@@ -192,144 +192,186 @@
   "onboarding": {
     "page_title": "Benvenuto in AIO Pulse",
     "page_subtitle": "Configura il tuo primo brand in pochi passaggi",
-    "step_brand": "Info Brand",
-    "step_prompts": "Prompt",
-    "step_configure": "Configura",
-    "step_review": "Rivedi",
-    "form": {
+    "steps": {
+      "welcome": "Benvenuto",
+      "brand": "Brand",
+      "prompts": "Prompt",
+      "launch": "Avvio"
+    },
+    "welcome_screen": {
+      "title": "Benvenuto in AIO Pulse",
+      "subtitle": "Configuriamo il tuo primo brand per il monitoraggio della visibilità AI. Ci vorranno circa 2 minuti.",
+      "add_brand": "Aggiungi il tuo brand",
+      "add_brand_desc": "Nome, dominio, concorrenti",
+      "set_up_prompts": "Configura i prompt",
+      "set_up_prompts_desc": "Quali domande monitorare",
+      "start_monitoring": "Inizia il monitoraggio",
+      "start_monitoring_desc": "Traccia sui motori AI",
+      "get_started": "Inizia"
+    },
+    "brand_form": {
+      "title": "Configura il tuo brand",
+      "subtitle": "Raccontaci il brand che vuoi monitorare.",
       "name_label": "Nome Brand",
-      "name_placeholder": "es. AIO Pulse",
-      "description_label": "Descrizione",
-      "description_placeholder": "Breve descrizione del brand...",
-      "domain_label": "Dominio Principale",
-      "domain_placeholder": "iltuodominio.com",
+      "name_required": "Obbligatorio",
+      "name_placeholder": "es. StudioLegale Milano",
+      "domain_label": "Dominio Sito Web",
+      "domain_placeholder": "es. studiodomus.it",
       "industry_label": "Settore",
       "industry_placeholder": "Seleziona settore...",
-      "aliases_label": "Alias",
-      "aliases_placeholder": "Nomi alternativi...",
-      "competitors_label": "Concorrenti",
-      "competitors_placeholder": "Nomi dei concorrenti...",
-      "color_label": "Colore Brand",
       "language_label": "Lingua Mercato Principale",
       "language_required": "Obbligatorio",
-      "language_helper": "I prompt e le simulazioni AI verranno eseguiti in questa lingua per riflettere come i tuoi clienti cercano davvero."
+      "language_placeholder": "Seleziona lingua...",
+      "language_helper": "I prompt e le simulazioni AI verranno eseguiti in questa lingua per riflettere come i tuoi clienti cercano.",
+      "description_label": "Descrizione",
+      "description_placeholder": "Breve descrizione di cosa fa il tuo brand...",
+      "aliases_label": "Alias / Varianti",
+      "aliases_placeholder": "es. SLM, Studio Domus",
+      "aliases_helper": "Separati da virgola",
+      "competitors_label": "Concorrenti",
+      "competitors_placeholder": "es. Studio Rosa, Avvocati Online",
+      "competitors_helper": "Separati da virgola",
+      "color_label": "Colore Brand"
     },
-    "prompt_section": {
+    "prompts_form": {
       "title": "Prompt di Monitoraggio",
       "subtitle": "Queste sono le domande che porremo ai motori AI sul tuo brand. Ne abbiamo generati alcuni automaticamente in base al tuo brand — modifica o aggiungi altri.",
-      "add_prompt": "Aggiungi Prompt",
-      "edit_prompt": "Modifica Prompt",
-      "prompt_text": "Testo Prompt",
-      "prompt_category": "Categoria",
-      "prompt_engines": "Motori",
-      "no_prompts": "Nessun prompt ancora",
-      "auto_generated": "Auto-generato"
+      "add_custom_placeholder": "Aggiungi un prompt personalizzato...",
+      "add_button": "Aggiungi"
     },
-    "configure_section": {
-      "title": "Configura Monitoraggio",
-      "engines_title": "Motori AI",
-      "engines_subtitle": "Seleziona quali motori AI monitorare",
-      "frequency_title": "Frequenza Scansione",
-      "frequency_subtitle": "Quanto spesso dovremmo controllare?",
-      "alert_title": "Email Alert",
-      "alert_placeholder": "tua@email.com",
-      "alert_helper": "Ricevi una notifica quando la visibilità del tuo brand cambia significativamente."
+    "launch_screen": {
+      "title": "Pronto al lancio!",
+      "subtitle": "Creeremo il tuo brand e {count} prompt di monitoraggio. Puoi sempre aggiungerne altri in seguito.",
+      "no_domain": "Senza dominio",
+      "no_industry": "Senza settore",
+      "monitoring_prompts": "prompt di monitoraggio",
+      "ai_engines": "4 motori AI (ChatGPT, Gemini, Perplexity, Claude)",
+      "go_back_edit": "Torna indietro e modifica"
     },
-    "review_section": {
-      "title": "Rivedi e Avvia",
-      "subtitle": "Pronto a iniziare il monitoraggio?",
-      "brand_card": "Brand",
-      "stats_prompts": "Prompt",
-      "stats_engines": "Motori",
-      "stats_frequency": "Frequenza"
+    "launch_stages": {
+      "creating_brand": "Creazione brand...",
+      "creating_prompts": "Creazione {count} prompt...",
+      "launching_monitoring": "Avvio primo monitoraggio...",
+      "done_redirecting": "Fatto! Reindirizzamento...",
+      "launch_button": "Avvia Monitoraggio"
     },
-    "buttons": {
-      "next": "Avanti",
-      "back": "Indietro",
-      "cancel": "Annulla",
-      "save_continue": "Salva e Continua",
-      "generate_prompts": "Genera Prompt",
-      "start_monitoring": "Avvia Monitoraggio"
+    "launch_progress": {
+      "step1_brand": "Passo 1 di 3 · Brand",
+      "step2_prompts": "Passo 2 di 3 · Prompt",
+      "step3_check": "Passo 3 di 3 · Primo check AI (può richiedere 20-40s)",
+      "all_set": "Tutto pronto!"
     },
     "toast": {
-      "brand_created": "Brand creato con successo!",
-      "prompts_created": "{count} prompt creati",
-      "setup_complete": "Configurazione completata!",
-      "error_occurred": "Si è verificato un errore"
+      "monitoring_setup_complete": "Configurazione completata, ma il primo monitoraggio è fallito: {error}. Puoi riprovare dalla pagina brand.",
+      "launch_success": "Brand, {count} prompt e primo monitoraggio avviati!",
+      "setup_failed": "Configurazione fallita"
+    },
+    "buttons": {
+      "back": "Indietro",
+      "continue": "Continua"
     }
   },
   "brands": {
-    "page_title": "Brand",
-    "page_subtitle": "Gestisci i tuoi brand monitorati",
-    "add_brand": "Aggiungi Brand",
+    "page_title": "I Tuoi Brand",
+    "page_subtitle": "Gestisci i brand monitorati nei motori di ricerca AI.",
     "new_brand": "Nuovo Brand",
-    "edit_brand": "Modifica Brand",
-    "delete_brand": "Elimina Brand",
-    "form": {
-      "name_label": "Nome Brand",
-      "name_placeholder": "Inserisci nome brand...",
-      "domain_label": "Dominio",
-      "domain_placeholder": "esempio.com",
-      "description_label": "Descrizione",
-      "description_placeholder": "Breve descrizione...",
-      "industry_label": "Settore",
-      "industry_placeholder": "Seleziona settore...",
-      "language_label": "Lingua Mercato Principale",
-      "language_helper": "I prompt e le simulazioni AI verranno eseguiti in questa lingua.",
-      "color_label": "Colore Brand",
-      "save_button": "Salva Brand",
-      "update_button": "Aggiorna Brand"
+    "refresh": "Aggiorna",
+    "status": {
+      "active": "Attivo",
+      "paused": "In pausa"
     },
-    "card": {
-      "view_details": "Vedi Dettagli",
-      "run_monitoring": "Esegui Monitoraggio",
-      "edit": "Modifica",
-      "delete": "Elimina"
-    },
-    "language_nudge": {
-      "title": "Imposta mercato principale",
-      "description": "Imposta il mercato principale per questo brand per ottenere risultati di monitoraggio AI più accurati.",
-      "cta": "Imposta Lingua"
-    },
-    "white_label": {
-      "title": "Impostazioni Report White-label",
-      "subtitle": "Personalizza come il tuo brand appare nei report PDF. Lascia vuoto per usare il branding predefinito di AIO Pulse.",
-      "report_brand_name": "Nome Brand per Report",
-      "report_brand_name_placeholder": "Nome della Tua Azienda",
-      "primary_color": "Colore Principale (Hex)",
-      "logo_url": "URL Logo",
-      "logo_url_placeholder": "https://tua-azienda.com/logo.png",
-      "configure": "Configura",
-      "save": "Salva"
-    },
-    "team": {
-      "title": "Membri del Team",
-      "subtitle": "Invita membri del team a collaborare su questo brand.",
-      "invite_email": "collega@azienda.com",
-      "role_viewer": "Visualizzatore",
-      "role_editor": "Editor",
-      "invite": "Invita",
-      "inviting": "Invio...",
-      "pending_invitations": "Inviti in Attesa",
-      "no_members": "Nessun membro del team ancora.",
-      "expires": "Scade"
+    "confirm_delete": {
+      "title": "Eliminare \"{name}\"?",
+      "description": "Tutti i dati di monitoraggio verranno rimossi. Questa azione non può essere annullata.",
+      "confirm": "Elimina"
     },
     "toast": {
+      "deleted": "Brand eliminato con successo!",
       "created": "Brand creato con successo!",
       "updated": "Brand aggiornato con successo!",
-      "deleted": "Brand eliminato con successo!",
       "error": "Impossibile {action} brand"
     },
     "empty_state": {
-      "title": "Nessun brand ancora",
-      "description": "Aggiungi il tuo primo brand per iniziare a monitorare la visibilità AI.",
+      "title": "Nessun brand trovato",
+      "description": "Crea il tuo primo brand per iniziare a monitorare la visibilità.",
       "cta": "Aggiungi brand"
     },
-    "confirm_delete": {
-      "title": "Eliminare il brand?",
-      "description": "Questo eliminerà permanentemente il brand e tutti i dati di monitoraggio associati. Questa azione non può essere annullata.",
-      "confirm": "Elimina",
-      "cancel": "Annulla"
+    "error_state": {
+      "title": "Si è verificato un errore",
+      "retry": "Riprova",
+      "connection_error": "Impossibile connettersi al server. Il server di sviluppo è attivo?"
+    },
+    "journey_guide": {
+      "title": "Aggiungi il brand che vuoi tracciare",
+      "lead": "Un brand è chi stai monitorando. AIO Pulse porrà domande ai motori AI su di esso per misurare la tua visibilità.",
+      "steps": {
+        "click_new_brand": "Clicca \"Nuovo Brand\"",
+        "click_new_brand_desc": "Pulsante in alto a destra in questa pagina.",
+        "fill_details": "Compila nome, dominio, settore",
+        "fill_details_desc": "Questi aiutano i motori AI a capire il contesto del tuo brand.",
+        "pick_language": "Scegli la Lingua del Mercato Principale",
+        "pick_language_desc": "IT, SV o EN — tutti i prompt e le risposte useranno questa lingua.",
+        "add_competitors": "Aggiungi 1-3 concorrenti",
+        "add_competitors_desc": "Facoltativo ma fortemente consigliato — usati nei prompt di confronto."
+      },
+      "outcomes": {
+        "brand_card": "Una scheda brand in questa pagina",
+        "prompts_library": "Libreria prompt auto-generata (passo 2)",
+        "dashboards_unlock": "Le dashboard si sbloccano dopo aver eseguito il monitoraggio"
+      },
+      "cta": "Vai alla configurazione guidata"
+    },
+    "add_brand": "Aggiungi Brand",
+    "edit_brand": "Modifica Brand",
+    "delete_brand": "Elimina Brand",
+    "form": {
+      "name_label": "Brand Name",
+      "name_placeholder": "Enter brand name...",
+      "domain_label": "Domain",
+      "domain_placeholder": "example.com",
+      "description_label": "Description",
+      "description_placeholder": "Brief description...",
+      "industry_label": "Industry",
+      "industry_placeholder": "Select industry...",
+      "language_label": "Primary Market Language",
+      "language_helper": "Prompts and AI simulations will run in this language.",
+      "color_label": "Brand Color",
+      "save_button": "Save Brand",
+      "update_button": "Update Brand"
+    },
+    "card": {
+      "view_details": "View Details",
+      "run_monitoring": "Run Monitoring",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "language_nudge": {
+      "title": "Set primary market",
+      "description": "Set the primary market for this brand to get more accurate AI monitoring results.",
+      "cta": "Set Language"
+    },
+    "white_label": {
+      "title": "White-label Report Settings",
+      "subtitle": "Customize how your brand appears in PDF reports. Leave empty to use default AIO Pulse branding.",
+      "report_brand_name": "Report Brand Name",
+      "report_brand_name_placeholder": "Your Company Name",
+      "primary_color": "Primary Color (Hex)",
+      "logo_url": "Logo URL",
+      "logo_url_placeholder": "https://your-company.com/logo.png",
+      "configure": "Configure",
+      "save": "Save"
+    },
+    "team": {
+      "title": "Team Members",
+      "subtitle": "Invite team members to collaborate on this brand.",
+      "invite_email": "colleague@company.com",
+      "role_viewer": "Viewer",
+      "role_editor": "Editor",
+      "invite": "Invite",
+      "inviting": "Sending...",
+      "pending_invitations": "Pending Invitations",
+      "no_members": "No team members yet.",
+      "expires": "Expires"
     }
   },
   "prompts": {
@@ -337,7 +379,10 @@
     "page_subtitle": "Configura le query da monitorare sui motori AI.",
     "add_from_library": "Aggiungi dalla Libreria",
     "new_prompt": "Nuovo Prompt",
+    "filter_by_brand": "Brand",
+    "all_brands": "Tutti",
     "form": {
+      "create_title": "Crea Nuovo Prompt",
       "brand_label": "Brand",
       "brand_placeholder": "Seleziona brand...",
       "text_label": "Testo Prompt",
@@ -347,7 +392,8 @@
       "frequency_label": "Frequenza Esecuzione",
       "engines_label": "Motori da Monitorare",
       "language_label": "Lingua",
-      "create_button": "Crea Prompt"
+      "create_button": "Crea Prompt",
+      "cancel": "Annulla"
     },
     "card": {
       "run": "Esegui",
@@ -358,21 +404,45 @@
     },
     "library": {
       "title": "Aggiungi Prompt dalla Libreria",
-      "select_all": "Seleziona Tutti",
-      "select_none": "Deseleziona Tutti",
-      "seed_button": "Crea {count} Prompt",
+      "select_brand_first": "Seleziona un brand per aggiungere prompt dalla libreria.",
+      "select_all": "Seleziona Tutto",
+      "select_none": "Deseleziona Tutto",
+      "seed_button": "Seeda {count} Prompt",
       "created": "Creati {created}, {skipped} saltati",
       "categories_selected": "{count} categorie selezionate ({prompts} prompt)"
     },
     "toast": {
       "created": "Prompt creato",
       "deleted": "Prompt eliminato",
-      "error": "Impossibile {action} prompt"
+      "no_brands_error": "Nessun brand trovato. Crea prima un brand.",
+      "select_brand_error": "Seleziona un brand e inserisci il testo del prompt",
+      "select_engine_error": "Seleziona almeno un motore AI",
+      "load_failed": "Impossibile caricare i dati",
+      "monitoring_complete": "Monitoraggio completato: {count} risultati salvati"
     },
     "empty_state": {
       "title": "Nessun prompt ancora",
       "description": "Crea il tuo primo prompt per iniziare a monitorare le risposte AI.",
       "cta": "Nuovo Prompt"
+    },
+    "journey_guide": {
+      "title": "Definisci cosa chiedere ai motori AI sul tuo brand",
+      "lead": "I prompt sono le domande che i tuoi clienti reali potrebbero digitare in ChatGPT, Gemini, Perplexity o Claude. Ogni prompt viene eseguito su tutti i 4 motori secondo la tua programmazione.",
+      "steps": {
+        "open_library": "Apri la libreria",
+        "open_library_desc": "Clicca \"Aggiungi dalla Libreria\" per seminare dai nostri 70 template pre-scritti (tradotti in IT/SV/EN).",
+        "write_own": "O scrivi i tuoi",
+        "write_own_desc": "\"Nuovo Prompt\" ti permette di digitare una query personalizzata — es. \"miglior CRM per piccole aziende in {country}\".",
+        "pick_engines": "Scegli i motori",
+        "pick_engines_desc": "Default: tutti e 4 (ChatGPT, Gemini, Perplexity, Claude). Deseleziona se vuoi risparmiare crediti.",
+        "set_frequency": "Imposta la frequenza",
+        "set_frequency_desc": "Giornaliero è consigliato per brand attivi. Settimanale va bene per mercati più lenti."
+      },
+      "outcomes": {
+        "prompts_ready": "Prompt pronti per essere eseguiti nel monitoraggio",
+        "responses_captured": "Ogni risposta catturata: menzioni brand, sentiment, citazioni",
+        "avi_computed": "Punteggio AVI calcolato da queste esecuzioni"
+      }
     }
   },
   "monitoring": {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import {
   Plus,
   Building2,
@@ -32,9 +33,11 @@ const LANGUAGE_FLAGS: Record<BrandLanguage, string> = {
 function BrandCard({
   brand,
   onDelete,
+  t,
 }: {
   brand: Brand
   onDelete: (id: string) => void
+  t: ReturnType<typeof useTranslations>
 }): ReactNode {
   return (
     <Card className="hover:border-muted-foreground/30 group border-input p-6 transition-all">
@@ -107,18 +110,18 @@ function BrandCard({
           {brand.is_active ? (
             <>
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-xs text-emerald-400">Active</span>
+              <span className="text-xs text-emerald-400">{t('brands.status.active')}</span>
             </>
           ) : (
             <>
               <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Paused</span>
+              <span className="text-xs text-muted-foreground">{t('brands.status.paused')}</span>
             </>
           )}
         </div>
         <Link href={`/dashboard/prompts?brand_id=${brand.id}`}>
           <Button size="sm" variant="outline">
-            Prompt
+            {t('sidebar.items.prompts')}
           </Button>
         </Link>
       </div>
@@ -127,6 +130,7 @@ function BrandCard({
 }
 
 export default function BrandsPage() {
+  const t = useTranslations()
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -134,9 +138,9 @@ export default function BrandsPage() {
 
   const handleDelete = async (id: string, name: string) => {
     const confirmed = await confirm({
-      title: `Delete "${name}"?`,
-      description: 'All monitoring data will also be removed. This action cannot be undone.',
-      confirmLabel: 'Delete',
+      title: t('brands.confirm_delete.title', { name }),
+      description: t('brands.confirm_delete.description'),
+      confirmLabel: t('brands.confirm_delete.confirm'),
       destructive: true,
     })
     if (!confirmed) return
@@ -146,9 +150,9 @@ export default function BrandsPage() {
       const json = await res.json()
       if (!json.success) throw new Error(json.message)
       setBrands((b) => b.filter((x) => x.id !== id))
-      toast.success(`"${name}" deleted`)
+      toast.success(t('brands.toast.deleted', { name }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Delete failed')
+      toast.error(err instanceof Error ? err.message : t('brands.toast.delete_failed'))
     }
   }
 
@@ -173,34 +177,34 @@ export default function BrandsPage() {
         if (!res.ok) {
           setError(`Server error (${res.status}): ${text.substring(0, 200)}`)
         } else {
-          setError('Invalid response from server')
+          setError(t('errors.server_error'))
         }
         return
       }
 
       if (!res.ok) {
-        setError(json.message || `Server error (${res.status})`)
+        setError(json.message || t('errors.server_error'))
         return
       }
 
       if (!json.success) {
-        setError(json.message || `Server error`)
+        setError(json.message || t('errors.server_error'))
         return
       }
 
       setBrands(json.data ?? [])
     } catch (err) {
       console.error('[BrandsPage] Load error:', err)
-      const msg = err instanceof Error ? err.message : 'Failed to load brands'
+      const msg = err instanceof Error ? err.message : t('errors.network_error')
       if (msg.includes('fetch failed') || msg.includes('Failed to fetch')) {
-        setError('Unable to connect to server. Is the dev server running?')
+        setError(t('brands.error_state.connection_error'))
       } else {
         setError(msg)
       }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void loadBrands()
@@ -210,37 +214,40 @@ export default function BrandsPage() {
     <div className="animate-in space-y-8">
       <JourneyGuide
         step={1}
-        title="Add the brand you want to track"
-        lead="A brand is who you're monitoring. AIO Pulse will ask AI engines questions about it to measure your visibility."
+        title={t('brands.journey_guide.title')}
+        lead={t('brands.journey_guide.lead')}
         persistKey="brands"
         steps={[
-          { label: 'Click "New Brand"', description: 'Top-right button on this page.' },
           {
-            label: 'Fill name, domain, industry',
-            description: 'These help the AI engines understand the context of your brand.',
+            label: t('brands.journey_guide.steps.click_new_brand'),
+            description: t('brands.journey_guide.steps.click_new_brand_desc'),
           },
           {
-            label: 'Pick your Primary Market Language',
-            description: 'IT, SV, or EN — all prompts and responses will use this language.',
+            label: t('brands.journey_guide.steps.fill_details'),
+            description: t('brands.journey_guide.steps.fill_details_desc'),
           },
           {
-            label: 'Add 1-3 competitors',
-            description: 'Optional but strongly recommended — used in comparison prompts.',
+            label: t('brands.journey_guide.steps.pick_language'),
+            description: t('brands.journey_guide.steps.pick_language_desc'),
+          },
+          {
+            label: t('brands.journey_guide.steps.add_competitors'),
+            description: t('brands.journey_guide.steps.add_competitors_desc'),
           },
         ]}
         outcomes={[
-          'A brand card on this page',
-          'Auto-generated prompts library (step 2)',
-          'Dashboards unlock once you run monitoring',
+          t('brands.journey_guide.outcomes.brand_card'),
+          t('brands.journey_guide.outcomes.prompts_library'),
+          t('brands.journey_guide.outcomes.dashboards_unlock'),
         ]}
-        cta={{ label: 'Go to the guided setup instead', href: '/dashboard/onboarding' }}
+        cta={{ label: t('brands.journey_guide.cta'), href: '/dashboard/onboarding' }}
       />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Your Brands</h1>
-          <p className="mt-1 text-muted-foreground">
-            Manage brands monitored in AI search engines.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
+            {t('brands.page_title')}
+          </h1>
+          <p className="mt-1 text-muted-foreground">{t('brands.page_subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="lg" onClick={loadBrands} disabled={loading}>
@@ -248,7 +255,7 @@ export default function BrandsPage() {
           </Button>
           <Link href="/dashboard/brands/new" className="flex-1 sm:flex-none">
             <Button size="lg" className="w-full">
-              <Plus className="h-5 w-5" /> New Brand
+              <Plus className="h-5 w-5" /> {t('brands.new_brand')}
             </Button>
           </Link>
         </div>
@@ -264,11 +271,11 @@ export default function BrandsPage() {
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-8 text-center text-red-400">
           <AlertCircle className="h-10 w-10" />
           <div>
-            <p className="font-bold">An error occurred</p>
+            <p className="font-bold">{t('brands.error_state.title')}</p>
             <p className="text-sm opacity-80">{error}</p>
           </div>
           <Button variant="outline" size="sm" onClick={loadBrands}>
-            Try again
+            {t('brands.error_state.retry')}
           </Button>
         </div>
       )}
@@ -276,19 +283,21 @@ export default function BrandsPage() {
       {!loading && !error && brands.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Building2 className="mb-6 h-16 w-16 text-muted-foreground" />
-          <h2 className="mb-2 text-xl font-bold text-foreground">No brands found</h2>
+          <h2 className="mb-2 text-xl font-bold text-foreground">
+            {t('brands.empty_state.title')}
+          </h2>
           <p className="mb-8 max-w-sm text-muted-foreground">
-            Create your first brand to start monitoring visibility.
+            {t('brands.empty_state.description')}
           </p>
           <div className="flex gap-3">
             <Link href="/dashboard/onboarding">
               <Button size="lg" variant="outline">
-                Guided Setup
+                {t('brands.empty_state.guided_setup')}
               </Button>
             </Link>
             <Link href="/dashboard/brands/new">
               <Button size="lg">
-                <Plus className="h-5 w-5" /> New Brand
+                <Plus className="h-5 w-5" /> {t('brands.new_brand')}
               </Button>
             </Link>
           </div>
@@ -302,6 +311,7 @@ export default function BrandsPage() {
               key={brand.id}
               brand={brand}
               onDelete={(id) => handleDelete(id, brand.name)}
+              t={t}
             />
           ))}
         </div>

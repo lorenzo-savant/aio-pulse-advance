@@ -192,144 +192,186 @@
   "onboarding": {
     "page_title": "Välkommen till AIO Pulse",
     "page_subtitle": "Konfigurera ditt första varumärke på bara några steg",
-    "step_brand": "Varumärkesinfo",
-    "step_prompts": "Prompts",
-    "step_configure": "Konfigurera",
-    "step_review": "Granska",
-    "form": {
+    "steps": {
+      "welcome": "Välkommen",
+      "brand": "Varumärke",
+      "prompts": "Prompts",
+      "launch": "Starta"
+    },
+    "welcome_screen": {
+      "title": "Välkommen till AIO Pulse",
+      "subtitle": "Låt oss konfigurera ditt första varumärke för AI-synlighetsövervakning. Det tar cirka 2 minuter.",
+      "add_brand": "Lägg till ditt varumärke",
+      "add_brand_desc": "Namn, domän, konkurrenter",
+      "set_up_prompts": "Konfigurera prompts",
+      "set_up_prompts_desc": "Vilka frågor att övervaka",
+      "start_monitoring": "Starta övervakning",
+      "start_monitoring_desc": "Spåra över AI-motorer",
+      "get_started": "Kom igång"
+    },
+    "brand_form": {
+      "title": "Konfigurera ditt varumärke",
+      "subtitle": "Berätta om varumärket du vill övervaka.",
       "name_label": "Varumärkesnamn",
-      "name_placeholder": "t.ex. AIO Pulse",
-      "description_label": "Beskrivning",
-      "description_placeholder": "Kort beskrivning av ditt varumärke...",
-      "domain_label": "Huvuddomän",
-      "domain_placeholder": "dindoman.se",
-      "industry_label": "Bransch",
-      "industry_placeholder": "Välj bransch...",
-      "aliases_label": "Alias",
-      "aliases_placeholder": "Alternativa namn...",
-      "competitors_label": "Konkurrenter",
-      "competitors_placeholder": "Konkurrentnamn...",
-      "color_label": "Varumärkesfärg",
-      "language_label": "Primärt marknadsspråk",
-      "language_required": "Obligatoriskt",
-      "language_helper": "Prompts och AI-simuleringar körs på detta språk för att spegla hur dina kunder faktiskt söker."
-    },
-    "prompt_section": {
-      "title": "Övervakningsprompts",
-      "subtitle": "Detta är frågorna vi kommer att ställa till AI-motorer om ditt varumärke. Vi har auto-genererat några baserat på ditt varumärke — redigera eller lägg till fler.",
-      "add_prompt": "Lägg till Prompt",
-      "edit_prompt": "Redigera Prompt",
-      "prompt_text": "Prompt-text",
-      "prompt_category": "Kategori",
-      "prompt_engines": "Motorer",
-      "no_prompts": "Inga prompts ännu",
-      "auto_generated": "Auto-genererad"
-    },
-    "configure_section": {
-      "title": "Konfigurera Övervakning",
-      "engines_title": "AI-motorer",
-      "engines_subtitle": "Välj vilka AI-motorer att övervaka",
-      "frequency_title": "Skanningsfrekvens",
-      "frequency_subtitle": "Hur ofta ska vi kontrollera?",
-      "alert_title": "Aviserings-e-post",
-      "alert_placeholder": "din@email.se",
-      "alert_helper": "Få ett meddelande när ditt varumärkes synlighet förändras markant."
-    },
-    "review_section": {
-      "title": "Granska & Starta",
-      "subtitle": "Redo att börja övervaka?",
-      "brand_card": "Varumärke",
-      "stats_prompts": "Prompts",
-      "stats_engines": "Motorer",
-      "stats_frequency": "Frekvens"
-    },
-    "buttons": {
-      "next": "Nästa",
-      "back": "Tillbaka",
-      "cancel": "Avbryt",
-      "save_continue": "Spara & Fortsätt",
-      "generate_prompts": "Generera Prompts",
-      "start_monitoring": "Starta Övervakning"
-    },
-    "toast": {
-      "brand_created": "Varumärke skapat!",
-      "prompts_created": "{count} prompts skapade",
-      "setup_complete": "Konfiguration klar!",
-      "error_occurred": "Ett fel uppstod"
-    }
-  },
-  "brands": {
-    "page_title": "Varumärken",
-    "page_subtitle": "Hantera dina övervakade varumärken",
-    "add_brand": "Lägg till Varumärke",
-    "new_brand": "Nytt Varumärke",
-    "edit_brand": "Redigera Varumärke",
-    "delete_brand": "Ta bort Varumärke",
-    "form": {
-      "name_label": "Varumärkesnamn",
-      "name_placeholder": "Ange varumärkesnamn...",
-      "domain_label": "Domän",
-      "domain_placeholder": "exempel.se",
-      "description_label": "Beskrivning",
-      "description_placeholder": "Kort beskrivning...",
+      "name_required": "Obligatoriskt",
+      "name_placeholder": "t.ex. Ekonomirådgivarna",
+      "domain_label": "Webbplatsdomän",
+      "domain_placeholder": "t.ex. ekonomiradgivarna.se",
       "industry_label": "Bransch",
       "industry_placeholder": "Välj bransch...",
       "language_label": "Primärt Marknadsspråk",
-      "language_helper": "Prompts och AI-simuleringar körs på detta språk.",
-      "color_label": "Varumärkesfärg",
-      "save_button": "Spara Varumärke",
-      "update_button": "Uppdatera Varumärke"
+      "language_required": "Obligatoriskt",
+      "language_placeholder": "Välj språk...",
+      "language_helper": "Prompts och AI-simuleringar körs på detta språk för att spegla hur dina kunder söker.",
+      "description_label": "Beskrivning",
+      "description_placeholder": "Kort beskrivning av vad ditt varumärke gör...",
+      "aliases_label": "Alias / Varianter",
+      "aliases_placeholder": "t.ex. ERG, Ekonomi AB",
+      "aliases_helper": "Kommaseparerat",
+      "competitors_label": "Konkurrenter",
+      "competitors_placeholder": "t.ex. Fortnox, Visma",
+      "competitors_helper": "Kommaseparerat",
+      "color_label": "Varumärkesfärg"
     },
-    "card": {
-      "view_details": "Visa Detaljer",
-      "run_monitoring": "Kör Övervakning",
-      "edit": "Redigera",
-      "delete": "Ta bort"
+    "prompts_form": {
+      "title": "Övervakningsprompts",
+      "subtitle": "Detta är frågorna vi kommer att ställa till AI-motorer om ditt varumärke. Vi har auto-genererat några baserat på ditt varumärke — redigera eller lägg till fler.",
+      "add_custom_placeholder": "Lägg till en anpassad prompt...",
+      "add_button": "Lägg till"
     },
-    "language_nudge": {
-      "title": "Ange primär marknad",
-      "description": "Ange den primära marknaden för detta varumärke för mer exakta AI-övervakningsresultat.",
-      "cta": "Ange Språk"
+    "launch_screen": {
+      "title": "Redo att starta!",
+      "subtitle": "Vi skapar ditt varumärke och {count} övervakningsprompts. Du kan alltid lägga till fler senare.",
+      "no_domain": "Ingen domän",
+      "no_industry": "Ingen bransch",
+      "monitoring_prompts": "övervakningsprompts",
+      "ai_engines": "4 AI-motorer (ChatGPT, Gemini, Perplexity, Claude)",
+      "go_back_edit": "Gå tillbaka och redigera"
     },
-    "white_label": {
-      "title": "White-label Rapportinställningar",
-      "subtitle": "Anpassa hur ditt varumärke visas i PDF-rapporter. Lämna tomt för att använda AIO Pulses standardvarumärke.",
-      "report_brand_name": "Rapportvarumärkesnamn",
-      "report_brand_name_placeholder": "Ditt Företagsnamn",
-      "primary_color": "Primär Färg (Hex)",
-      "logo_url": "Logo-URL",
-      "logo_url_placeholder": "https://ditt-företag.se/logo.png",
-      "configure": "Konfigurera",
-      "save": "Spara"
+    "launch_stages": {
+      "creating_brand": "Skapar varumärke...",
+      "creating_prompts": "Skapar {count} prompts...",
+      "launching_monitoring": "Startar första övervakning...",
+      "done_redirecting": "Klart! Omdirigerar...",
+      "launch_button": "Starta Övervakning"
     },
-    "team": {
-      "title": "Teammedlemmar",
-      "subtitle": "Bjud in teammedlemmar att samarbeta på detta varumärke.",
-      "invite_email": "kollega@foretag.se",
-      "role_viewer": "Visare",
-      "role_editor": "Redigerare",
-      "invite": "Bjud in",
-      "inviting": "Skickar...",
-      "pending_invitations": "Inväntande Inbjudningar",
-      "no_members": "Inga teammedlemmar ännu.",
-      "expires": "Går ut"
+    "launch_progress": {
+      "step1_brand": "Steg 1 av 3 · Varumärke",
+      "step2_prompts": "Steg 2 av 3 · Prompts",
+      "step3_check": "Steg 3 av 3 · Första AI-kontroll (kan ta 20-40s)",
+      "all_set": "Allt klart!"
     },
     "toast": {
-      "created": "Varumärke skapat!",
-      "updated": "Varumärke uppdaterat!",
-      "deleted": "Varumärke raderat!",
-      "error": "Misslyckades att {action} varumärke"
+      "monitoring_setup_complete": "Konfiguration klar, men första övervakning misslyckades: {error}. Du kan försöka igen från varumärkessidan.",
+      "launch_success": "Varumärke, {count} prompts och första övervakning startade!",
+      "setup_failed": "Konfiguration misslyckades"
     },
-    "empty_state": {
-      "title": "Inga varumärken ännu",
-      "description": "Lägg till ditt första varumärke för att börja övervaka AI-synlighet.",
-      "cta": "Lägg till varumärke"
+    "buttons": {
+      "back": "Tillbaka",
+      "continue": "Fortsätt"
+    }
+  },
+  "brands": {
+    "page_title": "Dina Varumärken",
+    "page_subtitle": "Hantera varumärken som övervakas i AI-sökmotorer.",
+    "new_brand": "Nytt Varumärke",
+    "refresh": "Uppdatera",
+    "status": {
+      "active": "Aktiv",
+      "paused": "Pausad"
     },
     "confirm_delete": {
-      "title": "Ta bort varumärke?",
-      "description": "Detta kommer permanent ta bort varumärket och all associerad övervakningsdata. Detta kan inte ångras.",
-      "confirm": "Ta bort",
-      "cancel": "Avbryt"
+      "title": "Ta bort \"{name}\"?",
+      "description": "All övervakningsdata kommer också att tas bort. Detta kan inte ångras.",
+      "confirm": "Ta bort"
+    },
+    "toast": {
+      "deleted": "Varumärke raderat!",
+      "created": "Varumärke skapat!",
+      "updated": "Varumärke uppdaterat!",
+      "error": "Misslyckades {action} varumärke"
+    },
+    "empty_state": {
+      "title": "Inga varumärken hittades",
+      "description": "Skapa ditt första varumärke för att börja övervaka synlighet.",
+      "cta": "Lägg till varumärke"
+    },
+    "error_state": {
+      "title": "Ett fel uppstod",
+      "retry": "Försök igen",
+      "connection_error": "Kan inte ansluta till servern. Kör dev-servern?"
+    },
+    "journey_guide": {
+      "title": "Lägg till varumärket du vill spåra",
+      "lead": "Ett varumärke är vem du övervakar. AIO Pulse kommer att ställa frågor till AI-motorer om det för att mäta din synlighet.",
+      "steps": {
+        "click_new_brand": "Klicka \"Nytt Varumärke\"",
+        "click_new_brand_desc": "Knappen uppe till höger på denna sida.",
+        "fill_details": "Fyll i namn, domän, bransch",
+        "fill_details_desc": "Dessa hjälper AI-motorer att förstå kontexten av ditt varumärke.",
+        "pick_language": "Välj ditt Primära Marknadsspråk",
+        "pick_language_desc": "IT, SV eller EN — alla prompts och svar kommer att använda detta språk.",
+        "add_competitors": "Lägg till 1-3 konkurrenter",
+        "add_competitors_desc": "Valfritt men starkt rekommenderat — används i jämförelseprompts."
+      },
+      "outcomes": {
+        "brand_card": "Ett varumärkeskort på denna sida",
+        "prompts_library": "Auto-genererat prompts-bibliotek (steg 2)",
+        "dashboards_unlock": "Dashboards låses upp när du kör övervakning"
+      },
+      "cta": "Gå till den guidade installationen istället"
+    },
+    "add_brand": "Lägg till Varumärke",
+    "edit_brand": "Redigera Varumärke",
+    "delete_brand": "Ta bort Varumärke",
+    "form": {
+      "name_label": "Brand Name",
+      "name_placeholder": "Enter brand name...",
+      "domain_label": "Domain",
+      "domain_placeholder": "example.com",
+      "description_label": "Description",
+      "description_placeholder": "Brief description...",
+      "industry_label": "Industry",
+      "industry_placeholder": "Select industry...",
+      "language_label": "Primary Market Language",
+      "language_helper": "Prompts and AI simulations will run in this language.",
+      "color_label": "Brand Color",
+      "save_button": "Save Brand",
+      "update_button": "Update Brand"
+    },
+    "card": {
+      "view_details": "View Details",
+      "run_monitoring": "Run Monitoring",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "language_nudge": {
+      "title": "Set primary market",
+      "description": "Set the primary market for this brand to get more accurate AI monitoring results.",
+      "cta": "Set Language"
+    },
+    "white_label": {
+      "title": "White-label Report Settings",
+      "subtitle": "Customize how your brand appears in PDF reports. Leave empty to use default AIO Pulse branding.",
+      "report_brand_name": "Report Brand Name",
+      "report_brand_name_placeholder": "Your Company Name",
+      "primary_color": "Primary Color (Hex)",
+      "logo_url": "Logo URL",
+      "logo_url_placeholder": "https://your-company.com/logo.png",
+      "configure": "Configure",
+      "save": "Save"
+    },
+    "team": {
+      "title": "Team Members",
+      "subtitle": "Invite team members to collaborate on this brand.",
+      "invite_email": "colleague@company.com",
+      "role_viewer": "Viewer",
+      "role_editor": "Editor",
+      "invite": "Invite",
+      "inviting": "Sending...",
+      "pending_invitations": "Pending Invitations",
+      "no_members": "No team members yet.",
+      "expires": "Expires"
     }
   },
   "prompts": {
@@ -337,7 +379,10 @@
     "page_subtitle": "Konfigurera frågorna att övervaka över AI-motorer.",
     "add_from_library": "Lägg från Bibliotek",
     "new_prompt": "Ny Prompt",
+    "filter_by_brand": "Varumärke",
+    "all_brands": "Alla",
     "form": {
+      "create_title": "Skapa Ny Prompt",
       "brand_label": "Varumärke",
       "brand_placeholder": "Välj varumärke...",
       "text_label": "Prompt-text",
@@ -347,7 +392,8 @@
       "frequency_label": "Körfrekvens",
       "engines_label": "Motorer att Övervaka",
       "language_label": "Språk",
-      "create_button": "Skapa Prompt"
+      "create_button": "Skapa Prompt",
+      "cancel": "Avbryt"
     },
     "card": {
       "run": "Kör",
@@ -358,21 +404,45 @@
     },
     "library": {
       "title": "Lägg Prompts från Bibliotek",
+      "select_brand_first": "Välj ett varumärke för att lägga till prompts från biblioteket.",
       "select_all": "Välj Alla",
       "select_none": "Välj Inga",
-      "seed_button": "Skapa {count} Prompts",
+      "seed_button": "Seed {count} Prompts",
       "created": "Skapade {created}, {skipped} överhoppade",
       "categories_selected": "{count} kategorier valda ({prompts} prompts)"
     },
     "toast": {
       "created": "Prompt skapad",
       "deleted": "Prompt raderad",
-      "error": "Misslyckades att {action} prompt"
+      "no_brands_error": "Inga varumärken hittades. Skapa ett varumärke först.",
+      "select_brand_error": "Välj ett varumärke och ange prompt-text",
+      "select_engine_error": "Välj minst en AI-motor",
+      "load_failed": "Misslyckades att ladda data",
+      "monitoring_complete": "Övervakning klar: {count} resultat sparade"
     },
     "empty_state": {
       "title": "Inga prompts ännu",
       "description": "Skapa din första prompt för att börja övervaka AI-svar.",
       "cta": "Ny Prompt"
+    },
+    "journey_guide": {
+      "title": "Definiera vad du ska fråga AI-motorer om ditt varumärke",
+      "lead": "Prompts är frågorna som dina riktiga kunder kan skriva in i ChatGPT, Gemini, Perplexity eller Claude. Varje prompt körs över alla 4 motorer enligt ditt schema.",
+      "steps": {
+        "open_library": "Öppna biblioteket",
+        "open_library_desc": "Klicka \"Lägg från Bibliotek\" för att så från våra 70 förladdade mallar (översatta till IT/SV/EN).",
+        "write_own": "Eller skriv dina egna",
+        "write_own_desc": "\"Ny Prompt\" låter dig skriva en anpassad fråga — t.ex. \"bästa CRM för småföretag i {country}\".",
+        "pick_engines": "Välj motorer",
+        "pick_engines_desc": "Standard: alla 4 (ChatGPT, Gemini, Perplexity, Claude). Avmarkera om du vill spara krediter.",
+        "set_frequency": "Ange frekvens",
+        "set_frequency_desc": "Dagligen rekommenderas för aktiva varumärken. Veckovis fungerar för långsammare marknader."
+      },
+      "outcomes": {
+        "prompts_ready": "Prompts redo att köras i övervakning",
+        "responses_captured": "Varje svar fångat: varumärkesomnämnanden, sentiment, citat",
+        "avi_computed": "AVI-poäng beräknad från dessa körningar"
+      }
     }
   },
   "monitoring": {

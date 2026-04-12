@@ -43,8 +43,20 @@ export async function GET(req: NextRequest) {
   const { data, error, count } = await query
 
   if (error) {
+    // Missing table / relationship → empty result instead of 500 so dashboards
+    // still render on fresh/partial DB setups.
+    const msg = String((error as { message?: string })?.message ?? error)
+    if (/does not exist|not found/i.test(msg)) {
+      logger.warn('scan_history missing, returning empty', { route: '/api/scans', msg })
+      return NextResponse.json({
+        success: true,
+        ...paginatedResponse([], 0, page, limit),
+        timestamp: Date.now(),
+        warning: 'scan_history table not yet migrated',
+      })
+    }
     logger.error('Scan load error', { route: '/api/scans', error })
-    return err(error.message)
+    return err(msg)
   }
 
   return NextResponse.json({

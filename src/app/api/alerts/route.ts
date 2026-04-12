@@ -160,8 +160,18 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await query
     if (error) {
-      logger.error('DB error (events)', { source: 'alerts', error: String(error) })
-      return err(error.message)
+      const msg = String((error as { message?: string })?.message ?? error)
+      if (/does not exist|not found/i.test(msg)) {
+        logger.warn('alert_events missing, returning empty', { source: 'alerts', msg })
+        return NextResponse.json({
+          success: true,
+          data: [],
+          timestamp: Date.now(),
+          warning: 'alert_events table not yet migrated',
+        })
+      }
+      logger.error('DB error (events)', { source: 'alerts', error: msg })
+      return err(msg)
     }
     return NextResponse.json({ success: true, data, timestamp: Date.now() })
   }
@@ -176,7 +186,17 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query
   if (error) {
-    logger.error('DB error (rules)', { source: 'alerts', error: String(error) })
+    const msg = String((error as { message?: string })?.message ?? error)
+    if (/does not exist|not found/i.test(msg)) {
+      logger.warn('alert_rules missing, returning empty', { source: 'alerts', msg })
+      return NextResponse.json({
+        success: true,
+        data: [],
+        timestamp: Date.now(),
+        warning: 'alert_rules table not yet migrated',
+      })
+    }
+    logger.error('DB error (rules)', { source: 'alerts', error: msg })
     return err(error.message)
   }
   return NextResponse.json({ success: true, data, timestamp: Date.now() })

@@ -192,10 +192,18 @@ export default function NewBrandWizard() {
         `${brand} vs konkurrenter`,
         `Bästa ${industry} företag`,
       ]
+      const italianTemplates = [
+        `Migliore ${industry} in Italia`,
+        `${industry} recensioni`,
+        `${industry} consigliato`,
+        `${brand} vs concorrenti`,
+        `Migliori aziende ${industry}`,
+      ]
 
       const templatesByLang: Record<string, string[]> = {
         en: englishTemplates,
         sv: swedishTemplates,
+        it: italianTemplates,
         de: englishTemplates.map((t) => t.replace(/Best /, 'Beste ').replace(/Top /, 'Top-')),
         fr: englishTemplates.map((t) => t.replace(/Best /, 'Meilleur ').replace(/Top /, 'Top ')),
         es: englishTemplates.map((t) => t.replace(/Best /, 'Mejor ').replace(/Top /, 'Top ')),

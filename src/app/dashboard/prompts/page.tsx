@@ -442,6 +442,7 @@ function PromptsPageContent() {
               <div className="flex gap-2">
                 {[
                   { code: 'en', label: '🇬🇧 English' },
+                  { code: 'it', label: '🇮🇹 Italiano' },
                   { code: 'sv', label: '🇸🇪 Svenska' },
                 ].map((lang) => (
                   <button
@@ -514,6 +515,10 @@ function PromptsPageContent() {
                 (brands.find((b) => b.id === selectedBrandId)?.competitors as
                   | string[]
                   | undefined) ?? []
+              }
+              language={
+                (brands.find((b) => b.id === selectedBrandId)?.language as 'en' | 'it' | 'sv') ??
+                'en'
               }
               onComplete={() => {
                 void loadData()

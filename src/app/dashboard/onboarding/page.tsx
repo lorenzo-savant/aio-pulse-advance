@@ -238,7 +238,9 @@ export default function OnboardingPage() {
   const goNext = () => {
     if (step === 1 && prompts.length === 0) {
       // Auto-generate prompts when leaving brand step
-      setPrompts(generatePromptTemplates(brand.name, brand.industry || 'business'))
+      setPrompts(
+        generatePromptTemplates(brand.name, brand.industry || 'business', brand.language || 'en'),
+      )
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
   }

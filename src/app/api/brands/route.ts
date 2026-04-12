@@ -16,7 +16,14 @@ const brandSchema = z.object({
   domains: z.array(z.string().max(200)).max(20).optional().default([]),
   competitors: z.array(z.string().max(100)).max(20).optional().default([]),
   industry: z.string().max(100).optional(),
-  language: z.enum(['en', 'it', 'sv']).optional().default('en'),
+  // Accept empty string from dropdowns with a default placeholder option
+  language: z
+    .preprocess(
+      (v) => (v === '' || v == null ? 'en' : v),
+      z.enum(['en', 'it', 'sv']),
+    )
+    .optional()
+    .default('en'),
   color: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color')

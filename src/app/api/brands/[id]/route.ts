@@ -14,7 +14,9 @@ const updateBrandSchema = z.object({
   domains: z.array(z.string().max(200)).max(20).optional(),
   competitors: z.array(z.string().max(100)).max(20).optional(),
   industry: z.string().max(100).optional().nullable(),
-  language: z.enum(['en', 'it', 'sv']).optional(),
+  language: z
+    .preprocess((v) => (v === '' ? undefined : v), z.enum(['en', 'it', 'sv']))
+    .optional(),
   color: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)

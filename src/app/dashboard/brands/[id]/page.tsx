@@ -26,6 +26,7 @@ import {
   FileText,
   Copy,
   Download,
+  Globe,
 } from 'lucide-react'
 import { Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -847,6 +848,66 @@ export default function BrandDetailPage() {
               </p>
             </div>
           </div>
+        )}
+      </Card>
+
+      {/* Language Settings */}
+      <Card className="p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Globe className="h-5 w-5 text-muted-foreground" />
+            <h3 className="text-lg font-bold text-foreground">Market Language</h3>
+          </div>
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Primary market language for prompts and AI monitoring. This determines which language is
+          used when generating prompts and simulating AI responses.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {[
+            { code: 'en' as const, label: '🇬🇧 English' },
+            { code: 'it' as const, label: '🇮🇹 Italiano' },
+            { code: 'sv' as const, label: '🇸🇪 Svenska' },
+          ].map((lang) => (
+            <button
+              key={lang.code}
+              className={cn(
+                'rounded-xl border px-4 py-2.5 text-sm font-medium transition-all',
+                (brand?.language || 'en') === lang.code
+                  ? 'bg-primary/10 border-primary text-foreground'
+                  : 'border-border bg-secondary text-muted-foreground hover:border-primary',
+              )}
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/brands/${brandId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language: lang.code }),
+                  })
+                  const json = await res.json()
+                  if (json.success) {
+                    setBrand((prev) => (prev ? { ...prev, language: lang.code } : prev))
+                    toast.success(`Language set to ${lang.label}`)
+                  } else {
+                    toast.error(json.message || 'Failed to update language')
+                  }
+                } catch {
+                  toast.error('Failed to update language')
+                }
+              }}
+            >
+              {lang.label}
+              {(brand?.language || 'en') === lang.code && (
+                <Check className="ml-2 inline h-4 w-4 text-primary" />
+              )}
+            </button>
+          ))}
+        </div>
+        {brand?.language === 'en' && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Note: Changing the language does not regenerate existing prompts. Use the prompt library
+            to add new prompts in the selected language.
+          </p>
         )}
       </Card>
 

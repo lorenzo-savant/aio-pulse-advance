@@ -1,3 +1,5 @@
+import { safeFetch } from '@/lib/utils/safe-fetch'
+
 export const AI_BOTS = [
   'GPTBot',
   'ClaudeBot',
@@ -239,7 +241,7 @@ export async function checkCrawlability(url: string): Promise<CrawlabilityResult
   const robotsUrl = new URL('/robots.txt', parsedUrl.origin)
 
   try {
-    const response = await fetch(robotsUrl.toString(), {
+    const response = await safeFetch(robotsUrl.toString(), {
       headers: {
         'User-Agent': 'AIO-Pulse-Advance/1.0',
       },

@@ -15,7 +15,7 @@ import {
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/index'
 import { Button } from '@/components/ui/Button'
-import { getEngineSignals } from '@/lib/services/gemini'
+import { getEngineSignals } from '@/lib/engine-signals'
 import { cn } from '@/lib/utils'
 import { useTranslations } from 'next-intl'
 

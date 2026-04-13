@@ -45,6 +45,7 @@ model Brand {
   seoAuditResults    SeoAuditResult[]
   llmsTxtVersions    LlmsTxtVersion[]
   weeklyReviews      WeeklyReview[]
+  keywordRankings    KeywordRanking[]
 
   @@map("brands")
   @@index([userId])
@@ -458,4 +459,22 @@ model CitationSnapshot {
   @@index([projectId])
   @@index([scanDate(sort: Desc)])
   @@index([engine])
+}
+
+model KeywordRanking {
+  id                String   @id @default(uuid())
+  brandId           String   @map("brand_id")
+  keyword           String
+  url               String?
+  position          Int      @default(0)
+  aiOverviewPresent Boolean  @default(false) @map("ai_overview_present")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, keyword, createdAt(sort: Desc)])
+  @@map("keyword_rankings")
+  @@index([brandId])
+  @@index([keyword])
+  @@index([createdAt(sort: Desc)])
 }

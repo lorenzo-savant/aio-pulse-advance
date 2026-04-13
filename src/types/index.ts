@@ -241,7 +241,7 @@ export interface MonitoringResult {
   brand_id: string
   user_id: string
   engine: MonitoringEngine
-  query_text: string
+  query_text?: string | null
   prompt_text: string
   response_text: string
   brand_mentioned: boolean

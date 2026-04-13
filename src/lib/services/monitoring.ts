@@ -42,8 +42,8 @@ const analysisOutputSchema = z.object({
     .array(
       z.object({
         name: z.string(),
-        position: z.number().int(),
-        count: z.number().int(),
+        position: z.number().int().nullable().optional(),
+        count: z.number().int().nullable().optional().default(1),
       }),
     )
     .optional()
@@ -152,7 +152,6 @@ export async function runMonitoringCheck(
     brand_id: brand.id,
     user_id: userId,
     engine,
-    query_text: prompt.text || 'No query text',
     prompt_text: prompt.text || 'No prompt text',
     response_text: responseText.length > 5000 ? responseText.slice(0, 5000) + '…' : responseText,
     brand_mentioned: analysis.brand_mentioned,

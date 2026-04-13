@@ -366,14 +366,24 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const offset = (page - 1) * limit
 
+  // Resolve brands owned by user (handles UUID vs string mismatch on user_id col)
+  const { data: ownedBrands } = await db.from('brands').select('id').eq('user_id', userId)
+  const ownedBrandIds = (ownedBrands ?? []).map((b: { id: string }) => b.id)
+  if (ownedBrandIds.length === 0) {
+    return NextResponse.json({
+      success: true, data: [],
+      pagination: { page, perPage: limit, total: 0, totalPages: 0 },
+      timestamp: Date.now(),
+    })
+  }
+  const filterIds = brandId && ownedBrandIds.includes(brandId) ? [brandId] : ownedBrandIds
+
   let query = db
     .from('monitoring_results')
     .select('*, prompt:prompts(text, category, language)', { count: 'exact' })
-    .eq('user_id', userId)
+    .in('brand_id', filterIds)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
-
-  if (brandId) query = query.eq('brand_id', brandId)
   if (engine) query = query.eq('engine', engine)
   if (language) query = query.eq('prompt.language', language)
 

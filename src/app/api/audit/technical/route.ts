@@ -7,7 +7,10 @@ import type { Json } from '@/types/database'
 import { formatValidationError } from '@/lib/format-validation-error'
 
 const auditRequestSchema = z.object({
-  url: z.string().url(),
+  url: z.preprocess(
+    (v) => (typeof v === 'string' && v.length > 0 && !/^https?:\/\//i.test(v) ? `https://${v}` : v),
+    z.string().url(),
+  ),
   brandId: z.string().uuid().optional(),
 })
 

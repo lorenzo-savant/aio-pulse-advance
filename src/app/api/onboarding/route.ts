@@ -6,7 +6,12 @@ import { formatValidationError } from '@/lib/format-validation-error'
 
 const schema = z.object({
   brandName: z.string().min(1).max(100),
-  domain: z.string().url().optional().or(z.literal('')),
+  domain: z
+    .preprocess(
+      (v) => (typeof v === 'string' && v.length > 0 && !/^https?:\/\//i.test(v) ? `https://${v}` : v),
+      z.string().url().optional().or(z.literal('')),
+    )
+    .optional(),
   industry: z.string().max(100).optional(),
   competitors: z.array(z.string()).max(10).optional().default([]),
   color: z

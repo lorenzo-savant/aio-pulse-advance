@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useBrandsQuery, useDeleteBrandMutation } from '@/hooks/useBrandsQuery'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import {
@@ -131,10 +132,17 @@ function BrandCard({
 
 export default function BrandsPage() {
   const t = useTranslations()
-  const [brands, setBrands] = useState<Brand[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const { confirm, ConfirmDialog } = useConfirmDialog()
+
+  // React Query — visible in TanStack devtools, cached, optimistic deletes
+  const { data: brands = [], isLoading: loading, error: queryError, refetch } = useBrandsQuery()
+  const deleteBrand = useDeleteBrandMutation()
+
+  const error = queryError instanceof Error ? queryError.message : null
+
+  const loadBrands = async () => {
+    await refetch()
+  }
 
   const handleDelete = async (id: string, name: string) => {
     const confirmed = await confirm({
@@ -145,70 +153,12 @@ export default function BrandsPage() {
     })
     if (!confirmed) return
     try {
-      const res = await fetch(`/api/brands/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(`Server error: ${res.status}`)
-      const json = await res.json()
-      if (!json.success) throw new Error(json.message)
-      setBrands((b) => b.filter((x) => x.id !== id))
+      await deleteBrand.mutateAsync(id)
       toast.success(t('brands.toast.deleted', { name }))
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('brands.toast.delete_failed'))
     }
   }
-
-  const loadBrands = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/brands')
-
-      const text = await res.text()
-
-      if (!text || text.trim() === '') {
-        setBrands([])
-        return
-      }
-
-      let json
-      try {
-        json = JSON.parse(text)
-      } catch {
-        console.error('[BrandsPage] Invalid JSON response:', text)
-        if (!res.ok) {
-          setError(`Server error (${res.status}): ${text.substring(0, 200)}`)
-        } else {
-          setError(t('errors.server_error'))
-        }
-        return
-      }
-
-      if (!res.ok) {
-        setError(json.message || t('errors.server_error'))
-        return
-      }
-
-      if (!json.success) {
-        setError(json.message || t('errors.server_error'))
-        return
-      }
-
-      setBrands(json.data ?? [])
-    } catch (err) {
-      console.error('[BrandsPage] Load error:', err)
-      const msg = err instanceof Error ? err.message : t('errors.network_error')
-      if (msg.includes('fetch failed') || msg.includes('Failed to fetch')) {
-        setError(t('brands.error_state.connection_error'))
-      } else {
-        setError(msg)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [t])
-
-  useEffect(() => {
-    void loadBrands()
-  }, [loadBrands])
 
   return (
     <div className="animate-in space-y-8">

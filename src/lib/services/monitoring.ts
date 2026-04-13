@@ -603,3 +603,149 @@ export function calculateDomainSOAIV(
 
   return results.sort((a, b) => b.brandShare - a.brandShare)
 }
+
+// ─── generateRecommendations ─────────────────────────────────────────────────
+
+export interface RecommendationInput {
+  aviComponents: AVIInput
+  soaiv: DomainSOAIVResult[]
+  competitorGap: {
+    rank: number
+    competitorAvi: number
+    brandAvi: number
+    weakestComponent: string
+  }
+}
+
+export interface Recommendation {
+  priority: number
+  title: string
+  description: string
+  impact: number
+  effort: number
+  component: string
+}
+
+const RECOMMENDATION_RULES: Array<{
+  condition: (input: RecommendationInput) => boolean
+  title: string
+  description: (input: RecommendationInput) => string
+  impact: number
+  effort: number
+  component: string
+}> = [
+  {
+    condition: (i) => i.aviComponents.citationRate < 30,
+    title: 'Aumenta citazioni',
+    description: () =>
+      'Il tasso di citazione è basso. Pubblica contenuti che attirino più link da siti autorevoli.',
+    impact: 8,
+    effort: 5,
+    component: 'citationRate',
+  },
+  {
+    condition: (i) => i.aviComponents.mentionFrequency < 40,
+    title: 'Aumenta visibilità',
+    description: () =>
+      'La frequenza di mention è bassa. Incrementa la presenza del brand nei risultati di ricerca.',
+    impact: 7,
+    effort: 4,
+    component: 'mentionFrequency',
+  },
+  {
+    condition: (i) => i.aviComponents.sentimentScore < 0,
+    title: 'Migliora sentiment',
+    description: () =>
+      'Il sentiment medio è negativo. Affronta le recensioni negative e rafforza la comunicazione positiva.',
+    impact: 7,
+    effort: 3,
+    component: 'sentimentScore',
+  },
+  {
+    condition: (i) => i.aviComponents.sentimentScore >= 0 && i.aviComponents.sentimentScore < 0.5,
+    title: 'Incrementa sentiment positivo',
+    description: () =>
+      'Il sentiment è neutra. Amplifica i messaggi positivi per migliorare la percezione del brand.',
+    impact: 5,
+    effort: 3,
+    component: 'sentimentScore',
+  },
+  {
+    condition: (i) => i.aviComponents.recommendationRate < 30,
+    title: 'Aumenta raccomandazioni',
+    description: () =>
+      'Tasso di raccomandazione basso. Crea contenuti che generino endorsement organici.',
+    impact: 7,
+    effort: 5,
+    component: 'recommendationRate',
+  },
+  {
+    condition: (i) => i.aviComponents.positionAvg > 3,
+    title: 'Migliora posizionamento',
+    description: () =>
+      'La posizione media nei risultati è bassa. Ottimizza SEO e content strategy per salire nelle SERP.',
+    impact: 6,
+    effort: 6,
+    component: 'positionAvg',
+  },
+  {
+    condition: (i) => i.aviComponents.hallucinationIndex > 20,
+    title: 'Riduci allucinazioni',
+    description: () =>
+      'Alto indice di allucinazioni. Verifica e correggi le informazioni generate inaccurate.',
+    impact: 6,
+    effort: 4,
+    component: 'hallucinationIndex',
+  },
+  {
+    condition: (i) =>
+      i.competitorGap && i.competitorGap.brandAvi - i.competitorGap.competitorAvi > 20,
+    title: 'Recupera gap competitor',
+    description: (i) =>
+      `Il competitor è dominante nel componente: ${i.competitorGap.weakestComponent}. Analizza le strategie del competitor e implementa azioni correttive.`,
+    impact: 9,
+    effort: 7,
+    component: 'competitorGap',
+  },
+  {
+    condition: (i) => i.soaiv.length > 0 && i.soaiv[0]!.brandShare < 40,
+    title: 'Aumenta share del brand',
+    description: (i) =>
+      `La quota del brand nelle citazioni è bassa (${i.soaiv[0]!.brandShare}%). Diversifica le fonti e aumenta la visibilità su domini terzi.`,
+    impact: 7,
+    effort: 6,
+    component: 'soaiv',
+  },
+  {
+    condition: (i) => {
+      const competitorShare = i.soaiv.find((d) => d.competitorShare > d.brandShare)
+      return !!competitorShare
+    },
+    title: 'Combatti dominio competitor',
+    description: () =>
+      'Un competitor sta dominando nelle citazioni. Identifica i domini che citano il competitor e propogli contenuti alternativi.',
+    impact: 8,
+    effort: 6,
+    component: 'soaiv',
+  },
+]
+
+export function generateRecommendations(input: RecommendationInput): Recommendation[] {
+  const recommendations: Recommendation[] = []
+
+  for (const rule of RECOMMENDATION_RULES) {
+    if (rule.condition(input)) {
+      const priority = rule.impact * 3 - rule.effort
+      recommendations.push({
+        priority,
+        title: rule.title,
+        description: rule.description(input),
+        impact: rule.impact,
+        effort: rule.effort,
+        component: rule.component,
+      })
+    }
+  }
+
+  return recommendations.sort((a, b) => b.priority - a.priority)
+}

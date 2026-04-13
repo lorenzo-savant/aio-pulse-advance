@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger'
 
 const brandSchema = z.object({
   name: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
+  description: z.string().max(2000).optional(),
   domain: z.string().max(200).optional(),
   aliases: z.array(z.string().max(100)).max(10).optional().default([]),
   domains: z.array(z.string().max(200)).max(20).optional().default([]),

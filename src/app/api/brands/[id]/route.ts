@@ -8,7 +8,7 @@ import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 const updateBrandSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  description: z.string().max(500).optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
   domain: z.string().max(200).optional().nullable(),
   aliases: z.array(z.string().max(100)).max(10).optional(),
   domains: z.array(z.string().max(200)).max(20).optional(),

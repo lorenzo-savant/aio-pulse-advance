@@ -21,7 +21,7 @@ interface CompetitorRate {
 }
 
 interface SnapshotRow {
-  project_id: string
+  brand_id: string
   scan_date: string
   engine: string
   category: string
@@ -138,7 +138,7 @@ export async function calculateCitationSnapshots(
         }
 
         snapshots.push({
-          project_id: brandId,
+          brand_id: brandId,
           scan_date: scanDate,
           engine: engine as string,
           category: category as string,
@@ -162,7 +162,7 @@ export async function calculateCitationSnapshots(
   for (const snap of snapshots) {
     const { error: upsertError } = await db
       .from('citation_snapshots')
-      .upsert(snap, { onConflict: 'project_id,scan_date,engine,category,language' })
+      .upsert(snap, { onConflict: 'brand_id,scan_date,engine,category,language' })
 
     if (upsertError) {
       errors.push(`${snap.engine}/${snap.category}/${snap.language}: ${upsertError.message}`)

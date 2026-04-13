@@ -237,7 +237,7 @@ export type Database = {
           avg_sentiment: number | null
           avg_visibility: number | null
           brand_citations: number | null
-          brand_id: string | null
+          brand_id: string
           category: string
           citation_rate: number | null
           competitor_rates: Json | null
@@ -245,7 +245,6 @@ export type Database = {
           engine: string
           id: string
           language: string
-          project_id: string
           scan_date: string
           total_prompts: number | null
           user_id: string | null
@@ -255,7 +254,7 @@ export type Database = {
           avg_sentiment?: number | null
           avg_visibility?: number | null
           brand_citations?: number | null
-          brand_id?: string | null
+          brand_id: string
           category?: string
           citation_rate?: number | null
           competitor_rates?: Json | null
@@ -263,7 +262,6 @@ export type Database = {
           engine?: string
           id?: string
           language?: string
-          project_id: string
           scan_date: string
           total_prompts?: number | null
           user_id?: string | null
@@ -273,7 +271,7 @@ export type Database = {
           avg_sentiment?: number | null
           avg_visibility?: number | null
           brand_citations?: number | null
-          brand_id?: string | null
+          brand_id?: string
           category?: string
           citation_rate?: number | null
           competitor_rates?: Json | null
@@ -281,7 +279,6 @@ export type Database = {
           engine?: string
           id?: string
           language?: string
-          project_id?: string
           scan_date?: string
           total_prompts?: number | null
           user_id?: string | null

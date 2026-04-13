@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
         const { data: snapshots } = (await db
           .from('citation_snapshots')
           .select('scan_date, citation_count, citation_rate, avg_visibility')
-          .eq('project_id', brand.id)
+          .eq('brand_id', brand.id)
           .eq('engine', 'all')
           .gte('scan_date', fromDate)
           .lte('scan_date', toDate)

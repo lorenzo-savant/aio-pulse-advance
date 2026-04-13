@@ -38,7 +38,7 @@ import { useChartTheme } from '@/hooks/useChartTheme'
 
 interface Snapshot {
   id: string
-  project_id: string
+  brand_id: string
   scan_date: string
   engine: string
   category: string

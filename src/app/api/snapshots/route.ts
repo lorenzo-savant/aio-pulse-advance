@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
   let query = db
     .from('citation_snapshots')
     .select('*')
-    .eq('project_id', brandId)
+    .eq('brand_id', brandId)
     .gte('scan_date', fromDate)
     .lte('scan_date', to)
     .order('scan_date', { ascending: true })

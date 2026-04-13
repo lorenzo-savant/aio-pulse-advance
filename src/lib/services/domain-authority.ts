@@ -60,7 +60,7 @@ async function fetchBrandMetrics(db: TypedSupabaseClient, brandId: string): Prom
   const { data: snapshots, error: snapError } = await db
     .from('citation_snapshots')
     .select('*')
-    .eq('project_id', brandId)
+    .eq('brand_id', brandId)
     .eq('engine', 'all')
     .eq('category', 'all')
     .gte('scan_date', fromDate)
@@ -117,7 +117,7 @@ async function fetchBrandMetrics(db: TypedSupabaseClient, brandId: string): Prom
     const { data: engSnaps } = await db
       .from('citation_snapshots')
       .select('engine, citation_rate')
-      .eq('project_id', brandId)
+      .eq('brand_id', brandId)
       .eq('scan_date', snap.scan_date)
       .neq('engine', 'all')
 

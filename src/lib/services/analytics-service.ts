@@ -63,7 +63,7 @@ export async function getHistoricalAnalytics(
   const { data: currentData, error: currentError } = await db
     .from('citation_snapshots')
     .select('*')
-    .eq('project_id', brandId)
+    .eq('brand_id', brandId)
     .gte('scan_date', startDate.toISOString().split('T')[0])
     .lte('scan_date', new Date().toISOString().split('T')[0])
     .order('scan_date', { ascending: true })
@@ -72,7 +72,7 @@ export async function getHistoricalAnalytics(
   const { data: previousData } = await db
     .from('citation_snapshots')
     .select('*')
-    .eq('project_id', brandId)
+    .eq('brand_id', brandId)
     .gte('scan_date', previousStartDate.toISOString().split('T')[0])
     .lte('scan_date', startDate.toISOString().split('T')[0])
     .order('scan_date', { ascending: true })
@@ -235,7 +235,7 @@ export async function getCompetitorComparison(
   const { data: brandSnapshots } = await db
     .from('citation_snapshots')
     .select('scan_date, citation_rate, avg_visibility')
-    .eq('project_id', brandId)
+    .eq('brand_id', brandId)
     .gte('scan_date', startDate.toISOString().split('T')[0])
     .order('scan_date', { ascending: false })
 
@@ -313,7 +313,7 @@ export async function autoGenerateSnapshots(brandId: string): Promise<{
 
     const { error: upsertError } = await db.from('citation_snapshots').upsert(
       {
-        project_id: brandId,
+        brand_id: brandId,
         scan_date: date,
         engine: 'all',
         category: 'all',
@@ -327,7 +327,7 @@ export async function autoGenerateSnapshots(brandId: string): Promise<{
         competitor_rates: {},
       },
       {
-        onConflict: 'project_id,scan_date,engine,category,language',
+        onConflict: 'brand_id,scan_date,engine,category,language',
       },
     )
 

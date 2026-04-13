@@ -266,7 +266,7 @@ describe('safeFetch', () => {
       })
     })
 
-    it('uses default timeout of 15000ms when not specified', async () => {
+    it('uses default timeout of 45000ms when not specified', async () => {
       mockResolve4.mockResolvedValue(['93.184.216.34'])
       mockResolve6.mockResolvedValue([])
 

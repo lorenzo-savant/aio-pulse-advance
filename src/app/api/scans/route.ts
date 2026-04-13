@@ -29,15 +29,21 @@ export async function GET(req: NextRequest) {
     maxLimit: 100,
   })
 
+  // Resolve owned brands (handles user_id format mismatch on legacy rows)
+  const { data: ownedBrands } = await db.from('brands').select('id').eq('user_id', userId)
+  const ownedIds = (ownedBrands ?? []).map((b: { id: string }) => b.id)
+  const filterIds = brandId && ownedIds.includes(brandId) ? [brandId] : ownedIds
+
   let query = db
     .from('scan_history')
     .select('*', { count: 'exact' })
-    .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  if (brandId) {
-    query = query.eq('brand_id', brandId)
+  if (filterIds.length > 0) {
+    query = query.or(`user_id.eq.${userId},brand_id.in.(${filterIds.join(',')})`)
+  } else {
+    query = query.eq('user_id', userId)
   }
 
   const { data, error, count } = await query

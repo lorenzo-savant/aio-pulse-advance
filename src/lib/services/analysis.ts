@@ -100,7 +100,7 @@ export async function fetchUrlContent(url: string): Promise<string> {
       'Accept-Language': 'en-US,en;q=0.9,it;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br',
     },
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(45_000),
   })
 
   if (!res.ok) throw new Error(`Failed to fetch URL: ${res.status}`)

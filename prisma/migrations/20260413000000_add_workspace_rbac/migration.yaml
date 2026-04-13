@@ -1,0 +1,5 @@
+# Migration manifest
+version: 1
+generator:
+  provider: prisma-client-js
+createdAt: '2026-04-13T00:00:00.000Z'

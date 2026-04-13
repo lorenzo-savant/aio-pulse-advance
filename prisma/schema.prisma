@@ -478,3 +478,59 @@ model KeywordRanking {
   @@index([keyword])
   @@index([createdAt(sort: Desc)])
 }
+
+enum WorkspaceRole {
+  owner
+  admin
+  editor
+  viewer
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members   WorkspaceMember[]
+  auditLogs AuditLog[]
+
+  @@map("workspaces")
+  @@index([slug])
+}
+
+model WorkspaceMember {
+  id          String       @id @default(uuid())
+  workspaceId String       @map("workspace_id")
+  userId      String       @map("user_id")
+  role        WorkspaceRole @default(viewer)
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  action      String
+  resource    String
+  ip          String?  @map("ip")
+  userAgent   String?  @map("user_agent")
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@index([action])
+}

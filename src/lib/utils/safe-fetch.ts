@@ -101,7 +101,8 @@ export async function safeFetch(
   url: string | URL,
   options?: RequestInit & { timeout?: number },
 ): Promise<Response> {
-  const parsedUrl = typeof url === 'string' ? new URL(url) : url
+  const normalized = typeof url === 'string' && !/^https?:\/\//i.test(url) ? `https://${url}` : url
+  const parsedUrl = typeof normalized === 'string' ? new URL(normalized) : normalized
 
   if (BLOCKED_PROTOCOLS.includes(parsedUrl.protocol)) {
     throw new SsrfError('BLOCKED_PROTOCOL', `Protocol ${parsedUrl.protocol} is not allowed`)

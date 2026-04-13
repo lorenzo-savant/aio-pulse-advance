@@ -97,10 +97,14 @@ export async function POST(req: NextRequest) {
     const period1 = period1Data as Array<Record<string, unknown>>
     const avg1 = period1?.length
       ? {
-          healthScore: period1.reduce((a, b) => a + ((b.health_score as number) || 0), 0) / period1.length,
+          healthScore:
+            period1.reduce((a, b) => a + ((b.health_score as number) || 0), 0) / period1.length,
           sentiment:
             period1.reduce((a, b) => a + ((b.sentiment_score as number) || 0), 0) / period1.length,
-          recommendations: period1.reduce((a, b) => a + ((b.total_recommendations as number) || 0), 0),
+          recommendations: period1.reduce(
+            (a, b) => a + ((b.total_recommendations as number) || 0),
+            0,
+          ),
           queries: period1.reduce((a, b) => a + ((b.queries_this_period as number) || 0), 0),
         }
       : { healthScore: 0, sentiment: 0, recommendations: 0, queries: 0 }
@@ -108,10 +112,14 @@ export async function POST(req: NextRequest) {
     const period2 = period2Data as Array<Record<string, unknown>>
     const avg2 = period2?.length
       ? {
-          healthScore: period2.reduce((a, b) => a + ((b.health_score as number) || 0), 0) / period2.length,
+          healthScore:
+            period2.reduce((a, b) => a + ((b.health_score as number) || 0), 0) / period2.length,
           sentiment:
             period2.reduce((a, b) => a + ((b.sentiment_score as number) || 0), 0) / period2.length,
-          recommendations: period2.reduce((a, b) => a + ((b.total_recommendations as number) || 0), 0),
+          recommendations: period2.reduce(
+            (a, b) => a + ((b.total_recommendations as number) || 0),
+            0,
+          ),
           queries: period2.reduce((a, b) => a + ((b.queries_this_period as number) || 0), 0),
         }
       : { healthScore: 0, sentiment: 0, recommendations: 0, queries: 0 }
@@ -130,7 +138,8 @@ export async function POST(req: NextRequest) {
     const disappearedRecs =
       p1RecIds.size > 0
         ? (period1Recs || []).filter(
-            (r: Record<string, unknown>) => !p2RecIds.some((p2) => (p2 as Record<string, unknown>)?.id === r.id),
+            (r: Record<string, unknown>) =>
+              !p2RecIds.some((p2) => (p2 as Record<string, unknown>)?.id === r.id),
           )
         : []
     const consistentRecs = p2RecIds.filter((r) => p1RecIds.has((r as Record<string, unknown>)?.id))

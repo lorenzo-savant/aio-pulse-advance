@@ -233,7 +233,11 @@ export async function POST(req: NextRequest) {
         })
         sentCount++
       } catch (error) {
-        logger.error('Failed to send digest', { source: 'digest', to: userEmail, error: String(error) })
+        logger.error('Failed to send digest', {
+          source: 'digest',
+          to: userEmail,
+          error: String(error),
+        })
         failCount++
       }
     }

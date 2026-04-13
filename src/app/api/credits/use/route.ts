@@ -39,7 +39,10 @@ export async function POST(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -171,7 +174,8 @@ export async function POST(req: NextRequest) {
         cost_credits: creditsNeeded,
       })
       .then(({ error: usageError }: { error: any }) => {
-        if (usageError) logger.error('Failed to record usage', { source: 'credits', error: String(usageError) })
+        if (usageError)
+          logger.error('Failed to record usage', { source: 'credits', error: String(usageError) })
       })
 
     return NextResponse.json({

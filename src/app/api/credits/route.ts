@@ -26,7 +26,10 @@ export async function GET(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -42,15 +45,13 @@ export async function GET(req: NextRequest) {
 
     if (creditsError) throw creditsError
 
-    const totalPurchased =
-      (credits || [])
-        .filter((c: any) => c.amount > 0)
-        .reduce((sum: number, c: any) => sum + c.amount, 0)
+    const totalPurchased = (credits || [])
+      .filter((c: any) => c.amount > 0)
+      .reduce((sum: number, c: any) => sum + c.amount, 0)
 
-    const totalUsed =
-      (credits || [])
-        .filter((c: any) => c.amount < 0)
-        .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0)
+    const totalUsed = (credits || [])
+      .filter((c: any) => c.amount < 0)
+      .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0)
 
     const balance = totalPurchased - totalUsed
 
@@ -95,7 +96,10 @@ export async function POST(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -131,20 +135,15 @@ export async function POST(req: NextRequest) {
     if (insertError) throw insertError
 
     // Fetch updated balance
-    const { data: credits } = await db
-      .from('credits')
-      .select('amount')
-      .eq('user_id', userId)
+    const { data: credits } = await db.from('credits').select('amount').eq('user_id', userId)
 
-    const totalPurchased =
-      (credits || [])
-        .filter((c: any) => c.amount > 0)
-        .reduce((sum: number, c: any) => sum + c.amount, 0)
+    const totalPurchased = (credits || [])
+      .filter((c: any) => c.amount > 0)
+      .reduce((sum: number, c: any) => sum + c.amount, 0)
 
-    const totalUsed =
-      (credits || [])
-        .filter((c: any) => c.amount < 0)
-        .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0)
+    const totalUsed = (credits || [])
+      .filter((c: any) => c.amount < 0)
+      .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0)
 
     return NextResponse.json({
       success: true,

@@ -31,7 +31,10 @@ export async function GET(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -49,11 +52,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Verify user has access to brand
-  const { data: brand } = await db
-    .from('brands')
-    .select('id, user_id')
-    .eq('id', brandId)
-    .single()
+  const { data: brand } = await db.from('brands').select('id, user_id').eq('id', brandId).single()
 
   if (!brand || brand.user_id !== userId) {
     return err('Brand not found or access denied', 404)
@@ -94,7 +93,10 @@ export async function GET(req: NextRequest) {
       timestamp: Date.now(),
     })
   } catch (error) {
-    logger.error('Historical analytics error', { source: 'analytics/historical', error: String(error) })
+    logger.error('Historical analytics error', {
+      source: 'analytics/historical',
+      error: String(error),
+    })
     return err('Failed to fetch analytics')
   }
 }
@@ -115,7 +117,10 @@ export async function POST(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 

@@ -80,7 +80,10 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    logger.error('Recommendations error', { source: 'archive/recommendations', error: String(error) })
+    logger.error('Recommendations error', {
+      source: 'archive/recommendations',
+      error: String(error),
+    })
     return NextResponse.json(
       { success: false, message: 'Failed to fetch recommendations' },
       { status: 500 },
@@ -171,7 +174,10 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Recommendation updated' })
   } catch (error) {
-    logger.error('Recommendations update error', { source: 'archive/recommendations', error: String(error) })
+    logger.error('Recommendations update error', {
+      source: 'archive/recommendations',
+      error: String(error),
+    })
     return NextResponse.json(
       { success: false, message: 'Failed to update recommendation' },
       { status: 500 },

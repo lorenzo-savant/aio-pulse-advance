@@ -116,16 +116,18 @@ export async function POST(req: NextRequest) {
           results.push({ promptId: prompt.id, engine, success: true })
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
-          logger.error('Engine failed for prompt', { source: 'cron', engine, prompt: prompt.text.slice(0, 50), error: msg })
+          logger.error('Engine failed for prompt', {
+            source: 'cron',
+            engine,
+            prompt: prompt.text.slice(0, 50),
+            error: msg,
+          })
           results.push({ promptId: prompt.id, engine, success: false, error: msg })
         }
       }
 
       // ── Update prompt last_run_at ─────────────────────────────────────────
-      await supabase
-        .from('prompts')
-        .update({ last_run_at: now.toISOString() })
-        .eq('id', prompt.id)
+      await supabase.from('prompts').update({ last_run_at: now.toISOString() }).eq('id', prompt.id)
 
       // ── Update daily health score ─────────────────────────────────────────
       if (engineResults.length > 0) {
@@ -162,7 +164,11 @@ export async function POST(req: NextRequest) {
       try {
         await calculateCitationSnapshots(bId as string)
       } catch (snapErr) {
-        logger.error('Snapshot calculation failed', { source: 'cron', brandId: String(bId), error: String(snapErr) })
+        logger.error('Snapshot calculation failed', {
+          source: 'cron',
+          brandId: String(bId),
+          error: String(snapErr),
+        })
       }
     }
 

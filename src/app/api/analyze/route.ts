@@ -39,17 +39,17 @@ export async function GET(req: NextRequest) {
     if (!brand) return err('Brand not found or access denied', 404)
   }
 
-let query = db
-  .from('analysis_results')
-  .select('...')
-  .order('created_at', { ascending: false })
-  .limit(limit)
+  let query = db
+    .from('analysis_results')
+    .select('...')
+    .order('created_at', { ascending: false })
+    .limit(limit)
 
-if (brandId) {
-  query = query.eq('brand_id', brandId)
-} else {
-  query = query.eq('user_id', userId)
-}
+  if (brandId) {
+    query = query.eq('brand_id', brandId)
+  } else {
+    query = query.eq('user_id', userId)
+  }
 
   const { data, error: fetchErr } = await query
 

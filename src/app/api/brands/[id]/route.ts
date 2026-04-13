@@ -14,9 +14,7 @@ const updateBrandSchema = z.object({
   domains: z.array(z.string().max(200)).max(20).optional(),
   competitors: z.array(z.string().max(100)).max(20).optional(),
   industry: z.string().max(100).optional().nullable(),
-  language: z
-    .preprocess((v) => (v === '' ? undefined : v), z.enum(['en', 'it', 'sv']))
-    .optional(),
+  language: z.preprocess((v) => (v === '' ? undefined : v), z.enum(['en', 'it', 'sv'])).optional(),
   color: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
@@ -88,7 +86,10 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -118,7 +119,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -188,7 +192,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -263,7 +270,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 

@@ -163,10 +163,7 @@ export async function POST(req: NextRequest) {
           .single()
 
         if (sub) {
-          await db
-            .from('subscriptions')
-            .update({ status: 'past_due' })
-            .eq('user_id', sub.user_id)
+          await db.from('subscriptions').update({ status: 'past_due' }).eq('user_id', sub.user_id)
 
           logger.warn('Payment failed', { source: 'billing' })
         }

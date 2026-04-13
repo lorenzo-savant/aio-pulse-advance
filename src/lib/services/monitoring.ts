@@ -338,6 +338,181 @@ export function calculateAVIFromResults(
   return { avi: calculateAVI(components), components }
 }
 
+// ─── calculateCompetitorAVI ───────────────────────────────────────────────────
+
+export interface CompetitorGapResult {
+  rank: number
+  weakestComponent: string
+  competitorAvi: number
+}
+
+const COMPONENT_WEIGHTS: Record<keyof AVIInput, number> = {
+  citationRate: 0.2,
+  mentionFrequency: 0.2,
+  sentimentScore: 0.15,
+  recommendationRate: 0.2,
+  positionAvg: 0.15,
+  hallucinationIndex: 0.1,
+}
+
+const COMPONENT_LABELS: Record<keyof AVIInput, string> = {
+  citationRate: 'Citation Rate',
+  mentionFrequency: 'Mention Frequency',
+  sentimentScore: 'Sentiment Score',
+  recommendationRate: 'Recommendation Rate',
+  positionAvg: 'Position Average',
+  hallucinationIndex: 'Hallucination Index',
+}
+
+export function calculateCompetitorAVI(
+  competitorMentions: Array<{ name: string; position: number; count: number }>,
+  brandAVI: number,
+): CompetitorGapResult {
+  const totalMentions = competitorMentions.reduce((sum, m) => sum + m.count, 0)
+
+  if (totalMentions === 0) {
+    return {
+      rank: 0,
+      weakestComponent: 'mentionFrequency',
+      competitorAvi: 0,
+    }
+  }
+
+  const mentioned = competitorMentions.filter((m) => m.count > 0)
+  const positionsValid = competitorMentions.filter((m) => m.position > 0)
+
+  const components: AVIInput = {
+    citationRate: Math.min(100, totalMentions * 10),
+    mentionFrequency: Math.min(
+      100,
+      (mentioned.length / Math.max(1, competitorMentions.length)) * 100,
+    ),
+    sentimentScore: 0,
+    recommendationRate: Math.min(
+      100,
+      (mentioned.length / Math.max(1, competitorMentions.length)) * 100,
+    ),
+    positionAvg:
+      positionsValid.length > 0
+        ? positionsValid.reduce((sum, m) => sum + m.position, 0) / positionsValid.length
+        : 5,
+    hallucinationIndex: 0,
+  }
+
+  const competitorAvi = calculateAVI(components)
+
+  const rank = competitorAvi >= brandAVI ? 1 : brandAVI - competitorAvi > 20 ? 3 : 2
+
+  const componentValues: Array<{ key: keyof AVIInput; value: number }> = [
+    { key: 'citationRate', value: components.citationRate * COMPONENT_WEIGHTS.citationRate },
+    {
+      key: 'mentionFrequency',
+      value: components.mentionFrequency * COMPONENT_WEIGHTS.mentionFrequency,
+    },
+    {
+      key: 'sentimentScore',
+      value: ((components.sentimentScore + 1) / 2) * 100 * COMPONENT_WEIGHTS.sentimentScore,
+    },
+    {
+      key: 'recommendationRate',
+      value: components.recommendationRate * COMPONENT_WEIGHTS.recommendationRate,
+    },
+    {
+      key: 'positionAvg',
+      value:
+        components.positionAvg > 0
+          ? ((5 - components.positionAvg) / 4) * 100 * COMPONENT_WEIGHTS.positionAvg
+          : 0,
+    },
+    {
+      key: 'hallucinationIndex',
+      value: (100 - components.hallucinationIndex) * COMPONENT_WEIGHTS.hallucinationIndex,
+    },
+  ]
+
+  if (componentValues.length === 0) {
+    return {
+      rank,
+      weakestComponent: 'Citation Rate',
+      competitorAvi,
+    }
+  }
+
+  let weakest = componentValues[0]!
+  for (const curr of componentValues) {
+    if (curr.value < weakest.value) {
+      weakest = curr
+    }
+  }
+
+  return {
+    rank,
+    weakestComponent: COMPONENT_LABELS[weakest.key],
+    competitorAvi,
+  }
+}
+
+// ─── Sentiment Heatmap ───────────────────────────────────────────────────────
+
+export type HeatmapCell = {
+  sentiment: number
+  mentions: number
+  avi: number
+}
+
+export type HeatmapRow = Record<string, HeatmapCell>
+
+export type SentimentHeatmap = Record<string, HeatmapRow>
+
+export function buildSentimentHeatmap(
+  results: Array<{
+    engine: string
+    category: string | null
+    brand_mentioned: boolean
+    sentiment_score: number | null
+    visibility_score: number
+    cited_urls: string[]
+    has_hallucination: boolean
+    mention_position?: number | null
+  }>,
+): SentimentHeatmap {
+  const heatmap: SentimentHeatmap = {}
+
+  const grouped = results.reduce(
+    (acc, r) => {
+      const category = r.category ?? 'uncategorized'
+      const key = `${r.engine}:${category}`
+      if (!acc[key]) {
+        acc[key] = []
+      }
+      acc[key].push(r)
+      return acc
+    },
+    {} as Record<string, typeof results>,
+  )
+
+  for (const [key, groupResults] of Object.entries(grouped)) {
+    const [engine, category] = key.split(':') as [string, string]
+
+    const mentioned = groupResults.filter((r) => r.brand_mentioned)
+    const sentimentSum = mentioned.reduce((a, r) => a + (r.sentiment_score ?? 0), 0)
+    const avgSentiment = mentioned.length > 0 ? sentimentSum / mentioned.length : 0
+
+    const { avi } = calculateAVIFromResults(groupResults)
+
+    if (!heatmap[engine]) {
+      heatmap[engine] = {}
+    }
+    heatmap[engine][category] = {
+      sentiment: Math.round(avgSentiment * 1000) / 1000,
+      mentions: mentioned.length,
+      avi: Math.round(avi * 10) / 10,
+    }
+  }
+
+  return heatmap
+}
+
 // ─── calculateHealthScore ─────────────────────────────────────────────────────
 
 /** @deprecated Use calculateAVI() instead. Backward-compatible wrapper. */
@@ -354,4 +529,77 @@ export function calculateHealthScore(
     positionAvg: 0,
     hallucinationIndex: hallucinationRate * 100,
   })
+}
+
+// ─── Domain SOAIV (Share of AI Voice) ────────────────────────────────────────
+
+export interface DomainSOAIVResult {
+  domain: string
+  brandShare: number
+  competitorShare: number
+  otherShare: number
+}
+
+function normalizeDomain(domain: string): string {
+  return domain.replace(/^www\./, '').toLowerCase()
+}
+
+function extractHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return null
+  }
+}
+
+export function calculateDomainSOAIV(
+  citedUrls: string[],
+  brandDomain: string,
+  competitors: string[],
+): DomainSOAIVResult[] {
+  const normalizedBrandDomain = normalizeDomain(brandDomain)
+  const normalizedCompetitors = competitors.map(normalizeDomain)
+
+  const categoryCounts: Record<string, { brand: number; competitor: number; other: number }> = {}
+
+  for (const url of citedUrls) {
+    const hostname = extractHostname(url)
+    if (!hostname) continue
+
+    const normalized = normalizeDomain(hostname)
+
+    let category: 'brand' | 'competitor' | 'other'
+    if (normalized === normalizedBrandDomain || normalized.endsWith(`.${normalizedBrandDomain}`)) {
+      category = 'brand'
+    } else if (
+      normalizedCompetitors.some((c) => normalized === c || normalized.endsWith(`.${c}`))
+    ) {
+      category = 'competitor'
+    } else {
+      category = 'other'
+    }
+
+    const domainKey = normalizedCompetitors.some((c) => normalized.endsWith(`.${c}`))
+      ? normalizedCompetitors.find((c) => normalized.endsWith(`.${c}`))!
+      : normalized
+
+    if (!categoryCounts[domainKey]) {
+      categoryCounts[domainKey] = { brand: 0, competitor: 0, other: 0 }
+    }
+    categoryCounts[domainKey][category]++
+  }
+
+  const results: DomainSOAIVResult[] = []
+  for (const [domain, counts] of Object.entries(categoryCounts)) {
+    const total = counts.brand + counts.competitor + counts.other
+    if (total === 0) continue
+    results.push({
+      domain,
+      brandShare: Math.round((counts.brand / total) * 1000) / 10,
+      competitorShare: Math.round((counts.competitor / total) * 1000) / 10,
+      otherShare: Math.round((counts.other / total) * 1000) / 10,
+    })
+  }
+
+  return results.sort((a, b) => b.brandShare - a.brandShare)
 }

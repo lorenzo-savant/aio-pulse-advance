@@ -26,6 +26,8 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-icons'],
   },
 
+  serverExternalPackages: ['dns'],
+
   turbopack: {
     root: './',
   },

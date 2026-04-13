@@ -149,13 +149,18 @@ export async function getTrends(brandId: string, days: number = 30): Promise<Tre
   > = {}
 
   for (const r of rankings) {
-    if (!groupedByKeyword[r.keyword]) {
-      groupedByKeyword[r.keyword] = []
+    const keyword = r.keyword
+    if (!groupedByKeyword[keyword]) {
+      groupedByKeyword[keyword] = []
     }
-    groupedByKeyword[r.keyword].push({
-      date: r.created_at.split('T')[0],
-      position: r.position,
-      aiOverviewPresent: r.ai_overview_present,
+    const date = r.created_at?.split('T')[0] ?? ''
+    const position = r.position ?? 0
+    const aiOverviewPresent = r.ai_overview_present ?? false
+    const arr = groupedByKeyword[keyword]
+    arr.push({
+      date,
+      position,
+      aiOverviewPresent,
     })
   }
 

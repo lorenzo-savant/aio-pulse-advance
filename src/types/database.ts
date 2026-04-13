@@ -372,6 +372,120 @@ export type Database = {
         }
         Relationships: []
       }
+      keyword_rankings: {
+        Row: {
+          id: string
+          brand_id: string
+          keyword: string
+          url: string | null
+          position: number | null
+          ai_overview_present: boolean | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          keyword: string
+          url?: string | null
+          position?: number | null
+          ai_overview_present?: boolean | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          keyword?: string
+          url?: string | null
+          position?: number | null
+          ai_overview_present?: boolean | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      workspaces: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          id: string
+          workspace_id: string
+          user_id: string
+          role: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          user_id: string
+          role?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          user_id?: string
+          role?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          id: string
+          workspace_id: string | null
+          user_id: string | null
+          action: string
+          resource: string | null
+          ip: string | null
+          user_agent: string | null
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id?: string | null
+          user_id?: string | null
+          action: string
+          resource?: string | null
+          ip?: string | null
+          user_agent?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string | null
+          user_id?: string | null
+          action?: string
+          resource?: string | null
+          ip?: string | null
+          user_agent?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       monitoring_results: {
         Row: {
           all_providers: string[] | null

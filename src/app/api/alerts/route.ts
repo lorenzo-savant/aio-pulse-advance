@@ -1,4 +1,5 @@
 // PATH: src/app/api/alerts/route.ts
+import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
@@ -242,7 +243,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: 'Validation failed',
+        message: formatValidationError(parsed.error),
         details: parsed.error.flatten().fieldErrors,
       },
       { status: 422 },
@@ -346,7 +347,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: 'Validation failed',
+        message: formatValidationError(parsed.error),
         details: parsed.error.flatten().fieldErrors,
       },
       { status: 422 },

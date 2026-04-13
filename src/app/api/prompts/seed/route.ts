@@ -8,6 +8,7 @@ import {
   type PromptCategory,
   type PromptLang,
 } from '@/lib/prompt-library'
+import { formatValidationError } from '@/lib/format-validation-error'
 import type { BrandLanguage } from '@/types'
 
 const seedSchema = z.object({
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
   const parsed = seedSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+      { success: false, message: formatValidationError(parsed.error), details: parsed.error.flatten().fieldErrors },
       { status: 422 },
     )
   }

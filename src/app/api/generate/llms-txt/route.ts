@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { generateLlmsTxt, generateLlmsFullTxt, LlmsInput } from '@/lib/services/llms-generator'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
+import { formatValidationError } from '@/lib/format-validation-error'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -115,7 +116,7 @@ export async function POST(req: NextRequest) {
   const parsed = requestSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+      { success: false, message: formatValidationError(parsed.error), details: parsed.error.flatten().fieldErrors },
       { status: 422 },
     )
   }

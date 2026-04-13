@@ -1,4 +1,5 @@
 // PATH: src/app/api/team/route.ts
+import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { z } from 'zod'
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest) {
   const parsed = inviteSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+      { success: false, message: formatValidationError(parsed.error), details: parsed.error.flatten().fieldErrors },
       { status: 422 },
     )
   }

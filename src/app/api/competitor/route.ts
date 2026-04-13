@@ -1,4 +1,5 @@
 // PATH: src/app/api/competitor/route.ts
+import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Json } from '@/types/database'
 import { z } from 'zod'
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: 'Validation failed',
+        message: formatValidationError(parsed.error),
         details: parsed.error.flatten().fieldErrors,
       },
       { status: 422 },

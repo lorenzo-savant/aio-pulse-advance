@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { slugify } from '@/lib/utils'
+import { formatValidationError } from '@/lib/format-validation-error'
 
 const schema = z.object({
   brandName: z.string().min(1).max(100),
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, message: 'Validation failed', errors: e.errors },
+        { success: false, message: formatValidationError(e), errors: e.errors },
         { status: 422 },
       )
     }

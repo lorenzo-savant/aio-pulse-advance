@@ -1,4 +1,5 @@
 // PATH: src/app/api/export/obsidian/route.ts
+import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import { getCurrentUserId, AuthError } from '@/lib/supabase'
 import { z } from 'zod'
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
   const parseResult = obsidianExportSchema.safeParse(body)
   if (!parseResult.success) {
     return NextResponse.json(
-      { success: false, message: 'Validation failed', errors: parseResult.error.flatten() },
+      { success: false, message: formatValidationError(parseResult.error), errors: parseResult.error.flatten() },
       { status: 400 },
     )
   }

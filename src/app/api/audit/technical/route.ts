@@ -4,6 +4,7 @@ import { runTechnicalAudit } from '@/lib/services/technical-seo-audit'
 import { logger } from '@/lib/logger'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import type { Json } from '@/types/database'
+import { formatValidationError } from '@/lib/format-validation-error'
 
 const auditRequestSchema = z.object({
   url: z.string().url(),
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: 'Validation failed',
+        message: formatValidationError(parsed.error),
         details: parsed.error.flatten().fieldErrors,
       },
       { status: 422 },

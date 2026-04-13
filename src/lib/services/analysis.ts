@@ -93,7 +93,8 @@ async function callAIProvider(
 }
 
 export async function fetchUrlContent(url: string): Promise<string> {
-  const res = await fetch(url, {
+  const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`
+  const res = await fetch(normalized, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',

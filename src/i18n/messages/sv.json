@@ -440,7 +440,7 @@
         "open_library": "Öppna biblioteket",
         "open_library_desc": "Klicka \"Lägg från Bibliotek\" för att så från våra 70 förladdade mallar (översatta till IT/SV/EN).",
         "write_own": "Eller skriv dina egna",
-        "write_own_desc": "\"Ny Prompt\" låter dig skriva en anpassad fråga — t.ex. \"bästa CRM för småföretag i {country}\".",
+        "write_own_desc": "\"Ny Prompt\" låter dig skriva en anpassad fråga — t.ex. \"bästa CRM för småföretag i Sverige\".",
         "pick_engines": "Välj motorer",
         "pick_engines_desc": "Standard: alla 4 (ChatGPT, Gemini, Perplexity, Claude). Avmarkera om du vill spara krediter.",
         "set_frequency": "Ange frekvens",

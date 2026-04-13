@@ -440,7 +440,7 @@
         "open_library": "Apri la libreria",
         "open_library_desc": "Clicca \"Aggiungi dalla Libreria\" per seminare dai nostri 70 template pre-scritti (tradotti in IT/SV/EN).",
         "write_own": "O scrivi i tuoi",
-        "write_own_desc": "\"Nuovo Prompt\" ti permette di digitare una query personalizzata — es. \"miglior CRM per piccole aziende in {country}\".",
+        "write_own_desc": "\"Nuovo Prompt\" ti permette di digitare una query personalizzata — es. \"miglior CRM per piccole aziende in Italia\".",
         "pick_engines": "Scegli i motori",
         "pick_engines_desc": "Default: tutti e 4 (ChatGPT, Gemini, Perplexity, Claude). Deseleziona se vuoi risparmiare crediti.",
         "set_frequency": "Imposta la frequenza",

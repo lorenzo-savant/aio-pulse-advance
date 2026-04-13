@@ -440,7 +440,7 @@
         "open_library": "Open the library",
         "open_library_desc": "Click \"Add from Library\" to seed from our 70 pre-written templates (translated to IT/SV/EN).",
         "write_own": "Or write your own",
-        "write_own_desc": "\"New Prompt\" lets you type a custom query — e.g. \"best CRM for small business in {country}\".",
+        "write_own_desc": "\"New Prompt\" lets you type a custom query — e.g. \"best CRM for small business in Italy\".",
         "pick_engines": "Pick engines",
         "pick_engines_desc": "Default: all 4 (ChatGPT, Gemini, Perplexity, Claude). Deselect if you want to save credits.",
         "set_frequency": "Set frequency",

@@ -1,3 +1,5 @@
+import { safeFetch } from '@/lib/utils/safe-fetch'
+
 export function isAnthropicAvailable(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY)
 }
@@ -6,7 +8,7 @@ export async function callAnthropic(prompt: string): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured')
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await safeFetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'x-api-key': apiKey,

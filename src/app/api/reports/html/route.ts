@@ -384,8 +384,9 @@ export async function GET(req: NextRequest) {
   const brandDomain = brand.domain ?? null
   const brandCompetitors = brand.competitors ?? []
 
-  const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const toDate = new Date().toISOString().split('T')[0]
+  const fromDate =
+    new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0] ?? ''
+  const toDate = new Date().toISOString().split('T')[0] ?? ''
 
   const { data: results, error: resultsError } = await db
     .from('monitoring_results')
@@ -448,7 +449,7 @@ export async function GET(req: NextRequest) {
     fromDate,
     toDate,
     avi,
-    components,
+    components as unknown as Record<string, number>,
     soaivResults,
     competitorAnalysis,
     heatmap,

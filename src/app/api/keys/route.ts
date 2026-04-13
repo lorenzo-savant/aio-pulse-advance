@@ -1,7 +1,26 @@
-// PATH: src/app/api/keys/route.ts
+import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+
+function isPlaintextKey(key: string): boolean {
+  const length = key.length
+  const hasNoSpaces = !key.includes(' ')
+  const hasNoSpecialChars = /^[A-Za-z0-9_\-]+$/.test(key)
+  const looksLikeBase64 = /^[A-Za-z0-9+/]+=*$/.test(key) && length > 20
+  const looksLikeHex = /^[a-fA-F0-9]+$/.test(key) && (length === 32 || length === 64)
+
+  if (length >= 20 && length <= 80 && hasNoSpaces) {
+    if (looksLikeBase64 || looksLikeHex || hasNoSpecialChars) {
+      return true
+    }
+  }
+  return false
+}
+
+function hashApiKey(key: string): string {
+  return createHash('sha256').update(key).digest('hex')
+}
 
 export async function GET(req: NextRequest) {
   let userId: string
@@ -18,7 +37,10 @@ export async function GET(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -60,7 +82,10 @@ export async function POST(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -97,11 +122,14 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (existing) {
+    // Check if key looks like plaintext - if so, hash it
+    const keyToStore = isPlaintextKey(apiKey) ? hashApiKey(apiKey) : apiKey
+
     // Update existing key
     const { error } = await supabase
       .from('user_api_keys')
       .update({
-        encrypted_key: apiKey,
+        encrypted_key: keyToStore,
         label: label || provider,
         updated_at: new Date().toISOString(),
       })
@@ -109,11 +137,14 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
   } else {
+    // Check if key looks like plaintext - if so, hash it
+    const keyToStore = isPlaintextKey(apiKey) ? hashApiKey(apiKey) : apiKey
+
     // Insert new key
     const { error } = await supabase.from('user_api_keys').insert({
       user_id: userId,
       provider,
-      encrypted_key: apiKey,
+      encrypted_key: keyToStore,
       label: label || provider,
       is_active: true,
     })

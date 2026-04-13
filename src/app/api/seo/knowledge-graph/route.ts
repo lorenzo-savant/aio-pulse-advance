@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeKnowledgeGraph } from '@/lib/services/knowledge-graph'
+import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 function extractJsonLd(html: string): object[] {
   const jsonLdScripts =
@@ -29,6 +30,18 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request.headers)
+  const rateCheck = await checkRateLimit(`knowledge-graph:${ip}`, 10, 60_000)
+  if (!rateCheck.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
+    )
+  }
+
   const { searchParams } = new URL(request.url)
   const url = searchParams.get('url')
 

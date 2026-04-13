@@ -1,6 +1,7 @@
 import type { AnalysisResult, EngineId, IntentType } from '@/types'
 import { generateId } from '@/lib/utils'
 import { logger } from '@/lib/logger'
+import { safeFetch } from '@/lib/utils/safe-fetch'
 
 // ─── SSRF Protection ───────────────────────────────────────────────────────────
 
@@ -128,7 +129,7 @@ export async function callGemini(prompt: string): Promise<string> {
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
 
-  const res = await fetch(url, {
+  const res = await safeFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -173,7 +174,7 @@ export async function fetchUrlContent(url: string): Promise<string> {
     hostname = url
   }
 
-  const res = await fetch(url, {
+  const res = await safeFetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       Accept: 'text/html,application/xhtml+xml',
@@ -283,7 +284,10 @@ export async function analyzeContent(
   const prompt = buildAnalysisPrompt(contentToAnalyze, engine)
   const rawResponse = await callGemini(prompt)
 
-  logger.debug('Raw Gemini response', { service: 'gemini', responsePreview: rawResponse.slice(0, 200) })
+  logger.debug('Raw Gemini response', {
+    service: 'gemini',
+    responsePreview: rawResponse.slice(0, 200),
+  })
 
   // Clean and parse JSON - handle multiple formats
   let cleaned = rawResponse
@@ -309,7 +313,10 @@ export async function analyzeContent(
       const fixed = repairTruncatedJson(cleaned)
       parsed = JSON.parse(fixed) as typeof parsed
     } catch (e2) {
-      logger.error('Failed to parse AI response', { service: 'gemini', rawPreview: cleaned.slice(0, 500) })
+      logger.error('Failed to parse AI response', {
+        service: 'gemini',
+        rawPreview: cleaned.slice(0, 500),
+      })
       throw new Error(
         `Failed to parse AI response: ${e2 instanceof Error ? e2.message : 'Invalid JSON'}. Please try again.`,
       )

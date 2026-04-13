@@ -1,4 +1,5 @@
 import { createServerClient, getCurrentUserId } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export interface SessionAnalytics {
   sessionId: string
@@ -85,7 +86,7 @@ export async function getSessionAnalytics(
       providersUsed: Array.from(uniqueProviders),
     }
   } catch (err) {
-    console.error('Failed to get session analytics:', err)
+    logger.error('Failed to get session analytics', { error: err })
     return null
   }
 }

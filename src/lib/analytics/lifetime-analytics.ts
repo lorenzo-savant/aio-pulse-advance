@@ -1,4 +1,5 @@
 import { createServerClient, getCurrentUserId } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export interface LifetimeAnalytics {
   brandId: string
@@ -98,7 +99,7 @@ export async function getLifetimeAnalytics(brandId: string): Promise<LifetimeAna
       queryCategoryBreakdown,
     }
   } catch (err) {
-    console.error('Failed to get lifetime analytics:', err)
+    logger.error('Failed to get lifetime analytics', { error: err })
     return null
   }
 }

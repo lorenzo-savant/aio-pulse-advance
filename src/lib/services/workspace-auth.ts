@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export type Permission = 'manage_members' | 'view_audit' | 'edit_brand' | 'view_brand'
 
@@ -149,7 +150,7 @@ export async function createWorkspace(name: string, slug: string, ownerId: strin
     .single()
 
   if (error || !workspace) {
-    console.error('createWorkspace: failed to create workspace', error)
+    logger.error('createWorkspace: failed to create workspace', { error })
     return null
   }
 

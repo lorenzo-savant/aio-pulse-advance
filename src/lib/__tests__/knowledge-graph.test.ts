@@ -20,9 +20,11 @@ describe('knowledge-graph', () => {
       ]
       const entities = extractEntities(jsonLd)
       expect(entities).toHaveLength(1)
-      expect(entities[0].type).toBe('Organization')
-      expect(entities[0].name).toBe('Acme Corp')
-      expect(entities[0].url).toBe('https://acme.com')
+      if (entities[0]) {
+        expect(entities[0].type).toBe('Organization')
+        expect(entities[0].name).toBe('Acme Corp')
+        expect(entities[0].url).toBe('https://acme.com')
+      }
     })
 
     it('should extract Person entity', () => {
@@ -36,9 +38,11 @@ describe('knowledge-graph', () => {
       ]
       const entities = extractEntities(jsonLd)
       expect(entities).toHaveLength(1)
-      expect(entities[0].type).toBe('Person')
-      expect(entities[0].name).toBe('John Doe')
-      expect(entities[0].properties?.jobTitle).toBe('CEO')
+      if (entities[0]) {
+        expect(entities[0].type).toBe('Person')
+        expect(entities[0].name).toBe('John Doe')
+        expect(entities[0].properties?.jobTitle).toBe('CEO')
+      }
     })
 
     it('should extract Product entity', () => {
@@ -51,7 +55,9 @@ describe('knowledge-graph', () => {
       ]
       const entities = extractEntities(jsonLd)
       expect(entities).toHaveLength(1)
-      expect(entities[0].type).toBe('Product')
+      if (entities[0]) {
+        expect(entities[0].type).toBe('Product')
+      }
     })
 
     it('should extract multiple entities', () => {
@@ -71,8 +77,12 @@ describe('knowledge-graph', () => {
       ]
       const entities = extractEntities(jsonLd)
       expect(entities).toHaveLength(2)
-      expect(entities[0].type).toBe('HowTo')
-      expect(entities[1].type).toBe('Recipe')
+      if (entities[0]) {
+        expect(entities[0].type).toBe('HowTo')
+      }
+      if (entities[1]) {
+        expect(entities[1].type).toBe('Recipe')
+      }
     })
   })
 

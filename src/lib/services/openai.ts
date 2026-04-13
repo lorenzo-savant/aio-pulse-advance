@@ -1,3 +1,5 @@
+import { safeFetch } from '@/lib/utils/safe-fetch'
+
 export function isOpenAIAvailable(): boolean {
   return Boolean(process.env.OPENAI_API_KEY)
 }
@@ -9,7 +11,7 @@ export async function callOpenAI(
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY not configured')
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await safeFetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,

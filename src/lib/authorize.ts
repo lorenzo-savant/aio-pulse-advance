@@ -6,7 +6,7 @@ const BRAND_BASE_COLS = 'id, name, slug, competitors, aliases, domain, color'
 
 // Extended columns for reports/export (may not exist in older schemas)
 const BRAND_REPORT_COLS =
-  'id, name, slug, competitors, aliases, domain, color, report_logo_url, report_brand_name, report_primary_color'
+  'id, name, slug, competitors, aliases, domain, color, description, industry, logo_url, is_active, created_at, updated_at, language, report_logo_url, report_brand_name, report_primary_color'
 
 export interface BrandAccess {
   id: string
@@ -16,9 +16,17 @@ export interface BrandAccess {
   aliases: string[]
   domain: string | null
   color: string
+  description: string | null
+  industry: string | null
+  logo_url: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  language: string
   report_logo_url?: string | null
   report_brand_name?: string | null
   report_primary_color?: string | null
+  user_id?: string
 }
 
 export interface PromptAccess {

@@ -1,3 +1,5 @@
+import { safeFetch } from '@/lib/utils/safe-fetch'
+
 export function isPerplexityAvailable(): boolean {
   return Boolean(process.env.PERPLEXITY_API_KEY)
 }
@@ -6,7 +8,7 @@ export async function callPerplexity(prompt: string): Promise<string> {
   const apiKey = process.env.PERPLEXITY_API_KEY
   if (!apiKey) throw new Error('PERPLEXITY_API_KEY not configured')
 
-  const res = await fetch('https://api.perplexity.ai/chat/completions', {
+  const res = await safeFetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,

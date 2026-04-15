@@ -155,7 +155,10 @@
       "analytics": "Analytics",
       "sentiment": "Sentiment",
       "citations": "Citations",
+      "citation_sources": "Citation Sources",
+      "aeo_snippets": "AEO Snippets",
       "keywords": "Keywords",
+      "geo_score": "GEO Score",
       "snapshots": "Snapshots",
       "reports": "Reports",
       "competitor": "Competitor",
@@ -302,7 +305,8 @@
     "empty_state": {
       "title": "No brands yet",
       "description": "Add your first brand to start monitoring AI visibility.",
-      "cta": "Add brand"
+      "cta": "Add brand",
+      "guided_setup": "Guided setup"
     },
     "error_state": {
       "title": "An error occurred",
@@ -976,5 +980,112 @@
     "steps": "Steps",
     "rerun": "Re-run",
     "cancel": "Cancel"
+  },
+  "geoScore": {
+    "page_title": "GEO Score",
+    "page_subtitle": "AI search visibility and optimization report",
+    "run_analysis": "Run Analysis",
+    "running_analysis": "Running analysis...",
+    "last_analyzed": "Last analyzed",
+    "pages_analyzed": "Pages analyzed",
+    "analyzed_url": "Analyzed URL",
+    "tier": {
+      "critical": "Critical",
+      "poor": "Poor",
+      "fair": "Fair",
+      "good": "Good",
+      "excellent": "Excellent"
+    },
+    "categories": {
+      "aiCitability": "AI Citability & Visibility",
+      "brandAuthority": "Brand Authority Signals",
+      "contentEeat": "Content Quality & E-E-A-T",
+      "technical": "Technical Foundations",
+      "schema": "Structured Data",
+      "platformOptimization": "Platform Optimization"
+    },
+    "crawlers": {
+      "title": "AI Crawler Access",
+      "allowed": "Allowed",
+      "blocked": "Blocked",
+      "restricted": "Restricted",
+      "not_mentioned": "Not mentioned",
+      "tier1": "Tier 1 (Critical)",
+      "tier2": "Tier 2 (Important)",
+      "tier3": "Tier 3 (Training)",
+      "not_analyzed": "Crawler access not analysed yet"
+    },
+    "platforms": {
+      "title": "Platform Performance",
+      "google_aio": "Google AIO",
+      "chatgpt": "ChatGPT",
+      "perplexity": "Perplexity AI",
+      "gemini": "Gemini",
+      "bing_copilot": "Bing Copilot"
+    },
+    "findings": {
+      "title": "Findings",
+      "all": "All",
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "resolved": "Resolved",
+      "unresolved": "Unresolved",
+      "no_findings": "No findings yet",
+      "impact": "impact"
+    },
+    "action_plan": {
+      "title": "Action Plan",
+      "quick_wins": "Quick Wins",
+      "medium_term": "Medium-Term",
+      "strategic": "Strategic",
+      "hours": "hours",
+      "days": "days",
+      "weeks": "weeks",
+      "months": "months",
+      "estimated_impact": "If you fix all these, estimated",
+      "points_suffix": "points",
+      "pts_suffix": "pts",
+      "no_items": "No items in this category"
+    },
+    "trend": {
+      "title": "Score Trend",
+      "need_more_data": "Need at least 2 snapshots to show a trend",
+      "loading": "Loading...",
+      "30d": "30 days",
+      "90d": "90 days",
+      "6m": "6 months",
+      "1y": "1 year"
+    },
+    "breakdown": {
+      "title": "Score Breakdown",
+      "category": "Category",
+      "score": "Score",
+      "weight": "Weight",
+      "weighted": "Weighted",
+      "overall": "Overall Score"
+    },
+    "radar": {
+      "score_label": "Score",
+      "key_gap": "Key gap",
+      "action": "Action",
+      "no_data": "No data"
+    },
+    "crawlers_extra": {
+      "allowed_summary": "{allowed}/{total} AI crawlers allowed"
+    },
+    "meta": {
+      "report_label": "GEO Score Report"
+    },
+    "toast": {
+      "resolved": "Marked as resolved",
+      "unresolved": "Marked as unresolved",
+      "update_failed": "Failed to update"
+    },
+    "empty": {
+      "no_data": "No GEO score data yet",
+      "run_first": "Run an analysis to see your GEO score"
+    }
   }
 }

@@ -155,7 +155,10 @@
       "analytics": "Analytics",
       "sentiment": "Sentiment",
       "citations": "Citazioni",
+      "citation_sources": "Fonti Citazioni",
+      "aeo_snippets": "AEO Snippets",
       "keywords": "Parole Chiave",
+      "geo_score": "GEO Score",
       "snapshots": "Snapshot",
       "reports": "Report",
       "competitor": "Competitor",
@@ -302,7 +305,8 @@
     "empty_state": {
       "title": "Nessun brand trovato",
       "description": "Crea il tuo primo brand per iniziare a monitorare la visibilità.",
-      "cta": "Aggiungi brand"
+      "cta": "Aggiungi brand",
+      "guided_setup": "Setup guidato"
     },
     "error_state": {
       "title": "Si è verificato un errore",
@@ -976,5 +980,112 @@
     "steps": "Passaggi",
     "rerun": "Riesegui",
     "cancel": "Annulla"
+  },
+  "geoScore": {
+    "page_title": "Punteggio GEO",
+    "page_subtitle": "Rapporto sulla visibilita e ottimizzazione per la ricerca AI",
+    "run_analysis": "Esegui Analisi",
+    "running_analysis": "Esecuzione analisi...",
+    "last_analyzed": "Ultima analisi",
+    "pages_analyzed": "Pagine analizzate",
+    "analyzed_url": "URL analizzato",
+    "tier": {
+      "critical": "Critico",
+      "poor": "Scarso",
+      "fair": "Discreto",
+      "good": "Buono",
+      "excellent": "Eccellente"
+    },
+    "categories": {
+      "aiCitability": "Citabilita AI e Visibilita",
+      "brandAuthority": "Segnali di Autorita del Brand",
+      "contentEeat": "Qualita del Contenuto E-E-A-T",
+      "technical": "Fondamenta Tecniche",
+      "schema": "Dati Strutturati",
+      "platformOptimization": "Ottimizzazione Piattaforma"
+    },
+    "crawlers": {
+      "title": "Accesso Crawler AI",
+      "allowed": "Consentito",
+      "blocked": "Bloccato",
+      "restricted": "Restrito",
+      "not_mentioned": "Non menzionato",
+      "tier1": "Tier 1 (Critico)",
+      "tier2": "Tier 2 (Importante)",
+      "tier3": "Tier 3 (Training)",
+      "not_analyzed": "Accesso crawler non ancora analizzato"
+    },
+    "platforms": {
+      "title": "Performance Piattaforma",
+      "google_aio": "Google AIO",
+      "chatgpt": "ChatGPT",
+      "perplexity": "Perplexity AI",
+      "gemini": "Gemini",
+      "bing_copilot": "Bing Copilot"
+    },
+    "findings": {
+      "title": "Risultati",
+      "all": "Tutti",
+      "critical": "Critico",
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Basso",
+      "resolved": "Risolto",
+      "unresolved": "Non risolto",
+      "no_findings": "Nessun risultato ancora",
+      "impact": "impatto"
+    },
+    "action_plan": {
+      "title": "Piano d'Azione",
+      "quick_wins": "Vittorie Rapide",
+      "medium_term": "Medio Termine",
+      "strategic": "Strategico",
+      "hours": "ore",
+      "days": "giorni",
+      "weeks": "settimane",
+      "months": "mesi",
+      "estimated_impact": "Se risolvi tutti questi, stimato",
+      "points_suffix": "punti",
+      "pts_suffix": "pt",
+      "no_items": "Nessun elemento in questa categoria"
+    },
+    "trend": {
+      "title": "Andamento Punteggio",
+      "need_more_data": "Servono almeno 2 snapshot per mostrare un trend",
+      "loading": "Caricamento...",
+      "30d": "30 giorni",
+      "90d": "90 giorni",
+      "6m": "6 mesi",
+      "1y": "1 anno"
+    },
+    "breakdown": {
+      "title": "Dettaglio Punteggio",
+      "category": "Categoria",
+      "score": "Punteggio",
+      "weight": "Peso",
+      "weighted": "Pesato",
+      "overall": "Punteggio Totale"
+    },
+    "radar": {
+      "score_label": "Punteggio",
+      "key_gap": "Gap principale",
+      "action": "Azione",
+      "no_data": "Nessun dato"
+    },
+    "crawlers_extra": {
+      "allowed_summary": "{allowed}/{total} crawler AI consentiti"
+    },
+    "meta": {
+      "report_label": "Report GEO Score"
+    },
+    "toast": {
+      "resolved": "Segnato come risolto",
+      "unresolved": "Segnato come non risolto",
+      "update_failed": "Aggiornamento fallito"
+    },
+    "empty": {
+      "no_data": "Nessun dato GEO score ancora",
+      "run_first": "Esegui un'analisi per vedere il tuo punteggio GEO"
+    }
   }
 }

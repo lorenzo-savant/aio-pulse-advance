@@ -31,6 +31,8 @@ import {
   Radio,
   GitBranch,
   Sparkle,
+  Link2,
+  Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
@@ -139,10 +141,25 @@ const NAV_SECTIONS: NavSection[] = [
         lockedUntil: (s) => !s.hasData,
       },
       {
+        href: '/dashboard/citation-sources',
+        icon: Link2,
+        labelKey: 'sidebar.items.citation_sources',
+      },
+      {
+        href: '/dashboard/aeo-snippets',
+        icon: Sparkles,
+        labelKey: 'sidebar.items.aeo_snippets',
+      },
+      {
         href: '/dashboard/keywords',
         icon: Tag,
         labelKey: 'sidebar.items.keywords',
         lockedUntil: (s) => !s.hasData,
+      },
+      {
+        href: '/dashboard/geo-score',
+        icon: Target,
+        labelKey: 'sidebar.items.geo_score',
       },
       {
         href: '/dashboard/snapshots',

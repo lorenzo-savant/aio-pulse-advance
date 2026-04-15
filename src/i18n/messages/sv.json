@@ -155,7 +155,10 @@
       "analytics": "Analys",
       "sentiment": "Sentiment",
       "citations": "Citat",
+      "citation_sources": "Citatkällor",
+      "aeo_snippets": "AEO-utdrag",
       "keywords": "Nyckelord",
+      "geo_score": "GEO-poäng",
       "snapshots": "Ögonblicksbilder",
       "reports": "Rapporter",
       "competitor": "Konkurrent",
@@ -302,7 +305,8 @@
     "empty_state": {
       "title": "Inga varumärken hittades",
       "description": "Skapa ditt första varumärke för att börja övervaka synlighet.",
-      "cta": "Lägg till varumärke"
+      "cta": "Lägg till varumärke",
+      "guided_setup": "Guidad installation"
     },
     "error_state": {
       "title": "Ett fel uppstod",
@@ -976,5 +980,112 @@
     "steps": "Steg",
     "rerun": "Kör igen",
     "cancel": "Avbryt"
+  },
+  "geoScore": {
+    "page_title": "GEO-poang",
+    "page_subtitle": "AI-sökbarhet och optimeringsrapport",
+    "run_analysis": "Kör Analys",
+    "running_analysis": "Kör analys...",
+    "last_analyzed": "Senast analyserad",
+    "pages_analyzed": "Analyserade sidor",
+    "analyzed_url": "Analyserad URL",
+    "tier": {
+      "critical": "Kritisk",
+      "poor": "Svag",
+      "fair": "Mellanliggande",
+      "good": "Bra",
+      "excellent": "Utmärkt"
+    },
+    "categories": {
+      "aiCitability": "AI-citbarhet och synlighet",
+      "brandAuthority": "Varumärkesauktoritetssignaler",
+      "contentEeat": "Innehållskvalitet E-E-A-T",
+      "technical": "Tekniska grunder",
+      "schema": "Strukturerad data",
+      "platformOptimization": "Plattformsoptimering"
+    },
+    "crawlers": {
+      "title": "AI-crawler-åtkomst",
+      "allowed": "Tillåten",
+      "blocked": "Blockerad",
+      "restricted": "Begränsad",
+      "not_mentioned": "Inte nämnd",
+      "tier1": "Tier 1 (Kritisk)",
+      "tier2": "Tier 2 (Viktig)",
+      "tier3": "Tier 3 (Träning)",
+      "not_analyzed": "Crawler-åtkomst inte analyserad än"
+    },
+    "platforms": {
+      "title": "Plattformsprestanda",
+      "google_aio": "Google AIO",
+      "chatgpt": "ChatGPT",
+      "perplexity": "Perplexity AI",
+      "gemini": "Gemini",
+      "bing_copilot": "Bing Copilot"
+    },
+    "findings": {
+      "title": "Fynd",
+      "all": "Alla",
+      "critical": "Kritisk",
+      "high": "Hög",
+      "medium": "Medel",
+      "low": "Låg",
+      "resolved": "Löst",
+      "unresolved": "Olöst",
+      "no_findings": "Inga fynd än",
+      "impact": "påverkan"
+    },
+    "action_plan": {
+      "title": "Handlingsplan",
+      "quick_wins": "Snabba vinster",
+      "medium_term": "Medellång sikt",
+      "strategic": "Strategisk",
+      "hours": "timmar",
+      "days": "dagar",
+      "weeks": "veckor",
+      "months": "månader",
+      "estimated_impact": "Om du fixar alla dessa, uppskattat",
+      "points_suffix": "poäng",
+      "pts_suffix": "p",
+      "no_items": "Inga objekt i denna kategori"
+    },
+    "trend": {
+      "title": "Poängtrend",
+      "need_more_data": "Behöver minst 2 ögonblicksbilder för att visa en trend",
+      "loading": "Laddar...",
+      "30d": "30 dagar",
+      "90d": "90 dagar",
+      "6m": "6 månader",
+      "1y": "1 år"
+    },
+    "breakdown": {
+      "title": "Poängfördelning",
+      "category": "Kategori",
+      "score": "Poäng",
+      "weight": "Vikt",
+      "weighted": "Viktad",
+      "overall": "Totalpoäng"
+    },
+    "radar": {
+      "score_label": "Poäng",
+      "key_gap": "Viktigaste lucka",
+      "action": "Åtgärd",
+      "no_data": "Inga data"
+    },
+    "crawlers_extra": {
+      "allowed_summary": "{allowed}/{total} AI-crawlers tillåtna"
+    },
+    "meta": {
+      "report_label": "GEO-poängrapport"
+    },
+    "toast": {
+      "resolved": "Markerad som löst",
+      "unresolved": "Markerad som oliden",
+      "update_failed": "Uppdatering misslyckades"
+    },
+    "empty": {
+      "no_data": "Inga GEO-poängdata än",
+      "run_first": "Kör en analys för att se ditt GEO-poäng"
+    }
   }
 }

@@ -1,6 +1,7 @@
 // PATH: src/app/api/monitoring/route.ts
 import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 import { z } from 'zod'
 import type { Json } from '@/types/database'
 import { logger } from '@/lib/logger'
@@ -11,6 +12,8 @@ import {
   calculateAVIFromResults,
 } from '@/lib/services/monitoring'
 import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/services/alerts'
+import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
+import { trackKeywords } from '@/lib/services/keyword-tracker'
 import { checkRateLimit } from '@/lib/ratelimit'
 import type { Brand, Prompt, MonitoringResult, AlertRule } from '@/types'
 
@@ -195,6 +198,30 @@ export async function POST(req: NextRequest) {
   const results: MonitoringResult[] = []
   const errors: string[] = []
 
+  // ── Create workflow_execution row to track this run ──────────────────────
+  const workflowId = randomUUID()
+  const workflowStartedAt = new Date().toISOString()
+  const workflowSteps = [
+    { id: randomUUID(), name: 'Fetch prompt', status: 'completed', startedAt: workflowStartedAt, completedAt: workflowStartedAt },
+    { id: randomUUID(), name: 'Run engines', status: 'running', startedAt: workflowStartedAt },
+    { id: randomUUID(), name: 'Save results', status: 'pending', startedAt: workflowStartedAt },
+    { id: randomUUID(), name: 'Update health score', status: 'pending', startedAt: workflowStartedAt },
+  ]
+  const { error: workflowErr } = await db.from('workflow_executions').insert({
+    id: workflowId,
+    type: 'monitoring_run',
+    brand_id: brand.id,
+    prompt_id: prompt.id,
+    user_id: userId,
+    status: 'running',
+    steps: workflowSteps as unknown as Json,
+    metadata: { engines, promptText: (prompt as Prompt).text } as unknown as Json,
+    started_at: workflowStartedAt,
+  })
+  if (workflowErr) {
+    logger.error('Workflow insert failed', { source: 'monitoring', error: String(workflowErr) })
+  }
+
   // ── Run engines in parallel ───────────────────────────────────────────────
   logger.info('Starting engines', { source: 'monitoring', engines, promptId: prompt.id })
 
@@ -327,7 +354,57 @@ export async function POST(req: NextRequest) {
       },
       { onConflict: 'brand_id,date' },
     )
+
+    // ── Auto-generate citation snapshots for today ─────────────────────────
+    try {
+      const snapshotResult = await calculateCitationSnapshots(brand.id)
+      logger.debug('Citation snapshots generated', {
+        source: 'monitoring',
+        brandId: brand.id,
+        inserted: snapshotResult.inserted,
+        errors: snapshotResult.errors,
+      })
+    } catch (snapErr) {
+      logger.error('Citation snapshots failed', {
+        source: 'monitoring',
+        error: String(snapErr),
+      })
+    }
+
+    // ── Auto-track keywords from latest responses ──────────────────────────
+    try {
+      await trackKeywords(brand.id)
+    } catch (kwErr) {
+      logger.error('Keyword tracking failed', {
+        source: 'monitoring',
+        error: String(kwErr),
+      })
+    }
+
   }
+
+  // ── Finalise workflow ────────────────────────────────────────────────────
+  const workflowCompletedAt = new Date().toISOString()
+  const finalStatus: 'completed' | 'failed' =
+    results.length > 0 && errors.length === 0
+      ? 'completed'
+      : results.length === 0
+        ? 'failed'
+        : 'completed'
+  const finalSteps = workflowSteps.map((s) =>
+    s.status === 'running' || s.status === 'pending'
+      ? { ...s, status: finalStatus, completedAt: workflowCompletedAt }
+      : s,
+  )
+  await db
+    .from('workflow_executions')
+    .update({
+      status: finalStatus,
+      steps: finalSteps as unknown as Json,
+      completed_at: workflowCompletedAt,
+      error: errors.length > 0 ? errors.join('; ') : null,
+    })
+    .eq('id', workflowId)
 
   return NextResponse.json({
     success: true,
@@ -337,6 +414,7 @@ export async function POST(req: NextRequest) {
       enginesSucceeded: results.length,
       enginesFailed: errors.length,
       errors: errors.length > 0 ? errors : undefined,
+      workflowId,
     },
     message: `Monitoring complete: ${results.length}/${engines.length} engines succeeded`,
     timestamp: Date.now(),

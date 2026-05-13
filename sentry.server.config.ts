@@ -32,6 +32,7 @@ Sentry.init({
   beforeSend(event) {
     if (event.request) {
       if (event.request.cookies) {
+        // @ts-expect-error - cookies is Record<string,string> but we intentionally replace with redaction sentinel
         event.request.cookies = '[REDACTED_BY_BEFORESEND]'
       }
       if (event.request.headers) {

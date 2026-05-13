@@ -170,7 +170,7 @@ function forwardToSentry(
 
   // info + warn → breadcrumb only (shown if an error follows in same scope).
   Sentry.addBreadcrumb({
-    level,
+    level: level as 'info' | 'warning',
     category: 'logger',
     message,
     data: rest,

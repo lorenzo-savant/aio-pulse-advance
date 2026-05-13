@@ -1,5 +1,6 @@
 // PATH: src/app/api/cron/monitoring/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 import type { Json } from '@/types/database'
 import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
@@ -8,8 +9,126 @@ import {
   calculateHealthScore,
   calculateAVIFromResults,
 } from '@/lib/services/monitoring'
-import type { Brand, Prompt, MonitoringResult, MonitoringEngine } from '@/types'
+import type { Brand, Prompt, MonitoringResult, MonitoringEngine, WorkflowStatus } from '@/types'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
+
+interface WorkflowStep {
+  id: string
+  name: string
+  status: WorkflowStatus
+  startedAt?: string
+  completedAt?: string
+  error?: string
+}
+
+interface CreateWorkflowResult {
+  workflowId: string
+  stepIds: string[]
+}
+
+async function createWorkflow(
+  supabase: NonNullable<ReturnType<typeof createServerClient>>,
+  brandId: string,
+  promptId: string,
+  userId: string,
+  engineCount: number,
+): Promise<CreateWorkflowResult | null> {
+  const workflowId = randomUUID()
+  const now = new Date().toISOString()
+
+  const steps: WorkflowStep[] = [
+    {
+      id: randomUUID(),
+      name: 'Fetch prompts',
+      status: 'completed',
+      startedAt: now,
+      completedAt: now,
+    },
+    { id: randomUUID(), name: 'Execute monitoring', status: 'running', startedAt: now },
+    { id: randomUUID(), name: 'Save results', status: 'pending', startedAt: now },
+    { id: randomUUID(), name: 'Update health scores', status: 'pending', startedAt: now },
+    { id: randomUUID(), name: 'Calculate citation snapshots', status: 'pending', startedAt: now },
+  ]
+
+  const { error } = await supabase.from('workflow_executions').insert({
+    id: workflowId,
+    type: 'monitoring_run',
+    brand_id: brandId,
+    prompt_id: promptId,
+    user_id: userId,
+    status: 'running',
+    steps: steps as unknown as Json,
+    started_at: now,
+  })
+
+  if (error) {
+    logger.error('Failed to create workflow', { source: 'cron', error: String(error) })
+    return null
+  }
+
+  return { workflowId, stepIds: steps.map((s) => s.id) }
+}
+
+async function updateWorkflowStep(
+  supabase: NonNullable<ReturnType<typeof createServerClient>>,
+  workflowId: string,
+  stepName: string,
+  status: WorkflowStatus,
+  error?: string,
+): Promise<void> {
+  const { data } = await supabase
+    .from('workflow_executions')
+    .select('steps')
+    .eq('id', workflowId)
+    .single()
+
+  if (!data) return
+
+  const steps = (data.steps || []) as unknown as WorkflowStep[]
+  const stepIndex = steps.findIndex((s) => s.name === stepName)
+  if (stepIndex === -1) return
+
+  const existingStep = steps[stepIndex]
+  if (!existingStep) return
+
+  steps[stepIndex] = {
+    id: existingStep.id,
+    name: existingStep.name,
+    status,
+    startedAt: existingStep.startedAt,
+    completedAt: ['completed', 'failed'].includes(status) ? new Date().toISOString() : undefined,
+    error,
+  }
+
+  const overallStatus: WorkflowStatus = steps.every((s) => s.status === 'completed')
+    ? 'completed'
+    : steps.some((s) => s.status === 'failed')
+      ? 'failed'
+      : steps.some((s) => s.status === 'running')
+        ? 'running'
+        : 'pending'
+
+  const { error: updateError } = await supabase
+    .from('workflow_executions')
+    .update({
+      steps: steps as unknown as Json,
+      status: overallStatus,
+      completed_at:
+        overallStatus === 'completed' || overallStatus === 'failed'
+          ? new Date().toISOString()
+          : null,
+      error: overallStatus === 'failed' ? error : null,
+    })
+    .eq('id', workflowId)
+
+  if (updateError) {
+    logger.error('Failed to update workflow step', {
+      source: 'cron',
+      stepName,
+      error: String(updateError),
+    })
+  }
+}
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 min (Vercel Pro) or 60s (Hobby)
@@ -70,7 +189,8 @@ export async function POST(req: NextRequest) {
     const results: Array<{ promptId: string; engine: string; success: boolean; error?: string }> =
       []
 
-    // ── Process each prompt sequentially to respect rate limits ────────────────
+    const processedBrands = new Set<string>()
+
     for (const promptRow of prompts) {
       const brand = promptRow.brand as unknown as Brand
       if (!brand || !brand.is_active) continue
@@ -81,16 +201,24 @@ export async function POST(req: NextRequest) {
         (e): e is MonitoringEngine => (validEngines as readonly string[]).includes(e),
       )
 
+      const workflowResult = await createWorkflow(
+        supabase,
+        brand.id,
+        prompt.id,
+        prompt.user_id,
+        engines.length,
+      )
+      const workflowId = workflowResult?.workflowId
+
       const engineResults: MonitoringResult[] = []
+      let hasErrors = false
 
       for (const engine of engines) {
         try {
-          // Delay between engine calls to avoid rate limits
           await new Promise((r) => setTimeout(r, 2000))
 
           const resultData = await runMonitoringCheck(prompt, brand, engine, prompt.user_id)
 
-          // Save to DB
           const insertPayload = {
             ...resultData,
             competitor_mentions: resultData.competitor_mentions as unknown as Json,
@@ -109,6 +237,7 @@ export async function POST(req: NextRequest) {
           if (insertError) {
             logger.error('DB insert error', { source: 'cron', engine, error: String(insertError) })
             results.push({ promptId: prompt.id, engine, success: false, error: 'DB insert failed' })
+            hasErrors = true
             continue
           }
 
@@ -123,13 +252,22 @@ export async function POST(req: NextRequest) {
             error: msg,
           })
           results.push({ promptId: prompt.id, engine, success: false, error: msg })
+          hasErrors = true
         }
       }
 
-      // ── Update prompt last_run_at ─────────────────────────────────────────
+      if (workflowId) {
+        await updateWorkflowStep(
+          supabase,
+          workflowId,
+          'Execute monitoring',
+          hasErrors ? 'failed' : 'completed',
+        )
+        await updateWorkflowStep(supabase, workflowId, 'Save results', 'completed')
+      }
+
       await supabase.from('prompts').update({ last_run_at: now.toISOString() }).eq('id', prompt.id)
 
-      // ── Update daily health score ─────────────────────────────────────────
       if (engineResults.length > 0) {
         const { avi, components } = calculateAVIFromResults(engineResults)
         const citedCount = engineResults.filter((r) => r.cited_urls?.length > 0).length
@@ -144,7 +282,6 @@ export async function POST(req: NextRequest) {
             hallucination_rate: components.hallucinationIndex / 100,
             mention_count: engineResults.filter((r) => r.brand_mentioned).length,
             citation_count: citedCount,
-            // AVI component fields
             avi_score: avi,
             citation_rate: components.citationRate,
             mention_rate: components.mentionFrequency,
@@ -157,9 +294,15 @@ export async function POST(req: NextRequest) {
           },
           { onConflict: 'brand_id,date' },
         )
+
+        if (workflowId) {
+          await updateWorkflowStep(supabase, workflowId, 'Update health scores', 'completed')
+        }
       }
+
+      processedBrands.add(brand.id)
     }
-    const processedBrands = [...new Set(prompts.map((p: any) => p.brand_id))]
+
     for (const bId of processedBrands) {
       try {
         await calculateCitationSnapshots(bId as string)

@@ -321,7 +321,15 @@ function PromptsPageContent() {
           <p className="mt-1 text-muted-foreground">{t('prompts.page_subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowLibrary(true)}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!selectedBrandId && brands.length > 0) {
+                setSelectedBrandId(brands[0]!.id)
+              }
+              setShowLibrary(true)
+            }}
+          >
             <Library className="h-5 w-5" /> {t('prompts.add_from_library')}
           </Button>
           <Button onClick={() => setShowForm((v) => !v)}>
@@ -580,6 +588,25 @@ function PromptsPageContent() {
           <ModalTitle>{t('prompts.library.title')}</ModalTitle>
         </ModalHeader>
         <ModalBody>
+          {brands.length > 0 && (
+            <div className="mb-4">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                {t('prompts.form.brand_label')}
+              </label>
+              <select
+                className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
+                value={selectedBrandId}
+                onChange={(e) => setSelectedBrandId(e.target.value)}
+              >
+                <option value="">{t('prompts.form.brand_placeholder')}</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           {selectedBrandId ? (
             <PromptLibrarySelector
               brandId={selectedBrandId}

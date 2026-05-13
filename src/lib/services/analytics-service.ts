@@ -59,23 +59,38 @@ export async function getHistoricalAnalytics(
   const previousStartDate = new Date()
   previousStartDate.setDate(previousStartDate.getDate() - days * 2)
 
-  // Get current period data
-  const { data: currentData, error: currentError } = await db
-    .from('citation_snapshots')
-    .select('*')
-    .eq('brand_id', brandId)
-    .gte('scan_date', startDate.toISOString().split('T')[0])
-    .lte('scan_date', new Date().toISOString().split('T')[0])
-    .order('scan_date', { ascending: true })
+  // Helper to query snapshots for this brand within a date range
+  const querySnapshots = async (from: string, to: string) =>
+    db
+      .from('citation_snapshots')
+      .select('*')
+      .eq('brand_id', brandId)
+      .eq('engine', 'all')
+      .eq('category', 'all')
+      .eq('language', 'all')
+      .gte('scan_date', from)
+      .lte('scan_date', to)
+      .order('scan_date', { ascending: true })
 
-  // Get previous period for comparison
-  const { data: previousData } = await db
-    .from('citation_snapshots')
-    .select('*')
-    .eq('brand_id', brandId)
-    .gte('scan_date', previousStartDate.toISOString().split('T')[0])
-    .lte('scan_date', startDate.toISOString().split('T')[0])
-    .order('scan_date', { ascending: true })
+  const todayStr = new Date().toISOString().split('T')[0]!
+  const startStr = startDate.toISOString().split('T')[0]!
+
+  // Get current period data
+  let { data: currentData, error: currentError } = await querySnapshots(startStr, todayStr)
+
+  // Lazy backfill: if no snapshots exist, derive them from monitoring_results
+  if (!currentError && (!currentData || currentData.length === 0)) {
+    await autoGenerateSnapshots(brandId)
+    const retry = await querySnapshots(startStr, todayStr)
+    currentData = retry.data
+    currentError = retry.error
+  }
+
+  // Get previous period for comparison (same filters)
+  const { data: previousData } = await querySnapshots(
+    previousStartDate.toISOString().split('T')[0]!,
+    startStr,
+  )
 
   if (currentError) throw currentError
 
@@ -231,15 +246,28 @@ export async function getCompetitorComparison(
 
   const competitors = brand?.competitors || []
 
-  // Get brand snapshots
-  const { data: brandSnapshots } = await db
-    .from('citation_snapshots')
-    .select('scan_date, citation_rate, avg_visibility')
-    .eq('brand_id', brandId)
-    .gte('scan_date', startDate.toISOString().split('T')[0])
-    .order('scan_date', { ascending: false })
+  const queryBrandSnaps = () =>
+    db
+      .from('citation_snapshots')
+      .select('scan_date, citation_rate, avg_visibility, competitor_rates')
+      .eq('brand_id', brandId)
+      .eq('engine', 'all')
+      .eq('category', 'all')
+      .eq('language', 'all')
+      .gte('scan_date', startDate.toISOString().split('T')[0])
+      .order('scan_date', { ascending: false })
 
-  // Calculate averages
+  // Get brand snapshots (aggregate engine='all', category='all')
+  let { data: brandSnapshots } = await queryBrandSnaps()
+
+  // Lazy backfill when no snapshots yet
+  if (!brandSnapshots || brandSnapshots.length === 0) {
+    await autoGenerateSnapshots(brandId)
+    const retry = await queryBrandSnaps()
+    brandSnapshots = retry.data
+  }
+
+  // Calculate brand averages
   const brandAvgCitation = calculateAverage(
     (brandSnapshots || []).map((s) => ({ date: '', value: Number(s.citation_rate) || 0 })),
   )
@@ -247,17 +275,35 @@ export async function getCompetitorComparison(
     (brandSnapshots || []).map((s) => ({ date: '', value: Number(s.avg_visibility) || 0 })),
   )
 
+  // Aggregate real competitor rates from snapshots (no fake data)
+  const competitorAgg = new Map<string, { citationSum: number; count: number }>()
+  for (const snap of brandSnapshots || []) {
+    const rates = (snap.competitor_rates || {}) as Record<string, number>
+    for (const [name, rate] of Object.entries(rates)) {
+      const entry = competitorAgg.get(name) || { citationSum: 0, count: 0 }
+      entry.citationSum += Number(rate) || 0
+      entry.count += 1
+      competitorAgg.set(name, entry)
+    }
+  }
+
+  const competitorsData = (competitors as string[]).map((comp) => {
+    const agg = competitorAgg.get(comp)
+    const avgCitation = agg && agg.count > 0 ? agg.citationSum / agg.count : 0
+    return {
+      name: comp,
+      avgCitation: Math.round(avgCitation * 100) / 100,
+      avgVisibility: 0, // visibility is brand-specific; not tracked per competitor yet
+    }
+  })
+
   return {
     brand: {
       name: brand?.name || 'Your Brand',
       avgCitation: brandAvgCitation,
       avgVisibility: brandAvgVisibility,
     },
-    competitors: competitors.map((comp: string) => ({
-      name: comp,
-      avgCitation: Math.random() * 30 + 10, // Would come from competitor analysis
-      avgVisibility: Math.random() * 50 + 20,
-    })),
+    competitors: competitorsData,
     period: options.period,
     snapshotCount: brandSnapshots?.length || 0,
   }
@@ -290,12 +336,10 @@ export async function autoGenerateSnapshots(brandId: string): Promise<{
   for (const r of results) {
     const dateStr = r.created_at as string | undefined
     if (!dateStr) continue
-    const date = dateStr.split('T')[0] as string
-    if (!date || !byDate.has(date)) {
-      if (date) byDate.set(date, [])
-    } else {
-      byDate.get(date)!.push(r)
-    }
+    const date = dateStr.split('T')[0]
+    if (!date) continue
+    if (!byDate.has(date)) byDate.set(date, [])
+    byDate.get(date)!.push(r)
   }
 
   let created = 0

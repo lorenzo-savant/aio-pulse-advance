@@ -15,6 +15,25 @@ if (!isConfigured && process.env.NODE_ENV === 'production') {
   )
 }
 
+// ╔════════════════════════════════════════════════════════════════════════════╗
+// ║  CRITICAL SECURITY GUARD (CF-01)                                           ║
+// ║  Refuse to boot if DEV_USER_ID is set in any production environment.       ║
+// ║  This protects against accidental leak of dev env vars into prod, which    ║
+// ║  would otherwise allow authentication bypass via the per-request check     ║
+// ║  in getCurrentUserId(). Defense in depth — checks both NODE_ENV and        ║
+// ║  Vercel-specific VERCEL_ENV signals.                                        ║
+// ╚════════════════════════════════════════════════════════════════════════════╝
+if (
+  process.env.DEV_USER_ID &&
+  (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production')
+) {
+  throw new Error(
+    'SECURITY FATAL: DEV_USER_ID environment variable is set in a production environment. ' +
+      'This would permit authentication bypass and is never acceptable in production. ' +
+      'Remove DEV_USER_ID from production environment variables immediately and redeploy.',
+  )
+}
+
 // Internal client for bearer token auth in getCurrentUserId — not exported
 const supabase = isConfigured
   ? createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
@@ -75,10 +94,14 @@ export async function getCurrentUserId(
   }
 
   // DEV MODE: Allow development users without full auth — NEVER active in production
+  // Defense in depth — checks NODE_ENV + VERCEL_ENV. Module-level fail-fast guard
+  // is enforced at the bottom of this file to refuse boot if misconfigured.
   const devUserId = process.env.DEV_USER_ID
+  const isProductionRuntime =
+    process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production'
   if (
     devUserId &&
-    process.env.NODE_ENV !== 'production' &&
+    !isProductionRuntime &&
     !authHeader &&
     !cookieHeader?.includes('sb-')
   ) {

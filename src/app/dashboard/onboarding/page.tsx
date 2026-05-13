@@ -380,7 +380,7 @@ export default function OnboardingPage() {
       ...p,
       {
         text: customPrompt.trim(),
-        language: 'en',
+        language: brand.language || 'en',
         engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
       },
     ])

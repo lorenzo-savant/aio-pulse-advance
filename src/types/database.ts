@@ -326,10 +326,14 @@ export type Database = {
           correlation_score: number | null
           created_at: string | null
           engines: string[] | null
+          first_seen: string | null
           id: string
           is_active: boolean | null
           keyword: string
           language: string | null
+          cluster: string | null
+          cluster_generated_at: string | null
+          last_seen: string | null
           market: string | null
           mention_count: number | null
           updated_at: string | null
@@ -342,10 +346,14 @@ export type Database = {
           correlation_score?: number | null
           created_at?: string | null
           engines?: string[] | null
+          first_seen?: string | null
           id?: string
           is_active?: boolean | null
           keyword: string
           language?: string | null
+          cluster?: string | null
+          cluster_generated_at?: string | null
+          last_seen?: string | null
           market?: string | null
           mention_count?: number | null
           updated_at?: string | null
@@ -358,10 +366,14 @@ export type Database = {
           correlation_score?: number | null
           created_at?: string | null
           engines?: string[] | null
+          first_seen?: string | null
           id?: string
           is_active?: boolean | null
           keyword?: string
           language?: string | null
+          cluster?: string | null
+          cluster_generated_at?: string | null
+          last_seen?: string | null
           market?: string | null
           mention_count?: number | null
           updated_at?: string | null
@@ -932,7 +944,7 @@ export type Database = {
       workflow_executions: {
         Row: {
           id: string
-          workflow_type: string
+          type: string
           brand_id: string | null
           prompt_id: string | null
           user_id: string | null
@@ -946,7 +958,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          workflow_type: string
+          type: string
           brand_id?: string | null
           prompt_id?: string | null
           user_id?: string | null
@@ -960,7 +972,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          workflow_type?: string
+          type?: string
           brand_id?: string | null
           prompt_id?: string | null
           user_id?: string | null
@@ -970,6 +982,261 @@ export type Database = {
           metadata?: Json
           started_at?: string | null
           completed_at?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      geo_scores: {
+        Row: {
+          id: string
+          brand_id: string
+          overall_score: number
+          tier: string
+          ai_citability_score: number | null
+          brand_authority_score: number | null
+          content_eeat_score: number | null
+          technical_score: number | null
+          schema_score: number | null
+          platform_optimization_score: number | null
+          analyzed_url: string
+          pages_analyzed: number | null
+          analysis_method: string | null
+          raw_data: Json | null
+          scan_date: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          overall_score: number
+          tier: string
+          ai_citability_score?: number | null
+          brand_authority_score?: number | null
+          content_eeat_score?: number | null
+          technical_score?: number | null
+          schema_score?: number | null
+          platform_optimization_score?: number | null
+          analyzed_url: string
+          pages_analyzed?: number | null
+          analysis_method?: string | null
+          raw_data?: Json | null
+          scan_date?: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          overall_score?: number
+          tier?: string
+          ai_citability_score?: number | null
+          brand_authority_score?: number | null
+          content_eeat_score?: number | null
+          technical_score?: number | null
+          schema_score?: number | null
+          platform_optimization_score?: number | null
+          analyzed_url?: string
+          pages_analyzed?: number | null
+          analysis_method?: string | null
+          raw_data?: Json | null
+          scan_date?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      geo_platform_scores: {
+        Row: {
+          id: string
+          geo_score_id: string
+          platform: string
+          score: number
+          key_gap: string | null
+          priority_action: string | null
+          details: Json | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          geo_score_id: string
+          platform: string
+          score: number
+          key_gap?: string | null
+          priority_action?: string | null
+          details?: Json | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          geo_score_id?: string
+          platform?: string
+          score?: number
+          key_gap?: string | null
+          priority_action?: string | null
+          details?: Json | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      geo_crawler_access: {
+        Row: {
+          id: string
+          geo_score_id: string
+          crawler_name: string
+          crawler_operator: string | null
+          tier: number | null
+          status: string
+          recommendation: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          geo_score_id: string
+          crawler_name: string
+          crawler_operator?: string | null
+          tier?: number | null
+          status: string
+          recommendation?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          geo_score_id?: string
+          crawler_name?: string
+          crawler_operator?: string | null
+          tier?: number | null
+          status?: string
+          recommendation?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      geo_citability_blocks: {
+        Row: {
+          id: string
+          geo_score_id: string
+          page_url: string
+          heading: string | null
+          content_preview: string | null
+          word_count: number | null
+          answer_block_quality: number | null
+          self_containment: number | null
+          structural_readability: number | null
+          statistical_density: number | null
+          uniqueness_signals: number | null
+          total_score: number | null
+          grade: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          geo_score_id: string
+          page_url: string
+          heading?: string | null
+          content_preview?: string | null
+          word_count?: number | null
+          answer_block_quality?: number | null
+          self_containment?: number | null
+          structural_readability?: number | null
+          statistical_density?: number | null
+          uniqueness_signals?: number | null
+          total_score?: number | null
+          grade?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          geo_score_id?: string
+          page_url?: string
+          heading?: string | null
+          content_preview?: string | null
+          word_count?: number | null
+          answer_block_quality?: number | null
+          self_containment?: number | null
+          structural_readability?: number | null
+          statistical_density?: number | null
+          uniqueness_signals?: number | null
+          total_score?: number | null
+          grade?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      geo_brand_presence: {
+        Row: {
+          id: string
+          geo_score_id: string
+          platform: string
+          status: string
+          score: number | null
+          details: string | null
+          url: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          geo_score_id: string
+          platform: string
+          status: string
+          score?: number | null
+          details?: string | null
+          url?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          geo_score_id?: string
+          platform?: string
+          status?: string
+          score?: number | null
+          details?: string | null
+          url?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      geo_findings: {
+        Row: {
+          id: string
+          geo_score_id: string
+          severity: string
+          category: string
+          title: string
+          description: string | null
+          business_impact: string | null
+          fix_effort: string | null
+          fix_description: string | null
+          estimated_score_impact: number | null
+          is_resolved: boolean | null
+          resolved_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          geo_score_id: string
+          severity: string
+          category: string
+          title: string
+          description?: string | null
+          business_impact?: string | null
+          fix_effort?: string | null
+          fix_description?: string | null
+          estimated_score_impact?: number | null
+          is_resolved?: boolean | null
+          resolved_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          geo_score_id?: string
+          severity?: string
+          category?: string
+          title?: string
+          description?: string | null
+          business_impact?: string | null
+          fix_effort?: string | null
+          fix_description?: string | null
+          estimated_score_impact?: number | null
+          is_resolved?: boolean | null
+          resolved_at?: string | null
           created_at?: string | null
         }
         Relationships: []

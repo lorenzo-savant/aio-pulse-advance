@@ -20,6 +20,7 @@
 
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import * as Sentry from '@sentry/nextjs'
 
 export interface RateLimitResult {
   /** true = request is allowed, false = limit exceeded */
@@ -124,11 +125,17 @@ export async function checkRateLimit(
 
   // ── No Redis configured ──────────────────────────────────────────────────
   // In-memory Map doesn't work on serverless (Vercel) where each invocation
-  // is a separate container. Fail closed in production.
-  if (process.env.NODE_ENV === 'production') {
-    console.error('[rate-limit] Redis not configured in production - rate limiting disabled')
-    // Allow requests but log the issue
-    return { success: true, remaining: 0, resetAt: Date.now() + windowMs }
+  // is a separate container. **Fail closed in production** to avoid API cost
+  // runaway during a Redis outage or misconfiguration. Configure Upstash to
+  // restore service.
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+    console.error(
+      '[rate-limit] Redis not configured in production — failing closed. ' +
+        'Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to restore.',
+    )
+    // Notify ops via Sentry (no-op if Sentry not initialized)
+    Sentry.captureMessage('Rate limit: Redis not configured in production', 'error')
+    return { success: false, remaining: 0, resetAt: Date.now() + windowMs }
   }
 
   // ── In-memory fallback (dev mode only) ──────────────────────────────────

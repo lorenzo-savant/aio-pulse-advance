@@ -122,12 +122,8 @@ const NAV_SECTIONS: NavSection[] = [
     descriptionKey: 'sidebar.sections.insights.description',
     items: [
       { href: '/dashboard', icon: LayoutDashboard, labelKey: 'sidebar.items.dashboard' },
-      {
-        href: '/dashboard/analytics',
-        icon: BarChart3,
-        labelKey: 'sidebar.items.analytics',
-        lockedUntil: (s) => !s.hasData,
-      },
+      // 2026-05-12 — /dashboard/analytics rimossa dal sidebar fino a completamento UI
+      // (vedi Area D — Critical Audit). La route resta accessibile via URL per dev.
       {
         href: '/dashboard/sentiment',
         icon: Smile,

@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
+import { classifyKeywordsForBrand } from './keyword-clustering'
 
 interface KeywordData {
   keyword: string
@@ -164,24 +165,53 @@ const STOP_WORDS = new Set([
   'live',
   'believe',
   'bring',
+  // ── Swedish stopwords ──────────────────────────────────────────────────
+  'och', 'att', 'det', 'som', 'är', 'på', 'för', 'med', 'en', 'ett', 'den', 'de',
+  'har', 'inte', 'av', 'om', 'eller', 'var', 'vi', 'ni', 'du', 'jag', 'hon', 'han',
+  'mig', 'dig', 'sig', 'sin', 'sina', 'sitt', 'men', 'till', 'från', 'kan', 'kunde',
+  'ska', 'skulle', 'här', 'där', 'när', 'då', 'så', 'också', 'även', 'mer', 'mest',
+  'mycket', 'lite', 'några', 'alla', 'bara', 'ännu', 'redan', 'enligt', 'samma',
+  'andra', 'annan', 'annat', 'varje', 'både', 'inom', 'utan', 'över', 'under',
+  'genom', 'mellan', 'hos', 'ger', 'fick', 'varit', 'blivit', 'blir', 'bli',
+  'väl', 'ganska', 'dock', 'således', 'eftersom', 'därför', 'medan', 'innan',
+  'efter', 'före', 'mot', 'via', 'ej', 'nu', 'sedan', 'sen',
+  // ── Italian stopwords ──────────────────────────────────────────────────
+  'il', 'lo', 'la', 'le', 'gli', 'uno', 'una', 'del', 'della', 'dello', 'degli',
+  'delle', 'dei', 'al', 'allo', 'alla', 'alle', 'agli', 'ai', 'nel', 'nello',
+  'nella', 'nelle', 'negli', 'nei', 'dal', 'dallo', 'dalla', 'dalle', 'dagli',
+  'dai', 'sul', 'sullo', 'sulla', 'sulle', 'sugli', 'sui', 'che', 'chi', 'cui',
+  'non', 'ma', 'però', 'anche', 'ancora', 'già', 'solo', 'sempre', 'mai', 'più',
+  'meno', 'molto', 'poco', 'tanto', 'tutto', 'tutti', 'tutta', 'tutte', 'essere',
+  'avere', 'fare', 'dire', 'sono', 'sei', 'era', 'sarà', 'ho', 'hai', 'abbiamo',
+  'hanno', 'loro', 'voi', 'noi', 'lui', 'lei', 'essi', 'esse', 'io', 'tu',
+  'suo', 'sua', 'suoi', 'sue', 'nostro', 'vostro', 'mio', 'mia', 'miei', 'tuo',
+  'tua', 'con', 'per', 'tra', 'fra', 'su', 'giù', 'quanto', 'quando', 'dove',
+  'come', 'perché', 'cosa', 'così', 'quale', 'quali', 'senza', 'dentro', 'fuori',
+  'sotto', 'sopra', 'verso', 'presso', 'dopo', 'prima',
 ])
 
-function extractKeywords(text: string): string[] {
-  const words = text
+const PURE_NUMBER = /^\d+$/
+
+function tokenize(text: string): string[] {
+  return text
     .toLowerCase()
-    .replace(/[^a-z0-9\såäöüßéèêëàâáã]/g, ' ')
+    .replace(/[^a-zåäöüßéèêëàâáãíîìôòóúùçñ\s]/g, ' ')
     .split(/\s+/)
-    .filter((word) => word.length > 2 && !STOP_WORDS.has(word))
+    .filter(
+      (word) =>
+        word.length >= 3 &&
+        word.length <= 30 &&
+        !PURE_NUMBER.test(word) &&
+        !STOP_WORDS.has(word),
+    )
+}
 
-  const wordFreq: Record<string, number> = {}
-  for (const word of words) {
-    wordFreq[word] = (wordFreq[word] || 0) + 1
+function countTokens(text: string): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const w of tokenize(text)) {
+    counts.set(w, (counts.get(w) || 0) + 1)
   }
-
-  return Object.entries(wordFreq)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 50)
-    .map(([word]) => word)
+  return counts
 }
 
 export async function trackKeywords(brandId: string): Promise<void> {
@@ -205,55 +235,75 @@ export async function trackKeywords(brandId: string): Promise<void> {
 
     const mentionResults = results.filter((r) => r.brand_mentioned)
     const noMentionResults = results.filter((r) => !r.brand_mentioned)
+    const mentionCount = mentionResults.length
+    const noMentionCount = noMentionResults.length
 
-    const mentionKeywords = new Set<string>()
-    for (const r of mentionResults) {
-      const keywords = extractKeywords(r.response_text || '')
-      keywords.forEach((k) => mentionKeywords.add(k))
+    // Per-response token counts (cached to avoid re-tokenising)
+    const tokenizedResults = results.map((r) => ({
+      result: r,
+      tokens: countTokens(r.response_text || ''),
+    }))
+
+    // Global aggregates per keyword
+    interface Stats {
+      totalOccurrences: number
+      docsInMention: number
+      docsInNoMention: number
+      engines: Set<string>
+      dates: string[]
     }
+    const stats = new Map<string, Stats>()
 
-    const noMentionKeywords = new Set<string>()
-    for (const r of noMentionResults) {
-      const keywords = extractKeywords(r.response_text || '')
-      keywords.forEach((k) => noMentionKeywords.add(k))
-    }
-
-    const allKeywords = new Set([...mentionKeywords, ...noMentionKeywords])
-    const keywordData: Record<string, KeywordData> = {}
-
-    for (const keyword of allKeywords) {
-      const inMention = mentionKeywords.has(keyword)
-      const inNoMention = noMentionKeywords.has(keyword)
-
-      const mentionCount = inMention ? mentionResults.length : 0
-      const noMentionCount = inNoMention ? noMentionResults.length : 0
-      const total = mentionCount + noMentionCount
-
-      let correlation = 0
-      if (total > 0) {
-        const mentionRate = mentionCount / total
-        correlation = inMention && !inNoMention ? 1 : inMention ? 0.5 : -0.5
+    for (const { result: r, tokens } of tokenizedResults) {
+      const date = (r.created_at ?? '').split('T')[0] || ''
+      for (const [word, count] of tokens) {
+        let s = stats.get(word)
+        if (!s) {
+          s = {
+            totalOccurrences: 0,
+            docsInMention: 0,
+            docsInNoMention: 0,
+            engines: new Set<string>(),
+            dates: [],
+          }
+          stats.set(word, s)
+        }
+        s.totalOccurrences += count
+        if (r.brand_mentioned) s.docsInMention += 1
+        else s.docsInNoMention += 1
+        s.engines.add(r.engine)
+        if (date) s.dates.push(date)
       }
+    }
 
-      const keywordEngines = results
-        .filter((r) => extractKeywords(r.response_text || '').includes(keyword))
-        .map((r) => r.engine)
-      const engines: string[] = Array.from(new Set(keywordEngines))
+    // Keep only keywords that appear in ≥2 responses (signal filter)
+    // and top 200 by total occurrences
+    const keywordData: Record<string, KeywordData> = {}
+    const ranked = [...stats.entries()]
+      .filter(([, s]) => s.docsInMention + s.docsInNoMention >= 2)
+      .sort((a, b) => b[1].totalOccurrences - a[1].totalOccurrences)
+      .slice(0, 200)
 
-      const dates = results
-        .filter((r) => extractKeywords(r.response_text || '').includes(keyword))
-        .map((r) => (r.created_at ?? '').split('T')[0])
-        .sort()
+    for (const [keyword, s] of ranked) {
+      // Proper correlation: P(keyword | mentioned) - P(keyword | not mentioned)
+      // Range: -1..1; positive = keyword correlates with brand mention
+      const mentionRate = mentionCount > 0 ? s.docsInMention / mentionCount : 0
+      const noMentionRate = noMentionCount > 0 ? s.docsInNoMention / noMentionCount : 0
+      const correlation = mentionRate - noMentionRate
 
+      const sortedDates = s.dates.sort()
       keywordData[keyword] = {
         keyword,
-        mention_count: total,
-        correlation_score: correlation,
-        engines,
-        first_seen: dates[0] || null,
-        last_seen: dates[dates.length - 1] || null,
+        mention_count: s.totalOccurrences,
+        correlation_score: Math.round(correlation * 100) / 100,
+        engines: [...s.engines],
+        first_seen: sortedDates[0] || null,
+        last_seen: sortedDates[sortedDates.length - 1] || null,
       }
     }
+
+    // Remove stale keywords for this brand before inserting fresh set
+    await db.from('keyword_tracking').delete().eq('brand_id', brandId)
 
     for (const [keyword, data] of Object.entries(keywordData)) {
       const { error: upsertError } = await db.from('keyword_tracking').upsert(
@@ -277,6 +327,23 @@ export async function trackKeywords(brandId: string): Promise<void> {
     }
 
     logger.info('Keywords tracked', { service: 'keyword-tracker', brandId, keywordCount: Object.keys(keywordData).length })
+
+    // Classify fresh keywords into clusters using brand context
+    try {
+      const clusterRes = await classifyKeywordsForBrand(brandId)
+      logger.info('Keywords clustered', {
+        service: 'keyword-tracker',
+        brandId,
+        classified: clusterRes.classified,
+        errors: clusterRes.errors.length,
+      })
+    } catch (clusterErr) {
+      logger.error('Keyword clustering failed', {
+        service: 'keyword-tracker',
+        brandId,
+        error: String(clusterErr),
+      })
+    }
   } catch (error) {
     logger.error('Error tracking keywords', { service: 'keyword-tracker', error })
   }

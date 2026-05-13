@@ -115,11 +115,11 @@ export async function runMonitoringCheck(
   const language: PromptLang =
     (brand.language as BrandLanguage) || (prompt.language as BrandLanguage) || 'en'
 
-  const { text: responseText, provider: simulationProvider } = await routerSimulate(
-    prompt.text,
-    engine,
-    language,
-  )
+  const {
+    text: responseText,
+    provider: simulationProvider,
+    citations: engineCitations = [],
+  } = await routerSimulate(prompt.text, engine, language)
   logger.info('Engine simulation completed', {
     service: 'monitoring',
     engine,
@@ -161,7 +161,7 @@ export async function runMonitoringCheck(
     visibility_score: Math.min(100, Math.max(0, analysis.visibility_score)),
     sentiment: analysis.sentiment as SentimentLabel,
     sentiment_score: Math.min(1, Math.max(-1, analysis.sentiment_score)),
-    cited_urls: analysis.cited_urls,
+    cited_urls: Array.from(new Set([...engineCitations, ...analysis.cited_urls])),
     competitor_mentions: analysis.competitor_mentions as CompetitorMention[],
     has_hallucination: analysis.has_hallucination,
     hallucination_flags: analysis.hallucination_flags as HallucinationFlag[],

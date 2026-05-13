@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next'
 import createNextIntlPlugin from 'next-intl/plugin'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
@@ -103,4 +104,21 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withNextIntl(nextConfig)
+// ─────────────────────────────────────────────────────────────────────────────
+// CF-04 — Sentry build-time wrapper.
+// Uploads source maps for human-readable stack traces in production.
+// Requires env: SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN.
+// If those are missing locally, the wrap is a no-op (build still succeeds).
+// ─────────────────────────────────────────────────────────────────────────────
+const sentryWebpackPluginOptions = {
+  org: process.env['SENTRY_ORG'],
+  project: process.env['SENTRY_PROJECT'],
+  authToken: process.env['SENTRY_AUTH_TOKEN'],
+  silent: process.env.NODE_ENV !== 'production',
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+}
+
+export default withSentryConfig(withNextIntl(nextConfig), sentryWebpackPluginOptions)

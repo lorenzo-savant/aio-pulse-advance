@@ -20,17 +20,21 @@ interface KeywordData {
   id: string
   brand_id: string
   keyword: string
-  frequency: number
-  mention_correlation: number
-  engines: string[]
+  mention_count: number | null
+  correlation_score: number | null
+  engines: string[] | null
   first_seen: string | null
   last_seen: string | null
+  cluster: 'identity' | 'product' | 'market' | string | null
 }
 
 interface Brand {
   id: string
   name: string
   color: string
+  aliases?: string[] | null
+  competitors?: string[] | null
+  industry?: string | null
 }
 
 const ENGINE_COLORS: Record<string, string> = {
@@ -38,6 +42,26 @@ const ENGINE_COLORS: Record<string, string> = {
   gemini: '#3b82f6',
   perplexity: '#a855f7',
   claude: '#f97316',
+}
+
+type Cluster = 'identity' | 'product' | 'market'
+
+const CLUSTER_META: Record<Cluster, { label: string; description: string; colorClass: string }> = {
+  identity: {
+    label: 'Brand Identity',
+    description: 'Valori, filosofia, heritage e termini legati al tuo brand',
+    colorClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  },
+  product: {
+    label: 'Prodotto',
+    description: 'Categorie, tipologie e vocabolario del tuo assortimento',
+    colorClass: 'bg-brand-500/15 text-brand-300 border-brand-500/30',
+  },
+  market: {
+    label: 'Market Context',
+    description: 'Competitor, prezzi, mercati e termini di comparazione',
+    colorClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  },
 }
 
 export default function KeywordsPage() {
@@ -116,7 +140,7 @@ export default function KeywordsPage() {
     (k) => !searchQuery || k.keyword.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const maxFrequency = Math.max(...keywords.map((k) => k.frequency), 1)
+  const maxFrequency = Math.max(...keywords.map((k) => k.mention_count ?? 0), 1)
 
   const getCorrelationBadge = (correlation: number) => {
     if (correlation > 0.7) return { variant: 'success' as const, label: 'High' }
@@ -212,28 +236,53 @@ export default function KeywordsPage() {
       {/* Keywords Grid */}
       {!loading && filteredKeywords.length > 0 && (
         <>
-          {/* Keyword Cloud Preview */}
+          {/* Keyword Cloud — 3 clusters */}
           <Card className="p-6">
-            <h2 className="mb-4 text-lg font-bold text-foreground">Keyword Cloud</h2>
-            <div className="flex flex-wrap gap-2">
-              {filteredKeywords.slice(0, 30).map((kw) => {
-                const size = 0.75 + (kw.frequency / maxFrequency) * 0.75
-                const corr = kw.mention_correlation
+            <h2 className="mb-5 text-lg font-bold text-foreground">Keyword Cloud</h2>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              {(['identity', 'product', 'market'] as const).map((cluster) => {
+                const meta = CLUSTER_META[cluster]
+                const clusterKeywords = filteredKeywords
+                  .filter((kw) => kw.cluster === cluster)
+                  .slice(0, 40)
                 return (
-                  <span
-                    key={kw.id}
-                    className={cn(
-                      'inline-block rounded-full px-3 py-1 transition-transform hover:scale-110',
-                      corr > 0.5
-                        ? 'bg-primary/20 text-brand-300'
-                        : corr > 0
-                          ? 'bg-blue-500/20 text-blue-300'
-                          : 'bg-secondary text-muted-foreground',
-                    )}
-                    style={{ fontSize: `${size}rem` }}
+                  <div
+                    key={cluster}
+                    className={cn('rounded-2xl border p-4', meta.colorClass)}
                   >
-                    {kw.keyword}
-                  </span>
+                    <div className="mb-3">
+                      <h3 className="text-sm font-black uppercase tracking-widest">
+                        {meta.label}
+                      </h3>
+                      <p className="mt-1 text-xs opacity-80">{meta.description}</p>
+                      <p className="mt-1 text-xs opacity-60">
+                        {clusterKeywords.length} keyword
+                        {clusterKeywords.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {clusterKeywords.length === 0 ? (
+                        <span className="text-xs italic opacity-60">
+                          Nessuna keyword in questo cluster
+                        </span>
+                      ) : (
+                        clusterKeywords.map((kw) => {
+                          const count = kw.mention_count ?? 0
+                          const size = 0.7 + (count / maxFrequency) * 0.8
+                          return (
+                            <span
+                              key={kw.id}
+                              className="inline-block rounded-full bg-background/40 px-2.5 py-1 font-medium transition-transform hover:scale-110"
+                              style={{ fontSize: `${size}rem` }}
+                              title={`${count} occurrences · corr ${(kw.correlation_score ?? 0).toFixed(2)}`}
+                            >
+                              {kw.keyword}
+                            </span>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
                 )
               })}
             </div>
@@ -265,7 +314,9 @@ export default function KeywordsPage() {
                 </thead>
                 <tbody>
                   {filteredKeywords.slice(0, 50).map((kw) => {
-                    const corrBadge = getCorrelationBadge(kw.mention_correlation)
+                    const count = kw.mention_count ?? 0
+                    const corr = kw.correlation_score ?? 0
+                    const corrBadge = getCorrelationBadge(corr)
                     return (
                       <tr key={kw.id} className="border-b border-border/50">
                         <td className="py-3">
@@ -276,26 +327,26 @@ export default function KeywordsPage() {
                             <div className="h-1.5 w-16 overflow-hidden rounded-full bg-secondary">
                               <div
                                 className="h-full rounded-full bg-primary"
-                                style={{ width: `${(kw.frequency / maxFrequency) * 100}%` }}
+                                style={{ width: `${(count / maxFrequency) * 100}%` }}
                               />
                             </div>
-                            <span className="text-muted-foreground">{kw.frequency}</span>
+                            <span className="text-muted-foreground">{count}</span>
                           </div>
                         </td>
                         <td className="py-3 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            {kw.mention_correlation > 0.1 && (
+                            {corr > 0.1 && (
                               <TrendingUp className="h-4 w-4 text-emerald-400" />
                             )}
-                            {kw.mention_correlation < -0.1 && (
+                            {corr < -0.1 && (
                               <TrendingDown className="h-4 w-4 text-red-400" />
                             )}
-                            {kw.mention_correlation >= -0.1 && kw.mention_correlation <= 0.1 && (
+                            {corr >= -0.1 && corr <= 0.1 && (
                               <Minus className="h-4 w-4 text-muted-foreground" />
                             )}
                             <Badge variant={corrBadge.variant}>{corrBadge.label}</Badge>
                             <span className="text-xs text-muted-foreground">
-                              ({kw.mention_correlation.toFixed(2)})
+                              ({corr.toFixed(2)})
                             </span>
                           </div>
                         </td>

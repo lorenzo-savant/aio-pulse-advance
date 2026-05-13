@@ -48,7 +48,7 @@ CREATE TABLE profiles (
 
 -- ─── USER API KEYS ───────────────────────────────────────────────────────────────
 CREATE TABLE user_api_keys (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL,
   provider text NOT NULL CHECK (provider IN ('openai', 'gemini', 'perplexity', 'anthropic')),
   encrypted_key text NOT NULL,
@@ -62,7 +62,7 @@ CREATE INDEX user_api_keys_user_id_idx ON user_api_keys(user_id);
 
 -- ─── BRANDS ───────────────────────────────────────────────────────────────────
 CREATE TABLE brands (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL,
   name text NOT NULL,
   slug text NOT NULL,
@@ -89,7 +89,7 @@ CREATE INDEX brands_language_idx ON brands(language);
 
 -- ─── PROMPTS ──────────────────────────────────────────────────────────────────
 CREATE TABLE prompts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   text text NOT NULL,
@@ -108,7 +108,7 @@ CREATE INDEX prompts_user_id_idx ON prompts(user_id);
 
 -- ─── MONITORING RESULTS ───────────────────────────────────────────────────────
 CREATE TABLE monitoring_results (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   prompt_id uuid NOT NULL REFERENCES prompts(id) ON DELETE CASCADE,
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
@@ -143,7 +143,7 @@ CREATE INDEX monitoring_results_user_id_idx ON monitoring_results(user_id);
 
 -- ─── SCAN HISTORY ────────────────────────────────────────────────────────────────
 CREATE TABLE scan_history (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL,
   brand_id uuid REFERENCES brands(id) ON DELETE CASCADE,
   source text NOT NULL,
@@ -165,7 +165,7 @@ CREATE INDEX scan_history_created_at_idx ON scan_history(created_at DESC);
 
 -- ─── ALERT RULES ──────────────────────────────────────────────────────────────
 CREATE TABLE alert_rules (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   name text NOT NULL,
@@ -183,7 +183,7 @@ CREATE INDEX alert_rules_user_id_idx ON alert_rules(user_id);
 
 -- ─── ALERT EVENTS ─────────────────────────────────────────────────────────────
 CREATE TABLE alert_events (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   alert_rule_id uuid REFERENCES alert_rules(id) ON DELETE SET NULL,
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
@@ -202,7 +202,7 @@ CREATE INDEX alert_events_created_at_idx ON alert_events(created_at DESC);
 
 -- ─── BRAND HEALTH SCORES ──────────────────────────────────────────────────────
 CREATE TABLE brand_health_scores (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   date date NOT NULL,
@@ -226,7 +226,7 @@ CREATE INDEX brand_health_scores_date_idx ON brand_health_scores(date DESC);
 
 -- ─── TEAM MEMBERS ─────────────────────────────────────────────────────────────
 CREATE TABLE team_members (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text,
   email text NOT NULL,
@@ -242,12 +242,12 @@ CREATE INDEX team_members_user_id_idx ON team_members(user_id);
 
 -- ─── INVITATIONS ─────────────────────────────────────────────────────────────
 CREATE TABLE brand_invitations (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   email text NOT NULL,
   role text NOT NULL DEFAULT 'viewer' CHECK (role IN ('owner', 'editor', 'viewer')),
   invited_by text NOT NULL,
-  token text NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
+  token text NOT NULL UNIQUE DEFAULT gen_random_uuid(),
   expires_at timestamptz NOT NULL DEFAULT (now() + INTERVAL '7 days'),
   created_at timestamptz DEFAULT now(),
   UNIQUE(brand_id, email));
@@ -257,7 +257,7 @@ CREATE INDEX invitations_email_idx ON brand_invitations(email);
 
 -- ─── SUBSCRIPTIONS ─────────────────────────────────────────────────────────
 CREATE TABLE subscriptions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL UNIQUE,
   stripe_customer_id text,
   stripe_sub_id text,
@@ -272,7 +272,7 @@ CREATE INDEX subscriptions_stripe_idx ON subscriptions(stripe_customer_id);
 
 -- ─── CREDITS ───────────────────────────────────────────────────────────────
 CREATE TABLE credits (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL,
   amount int NOT NULL,
   source text NOT NULL,
@@ -285,7 +285,7 @@ CREATE INDEX credits_user_id_idx ON credits(user_id);
 CREATE INDEX credits_created_idx ON credits(created_at DESC);
 
 CREATE TABLE credit_usage (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL,
   query_id text,
   credits_used int NOT NULL,
@@ -302,7 +302,7 @@ CREATE INDEX credit_usage_brand_idx ON credit_usage(brand_id);
 
 -- ─── CITATION SNAPSHOTS ─────────────────────────────────────────────────────────
 CREATE TABLE citation_snapshots (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   scan_date date NOT NULL,
   engine text NOT NULL DEFAULT 'all',
@@ -323,7 +323,7 @@ CREATE INDEX citation_snapshots_date_idx ON citation_snapshots(scan_date DESC);
 
 -- ─── ANALYSIS RESULTS ─────────────────────────────────────────────────────────
 CREATE TABLE analysis_results (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   input text NOT NULL,
@@ -346,7 +346,7 @@ CREATE INDEX analysis_results_created_idx ON analysis_results(created_at DESC);
 
 -- ─── COMPETITOR ANALYSES ─────────────────────────────────────────────────────────
 CREATE TABLE competitor_analyses (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   primary_url text NOT NULL,
@@ -361,7 +361,7 @@ CREATE INDEX competitor_analyses_created_idx ON competitor_analyses(created_at D
 
 -- ─── RECOMMENDATION HISTORY ─────────────────────────────────────────────────────────
 CREATE TABLE recommendation_history (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   recommendations jsonb DEFAULT '[]',
@@ -375,7 +375,7 @@ CREATE INDEX recommendation_history_created_idx ON recommendation_history(create
 
 -- ─── SEO AUDIT RESULTS ─────────────────────────────────────────────────────────
 CREATE TABLE seo_audit_results (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   url text NOT NULL,
@@ -391,7 +391,7 @@ CREATE INDEX seo_audit_results_url_idx ON seo_audit_results(url);
 
 -- ─── LLMS.TXT VERSIONS ────────────────────────────────────────────────────��─��──
 CREATE TABLE llms_txt_versions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   llms_txt text NOT NULL,
@@ -406,7 +406,7 @@ CREATE INDEX llms_txt_versions_created_idx ON llms_txt_versions(created_at DESC)
 
 -- ─── WEEKLY REVIEWS ─────────────────────────────────────────────────────────
 CREATE TABLE weekly_reviews (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   week_number int NOT NULL,
@@ -423,7 +423,7 @@ CREATE INDEX weekly_reviews_user_id_idx ON weekly_reviews(user_id);
 
 -- ─── WORKFLOW EXECUTIONS ─────────────────────────────────────────────────────────
 CREATE TABLE workflow_executions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id uuid REFERENCES brands(id) ON DELETE SET NULL,
   user_id text NOT NULL,
   type text NOT NULL,

@@ -163,6 +163,7 @@ export type Database = {
           color: string | null
           competitors: string[] | null
           created_at: string | null
+          deleted_at: string | null
           description: string | null
           domain: string | null
           domains: string[] | null
@@ -180,6 +181,7 @@ export type Database = {
           slug: string
           updated_at: string | null
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           alert_email?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           color?: string | null
           competitors?: string[] | null
           created_at?: string | null
+          deleted_at?: string | null
           description?: string | null
           domain?: string | null
           domains?: string[] | null
@@ -204,6 +207,7 @@ export type Database = {
           slug: string
           updated_at?: string | null
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           alert_email?: string | null
@@ -211,6 +215,7 @@ export type Database = {
           color?: string | null
           competitors?: string[] | null
           created_at?: string | null
+          deleted_at?: string | null
           description?: string | null
           domain?: string | null
           domains?: string[] | null
@@ -228,6 +233,7 @@ export type Database = {
           slug?: string
           updated_at?: string | null
           user_id?: string
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -411,27 +417,117 @@ export type Database = {
         }
         Relationships: []
       }
-      workspaces: {
+      organizations: {
         Row: {
           id: string
           name: string
           slug: string
+          owner_id: string
+          stripe_customer_id: string | null
+          stripe_sub_id: string | null
+          plan: string
+          status: string
+          current_period_end: string | null
+          logo_url: string | null
+          primary_color: string
+          default_workspace_id: string | null
           created_at: string
-          updated_at: string | null
+          updated_at: string
+          deleted_at: string | null
         }
         Insert: {
           id?: string
           name: string
           slug: string
+          owner_id: string
+          stripe_customer_id?: string | null
+          stripe_sub_id?: string | null
+          plan?: string
+          status?: string
+          current_period_end?: string | null
+          logo_url?: string | null
+          primary_color?: string
+          default_workspace_id?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
+          deleted_at?: string | null
         }
         Update: {
           id?: string
           name?: string
           slug?: string
+          owner_id?: string
+          stripe_customer_id?: string | null
+          stripe_sub_id?: string | null
+          plan?: string
+          status?: string
+          current_period_end?: string | null
+          logo_url?: string | null
+          primary_color?: string
+          default_workspace_id?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      organization_members: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          role: string
+          invited_by: string | null
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          role?: string
+          invited_by?: string | null
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          role?: string
+          invited_by?: string | null
+          joined_at?: string
+        }
+        Relationships: []
+      }
+      workspaces: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          slug: string
+          description: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          slug: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          slug?: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
         }
         Relationships: []
       }
@@ -441,56 +537,122 @@ export type Database = {
           workspace_id: string
           user_id: string
           role: string
-          created_at: string
+          invited_by: string | null
+          joined_at: string
         }
         Insert: {
           id?: string
           workspace_id: string
           user_id: string
           role?: string
-          created_at?: string
+          invited_by?: string | null
+          joined_at?: string
         }
         Update: {
           id?: string
           workspace_id?: string
           user_id?: string
           role?: string
-          created_at?: string
+          invited_by?: string | null
+          joined_at?: string
         }
         Relationships: []
       }
       audit_logs: {
         Row: {
           id: string
+          organization_id: string
           workspace_id: string | null
-          user_id: string | null
+          actor_id: string
+          actor_type: string
+          actor_api_key_id: string | null
           action: string
-          resource: string | null
-          ip: string | null
+          resource_type: string
+          resource_id: string | null
+          ip_address: string | null
           user_agent: string | null
-          metadata: Json | null
+          metadata: Json
           created_at: string
         }
         Insert: {
           id?: string
+          organization_id: string
           workspace_id?: string | null
-          user_id?: string | null
+          actor_id: string
+          actor_type?: string
+          actor_api_key_id?: string | null
           action: string
-          resource?: string | null
-          ip?: string | null
+          resource_type: string
+          resource_id?: string | null
+          ip_address?: string | null
           user_agent?: string | null
-          metadata?: Json | null
+          metadata?: Json
           created_at?: string
         }
         Update: {
           id?: string
+          organization_id?: string
           workspace_id?: string | null
-          user_id?: string | null
+          actor_id?: string
+          actor_type?: string
+          actor_api_key_id?: string | null
           action?: string
-          resource?: string | null
-          ip?: string | null
+          resource_type?: string
+          resource_id?: string | null
+          ip_address?: string | null
           user_agent?: string | null
-          metadata?: Json | null
+          metadata?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      api_keys: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string | null
+          created_by: string | null
+          name: string
+          key: string | null
+          key_prefix: string | null
+          key_hash: string | null
+          scopes: string[]
+          last_used_at: string | null
+          expires_at: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id?: string | null
+          created_by?: string | null
+          name: string
+          key?: string | null
+          key_prefix?: string | null
+          key_hash?: string | null
+          scopes?: string[]
+          last_used_at?: string | null
+          expires_at?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string | null
+          created_by?: string | null
+          name?: string
+          key?: string | null
+          key_prefix?: string | null
+          key_hash?: string | null
+          scopes?: string[]
+          last_used_at?: string | null
+          expires_at?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           created_at?: string
         }
         Relationships: []

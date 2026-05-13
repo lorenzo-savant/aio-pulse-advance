@@ -88,14 +88,19 @@ describe('workspace-auth permissions', () => {
   })
 
   describe('logAudit', () => {
-    it('returns null when supabase not configured', async () => {
-      const result = await logAudit({
-        workspaceId: 'ws-1',
-        userId: 'user-1',
-        action: 'test_action',
-        resource: 'test_resource',
-      })
-      expect(result).toBe(null)
+    it('does not throw when supabase not configured', async () => {
+      // logAudit is intentionally never-throws (audit is observability, not a gate).
+      // It returns void regardless of DB availability.
+      await expect(
+        logAudit({
+          organizationId: 'org-1',
+          workspaceId: 'ws-1',
+          actorId: 'user-1',
+          action: 'brand.created',
+          resourceType: 'brand',
+          resourceId: 'brand-1',
+        }),
+      ).resolves.toBeUndefined()
     })
   })
 
@@ -147,7 +152,7 @@ describe('permission matrix integrity', () => {
     }
   })
 
-  it('permissions are ordered by access level (viewer < editor < admin/owner)', () => {
+  it('permissions are ordered by access level (viewer < editor < admin <= owner)', () => {
     const viewerPerms = getRolePermissions('viewer')
     const editorPerms = getRolePermissions('editor')
     const adminPerms = getRolePermissions('admin')
@@ -155,6 +160,14 @@ describe('permission matrix integrity', () => {
 
     expect(viewerPerms.length).toBeLessThan(editorPerms.length)
     expect(editorPerms.length).toBeLessThan(adminPerms.length)
-    expect(adminPerms.length).toBe(ownerPerms.length)
+    // T07: owner has manage_billing exclusively (admin cannot change billing).
+    expect(adminPerms.length).toBeLessThanOrEqual(ownerPerms.length)
+  })
+
+  it('only owner can manage_billing', () => {
+    expect(getRolePermissions('owner')).toContain('manage_billing')
+    expect(getRolePermissions('admin')).not.toContain('manage_billing')
+    expect(getRolePermissions('editor')).not.toContain('manage_billing')
+    expect(getRolePermissions('viewer')).not.toContain('manage_billing')
   })
 })

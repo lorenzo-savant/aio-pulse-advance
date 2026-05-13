@@ -16,10 +16,10 @@
 | Fase | Done | Scaffolding done (user verify) | Ready | Blocked |
 |---|---|---|---|---|---|
 | Fase 0 | 5/6 | 0 | 0 | 1 (T04 waits Sentry DSN user-provision) |
-| Fase 1 | 0/3 | 0 | 3 | 0 |
+| Fase 1 | 0/3 | 3 (T07.1/T08/T09 schema+lib) | 0 | 3 (waiting Supabase access) |
 | Fase 2 | 0/5 | 0 | 0 | 5 (waiting Fase 1) |
 | Fase 3 | 0/4 | 0 | 0 | 4 (waiting Fase 1) |
-| **Total** | **5/18** | **0** | **3** | **10** |
+| **Total** | **5/18** | **3** | **0** | **13** |
 
 ---
 
@@ -38,19 +38,19 @@ Dettaglio: [01-fase-0-pulizia.md](01-fase-0-pulizia.md)
 
 ---
 
-## 🟡 Fase 1 — Workspace + Audit + Scoped Keys (Fase 0 completa, può iniziare)
+## 🔵 Fase 1 — Workspace + Audit + Scoped Keys
 
 | ID | Title | Status | Owner | Branch | PR | Updated |
 |---|---|---|---|---|---|---|
-| T07 | Re-introduce Organization → Workspace → Brand hierarchy | 🟡 Ready | — | — | — | 2026-05-14 |
-| T08 | Audit log table + instrumentation azioni critical | 🟡 Ready | — | — | — | 2026-05-14 |
-| T09 | Scoped API keys con permission model | 🟡 Ready | — | — | — | 2026-05-14 |
-| T08 | Audit log table + instrumentation azioni critical | ⚫ Blocked by T07 | — | — | — | 2026-05-13 |
-| T09 | Scoped API keys con permission model | ⚫ Blocked by T07 | — | — | — | 2026-05-13 |
+| T07 | Re-introduce Organization → Workspace → Brand hierarchy | 🔵 PR 7.1 done (additive schema + types + migration SQL). PR 7.2-7.7 pending DB access | Claude | fase-0/T02-T06-residual-cleanup | — | 2026-05-13 |
+| T08 | Audit log table + instrumentation azioni critical | 🔵 schema + `logAudit()` helper landed. Instrumentation pending Fase 1.x | Claude | fase-0/T02-T06-residual-cleanup | — | 2026-05-13 |
+| T09 | Scoped API keys con permission model | 🔵 schema + `verifyApiKey()` helper landed. UI + endpoint integration pending | Claude | fase-0/T02-T06-residual-cleanup | — | 2026-05-13 |
 
 Dettaglio: [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md)
 
-**Note T07**: spezzato in 7 sub-PR (7.1–7.7) per gestire complessità. Vedi documento per dettaglio.
+**Note T07**: spezzato in 7 sub-PR (7.1–7.7). PR 7.1 ✅ — additive schema only.
+Migration SQL ready at `prisma/migrations/20260513120000_fase1_workspace_audit_apikeys/migration.sql`
+but **not applied** (Supabase project npxfqsbslhnkoxgqosyy unreachable). Apply when DB access restored.
 
 ---
 

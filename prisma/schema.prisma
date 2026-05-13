@@ -9,48 +9,57 @@ datasource db {
 }
 
 model Brand {
-  id           String    @id @default(uuid())
-  userId       String    @map("user_id")
-  name         String
-  slug         String    @unique
-  description  String?
-  domain       String?
-  aliases      String[]  @default([])
-  domains      String[]  @default([])
-  competitors  String[]  @default([])
-  industry     String?
-  color        String    @default("#6366f1")
-  logoUrl      String?   @map("logo_url")
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  deletedAt    DateTime? @map("deleted_at")
-  
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  // Fase 1 (T07): workspace/org scoping. NULLABLE during PR 7.1-7.6 transition.
+  // NOT NULL enforced in PR 7.7 after backfill.
+  workspaceId    String?   @map("workspace_id")
+  organizationId String?   @map("organization_id")
+  name           String
+  slug           String    @unique
+  description    String?
+  domain         String?
+  aliases        String[]  @default([])
+  domains        String[]  @default([])
+  competitors    String[]  @default([])
+  industry       String?
+  color          String    @default("#6366f1")
+  logoUrl        String?   @map("logo_url")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
   // White-label report settings
-  reportLogoUrl     String?  @map("report_logo_url")
-  reportBrandName   String?  @map("report_brand_name")
-  reportPrimaryColor String?  @map("report_primary_color")
+  reportLogoUrl      String? @map("report_logo_url")
+  reportBrandName    String? @map("report_brand_name")
+  reportPrimaryColor String? @map("report_primary_color")
 
-  prompts            Prompt[]
-  alertRules         AlertRule[]
-  monitoringResults  MonitoringResult[]
-  alertEvents        AlertEvent[]
-  healthScores       BrandHealthScore[]
-  analysisResults    AnalysisResult[]
-  competitorAnalyses CompetitorAnalysis[]
+  workspace    Workspace?    @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  prompts                 Prompt[]
+  alertRules              AlertRule[]
+  monitoringResults       MonitoringResult[]
+  alertEvents             AlertEvent[]
+  healthScores            BrandHealthScore[]
+  analysisResults         AnalysisResult[]
+  competitorAnalyses      CompetitorAnalysis[]
   recommendationHistories RecommendationHistory[]
-  citationSnapshots CitationSnapshot[]
-  teamMembers        TeamMember[]
-  brandInvitations   BrandInvitation[]
-  seoAuditResults    SeoAuditResult[]
-  llmsTxtVersions    LlmsTxtVersion[]
-  weeklyReviews      WeeklyReview[]
-  keywordRankings    KeywordRanking[]
+  citationSnapshots       CitationSnapshot[]
+  teamMembers             TeamMember[]
+  brandInvitations        BrandInvitation[]
+  seoAuditResults         SeoAuditResult[]
+  llmsTxtVersions         LlmsTxtVersion[]
+  weeklyReviews           WeeklyReview[]
+  keywordRankings         KeywordRanking[]
 
-  @@map("brands")
   @@index([userId])
   @@index([slug])
   @@index([deletedAt])
+  @@index([workspaceId])
+  @@index([organizationId])
+  @@map("brands")
 }
 
 model Prompt {
@@ -72,226 +81,247 @@ model Prompt {
   brand             Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
   monitoringResults MonitoringResult[]
 
-  @@map("prompts")
   @@index([brandId])
   @@index([userId])
   @@index([deletedAt])
+  @@map("prompts")
 }
 
 model MonitoringResult {
-  id                String   @id @default(uuid())
-  promptId          String   @map("prompt_id")
-  brandId           String   @map("brand_id")
-  userId            String   @map("user_id")
-  engine            String
-  promptText        String   @map("prompt_text")
-  responseText     String   @map("response_text")
-  brandMentioned   Boolean  @default(false) @map("brand_mentioned")
-  mentionPosition  Int?     @map("mention_position")
-  mentionCount     Int      @default(0) @map("mention_count")
-  mentionType      String?  @map("mention_type")
-  visibilityScore  Int      @default(0) @map("visibility_score")
-  sentiment        String?
-  sentimentScore   Float?   @map("sentiment_score")
-  citedUrls        String[] @default([]) @map("cited_urls")
-  competitorMentions Json   @default("[]") @map("competitor_mentions")
-  hasHallucination Boolean  @default(false) @map("has_hallucination")
-  hallucinationFlags Json   @default("[]") @map("hallucination_flags")
-  rawResponse      Json?    @map("raw_response")
-  
+  id                 String   @id @default(uuid())
+  promptId           String   @map("prompt_id")
+  brandId            String   @map("brand_id")
+  userId             String   @map("user_id")
+  engine             String
+  promptText         String   @map("prompt_text")
+  responseText       String   @map("response_text")
+  brandMentioned     Boolean  @default(false) @map("brand_mentioned")
+  mentionPosition    Int?     @map("mention_position")
+  mentionCount       Int      @default(0) @map("mention_count")
+  mentionType        String?  @map("mention_type")
+  visibilityScore    Int      @default(0) @map("visibility_score")
+  sentiment          String?
+  sentimentScore     Float?   @map("sentiment_score")
+  citedUrls          String[] @default([]) @map("cited_urls")
+  competitorMentions Json     @default("[]") @map("competitor_mentions")
+  hasHallucination   Boolean  @default(false) @map("has_hallucination")
+  hallucinationFlags Json     @default("[]") @map("hallucination_flags")
+  rawResponse        Json?    @map("raw_response")
+
   // Execution tracking (Phase 1)
   executionTimeMs    Int?     @map("execution_time_ms")
   costCredits        Float?   @map("cost_credits")
-  primaryProvider   String?  @map("primary_provider")
-  allProviders      String[] @default([]) @map("all_providers")
-  failedProviders   String[] @default([]) @map("failed_providers")
-  responseComparison Json?   @map("response_comparison")
-  
-  createdAt        DateTime @default(now()) @map("created_at")
+  primaryProvider    String?  @map("primary_provider")
+  allProviders       String[] @default([]) @map("all_providers")
+  failedProviders    String[] @default([]) @map("failed_providers")
+  responseComparison Json?    @map("response_comparison")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
   brand  Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
-  @@map("monitoring_results")
   @@index([brandId])
   @@index([promptId])
   @@index([engine])
   @@index([createdAt(sort: Desc)])
   @@index([userId])
   @@index([primaryProvider])
+  @@map("monitoring_results")
 }
 
 model AlertRule {
-  id           String    @id @default(uuid())
-  brandId      String    @map("brand_id")
-  userId       String    @map("user_id")
-  name         String
-  type         String
-  condition    Json
-  channels     String[]  @default(["email"])
-  email        String?
-  webhookUrl   String?   @map("webhook_url")
-  isActive     Boolean   @default(true) @map("is_active")
+  id          String    @id @default(uuid())
+  brandId     String    @map("brand_id")
+  userId      String    @map("user_id")
+  name        String
+  type        String
+  condition   Json
+  channels    String[]  @default(["email"])
+  email       String?
+  webhookUrl  String?   @map("webhook_url")
+  isActive    Boolean   @default(true) @map("is_active")
   lastFiredAt DateTime? @map("last_fired_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  deletedAt    DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  deletedAt   DateTime? @map("deleted_at")
 
-  brand        Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  alertEvents  AlertEvent[]
+  brand       Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  alertEvents AlertEvent[]
 
-  @@map("alert_rules")
   @@index([brandId])
   @@index([userId])
   @@index([deletedAt])
+  @@map("alert_rules")
 }
 
 model AlertEvent {
-  id            String    @id @default(uuid())
-  alertRuleId   String    @map("alert_rule_id")
-  brandId       String    @map("brand_id")
-  userId        String    @map("user_id")
-  type          String
-  title         String
-  message       String
-  data          Json      @default("{}")
-  channelsSent  String[]  @default([]) @map("channels_sent")
-  isRead        Boolean   @default(false) @map("is_read")
-  createdAt     DateTime  @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  alertRuleId  String   @map("alert_rule_id")
+  brandId      String   @map("brand_id")
+  userId       String   @map("user_id")
+  type         String
+  title        String
+  message      String
+  data         Json     @default("{}")
+  channelsSent String[] @default([]) @map("channels_sent")
+  isRead       Boolean  @default(false) @map("is_read")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  alertRule     AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
-  brand         Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  alertRule AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+  brand     Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
-  @@map("alert_events")
   @@index([userId])
   @@index([brandId])
   @@index([createdAt(sort: Desc)])
   @@index([isRead])
+  @@map("alert_events")
 }
 
 model BrandHealthScore {
-  id                String   @id @default(uuid())
-  brandId           String   @map("brand_id")
-  userId            String   @map("user_id")
-  date              DateTime @db.Date @default(now())
-  visibilityScore   Float    @default(0) @map("visibility_score")
-  sentimentScore    Float    @default(0) @map("sentiment_score")
-  hallucinationRate Float    @default(0) @map("hallucination_rate")
-  mentionCount      Int      @default(0) @map("mention_count")
-  citationCount     Int      @default(0) @map("citation_count")
+  id                 String   @id @default(uuid())
+  brandId            String   @map("brand_id")
+  userId             String   @map("user_id")
+  date               DateTime @default(now()) @db.Date
+  visibilityScore    Float    @default(0) @map("visibility_score")
+  sentimentScore     Float    @default(0) @map("sentiment_score")
+  hallucinationRate  Float    @default(0) @map("hallucination_rate")
+  mentionCount       Int      @default(0) @map("mention_count")
+  citationCount      Int      @default(0) @map("citation_count")
   // AVI component metrics
-  aviScore          Float    @default(0) @map("avi_score")
-  citationRate      Float    @default(0) @map("citation_rate")
-  mentionRate       Float    @default(0) @map("mention_rate")
-  recommendationRate Float   @default(0) @map("recommendation_rate")
-  positionAvg       Float    @default(0) @map("position_avg")
-  healthScore       Float    @default(0) @map("health_score")
-  engineBreakdown   Json     @default("{}") @map("engine_breakdown")
-  createdAt         DateTime @default(now()) @map("created_at")
+  aviScore           Float    @default(0) @map("avi_score")
+  citationRate       Float    @default(0) @map("citation_rate")
+  mentionRate        Float    @default(0) @map("mention_rate")
+  recommendationRate Float    @default(0) @map("recommendation_rate")
+  positionAvg        Float    @default(0) @map("position_avg")
+  healthScore        Float    @default(0) @map("health_score")
+  engineBreakdown    Json     @default("{}") @map("engine_breakdown")
+  createdAt          DateTime @default(now()) @map("created_at")
 
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
   @@unique([brandId, date])
-  @@map("brand_health_scores")
   @@index([brandId])
   @@index([date(sort: Desc)])
+  @@map("brand_health_scores")
 }
 
 model Subscription {
-  id               String   @id @default(uuid())
-  userId           String   @unique @map("user_id")
-  stripeCustomerId String?  @map("stripe_customer_id")
-  stripeSubId     String?  @map("stripe_sub_id")
-  plan            String   @default("free")
-  status           String   @default("active")
+  id               String    @id @default(uuid())
+  userId           String    @unique @map("user_id")
+  stripeCustomerId String?   @map("stripe_customer_id")
+  stripeSubId      String?   @map("stripe_sub_id")
+  plan             String    @default("free")
+  status           String    @default("active")
   currentPeriodEnd DateTime? @map("current_period_end")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   @@map("subscriptions")
 }
 
 model Credit {
-  id            String   @id @default(uuid())
-  userId        String   @map("user_id")
-  amount        Int      // Credits purchased (positive) or used (negative)
-  source        String   // 'stripe_purchase', 'promo', 'bonus', 'refund', 'subscription'
-  stripePaymentId String? @map("stripe_payment_id")
-  description   String?
-  expiresAt     DateTime? @map("expires_at")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  amount          Int // Credits purchased (positive) or used (negative)
+  source          String // 'stripe_purchase', 'promo', 'bonus', 'refund', 'subscription'
+  stripePaymentId String?   @map("stripe_payment_id")
+  description     String?
+  expiresAt       DateTime? @map("expires_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
 
-  @@map("credits")
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@index([expiresAt])
+  @@map("credits")
 }
 
 model CreditUsage {
-  id            String   @id @default(uuid())
-  userId        String   @map("user_id")
-  queryId       String?  @map("query_id")
-  creditsUsed   Int      // Always positive number
-  provider      String?  // Which AI provider used
-  engine        String?  // Which engine (chatgpt, gemini, etc)
-  brandId       String?  @map("brand_id")
-  description   String?
-  costCredits   Float?   @map("cost_credits") // Calculated cost in credits
-  createdAt     DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  queryId     String?  @map("query_id")
+  creditsUsed Int // Always positive number
+  provider    String? // Which AI provider used
+  engine      String? // Which engine (chatgpt, gemini, etc)
+  brandId     String?  @map("brand_id")
+  description String?
+  costCredits Float?   @map("cost_credits") // Calculated cost in credits
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  @@map("credit_usage")
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@index([brandId])
+  @@map("credit_usage")
 }
 
 model TeamMember {
-  id         String   @id @default(uuid())
-  brandId    String   @map("brand_id")
-  userId     String?  @map("user_id")
-  email      String
-  role       String   @default("viewer")
-  invitedBy  String   @map("invited_by")
-  status     String   @default("pending")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  brandId   String   @map("brand_id")
+  userId    String?  @map("user_id")
+  email     String
+  role      String   @default("viewer")
+  invitedBy String   @map("invited_by")
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  brand      Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
   @@unique([brandId, email])
-  @@map("team_members")
   @@index([brandId])
   @@index([userId])
+  @@map("team_members")
 }
 
 model BrandInvitation {
-  id         String   @id @default(uuid())
-  brandId    String   @map("brand_id")
-  email      String
-  role       String   @default("viewer")
-  invitedBy  String   @map("invited_by")
-  token      String   @unique
-  expiresAt  DateTime @map("expires_at")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  brandId   String   @map("brand_id")
+  email     String
+  role      String   @default("viewer")
+  invitedBy String   @map("invited_by")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  brand      Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
   @@unique([brandId, email])
-  @@map("brand_invitations")
   @@index([token])
+  @@map("brand_invitations")
 }
 
 model ApiKey {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  name        String
-  key         String   @unique
-  lastUsedAt  DateTime? @map("last_used_at")
-  expiresAt   DateTime? @map("expires_at")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id             String  @id @default(uuid())
+  userId         String  @map("user_id")
+  // Fase 1 (T09): org-level + scoped API keys. Nullable during transition.
+  organizationId String? @map("organization_id")
+  createdBy      String? @map("created_by")
+  name           String
 
-  @@map("api_keys")
+  // Legacy: full key stored plaintext. Deprecated by keyHash. Kept until PR 7.7.
+  key       String? @unique
+  // T09: secure storage — keyPrefix visible (first 16 chars incl. 'aipulse_'),
+  // keyHash bcrypt of full key. Both populated by backfill migration.
+  keyPrefix String? @map("key_prefix")
+  keyHash   String? @unique @map("key_hash")
+
+  // T09: permission model. Empty array = no permissions (deny-all by default).
+  // Backfill grants legacy keys all scopes for back-compat.
+  scopes String[] @default([])
+
+  lastUsedAt DateTime? @map("last_used_at")
+  expiresAt  DateTime? @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  revokedBy  String?   @map("revoked_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([key])
+  @@index([organizationId])
+  @@index([keyPrefix])
+  @@index([revokedAt])
+  @@map("api_keys")
 }
 
 model AnalysisResult {
@@ -314,132 +344,132 @@ model AnalysisResult {
 
   brand Brand? @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
-  @@map("analysis_results")
   @@index([brandId])
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@index([deletedAt])
+  @@map("analysis_results")
 }
 
 model CompetitorAnalysis {
-  id              String   @id @default(uuid())
-  brandId         String?  @map("brand_id")
-  userId          String   @map("user_id")
-  primaryUrl      String   @map("primary_url")
-  competitors     Json     @default("[]")
-  summary         String?
-  rawResponse     Json?    @map("raw_response")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  brandId     String?  @map("brand_id")
+  userId      String   @map("user_id")
+  primaryUrl  String   @map("primary_url")
+  competitors Json     @default("[]")
+  summary     String?
+  rawResponse Json?    @map("raw_response")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   brand Brand? @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
-  @@map("competitor_analyses")
   @@index([brandId])
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+  @@map("competitor_analyses")
 }
 
 model RecommendationHistory {
-  id            String   @id @default(uuid())
-  brandId       String   @map("brand_id")
-  userId        String   @map("user_id")
-  recommendations Json   @default("[]")
-  summary       String?
-  basedOnCount  Int      @default(0) @map("based_on_count")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id              String   @id @default(uuid())
+  brandId         String   @map("brand_id")
+  userId          String   @map("user_id")
+  recommendations Json     @default("[]")
+  summary         String?
+  basedOnCount    Int      @default(0) @map("based_on_count")
+  createdAt       DateTime @default(now()) @map("created_at")
 
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
-  @@map("recommendation_history")
   @@index([brandId])
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+  @@map("recommendation_history")
 }
 
 model SeoAuditResult {
-  id              String   @id @default(uuid())
-  brandId         String?  @map("brand_id")
-  userId          String   @map("user_id")
-  url             String
-  overallScore    Float    @map("overall_score")
-  results         Json     @default("{}")
-  cachedAt        DateTime @default(now()) @map("cached_at")
-  expiresAt       DateTime @map("expires_at")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  brandId      String?  @map("brand_id")
+  userId       String   @map("user_id")
+  url          String
+  overallScore Float    @map("overall_score")
+  results      Json     @default("{}")
+  cachedAt     DateTime @default(now()) @map("cached_at")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   brand Brand? @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
-  @@map("seo_audit_results")
   @@index([userId])
   @@index([brandId])
   @@index([url])
   @@index([expiresAt])
+  @@map("seo_audit_results")
 }
 
 model LlmsTxtVersion {
-  id           String   @id @default(uuid())
-  brandId      String   @map("brand_id")
-  userId       String   @map("user_id")
-  llmsTxt      String   @map("llms_txt")
-  llmsFullTxt  String   @map("llms_full_txt")
-  inputData    Json     @default("{}") @map("input_data")
-  version      Int      @default(1)
-  createdAt    DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  brandId     String   @map("brand_id")
+  userId      String   @map("user_id")
+  llmsTxt     String   @map("llms_txt")
+  llmsFullTxt String   @map("llms_full_txt")
+  inputData   Json     @default("{}") @map("input_data")
+  version     Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
 
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
-  @@map("llms_txt_versions")
   @@index([brandId])
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+  @@map("llms_txt_versions")
 }
 
 model WeeklyReview {
-  id            String   @id @default(uuid())
-  brandId       String   @map("brand_id")
-  userId        String   @map("user_id")
-  weekNumber    Int      @map("week_number")
-  year          Int
-  weekStart     DateTime @db.Date @map("week_start")
-  weekEnd       DateTime @db.Date @map("week_end")
-  metrics       Json     @default("{}")
-  markdown      String?
-  createdAt     DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid())
+  brandId    String   @map("brand_id")
+  userId     String   @map("user_id")
+  weekNumber Int      @map("week_number")
+  year       Int
+  weekStart  DateTime @map("week_start") @db.Date
+  weekEnd    DateTime @map("week_end") @db.Date
+  metrics    Json     @default("{}")
+  markdown   String?
+  createdAt  DateTime @default(now()) @map("created_at")
 
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
   @@unique([brandId, year, weekNumber])
-  @@map("weekly_reviews")
   @@index([brandId])
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+  @@map("weekly_reviews")
 }
 
 model WebhookDeliveryLog {
-  id              String    @id @default(uuid())
-  alertEventId    String    @map("alert_event_id")
-  alertRuleId     String    @map("alert_rule_id")
-  url             String
-  status          String    @default("pending")
-  httpStatus      Int?      @map("http_status")
-  attempts        Int       @default(0)
-  lastAttemptAt   DateTime? @map("last_attempt_at")
-  nextRetryAt     DateTime? @map("next_retry_at")
-  responseBody    String?   @map("response_body")
-  error           String?
-  createdAt       DateTime  @default(now()) @map("created_at")
+  id            String    @id @default(uuid())
+  alertEventId  String    @map("alert_event_id")
+  alertRuleId   String    @map("alert_rule_id")
+  url           String
+  status        String    @default("pending")
+  httpStatus    Int?      @map("http_status")
+  attempts      Int       @default(0)
+  lastAttemptAt DateTime? @map("last_attempt_at")
+  nextRetryAt   DateTime? @map("next_retry_at")
+  responseBody  String?   @map("response_body")
+  error         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
 
-  @@map("webhook_delivery_logs")
   @@index([alertEventId])
   @@index([alertRuleId])
   @@index([status])
   @@index([nextRetryAt])
+  @@map("webhook_delivery_logs")
 }
 
 model CitationSnapshot {
   id              String   @id @default(uuid())
   projectId       String   @map("project_id")
-  scanDate        DateTime @db.Date @map("scan_date")
+  scanDate        DateTime @map("scan_date") @db.Date
   engine          String   @default("all")
   category        String   @default("all")
   language        String   @default("all")
@@ -455,10 +485,10 @@ model CitationSnapshot {
   brand Brand? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, scanDate, engine, category, language])
-  @@map("citation_snapshots")
   @@index([projectId])
   @@index([scanDate(sort: Desc)])
   @@index([engine])
+  @@map("citation_snapshots")
 }
 
 model KeywordRanking {
@@ -473,28 +503,135 @@ model KeywordRanking {
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
   @@unique([brandId, keyword, createdAt(sort: Desc)])
-  @@map("keyword_rankings")
   @@index([brandId])
   @@index([keyword])
   @@index([createdAt(sort: Desc)])
+  @@map("keyword_rankings")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// REMOVED 2026-05-12 — CF-03 schema alignment
-//
-// The models Workspace, WorkspaceMember, AuditLog (+ WorkspaceRole enum) were
-// declared here but the corresponding tables NEVER existed in Supabase (not in
-// BOOTSTRAP.sql nor in any migration). No `prisma.workspace*` or `prisma.auditLog`
-// usage exists in src/ — they were truly orphaned models causing schema drift
-// and potential silent ORM failures.
-//
-// Multi-tenant isolation is achieved via the brand-based model with
-// `team_members` table (see src/lib/services/workspace-auth.ts, which despite
-// its name operates on brand_id, not workspace_id). This lean model is
-// sufficient for the first 10-20 paying customers.
-//
-// If multi-workspace becomes a product requirement later:
-//   1. Add migration creating workspaces / workspace_members / audit_logs
-//   2. Re-add models here with regenerated types
-//   3. Refactor workspace-auth.ts to use workspace_id
+// Fase 1 — Multi-tenancy (T07): Organization → Workspace → Brand hierarchy.
+// Re-introduced 2026-05-13 as additive-only PR 7.1.
+// FK on existing models (Brand.workspaceId etc.) are NULLABLE until backfill
+// migration runs. NOT NULL enforcement happens in PR 7.7 post-backfill.
+// See docs/enterprise-roadmap/02-fase-1-workspace-audit.md.
 // ─────────────────────────────────────────────────────────────────────────────
+
+model Organization {
+  id      String @id @default(uuid())
+  name    String
+  slug    String @unique
+  ownerId String @map("owner_id")
+
+  stripeCustomerId String?   @map("stripe_customer_id")
+  stripeSubId      String?   @map("stripe_sub_id")
+  plan             String    @default("free")
+  status           String    @default("active")
+  currentPeriodEnd DateTime? @map("current_period_end")
+
+  logoUrl      String? @map("logo_url")
+  primaryColor String  @default("#6366f1") @map("primary_color")
+
+  defaultWorkspaceId String? @map("default_workspace_id")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  workspaces Workspace[]
+  members    OrganizationMember[]
+  auditLogs  AuditLog[]
+  apiKeys    ApiKey[]
+  brands     Brand[]
+
+  @@index([ownerId])
+  @@index([slug])
+  @@index([deletedAt])
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  userId         String   @map("user_id")
+  role           String   @default("member") // owner | admin | billing | member
+  invitedBy      String?  @map("invited_by")
+  joinedAt       DateTime @default(now()) @map("joined_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("organization_members")
+}
+
+model Workspace {
+  id             String  @id @default(uuid())
+  organizationId String  @map("organization_id")
+  name           String
+  slug           String
+  description    String?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      WorkspaceMember[]
+  brands       Brand[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([deletedAt])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  role        String   @default("viewer") // owner | admin | editor | viewer
+  invitedBy   String?  @map("invited_by")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("workspace_members")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fase 1 — Audit log (T08): append-only compliance trail.
+// RLS policy in migration SQL enforces no UPDATE / no DELETE.
+// ─────────────────────────────────────────────────────────────────────────────
+model AuditLog {
+  id             String  @id @default(uuid())
+  organizationId String  @map("organization_id")
+  workspaceId    String? @map("workspace_id")
+
+  actorId       String  @map("actor_id")
+  actorType     String  @default("user") @map("actor_type") // user | api_key | system
+  actorApiKeyId String? @map("actor_api_key_id")
+
+  action       String
+  resourceType String  @map("resource_type")
+  resourceId   String? @map("resource_id")
+
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+  metadata  Json    @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
+}

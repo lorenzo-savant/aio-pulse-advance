@@ -39,8 +39,9 @@ export async function GET(req: NextRequest) {
   const userId = await auth(req)
   if (userId instanceof NextResponse) return userId
 
-  const db = createServerClient() as any
+  const db = createServerClient()
   if (!db) return err('Database not configured', 503)
+
 
   const brandId = req.nextUrl.searchParams.get('brand_id')
   const gap = req.nextUrl.searchParams.get('gap')
@@ -58,6 +59,7 @@ export async function GET(req: NextRequest) {
   if (!brand) return err('Brand not found or access denied', 404)
 
   let q = db
+    // @ts-expect-error - aeo_snippets table not yet in generated Database type
     .from('aeo_snippets')
     .select('*')
     .eq('brand_id', brandId)
@@ -74,6 +76,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data: runs } = await db
+    // @ts-expect-error - aeo_runs table not yet in generated Database type
     .from('aeo_runs')
     .select('*')
     .eq('brand_id', brandId)
@@ -83,6 +86,7 @@ export async function GET(req: NextRequest) {
   const quota = await getSerpApiQuota()
 
   const counts = { total: 0, gap: 0, covered: 0, unknown: 0 }
+  // @ts-expect-error - snippets from aeo_snippets table not in Database type
   for (const s of (snippets || []) as Array<{ gap_status: string }>) {
     counts.total++
     if (s.gap_status === 'gap') counts.gap++

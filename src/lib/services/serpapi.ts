@@ -36,6 +36,7 @@ export function isSerpApiAvailable(): boolean {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 async function readUsage(): Promise<Map<number, number>> {
+  // serpapi_usage table not yet in Database type
   const db = createServerClient() as any
   const out = new Map<number, number>()
   if (!db) return out
@@ -50,6 +51,7 @@ async function readUsage(): Promise<Map<number, number>> {
 }
 
 async function incrementUsage(keyIndex: number): Promise<number> {
+  // serpapi_usage table + increment_serpapi_usage RPC not in Database type
   const db = createServerClient() as any
   if (!db) return 0
   const { data, error } = await db.rpc('increment_serpapi_usage', {

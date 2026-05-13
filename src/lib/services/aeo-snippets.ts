@@ -84,6 +84,7 @@ export function buildFAQPageJsonLd(
 export async function runAEOGeneration(
   input: AEOSnippetInput,
 ): Promise<AEOSnippetRunResult> {
+  // aeo_runs, aeo_snippets tables not yet in Database type for this service
   const db = createServerClient() as any
   if (!db) throw new Error('Database not configured')
   if (!isSerpApiAvailable()) throw new Error('SERPAPI_KEYS not configured')

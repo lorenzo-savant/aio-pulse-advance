@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { generateId } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 import type { AnalysisResult, ScanHistoryEntry, EngineId, ModelId } from '@/types'
 
 // ─── State Shape ──────────────────────────────────────────────────────────────
@@ -82,7 +83,7 @@ export const useAppStore = create<AppStore>()(
             set({ scanHistory: entries })
           }
         } catch (err) {
-          console.error('[store] Failed to load scan history:', err)
+          logger.error('[store] Failed to load scan history', { err })
         } finally {
           set({ scanHistoryLoading: false })
         }
@@ -132,7 +133,7 @@ export const useAppStore = create<AppStore>()(
             }))
           }
         } catch (err) {
-          console.error('[store] Failed to persist scan:', err)
+          logger.error('[store] Failed to persist scan', { err })
         }
 
         return entry
@@ -142,7 +143,7 @@ export const useAppStore = create<AppStore>()(
         set((s) => ({ scanHistory: s.scanHistory.filter((e) => e.id !== id) }))
         // Delete from DB via API
         fetch(`/api/scans?id=${id}`, { method: 'DELETE' }).catch((err) =>
-          console.error('[store] Failed to delete scan:', err),
+          logger.error('[store] Failed to delete scan', { err }),
         )
       },
 

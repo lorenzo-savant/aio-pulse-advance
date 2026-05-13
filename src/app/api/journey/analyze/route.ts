@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 import {
   analyzeJourney,
   calculateJourneyScore,
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
       brandEmergence,
     })
   } catch (error) {
-    console.error('Journey analysis error:', error)
+    logger.error('Journey analysis error', { err: error })
     return NextResponse.json({ error: 'Failed to analyze journey' }, { status: 500 })
   }
 }

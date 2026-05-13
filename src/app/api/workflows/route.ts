@@ -51,16 +51,13 @@ async function createWorkflow(
     .single()
 
   if (error) {
-    console.error(
-      '[workflows] Failed to create workflow:',
-      JSON.stringify({
-        error: String(error),
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-        message: error.message,
-      }),
-    )
+    logger.error('[workflows] Failed to create workflow', {
+      error: String(error),
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      message: error.message,
+    })
     return null
   }
 
@@ -229,7 +226,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: workflow }, { status: 201 })
   } catch (err) {
-    console.error('[workflows] POST error:', err)
+    logger.error('[workflows] POST error', { err })
     return NextResponse.json(
       { success: false, message: 'Internal server error', error: String(err) },
       { status: 500 },

@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient as createSSRClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/types/database'
+import { logger } from '@/lib/logger'
 
 const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL']
 const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
@@ -50,7 +51,7 @@ export function createServerClient(): TypedSupabaseClient | null {
         'FATAL: SUPABASE_SERVICE_KEY or SUPABASE_URL not set in production. All database operations will fail.',
       )
     }
-    console.warn('⚠️ SUPABASE_SERVICE_KEY not set - database features disabled (dev mode)')
+    logger.warn('SUPABASE_SERVICE_KEY not set - database features disabled (dev mode)')
     return null
   }
   return createClient<Database>(supabaseUrl, supabaseServiceKey, {
@@ -87,9 +88,10 @@ export async function getCurrentUserId(
 ): Promise<string> {
   // ✅ IMPROVED: Check Supabase configuration first
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('❌ Supabase not configured - missing environment variables:')
-    console.error('   - NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓' : '✗')
-    console.error('   - NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓' : '✗')
+    logger.error('Supabase not configured - missing environment variables', {
+      supabaseUrl: supabaseUrl ? 'set' : 'missing',
+      supabaseAnonKey: supabaseAnonKey ? 'set' : 'missing',
+    })
     throw new AuthError('Supabase not configured. Please set environment variables.', 503)
   }
 
@@ -105,7 +107,7 @@ export async function getCurrentUserId(
     !authHeader &&
     !cookieHeader?.includes('sb-')
   ) {
-    console.log('[auth] Using DEV_USER_ID:', devUserId)
+    logger.info('[auth] Using DEV_USER_ID', { devUserId })
     return devUserId
   }
 
@@ -146,13 +148,13 @@ export async function getCurrentUserId(
       const { data, error } = await ssrClient.auth.getUser()
       if (!error && data.user) return data.user.id
     } catch (e) {
-      console.warn('[auth] Cookie-based auth failed:', e instanceof Error ? e.message : e)
+      logger.warn('[auth] Cookie-based auth failed', { error: e instanceof Error ? e.message : e })
     }
   }
 
   // Fallback to dev user in development mode
   if (devUserId) {
-    console.log('[auth] Falling back to DEV_USER_ID:', devUserId)
+    logger.info('[auth] Falling back to DEV_USER_ID', { devUserId })
     return devUserId
   }
 

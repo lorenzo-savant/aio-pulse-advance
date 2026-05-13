@@ -21,6 +21,7 @@
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 import * as Sentry from '@sentry/nextjs'
+import { logger } from '@/lib/logger'
 
 export interface RateLimitResult {
   /** true = request is allowed, false = limit exceeded */
@@ -118,7 +119,7 @@ export async function checkRateLimit(
       const { success, remaining, reset } = await ratelimit.limit(identifier)
       return { success, remaining, resetAt: reset }
     } catch (error) {
-      console.error('[rate-limit] Redis error:', error)
+      logger.error('[rate-limit] Redis error', { err: error })
       return { success: false, remaining: 0, resetAt: Date.now() + windowMs }
     }
   }
@@ -129,10 +130,7 @@ export async function checkRateLimit(
   // runaway during a Redis outage or misconfiguration. Configure Upstash to
   // restore service.
   if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
-    console.error(
-      '[rate-limit] Redis not configured in production — failing closed. ' +
-        'Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to restore.',
-    )
+    logger.error('[rate-limit] Redis not configured in production — failing closed')
     // Notify ops via Sentry (no-op if Sentry not initialized)
     Sentry.captureMessage('Rate limit: Redis not configured in production', 'error')
     return { success: false, remaining: 0, resetAt: Date.now() + windowMs }

@@ -49,31 +49,31 @@ Task tracker live: [docs/enterprise-roadmap/task-tracker.md](docs/enterprise-roa
 
 ```bash
 # Setup e sviluppo
-pnpm install              # NB: il progetto usa pnpm (lock file pnpm-lock.yaml? verifica). Se è npm, sostituisci.
-pnpm dev                  # http://localhost:3000
+npm install              # NB: il progetto usa npm (lock file npm-lock.yaml? verifica). Se è npm, sostituisci.
+npm dev                  # http://localhost:3000
 
 # Quality gate — DEVE PASSARE prima di ogni commit
-pnpm type-check           # tsc --noEmit
-pnpm lint
-pnpm format               # Prettier
-pnpm test                 # Vitest unit + integration
-pnpm test:e2e             # Playwright (più lento, run before PR not before commit)
+npm type-check           # tsc --noEmit
+npm lint
+npm format               # Prettier
+npm test                 # Vitest unit + integration
+npm test:e2e             # Playwright (più lento, run before PR not before commit)
 
 # Security
-pnpm security:audit       # npm audit + custom check
-pnpm security:audit:fix
-pnpm security:check
+npm security:audit       # npm audit + custom check
+npm security:audit:fix
+npm security:check
 
 # Database (Prisma + Supabase)
-pnpm prisma generate                                # rigenera client dopo schema change
-pnpm prisma migrate dev --name <descriptive>        # crea nuova migration locale
-pnpm prisma migrate deploy                          # applica in prod (CI/CD)
-pnpm prisma studio                                  # UI per ispezionare DB
-supabase gen types typescript --project-id <id> > src/types/supabase.ts  # rigenera types Supabase
+npx prisma generate                                # rigenera client dopo schema change
+npx prisma migrate dev --name <descriptive>        # crea nuova migration locale
+npx prisma migrate deploy                          # applica in prod (CI/CD)
+npx prisma studio                                  # UI per ispezionare DB
+npm run db:gen-types                               # rigenera src/types/database.ts da schema Supabase live
 
 # Build
-pnpm build
-pnpm start                # production-mode locale
+npm build
+npm start                # production-mode locale
 ```
 
 → Dettagli ambienti: [ENVIRONMENTS.md](ENVIRONMENTS.md).
@@ -84,7 +84,7 @@ Riferimento completo: [docs/enterprise-roadmap/00-mission-scope-rules.md](docs/e
 
 Cinque punti che bocciano qualsiasi PR:
 
-1. **Type safety**: zero `(db as any)` o `as any` introdotti nuovi. Se devi, usa `// @ts-expect-error` con commento esplicativo. Il PR check fa fail se `pnpm type-check` non passa.
+1. **Type safety**: zero `(db as any)` o `as any` introdotti nuovi. Se devi, usa `// @ts-expect-error` con commento esplicativo. Il PR check fa fail se `npm type-check` non passa.
 2. **No console.log in produzione**: usa `logger` da [`src/lib/logger.ts`](src/lib/logger.ts). Se non c'è ancora structured logger, usa pino setup come task in [Fase 0](docs/enterprise-roadmap/01-fase-0-pulizia.md).
 3. **Mai loggare PII o secrets**: email, IP, JWT, API key, password mai loggati raw. Mascheratura automatica via logger middleware (vedi Fase 0).
 4. **Migration Supabase**: ogni schema change passa per `prisma migrate dev --name <kebab-case-descriptive>`. Le migration sono **forward-only** in produzione — niente rollback automatici, niente migration "fix" che riscrivono storia. Test locale + staging prima.
@@ -141,7 +141,7 @@ Quando inizi una sessione su questo progetto:
 4. **Crea branch**: `git checkout -b fase-N/<task-id>-<slug>`
 5. **Leggi il task** completo nel doc di fase (DoD, file modificati, test richiesti)
 6. **Implementa** rispettando coding standards (sez. 5)
-7. **Test locali**: `pnpm type-check && pnpm lint && pnpm test`
+7. **Test locali**: `npm type-check && npm lint && npm test`
 8. **Commit + push + PR** con DoD checklist
 9. **Aggiorna** task-tracker.md → status "In Review"
 10. Solo dopo merge + deploy: status "Done"

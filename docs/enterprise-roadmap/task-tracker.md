@@ -13,13 +13,13 @@
 
 ## 📊 Status sommario
 
-| Fase | Done | In Progress | Ready | Blocked |
+| Fase | Done | Scaffolding done (user verify) | Ready | Blocked |
 |---|---|---|---|---|
-| Fase 0 | 1/6 | 0 | 4 | 1 |
+| Fase 0 | 1/6 | 2 (T02, T04) | 2 (T03, T06) | 1 (T05 waits T04 user-verify) |
 | Fase 1 | 0/3 | 0 | 0 | 3 (waiting Fase 0) |
 | Fase 2 | 0/5 | 0 | 0 | 5 (waiting Fase 1) |
 | Fase 3 | 0/4 | 0 | 0 | 4 (waiting Fase 1) |
-| **Total** | **1/18** | **0** | **4** | **13** |
+| **Total** | **1/18** | **2** | **2** | **13** |
 
 ---
 
@@ -28,10 +28,10 @@
 | ID | Title | Status | Owner | Branch | PR | Updated |
 |---|---|---|---|---|---|---|
 | T01 | Fix imports + type bypass in `onboarding/route.ts` (S1) | 🟢 Done | — | — | — | 2026-05-14 |
-| T02 | Generate strong Supabase types + refactor `supabase.ts` (S1) | 🟡 Ready | — | — | — | 2026-05-14 |
+| T02 | Generate strong Supabase types + refactor `supabase.ts` (S1) | 🟣 Scaffolding done (user: `npm i` + `db:gen-types`) | Claude Opus 4.7 | main (in baseline commit) | — | 2026-05-14 |
 | T03 | Kill `(db as any)` across API routes (S2) — da 125+ a 1 residuo | 🟡 Ready | — | — | — | 2026-05-14 |
-| T04 | Structured logger: pino setup + PII masking + Sentry forward | 🟡 Ready | — | — | — | 2026-05-14 |
-| T05 | Replace 76 `console.log/error/warn` with logger | ⚫ Blocked by T04 | — | — | — | 2026-05-14 |
+| T04 | Structured logger: pino setup + PII masking + Sentry forward | 🟣 Scaffolding done (user: `npm i` + Sentry DSN + smoke test) | Claude Opus 4.7 | main (in baseline commit) | — | 2026-05-14 |
+| T05 | Replace 76 `console.log/error/warn` with logger | ⚫ Blocked by T04 user-verify | — | — | — | 2026-05-14 |
 | T06 | CI gate: type-check + lint + test in pre-commit + PR | 🟡 Ready | — | — | — | 2026-05-14 |
 
 Dettaglio: [01-fase-0-pulizia.md](01-fase-0-pulizia.md)
@@ -162,4 +162,7 @@ Prima di iniziare alcuni task, founder deve decidere:
 
 ---
 
-**Last updated**: 2026-05-14 — updated Fase 0 with verified real numbers (T01 done, T03: 1 instance, T05: 76 console.*).
+**Last updated**: 2026-05-14 — T02 + T04 scaffolding completed by Claude Opus 4.7. User action required: `npm install` to pull pino + supabase devDeps, then run smoke tests per task DoD.
+
+**Convenzione status estesa (2026-05-14)**:
+- 🟣 `Scaffolding done` = il lavoro di design e code-write è chiuso, ma necessita verification user-side (install deps, env vars, smoke test) per chiudere a 🟢 Done.

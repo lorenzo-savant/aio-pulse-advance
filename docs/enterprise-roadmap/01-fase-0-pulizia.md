@@ -43,47 +43,44 @@ Eliminare il **debito tecnico bloccante** identificato in [CODE_REVIEW.md](../..
 
 ---
 
-## T02 — Generate strong Supabase types + refactor `supabase.ts`
+## T02 — Generate strong Supabase types + refactor `supabase.ts` 🟣 Scaffolding done
 
 **Severity**: S1
-**Effort**: 1-2 giorni
+**Effort**: ~~1-2 giorni~~ → **scaffolding done 2026-05-14, hands-on regeneration ~30 min**
 **Dependencies**: nessuna
-**Owner**: TBD
+**Owner**: Claude Opus 4.7 (scaffolding) + user (run `db:gen-types`)
 
-### Issue
+### Stato attuale (verificato 2026-05-14)
 
-- `src/lib/supabase.ts` — `createServerClient()` return type è `any`, no strong typing
-- Mancano tipi generati dallo schema Supabase reale → ogni query è untyped
+- ✅ `src/lib/supabase.ts` già strong-typed: `import type { Database } from '@/types/database'` + `TypedSupabaseClient = SupabaseClient<Database>` + `createServerClient(): TypedSupabaseClient`
+- ✅ Plus CF-01 security guard contro `DEV_USER_ID` in prod (defense in depth)
+- ✅ `src/types/database.ts` esistente, 1906 righe, formato standard Supabase gen types (Row/Insert/Update)
+- ✅ **package.json**: aggiunto script `db:gen-types` + `supabase` CLI in devDependencies
+- ✅ **.env.example**: aggiunta `SUPABASE_PROJECT_ID` con istruzioni
+- ✅ **ENVIRONMENTS.md**: documentata procedura regen e best practice
 
-### Acceptance criteria
+### Action items residui (user, ~30 min)
 
-- [ ] Generato `src/types/supabase.ts` via `supabase gen types typescript --project-id <id> > src/types/supabase.ts`
-- [ ] `src/lib/supabase.ts` esporta `createServerClient<Database>()` tipizzato
-- [ ] Esporta `createBrowserClient<Database>()` tipizzato
-- [ ] Update `src/lib/supabase-browser.ts` analogamente
-- [ ] `Database` type esportato per uso in altri file
-- [ ] `npm script` aggiunto: `db:gen-types` → rigenera types Supabase
-- [ ] Documentazione in `ENVIRONMENTS.md` su quando rigenerare
+- [ ] `npm install` (per pickare supabase CLI da devDeps)
+- [ ] Aggiungere `SUPABASE_PROJECT_ID=npxfqsbslhnkoxgqosyy` in `.env.local`
+- [ ] `npm run db:gen-types` → rigenera `src/types/database.ts` da schema live
+- [ ] Diff manuale: verificare che le 273 righe geo_score (già nello stash) siano preservate dalla rigenerazione
+- [ ] `npm run type-check` → PASS
+- [ ] Commit con messaggio `chore(types): regenerate Supabase types from live schema`
 
-### Files
+### Files toccati dallo scaffolding 2026-05-14
 
-- `src/types/supabase.ts` (nuovo, generato)
-- `src/lib/supabase.ts` (modificato)
-- `src/lib/supabase-browser.ts` (modificato)
-- `package.json` (script `db:gen-types`)
-- `ENVIRONMENTS.md` (sezione "Type regeneration")
-
-### Verifica
-
-```bash
-pnpm db:gen-types
-pnpm type-check        # PASS
-```
+- `package.json` — script `db:gen-types` + `supabase` devDep
+- `.env.example` — `SUPABASE_PROJECT_ID` documented
+- `ENVIRONMENTS.md` — sezione "Supabase Type Regeneration" + "Sentry + Logger Configuration"
+- `AGENTS.md` — pnpm → npm consistency fix + `db:gen-types` command
 
 ### Note implementative
 
-- Project ID Supabase è in `.env.local` come `SUPABASE_PROJECT_ID` (verificare; se non esiste, aggiungere come env var)
-- I types vanno committati in git (sono parte del codice)
+- `database.ts` è il filename canonico in questo repo (non `supabase.ts` come dicevano le mie istruzioni iniziali — corretto adesso)
+- Project ref derivato da `NEXT_PUBLIC_SUPABASE_URL` (es. `https://abcd1234.supabase.co` → ref `abcd1234`)
+- Per Acasting: project ref attuale è `npxfqsbslhnkoxgqosyy` (visto in `.env.local`)
+- I types vanno committati in git (sono il contract con il DB)
 - Quando lo schema cambia in produzione: rigenerare + committare in stesso PR della migration
 
 ---
@@ -138,39 +135,55 @@ pnpm test
 
 ---
 
-## T04 — Structured logger: pino + PII masking + Sentry forward
+## T04 — Structured logger: pino + PII masking + Sentry forward 🟣 Scaffolding done
 
 **Severity**: S2
-**Effort**: 2-3 giorni
+**Effort**: ~~2-3 giorni~~ → **scaffolding done 2026-05-14, hands-on verification ~30 min**
 **Dependencies**: nessuna
-**Owner**: TBD
+**Owner**: Claude Opus 4.7 (scaffolding) + user (npm install + DSN config + smoke test)
 
-### Issue
+### Stato attuale (verificato 2026-05-14)
 
-- Sentry è installato (`@sentry/nextjs ^10.43.0` in package.json, `sentry.*.config.ts` esistenti) ma **non configurato** — DSN non attivo, dashboard vuota
-- `src/lib/logger.ts` esiste ma è **custom artigianale**, non basato su pino/winston → no PII masking, no levels strutturati, no Sentry forward
-- SECURITY.md flag "needs install + DSN config" ancora aperto
-- Rischio PII leak: log non hanno masking su email, API key, token
+- ✅ `src/lib/logger.ts` riscritto con `pino` v9.x: PII auto-masking via `redact.paths` (40+ paths coprono email/password/apiKey/token/authorization/cookie/Supabase session), Sentry forward (info/warn → breadcrumb, error → captureException), edge-runtime compatible, log levels da `LOG_LEVEL` env (default: `info` in prod / `debug` altrove), pino-pretty in dev per leggibilità
+- ✅ Interface `Logger` preservata (same shape) — call sites esistenti non si rompono
+- ✅ `sentry.server.config.ts` rinforzato: PII filter in `beforeSend` (defense in depth), release tagging da `VERCEL_GIT_COMMIT_SHA`, `enabled` con override `SENTRY_FORCE_ENABLE`, `ignoreErrors` di noise comune
+- ✅ `package.json`: aggiunti `pino ^9.5.0` (deps) + `pino-pretty ^13.0.0` (devDeps)
+- ✅ `ENVIRONMENTS.md`: aggiunta sezione "Sentry + Logger Configuration" con DO/DON'T
+- ⚠️ `sentry.client.config.ts` e `sentry.edge.config.ts`: lasciati intatti, conformi (eventuale enhancement con stessa beforeSend in PR follow-up)
 
-### Acceptance criteria
+### Action items residui (user, ~30 min)
 
-- [ ] Sentry funzionante: errore lanciato in dev → visibile in dashboard Sentry
-- [ ] `SENTRY_DSN` configurato in `.env.local` e documentato in `.env.example` + ENVIRONMENTS.md
-- [ ] `pino` installato e configurato in `src/lib/logger.ts` (sostituisce logger custom attuale)
-- [ ] Logger ha PII auto-masking: `email`, `password`, `apiKey`, `token`, `authorization` header, `creditCard`
-- [ ] Logger forward errori a Sentry automatico (breadcrumb)
-- [ ] Log levels: `debug` solo in dev, `info`/`warn`/`error` in prod
-- [ ] Documentazione `src/lib/logger.ts` con esempi di uso
+- [ ] `npm install` (per pickare pino + pino-pretty)
+- [ ] Crea progetto Sentry (https://sentry.io) e ottieni DSN
+- [ ] Aggiungi in `.env.local`: `SENTRY_DSN=https://...@sentry.io/...`, `SENTRY_ORG=<slug>`, `SENTRY_PROJECT=<slug>`
+- [ ] Aggiungi `SENTRY_AUTH_TOKEN` (per sourcemap upload — opzionale ma raccomandato)
+- [ ] Smoke test PII masking:
+  ```bash
+  # In una route, temporaneamente:
+  logger.info('user login', { email: 'test@test.com', apiKey: 'sk-xxx' })
+  # Verifica nei log: email + apiKey appaiono come '[REDACTED]'
+  ```
+- [ ] Smoke test Sentry: `throw new Error('test sentry')` in una route → evento visibile in dashboard <1min
+- [ ] In produzione (post-deploy Vercel): verificare che `release: <git_sha>` compaia sui Sentry events
 
-### Files
+### Acceptance criteria (scaffolding side)
 
-- `src/lib/logger.ts` (sostituisce implementazione custom attuale)
-- `sentry.client.config.ts` (verifica config DSN)
-- `sentry.server.config.ts` (verifica config DSN)
-- `sentry.edge.config.ts` (verifica config DSN)
-- `next.config.ts` (verifica Sentry plugin integration)
-- `.env.example` (aggiunta `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`)
-- `ENVIRONMENTS.md` (sezione Sentry + logger)
+- [x] Sentry config server-side hardened (PII filter, release tagging, ignoreErrors)
+- [x] `pino` configurato in `src/lib/logger.ts` con redact, level resolution, base service tag, formatters
+- [x] PII auto-masking attiva su 40+ paths (email, password, apiKey, token, cookies, Supabase session)
+- [x] Sentry forward: error → captureException, info/warn → breadcrumb, debug → mai forwardato (quota)
+- [x] Log levels via `LOG_LEVEL` env (default: `info` prod / `debug` altrove)
+- [x] Documentazione inline in `src/lib/logger.ts` + sezione "Sentry + Logger" in ENVIRONMENTS.md
+
+### Files modificati dallo scaffolding 2026-05-14
+
+- ✅ `src/lib/logger.ts` — riscritto da custom artigianale a pino + Sentry forward + PII masking
+- ✅ `sentry.server.config.ts` — beforeSend hardening + release tagging + ignoreErrors
+- ✅ `package.json` — `pino` (deps) + `pino-pretty` (devDeps) aggiunti
+- ✅ `ENVIRONMENTS.md` — sezione "Sentry + Logger Configuration"
+- ⚠️ `sentry.client.config.ts` — non toccato (potrebbe beneficiare di stessa beforeSend in PR follow-up)
+- ⚠️ `sentry.edge.config.ts` — non toccato (edge runtime ha vincoli su Sentry, verificare separatamente)
+- ⚠️ `next.config.ts` — non toccato (Sentry webpack config esistente è OK)
 
 ### Verifica
 

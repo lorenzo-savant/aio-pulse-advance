@@ -1,34 +1,34 @@
-# Fase 2 — SSO + MFA + Trust Center + GDPR + Status Page (T10-T14)
+# Fas 2 — SSO + MFA + Trust Center + GDPR + Status Page (T10-T14)
 
-> 2-3 settimane, 15-25k EUR. **Trust signal per mid-market.** Parallelizable con Fase 3 dopo Fase 1.
+> 2-3 veckor, 15-25k EUR. **Trust signal för mid-market.** Parallelliserbar med Fas 3 efter Fas 1.
 
 ---
 
-## 🎯 Goal della fase
+## 🎯 Fasens mål
 
-Sbloccare i deal mid-market (€20-50k ARR) eliminando i 5 blocker più comuni: "Avete SSO?", "C'è MFA?", "DPA scaricabile?", "Status page?", "Posso cancellare i miei dati?". Senza essere SOC 2 certified (fuori scope), ma trust-credibile.
+Låsa upp mid-market-affärerna (€20-50k ARR) genom att eliminera de 5 vanligaste blockerarna: "Har ni SSO?", "Finns det MFA?", "Nedladdningsbar DPA?", "Status page?", "Kan jag radera mina data?". Utan att vara SOC 2-certifierade (utanför omfattning), men trovärdiga ur ett trust-perspektiv.
 
-## ⚠️ Prerequisito
+## ⚠️ Förutsättning
 
-[Fase 1](02-fase-1-workspace-audit.md) completata: SSO va a livello Organization, audit log instrumentation pronto, GDPR export usa la gerarchia workspace.
+[Fas 1](02-fase-1-workspace-audit.md) slutförd: SSO går på Organization-nivå, instrumentering av audit log klar, GDPR-export använder workspace-hierarkin.
 
 ## 📋 Task overview
 
-| Task | Titolo | Effort | Deps |
+| Task | Titel | Effort | Deps |
 |---|---|---|---|
-| T10 | SSO Google + Microsoft OAuth | 3-4 giorni | T07 |
-| T11 | MFA TOTP opzionale + enforceable per workspace admin | 2-3 giorni | T07 |
-| T12 | Trust Center page + DPA + sub-processor list | 2-3 giorni | — |
-| T13 | Status page basic (Instatus) + monitoring config | 1-2 giorni | — |
-| T14 | GDPR essentials: data export + deletion self-serve | 4-5 giorni | T07, T08 |
+| T10 | SSO Google + Microsoft OAuth | 3-4 dagar | T07 |
+| T11 | MFA TOTP valfritt + enforceable per workspace admin | 2-3 dagar | T07 |
+| T12 | Trust Center page + DPA + sub-processor list | 2-3 dagar | — |
+| T13 | Status page basic (Instatus) + monitoring config | 1-2 dagar | — |
+| T14 | GDPR essentials: data export + deletion self-serve | 4-5 dagar | T07, T08 |
 
-**Totale**: ~2-3 settimane con 1 dev fulltime.
+**Totalt**: ~2-3 veckor med 1 dev på heltid.
 
 ---
 
 ## T10 — SSO Google + Microsoft OAuth
 
-**Effort**: 3-4 giorni
+**Effort**: 3-4 dagar
 **Dependencies**: T07 (organization tier per SSO config)
 **Owner**: TBD
 
@@ -36,78 +36,78 @@ Sbloccare i deal mid-market (€20-50k ARR) eliminando i 5 blocker più comuni: 
 
 - ✅ Google OAuth (Workspace + personal)
 - ✅ Microsoft OAuth (Azure AD personal + work)
-- ❌ NO SAML 2.0 (fuori scope — vedi [00-mission-scope-rules.md](00-mission-scope-rules.md))
+- ❌ NO SAML 2.0 (utanför omfattning — se [00-mission-scope-rules.md](00-mission-scope-rules.md))
 - ❌ NO OIDC custom IdP (uses SAML usually)
 
 ### Approach
 
-Supabase Auth supporta nativamente Google + Microsoft via OAuth. La maggior parte del lavoro è:
-1. Config providers in Supabase dashboard
-2. UI signup/login con button "Continue with Google" / "Continue with Microsoft"
-3. Account linking per user esistenti email/password che vogliono switchare a SSO
+Supabase Auth stöder Google + Microsoft nativt via OAuth. Det mesta av arbetet är:
+1. Config providers i Supabase dashboard
+2. UI signup/login med knappen "Continue with Google" / "Continue with Microsoft"
+3. Account linking för befintliga email/password-användare som vill byta till SSO
 
 ### Acceptance criteria
 
-- [ ] Google OAuth: configurato in Supabase dashboard (client ID + secret in vault)
-- [ ] Microsoft OAuth: configurato in Supabase dashboard
-- [ ] UI signup: bottoni "Continue with Google" + "Continue with Microsoft" + email/password
-- [ ] UI login: stesso layout
-- [ ] First-time SSO signup → crea Organization + Default Workspace automatico
-- [ ] Account linking: user email/password può collegare provider SSO da settings
-- [ ] User che si registra via SSO con email già esistente come password → flow di linking (no duplicate account)
+- [ ] Google OAuth: konfigurerad i Supabase dashboard (client ID + secret i vault)
+- [ ] Microsoft OAuth: konfigurerad i Supabase dashboard
+- [ ] UI signup: knappar "Continue with Google" + "Continue with Microsoft" + email/password
+- [ ] UI login: samma layout
+- [ ] First-time SSO signup → skapar Organization + Default Workspace automatiskt
+- [ ] Account linking: email/password-användare kan koppla SSO-provider från settings
+- [ ] Användare som registrerar sig via SSO med en e-post som redan finns som password → linking-flow (inget duplicate account)
 - [ ] Test E2E: signup via Google → workspace created → logged in
 - [ ] Test E2E: existing user logs in via Microsoft per la prima volta → linked correctly
-- [ ] Audit log: `auth.login` con `metadata.provider: 'google' | 'microsoft' | 'email'`
-- [ ] Documentazione: `ENVIRONMENTS.md` aggiornato con env vars OAuth
+- [ ] Audit log: `auth.login` med `metadata.provider: 'google' | 'microsoft' | 'email'`
+- [ ] Dokumentation: `ENVIRONMENTS.md` uppdaterad med OAuth env vars
 
 ### Files
 
-- Supabase dashboard config (no codice, ma documentare in `docs/auth/sso-setup.md`)
-- `src/app/auth/login/page.tsx` (aggiunta button)
-- `src/app/auth/signup/page.tsx` (aggiunta button)
-- `src/app/auth/callback/route.ts` (gestione callback con Org auto-creation)
+- Supabase dashboard config (ingen kod, men dokumentera i `docs/auth/sso-setup.md`)
+- `src/app/auth/login/page.tsx` (tillagd knapp)
+- `src/app/auth/signup/page.tsx` (tillagd knapp)
+- `src/app/auth/callback/route.ts` (callback-hantering med automatisk Org-skapande)
 - `src/lib/services/auth.ts` (account linking logic)
 - `src/app/dashboard/settings/account/page.tsx` (UI account linking)
-- `docs/auth/sso-setup.md` (nuovo, runbook setup IdP)
+- `docs/auth/sso-setup.md` (ny, runbook setup IdP)
 
-### Note implementative
+### Implementationsnoteringar
 
-- Microsoft OAuth: scegli "common" tenant per accettare sia personal (outlook.com, hotmail) sia work (Azure AD). Per restrict a solo work, usare "organizations" tenant.
-- Google: configurare consent screen con privacy policy + ToS URL
-- Redirect URLs critical: `https://<your-domain>/auth/callback` + `http://localhost:3000/auth/callback` per dev
-- Account linking: se user signup via Google con email X, poi tenta signup con password con email X → mostra "Existing account, sign in with Google" UI
+- Microsoft OAuth: välj "common" tenant för att acceptera både personal (outlook.com, hotmail) och work (Azure AD). För att begränsa till enbart work, använd "organizations" tenant.
+- Google: konfigurera consent screen med privacy policy + ToS URL
+- Redirect URLs critical: `https://<your-domain>/auth/callback` + `http://localhost:3000/auth/callback` för dev
+- Account linking: om en användare gör signup via Google med e-post X, sedan försöker göra signup med password med e-post X → visa "Existing account, sign in with Google" UI
 
 ---
 
-## T11 — MFA TOTP opzionale + enforceable per workspace admin
+## T11 — MFA TOTP valfritt + enforceable per workspace admin
 
-**Effort**: 2-3 giorni
+**Effort**: 2-3 dagar
 **Dependencies**: T07
 **Owner**: TBD
 
 ### Scope
 
 - ✅ TOTP (Google Authenticator, Authy, 1Password, etc.)
-- ✅ Opt-in da settings utente
-- ✅ Enforceable a livello workspace ("All admins must have MFA")
+- ✅ Opt-in från användarens settings
+- ✅ Enforceable på workspace-nivå ("All admins must have MFA")
 - ✅ Backup codes
 - ❌ NO SMS OTP (insecure, deprecated by NIST)
-- ❌ NO WebAuthn/passkey (può essere added later, non blocking)
+- ❌ NO WebAuthn/passkey (kan läggas till senare, inte blocking)
 
 ### Approach
 
-Supabase Auth supporta MFA nativo. Lavoro principale è UI flow + enforcement policy.
+Supabase Auth stöder MFA nativt. Huvudarbetet är UI flow + enforcement policy.
 
 ### Acceptance criteria
 
-- [ ] User può abilitare MFA TOTP da `/dashboard/settings/security`
-- [ ] QR code generato per setup app authenticator
-- [ ] Backup codes (10 single-use) generati e mostrati una volta
-- [ ] Login con MFA abilitato richiede TOTP code dopo password
-- [ ] User può disabilitare MFA (con password re-prompt)
-- [ ] User può rigenerare backup codes
-- [ ] Workspace admin (con role `admin` o `owner`) può abilitare policy "Require MFA for admins" — applicabile solo se loro stesso ha MFA
-- [ ] Quando policy attiva, user senza MFA che apre dashboard → forced onboarding MFA flow
+- [ ] Användare kan aktivera MFA TOTP från `/dashboard/settings/security`
+- [ ] QR code genererad för setup av authenticator-app
+- [ ] Backup codes (10 single-use) genererade och visade en gång
+- [ ] Login med MFA aktiverat kräver TOTP code efter password
+- [ ] Användare kan inaktivera MFA (med password re-prompt)
+- [ ] Användare kan regenerera backup codes
+- [ ] Workspace admin (med role `admin` eller `owner`) kan aktivera policyn "Require MFA for admins" — tillämpbar endast om de själva har MFA
+- [ ] När policyn är aktiv, användare utan MFA som öppnar dashboard → forced onboarding MFA flow
 - [ ] Audit log: `auth.mfa.enabled`, `auth.mfa.disabled`, `auth.mfa.backup_codes_regenerated`
 - [ ] Test E2E: enable MFA → logout → login → TOTP required → success
 
@@ -120,25 +120,25 @@ Supabase Auth supporta MFA nativo. Lavoro principale è UI flow + enforcement po
 - `src/app/api/v1/auth/mfa/enable/route.ts`
 - `src/app/api/v1/auth/mfa/disable/route.ts`
 - `src/app/api/v1/auth/mfa/verify/route.ts`
-- `src/app/api/v1/workspaces/[id]/security-policy/route.ts` (per enforce)
+- `src/app/api/v1/workspaces/[id]/security-policy/route.ts` (för enforce)
 - `src/app/auth/login/page.tsx` (TOTP step)
 
 ---
 
 ## T12 — Trust Center page + DPA + sub-processor list
 
-**Effort**: 2-3 giorni
-**Dependencies**: nessuna (può partire in parallelo)
+**Effort**: 2-3 dagar
+**Dependencies**: ingen (kan starta parallellt)
 **Owner**: TBD
 
 ### Goal
 
-Pagina `/trust` con tutte le informazioni che il mid-market buyer cerca prima di firmare. **Non serve essere certificati SOC 2 per avere una buona Trust Center** — serve trasparenza.
+Sidan `/trust` med all information som mid-market-köparen söker innan signering. **Man behöver inte vara SOC 2-certifierad för att ha ett bra Trust Center** — det som behövs är transparens.
 
-### Contenuti obbligatori
+### Obligatoriskt innehåll
 
-1. **Security overview** — sintesi di [SECURITY.md](../../SECURITY.md) (security score, OWASP coverage, tooling)
-2. **Sub-processor list** — pubblica e mantenuta:
+1. **Security overview** — sammanfattning av [SECURITY.md](../../SECURITY.md) (security score, OWASP coverage, tooling)
+2. **Sub-processor list** — offentlig och underhållen:
    - Supabase (database, auth, storage)
    - Vercel (hosting)
    - Stripe (payments)
@@ -147,122 +147,122 @@ Pagina `/trust` con tutte le informazioni che il mid-market buyer cerca prima di
    - Anthropic (LLM queries)
    - Google AI (Gemini queries)
    - Perplexity (LLM queries)
-   - SerpAPI (SERP data, se in uso)
+   - SerpAPI (SERP data, om i bruk)
    - Upstash (Redis + rate limit)
-   - Resend / SendGrid (transactional email — verifica quale)
-   - Aggiungere: location data residency per ognuno
+   - Resend / SendGrid (transactional email — verifiera vilken)
+   - Lägg till: location data residency för var och en
 3. **Data residency** — EU (Supabase EU region)
-4. **DPA template** — scaricabile PDF, pre-firmato lato Acasting, con campi pre-compilati su DPA standard EU
-5. **GDPR rights** — link a self-serve export/deletion (Fase 2 T14)
-6. **Compliance status** — onesto:
+4. **DPA template** — nedladdningsbar PDF, för-signerad från Acastings sida, med fält för-ifyllda enligt standard EU DPA
+5. **GDPR rights** — länk till self-serve export/deletion (Fas 2 T14)
+6. **Compliance status** — ärlig:
    - GDPR: ✅ Compliant (DPA, RoPA, data export/deletion)
    - SOC 2: 🚧 Not yet certified (consider Fase enterprise)
    - ISO 27001: 🚧 Not yet certified
    - CCPA: ✅ Compliant
-7. **Security practices** — link a `SECURITY.md` o sintesi:
+7. **Security practices** — länk till `SECURITY.md` eller sammanfattning:
    - Encryption at rest (Supabase default AES-256)
    - Encryption in transit (HTTPS/TLS 1.3 via Vercel)
    - Access control (RLS Postgres + RBAC application layer)
    - Audit logs (immutable, exportable)
    - Backup (Supabase daily snapshots, retention 7 days standard / 30 days paid)
-8. **Vulnerability disclosure** — `security@aio-pulse.com` (configurare alias)
-9. **Pen test status** — "Internal audit Marzo 2026 (85/100), external pen test planned Q4 2026" (onesto, futuro)
-10. **Contact** — security@, dpo@ (Data Protection Officer — designare anche se part-time legal counsel)
+8. **Vulnerability disclosure** — `security@aio-pulse.com` (konfigurera alias)
+9. **Pen test status** — "Internal audit Mars 2026 (85/100), external pen test planned Q4 2026" (ärlig, framtid)
+10. **Contact** — security@, dpo@ (Data Protection Officer — utse även om part-time legal counsel)
 
 ### Format
 
-Due opzioni acceptable:
-- **Statica Next.js** — `/trust` page, `/trust/dpa.pdf`, `/trust/sub-processors`. Vantaggio: in repo, versionato.
-- **Notion site** o **Webflow** — meno tecnico da maintain, ma fuori repo.
+Två acceptabla alternativ:
+- **Statisk Next.js** — `/trust` page, `/trust/dpa.pdf`, `/trust/sub-processors`. Fördel: i repo, versionshanterad.
+- **Notion site** eller **Webflow** — mindre tekniskt att underhålla, men utanför repo.
 
-**Raccomandazione**: statica Next.js in `src/app/trust/` per controllo + SEO (Trust Center è anche AEO signal positivo).
+**Rekommendation**: statisk Next.js i `src/app/trust/` för kontroll + SEO (Trust Center är även en positiv AEO signal).
 
 ### Acceptance criteria
 
-- [ ] `/trust` route funzionante con tutti i contenuti sopra
-- [ ] `/trust/dpa` route con DPA scaricabile PDF
-- [ ] `/trust/sub-processors` route con tabella aggiornata
-- [ ] `/trust/security` route con security practices detail
-- [ ] DPA PDF reviewed da legal counsel (1-2h consultancy, ~500-1500 EUR — vedi note)
-- [ ] Sub-processor list ha colonna "data location" + "purpose"
-- [ ] Footer di dashboard include link a `/trust`
-- [ ] OG tags + structured data per `/trust` (per SEO + AEO bonus)
-- [ ] `security@aio-pulse.com` alias configurato (Google Workspace o equivalent)
+- [ ] `/trust` route fungerande med allt innehåll ovan
+- [ ] `/trust/dpa` route med nedladdningsbar DPA PDF
+- [ ] `/trust/sub-processors` route med uppdaterad tabell
+- [ ] `/trust/security` route med security practices detail
+- [ ] DPA PDF reviewed av legal counsel (1-2h consultancy, ~500-1500 EUR — se noteringar)
+- [ ] Sub-processor list har kolumnen "data location" + "purpose"
+- [ ] Dashboardens footer inkluderar länk till `/trust`
+- [ ] OG tags + structured data för `/trust` (för SEO + AEO bonus)
+- [ ] `security@aio-pulse.com` alias konfigurerat (Google Workspace eller motsvarande)
 
 ### Files
 
 - `src/app/trust/page.tsx`
-- `src/app/trust/dpa/page.tsx` (+ download endpoint o link a static PDF)
+- `src/app/trust/dpa/page.tsx` (+ download endpoint eller länk till statisk PDF)
 - `src/app/trust/sub-processors/page.tsx`
 - `src/app/trust/security/page.tsx`
-- `public/trust/dpa-template.pdf` (statico)
+- `public/trust/dpa-template.pdf` (statisk)
 - `src/components/trust/SubProcessorTable.tsx`
 
-### Note: DPA template
+### Notering: DPA template
 
-- Usa template standard EU DPA (template gratuiti da IAPP, GDPR.eu)
-- 1-2h con legal counsel per personalizzazione + sign
-- Esempio sourcing: privacypartners.com template, modificato per Acasting
+- Använd standard EU DPA template (gratis templates från IAPP, GDPR.eu)
+- 1-2h med legal counsel för anpassning + sign
+- Exempel på sourcing: privacypartners.com template, modifierad för Acasting
 
 ---
 
 ## T13 — Status page basic (Instatus)
 
-**Effort**: 1-2 giorni
-**Dependencies**: nessuna
+**Effort**: 1-2 dagar
+**Dependencies**: ingen
 **Owner**: TBD
 
 ### Scope
 
-Status page pubblica che mostra:
-- Stato corrente: All Systems Operational / Partial Outage / Major Outage
+Offentlig status page som visar:
+- Aktuellt tillstånd: All Systems Operational / Partial Outage / Major Outage
 - Component status: Web App, API, AI Providers, Database, Auth
-- Incident history (storico)
-- Uptime % ultimi 30/90 giorni
+- Incident history (historik)
+- Uptime % senaste 30/90 dagarna
 
-### Strumento raccomandato
+### Rekommenderat verktyg
 
-**Instatus** (free tier OK per SMB):
-- Dominio custom: `status.aio-pulse.com`
+**Instatus** (free tier OK för SMB):
+- Custom domän: `status.aio-pulse.com`
 - Auto-monitoring via uptime checks
-- Componenti: Web (Vercel passthrough), API (`/api/health`), Database (custom check), Auth (Supabase passthrough), AI Providers (probe per ogni)
+- Komponenter: Web (Vercel passthrough), API (`/api/health`), Database (custom check), Auth (Supabase passthrough), AI Providers (probe för var och en)
 - Incident management UI
 
-Alternative: BetterStack (più costoso ma migliore UX), self-hosted (overkill).
+Alternativ: BetterStack (dyrare men bättre UX), self-hosted (overkill).
 
 ### Acceptance criteria
 
-- [ ] Account Instatus creato, dominio custom configurato
-- [ ] 5 component monitorati: Web, API, Database, Auth, AI Providers
-- [ ] Uptime monitoring attivo per ogni component
-- [ ] Status page accessibile pubblicamente
-- [ ] Footer di dashboard include link a status page
-- [ ] In caso di incident: founder può aggiornare via Instatus UI
-- [ ] Incident template pre-scritto: investigating / identified / monitoring / resolved
-- [ ] Webhook Sentry → Instatus per auto-create incident su error spike (opzionale)
-- [ ] Status badge embedded nella homepage (opzionale)
+- [ ] Instatus-konto skapat, custom domän konfigurerad
+- [ ] 5 component monitorerade: Web, API, Database, Auth, AI Providers
+- [ ] Uptime monitoring aktivt för varje component
+- [ ] Status page tillgänglig publikt
+- [ ] Dashboardens footer inkluderar länk till status page
+- [ ] Vid en incident: founder kan uppdatera via Instatus UI
+- [ ] Incident template förskrivet: investigating / identified / monitoring / resolved
+- [ ] Webhook Sentry → Instatus för auto-create incident vid error spike (valfritt)
+- [ ] Status badge embedded på homepage (valfritt)
 
 ### Files
 
-- Nessuna code change essenziale (config su Instatus)
-- `src/components/layout/Footer.tsx` (aggiungere link)
-- `docs/operations/incident-response.md` (runbook: cosa fare quando c'è un incident)
+- Ingen kodändring nödvändig (config på Instatus)
+- `src/components/layout/Footer.tsx` (lägg till länk)
+- `docs/operations/incident-response.md` (runbook: vad man gör när det finns en incident)
 
 ---
 
 ## T14 — GDPR essentials: data export + deletion self-serve
 
-**Effort**: 4-5 giorni
-**Dependencies**: T07, T08 completati
+**Effort**: 4-5 dagar
+**Dependencies**: T07, T08 slutförda
 **Owner**: TBD
 
 ### Goal
 
-Permettere a un utente di:
-1. **Esportare** tutti i suoi dati (GDPR Art. 15 + Art. 20)
-2. **Cancellare** il suo account + dati (GDPR Art. 17 — Right to Erasure)
+Tillåta en användare att:
+1. **Exportera** alla sina data (GDPR Art. 15 + Art. 20)
+2. **Radera** sitt konto + data (GDPR Art. 17 — Right to Erasure)
 
-Self-serve, senza intervento operatore.
+Self-serve, utan operatörsingripande.
 
 ### Export flow
 
@@ -351,20 +351,20 @@ model DataDeletionRequest {
 
 ### Acceptance criteria
 
-- [ ] `/dashboard/settings/data` UI con due button "Export data" / "Delete account"
-- [ ] Export flow funzionante end-to-end (request → ZIP ready → email → download)
-- [ ] Deletion flow funzionante: request → 30 day countdown → email reminders day 28/29 → hard delete day 30
-- [ ] User può cancellare deletion request entro 30 giorni
-- [ ] Background jobs configurati (Vercel Cron + Inngest o equiv)
-- [ ] ZIP export contiene tutti i dati: profile, orgs, workspaces, brands, prompts, monitoring, audit logs
-- [ ] ZIP export è formato leggibile (JSON + CSV per tabella)
-- [ ] File expire 7 giorni dopo generation
-- [ ] Hard delete cascades correttamente (orgs, workspaces, brands, prompts, etc.)
-- [ ] Audit log anonymized post-deletion (campo `actor_id` mantenuto, ma `metadata` con email rimosso)
+- [ ] `/dashboard/settings/data` UI med två knappar "Export data" / "Delete account"
+- [ ] Export flow fungerande end-to-end (request → ZIP ready → email → download)
+- [ ] Deletion flow fungerande: request → 30 day countdown → email reminders day 28/29 → hard delete day 30
+- [ ] Användare kan avbryta deletion request inom 30 dagar
+- [ ] Background jobs konfigurerade (Vercel Cron + Inngest eller motsv)
+- [ ] ZIP export innehåller alla data: profile, orgs, workspaces, brands, prompts, monitoring, audit logs
+- [ ] ZIP export är i läsbart format (JSON + CSV per tabell)
+- [ ] Filen expire 7 dagar efter generation
+- [ ] Hard delete cascades korrekt (orgs, workspaces, brands, prompts, etc.)
+- [ ] Audit log anonymized post-deletion (fältet `actor_id` bevaras, men `metadata` med email borttaget)
 - [ ] Email: export ready, deletion scheduled, deletion 1-day reminder, deletion completed
 - [ ] Test E2E: full export → download ZIP → verify content
 - [ ] Test E2E: full deletion → 30-day timer → cron triggers → all data gone
-- [ ] Documentation: `/trust/gdpr` page con explanation del flow
+- [ ] Dokumentation: `/trust/gdpr` page med explanation av flödet
 
 ### Files
 
@@ -378,25 +378,25 @@ model DataDeletionRequest {
 - `src/lib/services/data-deletion.ts` (job worker)
 - `src/app/dashboard/settings/data/page.tsx`
 - `src/app/cron/data-deletion-executor/route.ts` (cron handler)
-- `src/lib/services/email.ts` (estendere con templates)
+- `src/lib/services/email.ts` (utöka med templates)
 - `src/app/trust/gdpr/page.tsx` (sub-page)
 
 ---
 
-## ✅ Definition of Done Fase 2
+## ✅ Definition of Done Fas 2
 
-- [ ] T10-T14 tutti merged in `main`
-- [ ] SSO Google + Microsoft funzionante in produzione
-- [ ] MFA disponibile + enforceable a workspace level
-- [ ] `/trust` page live con DPA, sub-processors, security, GDPR rights
-- [ ] `status.aio-pulse.com` live con 5 component monitorati
-- [ ] GDPR export + deletion self-serve testati end-to-end
+- [ ] T10-T14 alla merged i `main`
+- [ ] SSO Google + Microsoft fungerande i produktion
+- [ ] MFA tillgängligt + enforceable på workspace-nivå
+- [ ] `/trust` page live med DPA, sub-processors, security, GDPR rights
+- [ ] `status.aio-pulse.com` live med 5 component monitorerade
+- [ ] GDPR export + deletion self-serve testade end-to-end
 - [ ] Email transactional setup: export ready, deletion scheduled, etc.
-- [ ] AGENTS.md aggiornato con env vars OAuth + MFA notes
-- [ ] SECURITY.md aggiornato: 2FA enforcement risolto, GDPR compliance "Full"
-- [ ] task-tracker.md aggiornato
+- [ ] AGENTS.md uppdaterad med OAuth env vars + MFA notes
+- [ ] SECURITY.md uppdaterad: 2FA enforcement löst, GDPR compliance "Full"
+- [ ] task-tracker.md uppdaterad
 
 ---
 
-**Tornare alla mappa**: [README.md](README.md).
-**Parallela / prossima fase**: [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md).
+**Tillbaka till kartan**: [README.md](README.md).
+**Parallell / nästa fas**: [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md).

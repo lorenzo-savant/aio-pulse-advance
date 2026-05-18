@@ -1,124 +1,124 @@
-# Fase 0 — Pulizia tecnica (T01-T06)
+# Fas 0 — Teknisk uppstädning (T01-T06)
 
-> **Precondizione non negoziabile** per tutto il resto. 3-4 settimane, 25-40k EUR. Niente Fase 1+ finché Fase 0 non è completata.
+> **Icke förhandlingsbar förutsättning** för allt annat. 3-4 veckor, 25-40k EUR. Ingen Fas 1+ förrän Fas 0 är slutförd.
 
 ---
 
-## 🎯 Goal della fase
+## 🎯 Fasens mål
 
-Eliminare il **debito tecnico bloccante** identificato in CODE_REVIEW.md (marzo 2026 — report storico rimosso dal repo) prima che si amplifichi durante l'espansione architetturale di Fase 1.
+Eliminera den **blockerande tekniska skulden** som identifierades i CODE_REVIEW.md (mars 2026 — historisk rapport borttagen från repot) innan den förstärks under den arkitektoniska expansionen i Fas 1.
 
-## 📋 Task overview
+## 📋 Task-översikt
 
-| Task | Titolo                                                        | Effort          | Deps |
+| Task | Titel                                                         | Effort          | Deps |
 | ---- | ------------------------------------------------------------- | --------------- | ---- |
 | T01  | Fix imports + type bypass in `onboarding/route.ts` (S1)       | ✅ Already done | —    |
-| T02  | Generate strong Supabase types + refactor `supabase.ts` (S1)  | 1-2 giorni      | —    |
-| T03  | Kill residual `(db as any)` across API routes (S2) — 125+ → 1 | 0.5-1 giorno    | —    |
-| T04  | Structured logger: pino + PII masking + Sentry forward (S2)   | 2-3 giorni      | —    |
-| T05  | Replace 76 `console.log/error/warn` with logger (residual S2) | 2-3 giorni      | T04  |
-| T06  | CI gate: type-check + lint + test in pre-commit + PR (S3)     | 1 giorno        | —    |
+| T02  | Generate strong Supabase types + refactor `supabase.ts` (S1)  | 1-2 dagar       | —    |
+| T03  | Kill residual `(db as any)` across API routes (S2) — 125+ → 1 | 0.5-1 dag       | —    |
+| T04  | Structured logger: pino + PII masking + Sentry forward (S2)   | 2-3 dagar       | —    |
+| T05  | Replace 76 `console.log/error/warn` with logger (residual S2) | 2-3 dagar       | T04  |
+| T06  | CI gate: type-check + lint + test in pre-commit + PR (S3)     | 1 dag           | —    |
 
-**Totale**: ~3-4 settimane con 1 dev fulltime.
+**Totalt**: ~3-4 veckor med 1 dev på heltid.
 
 ---
 
 ## T01 — Fix imports + type bypass in `onboarding/route.ts` ✅ Done
 
-**Severity**: S1 (critical, bloccante)
-**Effort**: ✅ Already done (verified 2026-05-14)
-**Owner**: — (pre-roadmap work)
+**Severity**: S1 (critical, blockerande)
+**Effort**: ✅ Already done (verifierat 2026-05-14)
+**Owner**: — (pre-roadmap-arbete)
 
-### Stato
+### Status
 
-- Import paths `@/lib/supabase` e `@/lib/utils` verificati funzionanti — non più broken
-- `(db as any)` in `onboarding/route.ts` rimosso
-- `pnpm type-check` PASS su questo file
-- Task chiuso prima dell'inizio della roadmap formale
+- Import paths `@/lib/supabase` och `@/lib/utils` verifierade fungerande — inte längre trasiga
+- `(db as any)` i `onboarding/route.ts` borttagen
+- `pnpm type-check` PASS på denna fil
+- Task stängd innan den formella roadmapen påbörjades
 
-### Da verificare (se non ancora presente)
+### Att verifiera (om ännu inte närvarande)
 
-- [ ] Nuovo test integration: `POST /api/onboarding` con auth → 200/201
-- [ ] Nuovo test integration: `POST /api/onboarding` senza auth → 401
+- [ ] Nytt integrationstest: `POST /api/onboarding` med auth → 200/201
+- [ ] Nytt integrationstest: `POST /api/onboarding` utan auth → 401
 
 ---
 
 ## T02 — Generate strong Supabase types + refactor `supabase.ts` 🟣 Scaffolding done
 
 **Severity**: S1
-**Effort**: ~~1-2 giorni~~ → **scaffolding done 2026-05-14, hands-on regeneration ~30 min**
-**Dependencies**: nessuna
-**Owner**: Claude Opus 4.7 (scaffolding) + user (run `db:gen-types`)
+**Effort**: ~~1-2 dagar~~ → **scaffolding done 2026-05-14, hands-on regeneration ~30 min**
+**Dependencies**: inga
+**Owner**: Claude Opus 4.7 (scaffolding) + user (kör `db:gen-types`)
 
-### Stato attuale (verificato 2026-05-14)
+### Nuvarande status (verifierat 2026-05-14)
 
-- ✅ `src/lib/supabase.ts` già strong-typed: `import type { Database } from '@/types/database'` + `TypedSupabaseClient = SupabaseClient<Database>` + `createServerClient(): TypedSupabaseClient`
-- ✅ Plus CF-01 security guard contro `DEV_USER_ID` in prod (defense in depth)
-- ✅ `src/types/database.ts` esistente, 1906 righe, formato standard Supabase gen types (Row/Insert/Update)
-- ✅ **package.json**: aggiunto script `db:gen-types` + `supabase` CLI in devDependencies
-- ✅ **.env.example**: aggiunta `SUPABASE_PROJECT_ID` con istruzioni
-- ✅ **ENVIRONMENTS.md**: documentata procedura regen e best practice
+- ✅ `src/lib/supabase.ts` redan strong-typed: `import type { Database } from '@/types/database'` + `TypedSupabaseClient = SupabaseClient<Database>` + `createServerClient(): TypedSupabaseClient`
+- ✅ Plus CF-01 security guard mot `DEV_USER_ID` i prod (defense in depth)
+- ✅ `src/types/database.ts` befintlig, 1906 rader, standardformat Supabase gen types (Row/Insert/Update)
+- ✅ **package.json**: tillagt script `db:gen-types` + `supabase` CLI i devDependencies
+- ✅ **.env.example**: tillagt `SUPABASE_PROJECT_ID` med instruktioner
+- ✅ **ENVIRONMENTS.md**: dokumenterad regen-procedur och best practice
 
-### Action items residui (user, ~30 min)
+### Återstående action items (user, ~30 min)
 
-- [ ] `npm install` (per pickare supabase CLI da devDeps)
-- [ ] Aggiungere `SUPABASE_PROJECT_ID=npxfqsbslhnkoxgqosyy` in `.env.local`
-- [ ] `npm run db:gen-types` → rigenera `src/types/database.ts` da schema live
-- [ ] Diff manuale: verificare che le 273 righe geo_score (già nello stash) siano preservate dalla rigenerazione
+- [ ] `npm install` (för att plocka upp supabase CLI från devDeps)
+- [ ] Lägg till `SUPABASE_PROJECT_ID=npxfqsbslhnkoxgqosyy` i `.env.local`
+- [ ] `npm run db:gen-types` → regenerera `src/types/database.ts` från live-schema
+- [ ] Manuell diff: verifiera att de 273 geo_score-raderna (redan i stash) bevaras av regenereringen
 - [ ] `npm run type-check` → PASS
-- [ ] Commit con messaggio `chore(types): regenerate Supabase types from live schema`
+- [ ] Commit med meddelandet `chore(types): regenerate Supabase types from live schema`
 
-### Files toccati dallo scaffolding 2026-05-14
+### Filer berörda av scaffolding 2026-05-14
 
 - `package.json` — script `db:gen-types` + `supabase` devDep
 - `.env.example` — `SUPABASE_PROJECT_ID` documented
-- `ENVIRONMENTS.md` — sezione "Supabase Type Regeneration" + "Sentry + Logger Configuration"
+- `ENVIRONMENTS.md` — sektion "Supabase Type Regeneration" + "Sentry + Logger Configuration"
 - `AGENTS.md` — pnpm → npm consistency fix + `db:gen-types` command
 
-### Note implementative
+### Implementationsanteckningar
 
-- `database.ts` è il filename canonico in questo repo (non `supabase.ts` come dicevano le mie istruzioni iniziali — corretto adesso)
-- Project ref derivato da `NEXT_PUBLIC_SUPABASE_URL` (es. `https://abcd1234.supabase.co` → ref `abcd1234`)
-- Per Acasting: project ref attuale è `npxfqsbslhnkoxgqosyy` (visto in `.env.local`)
-- I types vanno committati in git (sono il contract con il DB)
-- Quando lo schema cambia in produzione: rigenerare + committare in stesso PR della migration
+- `database.ts` är det kanoniska filnamnet i detta repo (inte `supabase.ts` som mina ursprungliga instruktioner sa — korrigerat nu)
+- Project ref härledd från `NEXT_PUBLIC_SUPABASE_URL` (t.ex. `https://abcd1234.supabase.co` → ref `abcd1234`)
+- För Acasting: nuvarande project ref är `npxfqsbslhnkoxgqosyy` (sett i `.env.local`)
+- Typerna ska committas i git (de är kontraktet med databasen)
+- När schemat ändras i produktion: regenerera + committa i samma PR som migrationen
 
 ---
 
 ## T03 — Kill residual `(db as any)` across API routes
 
 **Severity**: S2
-**Effort**: 0.5-1 giorno
-**Dependencies**: nessuna
+**Effort**: 0.5-1 dag
+**Dependencies**: inga
 **Owner**: TBD
 
 ### Issue
 
-- Marzo 2026: 125+ instances di `(db as any)` in API routes e services
-- **Maggio 2026**: down a **1 instanza residua** verificata (pre-roadmap work)
-- Conseguenza residua minore ma da chiudere per DoD
+- Mars 2026: 125+ instances av `(db as any)` i API routes och services
+- **Maj 2026**: nere på **1 återstående instans** verifierad (pre-roadmap-arbete)
+- Mindre kvarvarande konsekvens men ska stängas för DoD
 
-### Strategia
+### Strategi
 
-1. Cerca l'istanza residua:
+1. Sök efter den återstående instansen:
    ```bash
    grep -rn "as any" src/app/api/ src/lib/services/
    ```
-2. Sostituisci con cast typed appropriato o `// @ts-expect-error` con commento
-3. Verifica type-check
+2. Ersätt med lämplig typad cast eller `// @ts-expect-error` med kommentar
+3. Verifiera type-check
 
 ### Acceptance criteria
 
-- [ ] 0 `(db as any)` rimasti in `src/app/api/`
-- [ ] 0 `(db as any)` rimasti in `src/lib/services/`
+- [ ] 0 `(db as any)` kvar i `src/app/api/`
+- [ ] 0 `(db as any)` kvar i `src/lib/services/`
 - [ ] `pnpm type-check` PASS
 - [ ] `pnpm test` PASS
 
-### Files
+### Filer
 
-- `src/app/api/**/*.ts` o `src/lib/services/**/*.ts` (1 file)
+- `src/app/api/**/*.ts` eller `src/lib/services/**/*.ts` (1 fil)
 
-### Verifica
+### Verifiering
 
 ```bash
 grep -rn "as any" src/app/api/ src/lib/services/ | grep -v node_modules
@@ -128,64 +128,64 @@ pnpm type-check
 pnpm test
 ```
 
-### Note
+### Anteckningar
 
-- NON convertire `(db as any)` in `(db as unknown as Database)` — quello è solo nascondere il problema
-- Se l'unico residuo è veramente impossibile da tipizzare → `// @ts-expect-error` + issue ref
+- Konvertera INTE `(db as any)` till `(db as unknown as Database)` — det döljer bara problemet
+- Om den enda kvarvarande verkligen är omöjlig att typsätta → `// @ts-expect-error` + issue ref
 
 ---
 
 ## T04 — Structured logger: pino + PII masking + Sentry forward 🟣 Scaffolding done
 
 **Severity**: S2
-**Effort**: ~~2-3 giorni~~ → **scaffolding done 2026-05-14, hands-on verification ~30 min**
-**Dependencies**: nessuna
+**Effort**: ~~2-3 dagar~~ → **scaffolding done 2026-05-14, hands-on verification ~30 min**
+**Dependencies**: inga
 **Owner**: Claude Opus 4.7 (scaffolding) + user (npm install + DSN config + smoke test)
 
-### Stato attuale (verificato 2026-05-14)
+### Nuvarande status (verifierat 2026-05-14)
 
-- ✅ `src/lib/logger.ts` riscritto con `pino` v9.x: PII auto-masking via `redact.paths` (40+ paths coprono email/password/apiKey/token/authorization/cookie/Supabase session), Sentry forward (info/warn → breadcrumb, error → captureException), edge-runtime compatible, log levels da `LOG_LEVEL` env (default: `info` in prod / `debug` altrove), pino-pretty in dev per leggibilità
-- ✅ Interface `Logger` preservata (same shape) — call sites esistenti non si rompono
-- ✅ `sentry.server.config.ts` rinforzato: PII filter in `beforeSend` (defense in depth), release tagging da `VERCEL_GIT_COMMIT_SHA`, `enabled` con override `SENTRY_FORCE_ENABLE`, `ignoreErrors` di noise comune
-- ✅ `package.json`: aggiunti `pino ^9.5.0` (deps) + `pino-pretty ^13.0.0` (devDeps)
-- ✅ `ENVIRONMENTS.md`: aggiunta sezione "Sentry + Logger Configuration" con DO/DON'T
-- ⚠️ `sentry.client.config.ts` e `sentry.edge.config.ts`: lasciati intatti, conformi (eventuale enhancement con stessa beforeSend in PR follow-up)
+- ✅ `src/lib/logger.ts` omskriven med `pino` v9.x: PII auto-masking via `redact.paths` (40+ paths täcker email/password/apiKey/token/authorization/cookie/Supabase session), Sentry forward (info/warn → breadcrumb, error → captureException), edge-runtime compatible, log levels från `LOG_LEVEL` env (default: `info` i prod / `debug` annars), pino-pretty i dev för läsbarhet
+- ✅ Interface `Logger` bevarat (same shape) — befintliga call sites går inte sönder
+- ✅ `sentry.server.config.ts` förstärkt: PII filter i `beforeSend` (defense in depth), release tagging från `VERCEL_GIT_COMMIT_SHA`, `enabled` med override `SENTRY_FORCE_ENABLE`, `ignoreErrors` för vanligt brus
+- ✅ `package.json`: tillagt `pino ^9.5.0` (deps) + `pino-pretty ^13.0.0` (devDeps)
+- ✅ `ENVIRONMENTS.md`: tillagt sektion "Sentry + Logger Configuration" med DO/DON'T
+- ⚠️ `sentry.client.config.ts` och `sentry.edge.config.ts`: lämnade orörda, kompatibla (eventuell enhancement med samma beforeSend i follow-up-PR)
 
-### Action items residui (user, ~30 min)
+### Återstående action items (user, ~30 min)
 
-- [ ] `npm install` (per pickare pino + pino-pretty)
-- [ ] Crea progetto Sentry (https://sentry.io) e ottieni DSN
-- [ ] Aggiungi in `.env.local`: `SENTRY_DSN=https://...@sentry.io/...`, `SENTRY_ORG=<slug>`, `SENTRY_PROJECT=<slug>`
-- [ ] Aggiungi `SENTRY_AUTH_TOKEN` (per sourcemap upload — opzionale ma raccomandato)
+- [ ] `npm install` (för att plocka upp pino + pino-pretty)
+- [ ] Skapa Sentry-projekt (https://sentry.io) och hämta DSN
+- [ ] Lägg till i `.env.local`: `SENTRY_DSN=https://...@sentry.io/...`, `SENTRY_ORG=<slug>`, `SENTRY_PROJECT=<slug>`
+- [ ] Lägg till `SENTRY_AUTH_TOKEN` (för sourcemap upload — valfritt men rekommenderat)
 - [ ] Smoke test PII masking:
   ```bash
   # In una route, temporaneamente:
   logger.info('user login', { email: 'test@test.com', apiKey: 'sk-xxx' })
   # Verifica nei log: email + apiKey appaiono come '[REDACTED]'
   ```
-- [ ] Smoke test Sentry: `throw new Error('test sentry')` in una route → evento visibile in dashboard <1min
-- [ ] In produzione (post-deploy Vercel): verificare che `release: <git_sha>` compaia sui Sentry events
+- [ ] Smoke test Sentry: `throw new Error('test sentry')` i en route → händelse synlig i dashboard <1min
+- [ ] I produktion (post-deploy Vercel): verifiera att `release: <git_sha>` visas på Sentry events
 
 ### Acceptance criteria (scaffolding side)
 
 - [x] Sentry config server-side hardened (PII filter, release tagging, ignoreErrors)
-- [x] `pino` configurato in `src/lib/logger.ts` con redact, level resolution, base service tag, formatters
-- [x] PII auto-masking attiva su 40+ paths (email, password, apiKey, token, cookies, Supabase session)
-- [x] Sentry forward: error → captureException, info/warn → breadcrumb, debug → mai forwardato (quota)
-- [x] Log levels via `LOG_LEVEL` env (default: `info` prod / `debug` altrove)
-- [x] Documentazione inline in `src/lib/logger.ts` + sezione "Sentry + Logger" in ENVIRONMENTS.md
+- [x] `pino` konfigurerad i `src/lib/logger.ts` med redact, level resolution, base service tag, formatters
+- [x] PII auto-masking aktiv på 40+ paths (email, password, apiKey, token, cookies, Supabase session)
+- [x] Sentry forward: error → captureException, info/warn → breadcrumb, debug → aldrig forwardad (quota)
+- [x] Log levels via `LOG_LEVEL` env (default: `info` prod / `debug` annars)
+- [x] Inline-dokumentation i `src/lib/logger.ts` + sektion "Sentry + Logger" i ENVIRONMENTS.md
 
-### Files modificati dallo scaffolding 2026-05-14
+### Filer ändrade av scaffolding 2026-05-14
 
-- ✅ `src/lib/logger.ts` — riscritto da custom artigianale a pino + Sentry forward + PII masking
+- ✅ `src/lib/logger.ts` — omskriven från hantverksmässig custom till pino + Sentry forward + PII masking
 - ✅ `sentry.server.config.ts` — beforeSend hardening + release tagging + ignoreErrors
-- ✅ `package.json` — `pino` (deps) + `pino-pretty` (devDeps) aggiunti
-- ✅ `ENVIRONMENTS.md` — sezione "Sentry + Logger Configuration"
-- ⚠️ `sentry.client.config.ts` — non toccato (potrebbe beneficiare di stessa beforeSend in PR follow-up)
-- ⚠️ `sentry.edge.config.ts` — non toccato (edge runtime ha vincoli su Sentry, verificare separatamente)
-- ⚠️ `next.config.ts` — non toccato (Sentry webpack config esistente è OK)
+- ✅ `package.json` — `pino` (deps) + `pino-pretty` (devDeps) tillagda
+- ✅ `ENVIRONMENTS.md` — sektion "Sentry + Logger Configuration"
+- ⚠️ `sentry.client.config.ts` — inte rörd (kan dra nytta av samma beforeSend i follow-up-PR)
+- ⚠️ `sentry.edge.config.ts` — inte rörd (edge runtime har begränsningar för Sentry, verifiera separat)
+- ⚠️ `next.config.ts` — inte rörd (befintlig Sentry webpack config är OK)
 
-### Verifica
+### Verifiering
 
 ```bash
 pnpm dev
@@ -197,10 +197,10 @@ pnpm dev
 # Verifica che nei log appaia: { email: '[REDACTED]' } o similar
 ```
 
-### Note implementative
+### Implementationsanteckningar
 
-- Sentry release tagging: `next.config.ts` deve passare `git rev-parse HEAD` come release per sourcemap upload corretto
-- Logger pino raccomandato (più veloce di winston, native JSON, ottimo Sentry integration via `pino-sentry-transport`)
+- Sentry release tagging: `next.config.ts` måste skicka `git rev-parse HEAD` som release för korrekt sourcemap upload
+- Logger pino rekommenderad (snabbare än winston, native JSON, utmärkt Sentry integration via `pino-sentry-transport`)
 - Setup config:
 
   ```ts
@@ -233,41 +233,41 @@ pnpm dev
 ## T05 — Replace 76 `console.log/error/warn` with logger
 
 **Severity**: S2
-**Effort**: 2-3 giorni
-**Dependencies**: T04 completato
+**Effort**: 2-3 dagar
+**Dependencies**: T04 slutförd
 **Owner**: TBD
 
 ### Issue
 
-- Marzo 2026: 116+ instances di `console.log/error/warn` in `src/app/api/*/route.ts` e `src/lib/services/*.ts`
-- **Maggio 2026**: down a **76 residue** (pre-roadmap cleanup)
-- Conseguenza: log non strutturati, PII leak rischio (es. `console.error(error)` con response full), Sentry non vede gli eventi
+- Mars 2026: 116+ instances av `console.log/error/warn` i `src/app/api/*/route.ts` och `src/lib/services/*.ts`
+- **Maj 2026**: nere på **76 återstående** (pre-roadmap cleanup)
+- Konsekvens: ostrukturerade loggar, PII leak-risk (t.ex. `console.error(error)` med full response), Sentry ser inte händelserna
 
 ### Acceptance criteria
 
-- [ ] 0 `console.*` in `src/` (eccetto `src/types/` o file di config se utile)
-- [ ] Sostituzioni mapping:
-  - `console.log` → `logger.info` o `logger.debug` (basato su criticità)
+- [ ] 0 `console.*` i `src/` (förutom `src/types/` eller config-filer om användbart)
+- [ ] Ersättningsmappning:
+  - `console.log` → `logger.info` eller `logger.debug` (baserat på kritikalitet)
   - `console.warn` → `logger.warn`
   - `console.error` → `logger.error`
-- [ ] Errori tipizzati: `logger.error('description', { err, context })` non `logger.error(err)`
-- [ ] Mai loggare oggetti completi che possono contenere PII (api response, request body senza sanitize)
-- [ ] Pattern verificato: `src/app/api/providers/test/route.ts` non logga più API key in error (S2 separato)
+- [ ] Typade fel: `logger.error('description', { err, context })` inte `logger.error(err)`
+- [ ] Logga aldrig kompletta objekt som kan innehålla PII (api response, request body utan sanitize)
+- [ ] Mönster verifierat: `src/app/api/providers/test/route.ts` loggar inte längre API key vid error (separat S2)
 
-### Files
+### Filer
 
-- Tutti i file in `src/app/api/` con occorrenze
-- Tutti i file in `src/lib/services/` con occorrenze
-- Possibilmente alcuni in `src/lib/` se hanno console statement
+- Alla filer i `src/app/api/` med förekomster
+- Alla filer i `src/lib/services/` med förekomster
+- Möjligen några i `src/lib/` om de har console-statements
 
-### Strategia
+### Strategi
 
-1. `grep -rn "console\." src/ | grep -v test | grep -v __tests__` per lista
-2. Rimuovi/sostituisci una directory alla volta
-3. PR group di 3-5 directory per essere reviewable
-4. Test PASS dopo ogni gruppo
+1. `grep -rn "console\." src/ | grep -v test | grep -v __tests__` för lista
+2. Ta bort/ersätt en katalog i taget
+3. PR-grupp om 3-5 kataloger för att vara reviewable
+4. Test PASS efter varje grupp
 
-### Verifica
+### Verifiering
 
 ```bash
 # Conta residue:
@@ -282,32 +282,32 @@ pnpm test
 
 ## T06 — CI gate: type-check + lint + test in pre-commit + PR
 
-**Severity**: S3 (warning) ma **gating** per future Fase
-**Effort**: 1 giorno
-**Dependencies**: nessuna (può partire subito, si aggiornerà se T04 cambia dipendenze)
+**Severity**: S3 (warning) men **gating** för framtida Fas
+**Effort**: 1 dag
+**Dependencies**: inga (kan starta direkt, uppdateras om T04 ändrar dependencies)
 **Owner**: TBD
 
 ### Acceptance criteria
 
-- [ ] `husky` o `lefthook` installato per pre-commit hook
-- [ ] Pre-commit hook esegue: `pnpm type-check && pnpm lint --max-warnings 0` su file staged
-- [ ] GitHub Actions workflow `.github/workflows/ci.yml` esegue su ogni PR + push to main:
+- [ ] `husky` eller `lefthook` installerat för pre-commit hook
+- [ ] Pre-commit hook kör: `pnpm type-check && pnpm lint --max-warnings 0` på stagade filer
+- [ ] GitHub Actions workflow `.github/workflows/ci.yml` kör vid varje PR + push to main:
   - `pnpm install --frozen-lockfile`
   - `pnpm type-check`
   - `pnpm lint`
   - `pnpm test`
   - `pnpm build` (smoke check)
-- [ ] PR block se workflow fails (branch protection rule su `main`)
-- [ ] README aggiornato con "How to run quality checks locally"
+- [ ] PR block om workflow fails (branch protection rule på `main`)
+- [ ] README uppdaterad med "How to run quality checks locally"
 
-### Files
+### Filer
 
-- `.husky/pre-commit` (o `lefthook.yml`)
-- `.github/workflows/ci.yml` (nuovo)
-- `package.json` (script `prepare` per husky install)
-- `README.md` (sezione "Development workflow")
+- `.husky/pre-commit` (eller `lefthook.yml`)
+- `.github/workflows/ci.yml` (ny)
+- `package.json` (script `prepare` för husky install)
+- `README.md` (sektion "Development workflow")
 
-### Verifica
+### Verifiering
 
 ```bash
 # Pre-commit:
@@ -319,32 +319,32 @@ git add . && git commit -m "test"   # → hook deve bloccare
 # CI: aprire PR test e verificare workflow run
 ```
 
-### Note
+### Anteckningar
 
-- Branch protection rule su `main` da configurare via GitHub UI (impostazione repo, non file)
-- `lint-staged` come integration optional per lintare solo file staged (perf)
+- Branch protection rule på `main` ska konfigureras via GitHub UI (repo-inställning, inte fil)
+- `lint-staged` som valfri integration för att linta endast stagade filer (perf)
 
 ---
 
-## ✅ Definition of Done Fase 0
+## ✅ Definition of Done Fas 0
 
-- [ ] T02-T06 tutti merged in `main` (T01 è già pre-done)
-- [ ] `pnpm type-check` produce 0 errori
-- [ ] `pnpm lint` produce 0 warning (o tutti documentati)
+- [ ] T02-T06 alla merged i `main` (T01 är redan pre-done)
+- [ ] `pnpm type-check` ger 0 fel
+- [ ] `pnpm lint` ger 0 warning (eller alla dokumenterade)
 - [ ] `pnpm test` PASS
-- [ ] `pnpm test:e2e` PASS (se esistenti)
+- [ ] `pnpm test:e2e` PASS (om befintliga)
 - [ ] `grep -rn "as any" src/ --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v __tests__ | wc -l` → ~0
 - [ ] `grep -rn "console\." src/ --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v __tests__ | wc -l` → ~0
-- [ ] Sentry dashboard mostra eventi reali da dev (test)
-- [ ] CI workflow GitHub Actions verde su `main`
-- [ ] Branch protection attiva su `main`
-- [ ] task-tracker.md aggiornato a "Done" per tutti i T01-T06
+- [ ] Sentry dashboard visar verkliga händelser från dev (test)
+- [ ] CI workflow GitHub Actions grön på `main`
+- [ ] Branch protection aktiv på `main`
+- [ ] task-tracker.md uppdaterad till "Done" för alla T01-T06
 
-## 🚀 Quando passare a Fase 1
+## 🚀 När gå vidare till Fas 1
 
-Solo dopo DoD Fase 0 completo. Se uno dei punti DoD non è True → finire T0X first.
+Endast efter att DoD Fas 0 är komplett. Om någon av DoD-punkterna inte är True → slutför T0X först.
 
 ---
 
-**Tornare alla mappa**: [README.md](README.md).
-**Prossima fase**: [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md).
+**Tillbaka till kartan**: [README.md](README.md).
+**Nästa fas**: [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md).

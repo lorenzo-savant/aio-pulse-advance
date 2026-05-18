@@ -1,29 +1,29 @@
-# AIO Pulse — Istruzioni per coding agent (OpenCode / Cursor / Claude Code)
+# AIO Pulse — Instruktioner för coding agent (OpenCode / Cursor / Claude Code)
 
-> **Front door del progetto per AI agent.** Leggi questo prima di qualsiasi modifica.
+> **Projektets ingång för AI-agenter.** Läs detta innan du gör några ändringar.
 
 ---
 
-## 1. Identità del progetto
+## 1. Projektets identitet
 
-**AIO Pulse** è una SaaS proprietaria che misura l'**AI Visibility Index** (AVI) interrogando programmaticamente i principali LLM (ChatGPT, Claude, Perplexity, Gemini) e SERP generative (Google AI Overviews).
+**AIO Pulse** är en proprietär SaaS som mäter **AI Visibility Index** (AVI) genom att programmatiskt anropa de ledande LLM:erna (ChatGPT, Claude, Perplexity, Gemini) och generativa SERP:er (Google AI Overviews).
 
 - Stack: Next.js 14 (App Router), TypeScript strict, Tailwind v3, Prisma + Supabase Postgres, Stripe, Sentry, Vitest, Playwright, Upstash Redis
-- Versione corrente: 2.0.0
-- Stato: production-ready foundation, in transizione verso **SMB/prosumer + enterprise-lite** ($49–499/mese SMB + custom mid-market deals fino a ~€50k ARR)
-- Roadmap completa: [docs/enterprise-roadmap/](docs/enterprise-roadmap/README.md)
+- Aktuell version: 2.0.0
+- Status: production-ready foundation, i övergång mot **SMB/prosumer + enterprise-lite** ($49–499/månad SMB + custom mid-market deals upp till ~€50k ARR)
+- Fullständig roadmap: [docs/enterprise-roadmap/](docs/enterprise-roadmap/README.md)
 
-## 2. La missione di questa fase (Q2-Q3 2026)
+## 2. Den här fasens uppdrag (Q2-Q3 2026)
 
-Trasformare AIO Pulse da "production-grade boilerplate" a **SaaS commerciale vendibile a SMB e mid-market** in 10-14 settimane.
+Förvandla AIO Pulse från "production-grade boilerplate" till **kommersiell SaaS säljbar till SMB och mid-market** på 10-14 veckor.
 
-**Target segment**: agenzie marketing, SMB ($199-499/mese), prosumer ($49-99/mese), team mid-market via founder-led sales con quote custom.
+**Målsegment**: marknadsföringsbyråer, SMB ($199-499/månad), prosumer ($49-99/månad), mid-market-team via founder-led sales med custom-offerter.
 
-**Esplicitamente fuori scope** (non costruire, non proporre, non aggiungere):
+**Uttryckligen utanför scope** (bygg inte, föreslå inte, lägg inte till):
 
-- ❌ SAML 2.0 SSO (Google + Microsoft OAuth bastano per il target)
+- ❌ SAML 2.0 SSO (Google + Microsoft OAuth räcker för målgruppen)
 - ❌ SCIM 2.0 provisioning
-- ❌ SOC 2 / ISO 27001 / penetration test esterno
+- ❌ SOC 2 / ISO 27001 / extern penetrationstest
 - ❌ Multi-region active-active / data residency selection
 - ❌ Procurement integrations (Coupa, Ariba, SAP, ServiceNow)
 - ❌ BYOK encryption at rest
@@ -31,22 +31,22 @@ Trasformare AIO Pulse da "production-grade boilerplate" a **SaaS commerciale ven
 - ❌ Status page SLA-grade enterprise
 - ❌ VPC peering / IP allowlist enterprise
 
-Se senti la tentazione di aggiungere uno di questi: **stop, chiedi conferma all'umano prima**. Il rationale è in [docs/enterprise-roadmap/00-mission-scope-rules.md](docs/enterprise-roadmap/00-mission-scope-rules.md).
+Om du frestas att lägga till någon av dessa: **stopp, fråga människan om bekräftelse först**. Resonemanget finns i [docs/enterprise-roadmap/00-mission-scope-rules.md](docs/enterprise-roadmap/00-mission-scope-rules.md).
 
-## 3. Le 4 fasi della roadmap
+## 3. Roadmapens 4 faser
 
-| Fase  | Titolo                                        | Durata   | File con i task                                                                            |
+| Fas   | Titel                                         | Varaktighet | Fil med uppgifterna                                                                        |
 | ----- | --------------------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
-| **0** | Pulizia tecnica (prerequisito)                | 3-4 sett | [01-fase-0-pulizia.md](docs/enterprise-roadmap/01-fase-0-pulizia.md)                       |
-| **1** | Workspace tier + audit log + scoped API keys  | 3-4 sett | [02-fase-1-workspace-audit.md](docs/enterprise-roadmap/02-fase-1-workspace-audit.md)       |
-| **2** | SSO + MFA + Trust Center + GDPR + status page | 2-3 sett | [03-fase-2-trust-gdpr.md](docs/enterprise-roadmap/03-fase-2-trust-gdpr.md)                 |
-| **3** | Seat billing + onboarding + API docs          | 2-3 sett | [04-fase-3-billing-onboarding.md](docs/enterprise-roadmap/04-fase-3-billing-onboarding.md) |
+| **0** | Teknisk städning (förutsättning)              | 3-4 v    | [01-fase-0-pulizia.md](docs/enterprise-roadmap/01-fase-0-pulizia.md)                       |
+| **1** | Workspace tier + audit log + scoped API keys  | 3-4 v    | [02-fase-1-workspace-audit.md](docs/enterprise-roadmap/02-fase-1-workspace-audit.md)       |
+| **2** | SSO + MFA + Trust Center + GDPR + status page | 2-3 v    | [03-fase-2-trust-gdpr.md](docs/enterprise-roadmap/03-fase-2-trust-gdpr.md)                 |
+| **3** | Seat billing + onboarding + API docs          | 2-3 v    | [04-fase-3-billing-onboarding.md](docs/enterprise-roadmap/04-fase-3-billing-onboarding.md) |
 
-**Vincolo di sequenza**: Fase 0 → Fase 1 → Fase 2/3 (queste due possono parallelizzare).
+**Sekvensbegränsning**: Fas 0 → Fas 1 → Fas 2/3 (de två sistnämnda kan köras parallellt).
 
-Task tracker live: [docs/enterprise-roadmap/task-tracker.md](docs/enterprise-roadmap/task-tracker.md).
+Live task tracker: [docs/enterprise-roadmap/task-tracker.md](docs/enterprise-roadmap/task-tracker.md).
 
-## 4. Comandi che devi conoscere
+## 4. Kommandon du måste känna till
 
 ```bash
 # Setup e sviluppo
@@ -77,108 +77,108 @@ npm build
 npm start                # production-mode locale
 ```
 
-→ Dettagli ambienti: [ENVIRONMENTS.md](ENVIRONMENTS.md).
+→ Miljödetaljer: [ENVIRONMENTS.md](ENVIRONMENTS.md).
 
-## 5. Coding standards non negoziabili
+## 5. Icke förhandlingsbara coding standards
 
-Riferimento completo: [docs/enterprise-roadmap/00-mission-scope-rules.md](docs/enterprise-roadmap/00-mission-scope-rules.md) sezione "Coding standards".
+Fullständig referens: [docs/enterprise-roadmap/00-mission-scope-rules.md](docs/enterprise-roadmap/00-mission-scope-rules.md) sektionen "Coding standards".
 
-Cinque punti che bocciano qualsiasi PR:
+Fem punkter som underkänner vilken PR som helst:
 
-1. **Type safety**: zero `(db as any)` o `as any` introdotti nuovi. Se devi, usa `// @ts-expect-error` con commento esplicativo. Il PR check fa fail se `npm type-check` non passa.
-2. **No console.log in produzione**: usa `logger` da [`src/lib/logger.ts`](src/lib/logger.ts). Se non c'è ancora structured logger, usa pino setup come task in [Fase 0](docs/enterprise-roadmap/01-fase-0-pulizia.md).
-3. **Mai loggare PII o secrets**: email, IP, JWT, API key, password mai loggati raw. Mascheratura automatica via logger middleware (vedi Fase 0).
-4. **Migration Supabase**: ogni schema change passa per `prisma migrate dev --name <kebab-case-descriptive>`. Le migration sono **forward-only** in produzione — niente rollback automatici, niente migration "fix" che riscrivono storia. Test locale + staging prima.
-5. **Tests obbligatori per nuovi feature**: nuovo endpoint API = test Vitest + integration test su route. Nuovo workflow utente = Playwright E2E. Soglia coverage non rigida, ma "untested = unmerged".
+1. **Type safety**: noll nya `(db as any)` eller `as any` införda. Om du måste, använd `// @ts-expect-error` med förklarande kommentar. PR-kontrollen failar om `npm type-check` inte passerar.
+2. **Inget console.log i produktion**: använd `logger` från [`src/lib/logger.ts`](src/lib/logger.ts). Om det ännu inte finns någon structured logger, använd pino setup som uppgift i [Fas 0](docs/enterprise-roadmap/01-fase-0-pulizia.md).
+3. **Logga aldrig PII eller secrets**: e-post, IP, JWT, API key, lösenord loggas aldrig raw. Automatisk maskering via logger middleware (se Fas 0).
+4. **Supabase-migration**: varje schema change går via `prisma migrate dev --name <kebab-case-descriptive>`. Migrationerna är **forward-only** i produktion — inga automatiska rollbacks, inga "fix"-migrationer som skriver om historien. Lokalt test + staging först.
+5. **Obligatoriska tester för nya features**: ny API-endpoint = Vitest-test + integration test på route. Nytt användarflöde = Playwright E2E. Coverage-tröskeln är inte strikt, men "untested = unmerged".
 
-## 6. Conventions di codice
+## 6. Kodkonventioner
 
-- **Naming**: `camelCase` per variabili/funzioni JS, `PascalCase` per type/interface/class/component, `kebab-case` per file e folder, `snake_case` per colonne DB (Prisma `@map` converte)
-- **File structure**: per nuova feature, segui pattern:
-  - `src/lib/services/<feature>.ts` — business logic pura
-  - `src/app/api/<feature>/route.ts` — HTTP layer
+- **Namngivning**: `camelCase` för JS-variabler/funktioner, `PascalCase` för type/interface/class/component, `kebab-case` för filer och mappar, `snake_case` för DB-kolumner (Prisma `@map` konverterar)
+- **Filstruktur**: för ny feature, följ mönstret:
+  - `src/lib/services/<feature>.ts` — ren business logic
+  - `src/app/api/<feature>/route.ts` — HTTP-lager
   - `src/lib/__tests__/<feature>.test.ts` — unit test
-  - Component UI: `src/components/<area>/<Component>.tsx`
-- **Validation**: ogni route input passa per Zod schema. Mai trust user input.
-- **Errors**: throw `AppError` (da definire in Fase 0 se non esiste), mai stringhe nude. Sentry capture automatico via middleware.
+  - UI-komponent: `src/components/<area>/<Component>.tsx`
+- **Validering**: varje route-input går via Zod schema. Lita aldrig på user input.
+- **Errors**: throw `AppError` (definieras i Fas 0 om den inte finns), aldrig nakna strängar. Automatisk Sentry capture via middleware.
 
-## 7. Commit & PR rules
+## 7. Commit- & PR-regler
 
-- **Commit message format**: convenzionale ma rilassato. `<type>: <imperativo>` (es. `feat: add audit log instrumentation`, `fix: type errors in onboarding route`)
-- **Branch naming**: `fase-N/<task-id>-<slug>` (es. `fase-0/T01-fix-onboarding-imports`, `fase-1/T07-workspace-migration`)
-- **PR size**: < 400 righe di diff quando possibile. PR enormi sono red flag.
-- **PR title**: contiene task ID (es. `[T01] Fix onboarding imports + type safety`)
-- **PR description**: include task DoD checklist copiato dal task doc (vedi 01-fase-0-pulizia.md ecc.)
+- **Commit message-format**: konventionellt men avslappnat. `<type>: <imperativo>` (t.ex. `feat: add audit log instrumentation`, `fix: type errors in onboarding route`)
+- **Branch naming**: `fase-N/<task-id>-<slug>` (t.ex. `fase-0/T01-fix-onboarding-imports`, `fase-1/T07-workspace-migration`)
+- **PR-storlek**: < 400 rader diff när det är möjligt. Enorma PR:er är en red flag.
+- **PR-titel**: innehåller task-ID (t.ex. `[T01] Fix onboarding imports + type safety`)
+- **PR-beskrivning**: inkludera task DoD-checklista kopierad från task-dokumentet (se 01-fase-0-pulizia.md osv.)
 
-## 8. Quando chiedere all'umano (founder)
+## 8. När du ska fråga människan (founder)
 
-Trigger di STOP — non procedere senza conferma:
+STOPP-triggers — fortsätt inte utan bekräftelse:
 
-- Modifiche a `prisma/schema.prisma` che **alterano** o **droppano** colonne/tabelle esistenti (le additive sono OK)
-- Modifiche al billing flow / Stripe webhook
-- Modifiche all'autenticazione / Supabase Auth config
-- Nuove dipendenze npm con licenza non-MIT/Apache/BSD
-- Nuove env var necessarie in produzione
-- Cambiamenti che richiedono modifica config Vercel
-- Tutto ciò che è "fuori scope" del [target segment](docs/enterprise-roadmap/00-mission-scope-rules.md)
+- Ändringar i `prisma/schema.prisma` som **ändrar** eller **droppar** befintliga kolumner/tabeller (additiva är OK)
+- Ändringar i billing-flödet / Stripe webhook
+- Ändringar i autentiseringen / Supabase Auth config
+- Nya npm-beroenden med icke-MIT/Apache/BSD-licens
+- Nya env var som krävs i produktion
+- Ändringar som kräver modifiering av Vercel-config
+- Allt som är "utanför scope" för [målsegmentet](docs/enterprise-roadmap/00-mission-scope-rules.md)
 
-In tutti gli altri casi: procedi, documenta, apri PR.
+I alla andra fall: fortsätt, dokumentera, öppna PR.
 
-## 9. Stato delle issue note (CODE_REVIEW.md, Marzo 2026)
+## 9. Status för kända issues (CODE_REVIEW.md, mars 2026)
 
-Prima di iniziare lavoro su Fase 1+, fixare i blocker (da CODE_REVIEW.md, marzo 2026 — report storico rimosso dal repo):
+Innan arbete på Fas 1+ påbörjas, fixa blockerarna (från CODE_REVIEW.md, mars 2026 — historisk rapport borttagen från repot):
 
-- **3 critical (S1)**: import broken in `onboarding/route.ts`, type bypass `(db as any)`, supabase return types weak → tutto in [Task T01-T02 di Fase 0](docs/enterprise-roadmap/01-fase-0-pulizia.md)
-- **5 errors (S2)**: 125+ `(db as any)`, 116+ `console.log`, promise non gestite, API key leak in error log → [Task T03-T05 di Fase 0](docs/enterprise-roadmap/01-fase-0-pulizia.md)
-- **4 warnings (S3)**: naming inconsistencies, magic numbers, CSS organization → cleanup opportunistico durante Fase 0
+- **3 critical (S1)**: trasig import i `onboarding/route.ts`, type bypass `(db as any)`, supabase return types svaga → allt i [Task T01-T02 i Fas 0](docs/enterprise-roadmap/01-fase-0-pulizia.md)
+- **5 errors (S2)**: 125+ `(db as any)`, 116+ `console.log`, ohanterade promises, API key leak i error log → [Task T03-T05 i Fas 0](docs/enterprise-roadmap/01-fase-0-pulizia.md)
+- **4 warnings (S3)**: naming inconsistencies, magic numbers, CSS organization → opportunistisk cleanup under Fas 0
 
-## 10. Pattern di lavoro raccomandato per OpenCode
+## 10. Rekommenderat arbetsmönster för OpenCode
 
-Quando inizi una sessione su questo progetto:
+När du startar en session på detta projekt:
 
-1. **Leggi** [docs/enterprise-roadmap/task-tracker.md](docs/enterprise-roadmap/task-tracker.md) per vedere lo stato corrente
-2. **Pesca un task** "Ready" (prerequisiti completi, owner libero)
-3. **Aggiorna** task-tracker.md → status "In Progress" + tuo nome agent + timestamp
-4. **Crea branch**: `git checkout -b fase-N/<task-id>-<slug>`
-5. **Leggi il task** completo nel doc di fase (DoD, file modificati, test richiesti)
-6. **Implementa** rispettando coding standards (sez. 5)
-7. **Test locali**: `npm type-check && npm lint && npm test`
-8. **Commit + push + PR** con DoD checklist
-9. **Aggiorna** task-tracker.md → status "In Review"
-10. Solo dopo merge + deploy: status "Done"
+1. **Läs** [docs/enterprise-roadmap/task-tracker.md](docs/enterprise-roadmap/task-tracker.md) för att se aktuell status
+2. **Plocka en uppgift** "Ready" (förutsättningar klara, owner ledig)
+3. **Uppdatera** task-tracker.md → status "In Progress" + ditt agent-namn + timestamp
+4. **Skapa branch**: `git checkout -b fase-N/<task-id>-<slug>`
+5. **Läs hela uppgiften** i fas-dokumentet (DoD, ändrade filer, krävda tester)
+6. **Implementera** med respekt för coding standards (sek. 5)
+7. **Lokala tester**: `npm type-check && npm lint && npm test`
+8. **Commit + push + PR** med DoD-checklista
+9. **Uppdatera** task-tracker.md → status "In Review"
+10. Först efter merge + deploy: status "Done"
 
-## 11. Cosa NON fare mai
+## 11. Vad du ALDRIG ska göra
 
-- ❌ Modificare `prisma/schema.prisma` senza generare migration matching
-- ❌ Committare `.env*` files o secrets in qualsiasi forma
-- ❌ Disabilitare Sentry per "ridurre noise" — il noise è informazione
-- ❌ Aggiungere `eslint-disable` o `// @ts-ignore` come fix rapido (sempre `@ts-expect-error` con motivo)
-- ❌ Refactor "opportunistico" non richiesto nel task — sta in scope
-- ❌ Aggiungere nuove dipendenze npm "perché utili" — chiedi prima
-- ❌ Marcare task "Done" se test falliscono o type-check è rosso
-- ❌ Force-push su `main` o branch condivisi
-- ❌ Aprire PR senza local test pass
+- ❌ Ändra `prisma/schema.prisma` utan att generera matchande migration
+- ❌ Committa `.env*`-filer eller secrets i någon form
+- ❌ Inaktivera Sentry för att "minska brus" — bruset är information
+- ❌ Lägga till `eslint-disable` eller `// @ts-ignore` som snabb fix (alltid `@ts-expect-error` med motivering)
+- ❌ "Opportunistisk" refaktorering som inte efterfrågas i uppgiften — håll dig inom scope
+- ❌ Lägga till nya npm-beroenden "för att de är användbara" — fråga först
+- ❌ Markera en uppgift "Done" om tester failar eller type-check är röd
+- ❌ Force-pusha till `main` eller delade brancher
+- ❌ Öppna PR utan att lokala tester passerar
 
-## 12. Documenti tecnici di riferimento (già esistenti nel repo)
+## 12. Tekniska referensdokument (finns redan i repot)
 
-| Doc                                                            | Quando consultarlo                                 |
+| Doc                                                            | När du ska konsultera det                          |
 | -------------------------------------------------------------- | -------------------------------------------------- |
-| [README.md](README.md)                                         | Overview + setup base                              |
-| [SECURITY.md](SECURITY.md)                                     | Stato sicurezza marzo 2026, baseline da migliorare |
-| [BILLING_SETUP.md](BILLING_SETUP.md)                           | Configurazione Stripe (test + live)                |
-| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)                     | Deploy procedures Vercel                           |
+| [README.md](README.md)                                         | Översikt + grundsetup                              |
+| [SECURITY.md](SECURITY.md)                                     | Säkerhetsstatus mars 2026, baseline att förbättra  |
+| [BILLING_SETUP.md](BILLING_SETUP.md)                           | Stripe-konfiguration (test + live)                 |
+| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)                     | Deploy-procedurer Vercel                           |
 | [ENVIRONMENTS.md](ENVIRONMENTS.md)                             | Environment variables management                   |
 | [GUIDA_ENCRYPTION_GENERATOR.md](GUIDA_ENCRYPTION_GENERATOR.md) | Encryption tooling docs                            |
 
-## 13. Contesto cliente
+## 13. Kundkontext
 
-AIO Pulse è anche il tool centrale di misurazione della **strategia Acasting** (cliente Q1 2026) — `~/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/`. Acasting sarà il **primo deployment commerciale reale** della SaaS, quindi:
+AIO Pulse är även det centrala mätverktyget för **Acasting-strategin** (kund Q1 2026) — `~/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/`. Acasting blir SaaS:ens **första verkliga kommersiella deployment**, så:
 
-- Feedback diretto founder Acasting su gaps prodotto = priorità in roadmap
-- Le 60 query in [query-inventory.md](file:///c:/Users/loren/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/06-assets/query-inventory.md) sono i primi prompt veri da seedare in produzione
-- Bug trovati durante setup Acasting hanno priorità su roadmap "lite"
+- Direkt feedback från Acasting-founder om produktluckor = prioritet i roadmapen
+- De 60 frågorna i [query-inventory.md](file:///c:/Users/loren/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/06-assets/query-inventory.md) är de första riktiga prompterna att seeda i produktion
+- Buggar som hittas under Acasting-setup har prioritet över "lite"-roadmapen
 
 ---
 
-**Tornare in cima**: [Punto 3 — Le 4 fasi della roadmap](#3-le-4-fasi-della-roadmap).
-**Iniziare lavoro**: [docs/enterprise-roadmap/task-tracker.md](docs/enterprise-roadmap/task-tracker.md).
+**Tillbaka till toppen**: [Punkt 3 — Roadmapens 4 faser](#3-le-4-fasi-della-roadmap).
+**Börja arbeta**: [docs/enterprise-roadmap/task-tracker.md](docs/enterprise-roadmap/task-tracker.md).

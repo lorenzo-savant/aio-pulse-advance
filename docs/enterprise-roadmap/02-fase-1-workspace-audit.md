@@ -1,43 +1,43 @@
 # Fase 1 — Workspace tier + Audit log + Scoped API keys (T07-T09)
 
-> 3-4 settimane, 20-30k EUR. **La fase più rischiosa architetturalmente** — include migration di dati esistenti.
+> 3-4 veckor, 20-30k EUR. **Den arkitektoniskt mest riskfyllda fasen** — inkluderar migration av befintliga data.
 
 ---
 
-## 🎯 Goal della fase
+## 🎯 Fasens mål
 
-Costruire la **multi-tenancy vera** che permette ad un'agenzia di gestire 8-25 clienti in workspace separati, e ad un team mid-market di avere RBAC reale. Plus: audit trail compliance-ready e API keys non più "all-or-nothing".
+Bygga **äkta multi-tenancy** som låter en byrå hantera 8-25 kunder i separata workspaces, och ett mid-market-team ha riktig RBAC. Dessutom: compliance-redo audit trail och API keys som inte längre är "all-or-nothing".
 
-## ⚠️ Prerequisito
+## ⚠️ Förutsättning
 
-[Fase 0](01-fase-0-pulizia.md) completata al 100%. Senza type-safety + logger strutturato, fare Fase 1 = creare debito esponenziale.
+[Fase 0](01-fase-0-pulizia.md) slutförd till 100%. Utan type-safety + strukturerad logger blir Fas 1 = att skapa exponentiell skuld.
 
-## 📋 Task overview
+## 📋 Task-översikt
 
-| Task | Titolo | Effort | Deps |
+| Task | Titel | Effort | Deps |
 |---|---|---|---|
-| T07 | Re-introduce Organization → Workspace → Brand hierarchy | 10-15 giorni | Fase 0 |
-| T08 | Audit log table + instrumentation azioni critical | 4-6 giorni | T07 |
-| T09 | Scoped API keys con permission model | 3-5 giorni | T07 |
+| T07 | Re-introduce Organization → Workspace → Brand hierarchy | 10-15 dagar | Fase 0 |
+| T08 | Audit log table + instrumentation av kritiska åtgärder | 4-6 dagar | T07 |
+| T09 | Scoped API keys med permission model | 3-5 dagar | T07 |
 
-**Totale**: ~3-4 settimane con 1 dev fulltime.
+**Totalt**: ~3-4 veckor med 1 dev på heltid.
 
 ---
 
 ## T07 — Re-introduce Organization → Workspace → Brand hierarchy
 
-**Severity**: Architectural — bloccante per Fase 2/3
-**Effort**: 10-15 giorni (la parte di migration è la più sensibile)
-**Dependencies**: Fase 0 completa
+**Severity**: Architectural — blockerande för Fas 2/3
+**Effort**: 10-15 dagar (migration-delen är den känsligaste)
+**Dependencies**: Fas 0 komplett
 **Owner**: TBD
 
-### Contesto
+### Kontext
 
-Il 2026-05-12 ("CF-03 schema alignment"), i modelli `Workspace`, `WorkspaceMember`, `AuditLog` sono stati rimossi dallo schema Prisma perché le tabelle non esistevano in Supabase. `src/lib/services/workspace-auth.ts` è rimasto a chiamare quelle tabelle inesistenti → codice half-broken.
+Den 2026-05-12 ("CF-03 schema alignment") togs modellerna `Workspace`, `WorkspaceMember`, `AuditLog` bort från Prisma-schemat eftersom tabellerna inte fanns i Supabase. `src/lib/services/workspace-auth.ts` fortsatte anropa de obefintliga tabellerna → half-broken kod.
 
-Per Fase 1+ serve ricostruire la gerarchia **questa volta con le tabelle reali**.
+För Fas 1+ behöver hierarkin byggas om **den här gången med de riktiga tabellerna**.
 
-### Schema target (design completo)
+### Target-schema (komplett design)
 
 ```prisma
 // ─────────────────────────────────────────────────────────────────────────────
@@ -158,11 +158,11 @@ model Brand {
 // (Continua su Prompt, ApiKey, Subscription, etc. — vedi sezione "Refactor scope" sotto)
 ```
 
-### Migration di dati esistenti (la parte rischiosa)
+### Migration av befintliga data (den riskfyllda delen)
 
-**Strategia**: ogni `User` esistente diventa 1 `Organization` + 1 default `Workspace` + tutti i Brand assegnati al workspace default.
+**Strategi**: varje befintlig `User` blir 1 `Organization` + 1 default `Workspace` + alla Brands tilldelade till default-workspace.
 
-Script SQL idempotente da eseguire come migration Prisma:
+Idempotent SQL-skript som ska köras som Prisma-migration:
 
 ```sql
 -- Migration: 20260520_introduce_workspace_tier.sql
@@ -248,28 +248,28 @@ ALTER TABLE brands ALTER COLUMN organization_id SET NOT NULL;
 COMMIT;
 ```
 
-**Workflow execution** (CRITICAL — non saltare step):
+**Workflow execution** (KRITISKT — hoppa inte över steg):
 
-1. **Staging**: clona prod data via Supabase dump → restore in staging → esegui migration → verifica integrità
-2. **Test su staging**: ogni user esistente vede ancora i suoi brand? Premium subscription mappata bene?
-3. **Backup prod**: `pg_dump` completo prima della migration
-4. **Maintenance mode**: app in maintenance per 15-30 min (notifica utenti 48h prima via email)
-5. **Esegui migration prod**: dietro al backup
-6. **Smoke test prod**: 5 user reali confermano funzionamento
+1. **Staging**: klona prod-data via Supabase dump → restore i staging → kör migration → verifiera integritet
+2. **Test på staging**: ser varje befintlig användare fortfarande sina brands? Är premium subscription korrekt mappad?
+3. **Backup prod**: komplett `pg_dump` före migration
+4. **Maintenance mode**: appen i maintenance i 15-30 min (notifiera användare 48h i förväg via e-post)
+5. **Kör migration prod**: bakom backupen
+6. **Smoke test prod**: 5 riktiga användare bekräftar funktion
 7. **Maintenance off**
 
-### Refactor scope (post-migration)
+### Refactor scope (efter migration)
 
-Tutti questi model devono guadagnare `workspaceId` (+ `organizationId` denormalizzato per query perf):
+Alla dessa modeller behöver få `workspaceId` (+ `organizationId` denormaliserad för query perf):
 
-- `Brand` — già nel design sopra
-- `Prompt` — `workspaceId` aggiunto, query scoped
-- `ApiKey` — sposta da `userId` a `organizationId` (le keys sono org-level, non user-level)
-- `Subscription` — sposta da `userId` a `organizationId`
-- `TeamMember` — DEPRECATO, usa `WorkspaceMember` invece
-- `BrandInvitation` — DEPRECATO, usa workspace invitation flow
+- `Brand` — redan i designen ovan
+- `Prompt` — `workspaceId` tillagt, queries scoped
+- `ApiKey` — flytta från `userId` till `organizationId` (keys är org-level, inte user-level)
+- `Subscription` — flytta från `userId` till `organizationId`
+- `TeamMember` — DEPRECATED, använd `WorkspaceMember` istället
+- `BrandInvitation` — DEPRECATED, använd workspace invitation flow
 
-`workspace-auth.ts` da riscrivere (oggi punta a tabelle inesistenti):
+`workspace-auth.ts` ska skrivas om (pekar idag på obefintliga tabeller):
 
 ```ts
 // src/lib/services/workspace-auth.ts
@@ -313,72 +313,72 @@ export async function checkWorkspacePermission(
 // ... analogous for checkOrgPermission, getCurrentWorkspace, etc.
 ```
 
-### UI changes richieste
+### Begärda UI-ändringar
 
-- Workspace switcher nel nav (Cmd+K compatible)
-- `/dashboard/workspaces/[id]` route con member management
-- Invite member modal (email + role select)
-- "Move brand to different workspace" action in brand settings
-- Org settings page `/dashboard/org` (admin-only): billing, members, SSO setup (Fase 2)
+- Workspace switcher i nav (Cmd+K compatible)
+- `/dashboard/workspaces/[id]` route med member management
+- Invite member modal (e-post + role select)
+- "Move brand to different workspace" action i brand settings
+- Org settings page `/dashboard/org` (endast admin): billing, members, SSO setup (Fas 2)
 
 ### Acceptance criteria T07
 
-- [ ] Prisma schema include Organization, OrganizationMember, Workspace, WorkspaceMember
-- [ ] Migration SQL idempotente in `prisma/migrations/<timestamp>_introduce_workspace_tier/`
-- [ ] Migration eseguita su staging con dump prod simulato — verificato 0 orphan brands
-- [ ] `workspace-auth.ts` riscritto, punta alle tabelle vere
-- [ ] Brand, Prompt, ApiKey, Subscription tutti scoped per workspace/org
-- [ ] TeamMember/BrandInvitation deprecated con migration data → WorkspaceMember
-- [ ] UI: workspace switcher live, member management funzionante
-- [ ] Invitation flow: invite via email → click link → join workspace
+- [ ] Prisma-schema inkluderar Organization, OrganizationMember, Workspace, WorkspaceMember
+- [ ] Idempotent migration-SQL i `prisma/migrations/<timestamp>_introduce_workspace_tier/`
+- [ ] Migration körd på staging med simulerad prod-dump — verifierat 0 orphan brands
+- [ ] `workspace-auth.ts` omskriven, pekar på de riktiga tabellerna
+- [ ] Brand, Prompt, ApiKey, Subscription alla scoped per workspace/org
+- [ ] TeamMember/BrandInvitation deprecated med data-migration → WorkspaceMember
+- [ ] UI: workspace switcher live, member management fungerar
+- [ ] Invitation flow: invite via e-post → klicka länk → join workspace
 - [ ] Test E2E: signup → create workspace → invite member → switch workspace → see correct brands
 - [ ] Test E2E: try to access brand in workspace I'm not member of → 403
 - [ ] `pnpm type-check && pnpm test && pnpm test:e2e` PASS
-- [ ] Documentazione: `docs/architecture/multi-tenancy.md` con diagramma + ER
+- [ ] Dokumentation: `docs/architecture/multi-tenancy.md` med diagram + ER
 
-### Files (alto livello — non esaustivo)
+### Files (hög nivå — inte uttömmande)
 
 - `prisma/schema.prisma` (major changes)
 - `prisma/migrations/<timestamp>_introduce_workspace_tier/migration.sql`
-- `src/types/supabase.ts` (rigenerato)
+- `src/types/supabase.ts` (regenererad)
 - `src/lib/services/workspace-auth.ts` (rewrite)
-- `src/lib/services/organization-auth.ts` (nuovo)
-- `src/app/api/v1/organizations/` (nuovo)
-- `src/app/api/v1/workspaces/` (nuovo)
-- `src/app/api/v1/workspaces/[id]/members/` (nuovo)
-- `src/app/api/v1/workspaces/[id]/invitations/` (nuovo)
-- `src/components/workspace/WorkspaceSwitcher.tsx` (nuovo)
-- `src/components/workspace/MemberList.tsx` (nuovo)
-- `src/components/workspace/InviteMemberModal.tsx` (nuovo)
-- `src/app/dashboard/workspaces/[id]/page.tsx` (nuovo)
-- `src/app/dashboard/org/page.tsx` (nuovo)
-- `src/lib/services/email.ts` (estendere per invitation email)
-- `docs/architecture/multi-tenancy.md` (nuovo)
+- `src/lib/services/organization-auth.ts` (ny)
+- `src/app/api/v1/organizations/` (ny)
+- `src/app/api/v1/workspaces/` (ny)
+- `src/app/api/v1/workspaces/[id]/members/` (ny)
+- `src/app/api/v1/workspaces/[id]/invitations/` (ny)
+- `src/components/workspace/WorkspaceSwitcher.tsx` (ny)
+- `src/components/workspace/MemberList.tsx` (ny)
+- `src/components/workspace/InviteMemberModal.tsx` (ny)
+- `src/app/dashboard/workspaces/[id]/page.tsx` (ny)
+- `src/app/dashboard/org/page.tsx` (ny)
+- `src/lib/services/email.ts` (utöka för invitation-e-post)
+- `docs/architecture/multi-tenancy.md` (ny)
 
-### Strategia di rilascio
+### Releasestrategi
 
-Questa task è troppo grande per 1 PR singola. Spezzare in:
+Denna task är för stor för 1 enskild PR. Dela upp i:
 
-- **PR 7.1**: Prisma schema additive (no NOT NULL su nuove FK, no rimozione tabelle) + types regen
-- **PR 7.2**: Migration SQL idempotente + script di backfill testato in staging
-- **PR 7.3**: `workspace-auth.ts` rewrite + new auth endpoints
+- **PR 7.1**: Prisma schema additive (ingen NOT NULL på nya FK, ingen borttagning av tabeller) + types regen
+- **PR 7.2**: Idempotent migration-SQL + backfill-skript testat i staging
+- **PR 7.3**: `workspace-auth.ts` rewrite + nya auth-endpoints
 - **PR 7.4**: UI workspace switcher + member management
-- **PR 7.5**: Refactor `Brand` / `Prompt` / `ApiKey` per `workspaceId` scoping
-- **PR 7.6**: Deprecate TeamMember/BrandInvitation, migrate to WorkspaceMember
-- **PR 7.7**: NOT NULL enforcement + cleanup, final test E2E pass
+- **PR 7.5**: Refactor `Brand` / `Prompt` / `ApiKey` för `workspaceId` scoping
+- **PR 7.6**: Deprecate TeamMember/BrandInvitation, migrera till WorkspaceMember
+- **PR 7.7**: NOT NULL enforcement + cleanup, slutligt test E2E pass
 
-Ogni PR mergiabile autonomamente in `main` (feature flag se necessario per UI).
+Varje PR ska kunna mergas självständigt i `main` (feature flag om nödvändigt för UI).
 
 ---
 
-## T08 — Audit log table + instrumentation azioni critical
+## T08 — Audit log table + instrumentation av kritiska åtgärder
 
 **Severity**: Compliance + trust signal
-**Effort**: 4-6 giorni
-**Dependencies**: T07 completato
+**Effort**: 4-6 dagar
+**Dependencies**: T07 slutförd
 **Owner**: TBD
 
-### Schema target
+### Target-schema
 
 ```prisma
 model AuditLog {
@@ -434,13 +434,13 @@ USING (
 -- Service role bypasses RLS by design.
 ```
 
-### Azioni da loggare (minimo viable)
+### Åtgärder som ska loggas (minimum viable)
 
 | Categoria | Action | Trigger |
 |---|---|---|
 | **Auth** | `auth.login` | login success |
 | **Auth** | `auth.logout` | logout |
-| **Auth** | `auth.mfa.enabled` | MFA setup (Fase 2) |
+| **Auth** | `auth.mfa.enabled` | MFA setup (Fas 2) |
 | **Auth** | `auth.password.changed` | password reset |
 | **Org** | `org.created` | new org |
 | **Org** | `org.deleted` | org delete |
@@ -462,10 +462,10 @@ USING (
 | **Billing** | `billing.plan.changed` | subscription upgrade/downgrade |
 | **Billing** | `billing.payment.succeeded` | webhook stripe |
 | **Billing** | `billing.payment.failed` | webhook stripe |
-| **Data** | `data.exported` | GDPR export (Fase 2) |
-| **Data** | `data.deleted` | GDPR deletion (Fase 2) |
+| **Data** | `data.exported` | GDPR export (Fas 2) |
+| **Data** | `data.deleted` | GDPR deletion (Fas 2) |
 | **Settings** | `settings.changed` | major settings update |
-| **SSO** | `sso.configured` | SSO provider added (Fase 2) |
+| **SSO** | `sso.configured` | SSO provider added (Fas 2) |
 
 ### Implementation helper
 
@@ -531,30 +531,30 @@ export async function logAudit(input: AuditLogInput): Promise<void> {
 }
 ```
 
-### Export functionality
+### Export-funktionalitet
 
-- `GET /api/v1/organizations/:orgId/audit-logs` — query con filtri (action, resource_type, date range, actor)
+- `GET /api/v1/organizations/:orgId/audit-logs` — query med filter (action, resource_type, date range, actor)
 - `GET /api/v1/organizations/:orgId/audit-logs/export?format=csv&from=YYYY-MM-DD&to=YYYY-MM-DD` — streaming CSV download
 
 ### UI
 
-- `/dashboard/org/audit-logs` — table view con filtri
+- `/dashboard/org/audit-logs` — table view med filter
 - Pagination, search, export button
 
 ### Acceptance criteria T08
 
-- [ ] Schema Prisma include `AuditLog` model
-- [ ] Migration SQL include tabella + RLS append-only
-- [ ] `src/lib/services/audit-log.ts` con helper `logAudit()`
-- [ ] Tutte le 25+ azioni listate sopra hanno `logAudit()` call
-- [ ] `GET /api/v1/organizations/:orgId/audit-logs` endpoint funzionante (con filtri)
+- [ ] Prisma-schema inkluderar `AuditLog` model
+- [ ] Migration-SQL inkluderar tabell + RLS append-only
+- [ ] `src/lib/services/audit-log.ts` med helper `logAudit()`
+- [ ] Alla 25+ åtgärder listade ovan har `logAudit()` call
+- [ ] `GET /api/v1/organizations/:orgId/audit-logs` endpoint fungerar (med filter)
 - [ ] `GET /api/v1/organizations/:orgId/audit-logs/export?format=csv` endpoint
-- [ ] UI `/dashboard/org/audit-logs` con tabella + filtri + export
-- [ ] Test: log creato dopo ogni azione tracciata
-- [ ] Test: tentativo di UPDATE/DELETE su audit_logs → blocked da RLS
-- [ ] Test: user non-admin → 403 su audit log endpoints
-- [ ] Performance: export 10.000 record < 5s
-- [ ] Retention policy documentata in Trust Center (Fase 2)
+- [ ] UI `/dashboard/org/audit-logs` med tabell + filter + export
+- [ ] Test: log skapad efter varje spårad åtgärd
+- [ ] Test: försök till UPDATE/DELETE på audit_logs → blockerad av RLS
+- [ ] Test: icke-admin-användare → 403 på audit log endpoints
+- [ ] Performance: export av 10.000 records < 5s
+- [ ] Retention policy dokumenterad i Trust Center (Fas 2)
 
 ### Files
 
@@ -565,25 +565,25 @@ export async function logAudit(input: AuditLogInput): Promise<void> {
 - `src/app/api/v1/organizations/[orgId]/audit-logs/export/route.ts`
 - `src/app/dashboard/org/audit-logs/page.tsx`
 - `src/components/audit/AuditLogTable.tsx`
-- Instrumentation: ~25 file diversi (1 `logAudit()` ognuno)
+- Instrumentation: ~25 olika filer (1 `logAudit()` vardera)
 
 ---
 
-## T09 — Scoped API keys con permission model
+## T09 — Scoped API keys med permission model
 
-**Severity**: Security (chiude HIGH risk da SECURITY.md)
-**Effort**: 3-5 giorni
-**Dependencies**: T07 completato
+**Severity**: Security (stänger HIGH risk från SECURITY.md)
+**Effort**: 3-5 dagar
+**Dependencies**: T07 slutförd
 **Owner**: TBD
 
 ### Issue
 
-`ApiKey` model esiste ma:
-- Nessun campo `scopes` — ogni key = full access
-- Spostare da `userId` a `organizationId` (sono org-level resource)
-- SECURITY.md flag come HIGH risk
+`ApiKey` model finns men:
+- Inget `scopes`-fält — varje key = full access
+- Flytta från `userId` till `organizationId` (de är org-level resource)
+- SECURITY.md flaggar som HIGH risk
 
-### Schema update
+### Schema-uppdatering
 
 ```prisma
 model ApiKey {
@@ -616,7 +616,7 @@ model ApiKey {
 }
 ```
 
-### Scope catalog
+### Scope-katalog
 
 | Scope | Permits |
 |---|---|
@@ -727,47 +727,47 @@ export async function verifyApiKey(
 
 ### Acceptance criteria T09
 
-- [ ] Schema Prisma `ApiKey` model updated con `scopes`, `keyPrefix`, `keyHash`, `organizationId`, `revokedAt`, `revokedBy`
-- [ ] Migration: backfill esistenti `api_keys` con `scopes = ['read:brands', 'write:brands', ...]` (all permissions — backward compat) + `organizationId` derived
-- [ ] `src/lib/api-key-auth.ts` con `verifyApiKey()` helper
-- [ ] Tutti gli endpoint public API (`/api/v1/`) usano `verifyApiKey()` con scope appropriato
-- [ ] UI `/dashboard/org/api-keys` funzionante
-- [ ] Test: chiave generata può accedere a endpoint con scope autorizzato
-- [ ] Test: chiave senza scope richiesto → 403
-- [ ] Test: chiave revoked → 401
-- [ ] Test: chiave expired → 401
-- [ ] Audit log entry per ogni key created/revoked
-- [ ] Documentazione API: scopes list pubblicata in `/docs/api`
+- [ ] Prisma-schema `ApiKey` model uppdaterad med `scopes`, `keyPrefix`, `keyHash`, `organizationId`, `revokedAt`, `revokedBy`
+- [ ] Migration: backfill befintliga `api_keys` med `scopes = ['read:brands', 'write:brands', ...]` (all permissions — backward compat) + `organizationId` derived
+- [ ] `src/lib/api-key-auth.ts` med `verifyApiKey()` helper
+- [ ] Alla public API-endpoints (`/api/v1/`) använder `verifyApiKey()` med lämplig scope
+- [ ] UI `/dashboard/org/api-keys` fungerar
+- [ ] Test: genererad nyckel kan nå endpoint med auktoriserad scope
+- [ ] Test: nyckel utan begärd scope → 403
+- [ ] Test: revoked nyckel → 401
+- [ ] Test: expired nyckel → 401
+- [ ] Audit log entry för varje key created/revoked
+- [ ] API-dokumentation: scopes-lista publicerad i `/docs/api`
 
 ### Files
 
 - `prisma/schema.prisma` (update ApiKey)
 - `prisma/migrations/<timestamp>_scoped_api_keys/`
-- `src/lib/api-key-auth.ts` (nuovo)
+- `src/lib/api-key-auth.ts` (ny)
 - `src/app/api/v1/api-keys/route.ts` (CRUD)
 - `src/app/dashboard/org/api-keys/page.tsx`
 - `src/components/api-keys/ApiKeyList.tsx`
 - `src/components/api-keys/GenerateKeyModal.tsx`
-- Tutti gli endpoint `/api/v1/*` aggiornati per verifica scope
+- Alla `/api/v1/*` endpoints uppdaterade för scope-verifiering
 
 ---
 
 ## ✅ Definition of Done Fase 1
 
-- [ ] T07, T08, T09 tutti merged in `main`
-- [ ] Migration eseguita su prod senza data loss
-- [ ] Smoke test prod: 5 user reali confermano funzionamento
-- [ ] AGENTS.md aggiornato per riflettere multi-tenant (esempio: come ottenere current workspace context in route)
-- [ ] Documentazione architettura aggiornata: `docs/architecture/multi-tenancy.md`, `docs/architecture/audit-log.md`, `docs/architecture/api-keys.md`
-- [ ] CODE_REVIEW.md può essere chiuso (S1/S2 risolti in Fase 0, architettura HIGH risk chiusa in Fase 1)
-- [ ] SECURITY.md aggiornato: 2 HIGH risk (broad API key) → CLOSED
-- [ ] task-tracker.md aggiornato a Done per T07-T09
+- [ ] T07, T08, T09 alla merged i `main`
+- [ ] Migration körd på prod utan data loss
+- [ ] Smoke test prod: 5 riktiga användare bekräftar funktion
+- [ ] AGENTS.md uppdaterad för att återspegla multi-tenant (exempel: hur man hämtar current workspace context i route)
+- [ ] Arkitekturdokumentation uppdaterad: `docs/architecture/multi-tenancy.md`, `docs/architecture/audit-log.md`, `docs/architecture/api-keys.md`
+- [ ] CODE_REVIEW.md kan stängas (S1/S2 lösta i Fas 0, HIGH risk-arkitektur stängd i Fas 1)
+- [ ] SECURITY.md uppdaterad: 2 HIGH risk (broad API key) → CLOSED
+- [ ] task-tracker.md uppdaterad till Done för T07-T09
 
-## 🚀 Quando passare a Fase 2/3
+## 🚀 När man går vidare till Fas 2/3
 
-Fase 2 e Fase 3 possono partire in **parallelo** dopo Fase 1 completata. Idealmente split 2 dev: uno su Fase 2, l'altro su Fase 3.
+Fas 2 och Fas 3 kan startas **parallellt** efter att Fas 1 är slutförd. Idealiskt split med 2 dev: en på Fas 2, den andra på Fas 3.
 
 ---
 
-**Tornare alla mappa**: [README.md](README.md).
-**Prossime fasi**: [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md) | [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md)
+**Tillbaka till kartan**: [README.md](README.md).
+**Nästa faser**: [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md) | [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md)

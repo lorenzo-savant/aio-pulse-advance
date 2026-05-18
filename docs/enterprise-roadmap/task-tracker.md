@@ -1,17 +1,17 @@
 # Task Tracker — Enterprise Roadmap
 
-> Live view di tutti i 18 task. Update questa file ogni volta che task cambia stato.
+> Live-vy av alla 18 task. Uppdatera denna fil varje gång ett task ändrar status.
 
-**Convenzione stato**:
-- 🟡 `Ready` — prerequisiti completi, owner libero
-- 🔵 `In Progress` — qualcuno ci lavora
-- 🟣 `In Review` — PR aperta, attende merge
-- 🟢 `Done` — merged in main + deployed
-- ⚫ `Blocked` — attesa decisione/risorsa esterna
+**Statuskonvention**:
+- 🟡 `Ready` — förutsättningar klara, owner ledig
+- 🔵 `In Progress` — någon arbetar med det
+- 🟣 `In Review` — PR öppen, väntar på merge
+- 🟢 `Done` — merged i main + deployed
+- ⚫ `Blocked` — väntar på beslut/extern resurs
 
 ---
 
-## 📊 Status sommario
+## 📊 Statussammanfattning
 
 | Fase | Done | Scaffolding done (user verify) | Ready | Blocked |
 |---|---|---|---|---|---|
@@ -23,7 +23,7 @@
 
 ---
 
-## 🟡 Fase 0 — Pulizia tecnica (Ready, può iniziare oggi)
+## 🟡 Fas 0 — Teknisk uppstädning (Ready, kan starta idag)
 
 | ID | Title | Status | Owner | Branch | PR | Updated |
 |---|---|---|---|---|---|---|
@@ -34,11 +34,11 @@
 | T05 | Replace console.* with logger | 🟢 Done | OpenCode | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
 | T06 | CI gate: type-check + lint + test in pre-commit + PR | 🟢 Done | OpenCode | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
 
-Dettaglio: [01-fase-0-pulizia.md](01-fase-0-pulizia.md)
+Detalj: [01-fase-0-pulizia.md](01-fase-0-pulizia.md)
 
 ---
 
-## 🔵 Fase 1 — Workspace + Audit + Scoped Keys
+## 🔵 Fas 1 — Workspace + Audit + Scoped Keys
 
 | ID | Title | Status | Owner | Branch | PR | Updated |
 |---|---|---|---|---|---|---|
@@ -46,15 +46,15 @@ Dettaglio: [01-fase-0-pulizia.md](01-fase-0-pulizia.md)
 | T08 | Audit log table + instrumentation azioni critical | 🔵 schema + `logAudit()` helper landed. Instrumentation pending Fase 1.x | Claude | fase-0/T02-T06-residual-cleanup | — | 2026-05-13 |
 | T09 | Scoped API keys con permission model | 🔵 schema + `verifyApiKey()` helper landed. UI + endpoint integration pending | Claude | fase-0/T02-T06-residual-cleanup | — | 2026-05-13 |
 
-Dettaglio: [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md)
+Detalj: [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md)
 
-**Note T07**: spezzato in 7 sub-PR (7.1–7.7). PR 7.1 ✅ — additive schema only.
+**Anteckning T07**: uppdelad i 7 sub-PR (7.1–7.7). PR 7.1 ✅ — additive schema only.
 Migration SQL ready at `prisma/migrations/20260513120000_fase1_workspace_audit_apikeys/migration.sql`
 but **not applied** (Supabase project npxfqsbslhnkoxgqosyy unreachable). Apply when DB access restored.
 
 ---
 
-## ⚫ Fase 2 — SSO + MFA + Trust + GDPR (waiting Fase 1)
+## ⚫ Fas 2 — SSO + MFA + Trust + GDPR (väntar på Fas 1)
 
 | ID | Title | Status | Owner | Branch | PR | Updated |
 |---|---|---|---|---|---|---|
@@ -64,13 +64,13 @@ but **not applied** (Supabase project npxfqsbslhnkoxgqosyy unreachable). Apply w
 | T13 | Status page basic (Instatus) + monitoring config | ⚫ Blocked by — (può iniziare in parallelo con Fase 1) | — | — | — | 2026-05-13 |
 | T14 | GDPR essentials: data export + deletion self-serve | ⚫ Blocked by T07, T08 | — | — | — | 2026-05-13 |
 
-Dettaglio: [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md)
+Detalj: [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md)
 
-**Note**: T12 (Trust Center) e T13 (Status page) **possono iniziare in parallelo con Fase 1** — nessuna dipendenza tecnica. Buona task per onboarding nuovo team member.
+**Anteckning**: T12 (Trust Center) och T13 (Status page) **kan starta parallellt med Fas 1** — ingen teknisk dependency. Bra task för onboarding av ny team member.
 
 ---
 
-## ⚫ Fase 3 — Seat billing + Onboarding + API docs (waiting Fase 1)
+## ⚫ Fas 3 — Seat billing + Onboarding + API docs (väntar på Fas 1)
 
 | ID | Title | Status | Owner | Branch | PR | Updated |
 |---|---|---|---|---|---|---|
@@ -79,17 +79,17 @@ Dettaglio: [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md)
 | T17 | Onboarding wizard self-serve | ⚫ Blocked by T07 | — | — | — | 2026-05-13 |
 | T18 | API docs complete + SDK starter | ⚫ Blocked by T09 | — | — | — | 2026-05-13 |
 
-Dettaglio: [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md)
+Detalj: [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md)
 
 ---
 
-## 📝 Come usare questo tracker
+## 📝 Hur man använder denna tracker
 
-### Quando inizi un task
+### När du börjar ett task
 
-1. Pesca task con status 🟡 `Ready`
-2. Update riga: status → 🔵 `In Progress`, Owner → tuo nome/handle, Branch → nome branch, Updated → oggi
-3. Commit changes a `task-tracker.md` come **primo commit** del tuo branch:
+1. Plocka task med status 🟡 `Ready`
+2. Uppdatera raden: status → 🔵 `In Progress`, Owner → ditt namn/handle, Branch → branch-namn, Updated → idag
+3. Committa ändringar i `task-tracker.md` som **första commit** i din branch:
    ```bash
    git checkout -b fase-0/T01-fix-onboarding-imports
    # edit task-tracker.md
@@ -98,48 +98,48 @@ Dettaglio: [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md)
    git push -u origin fase-0/T01-fix-onboarding-imports
    ```
 
-### Quando apri PR
+### När du öppnar PR
 
-1. Update riga: status → 🟣 `In Review`, PR → numero PR
+1. Uppdatera raden: status → 🟣 `In Review`, PR → PR-nummer
 2. Commit + push
 
-### Quando merge
+### När du mergar
 
-1. Update riga: status → 🟢 `Done`, Updated → oggi
-2. Update sommario "Status sommario" in cima
-3. Se sblocchi altri task: cambia loro status da ⚫ `Blocked` → 🟡 `Ready`
-4. Commit direttamente su `main` (oppure in PR successiva, ma per chiarezza meglio inline)
+1. Uppdatera raden: status → 🟢 `Done`, Updated → idag
+2. Uppdatera sammanfattningen "Statussammanfattning" högst upp
+3. Om du låser upp andra task: ändra deras status från ⚫ `Blocked` → 🟡 `Ready`
+4. Committa direkt på `main` (eller i efterföljande PR, men för tydlighet hellre inline)
 
-### Quando ti blocchi
+### När du blir blockerad
 
-1. Update riga: status → ⚫ `Blocked`, Owner → mantieni, aggiungi commento "Blocked because X"
-2. Apri issue GitHub con label `roadmap-blocked` per traccia esterna
-3. Notifica founder
-
----
-
-## 🎯 Decisioni critiche da prendere (founder)
-
-Prima di iniziare alcuni task, founder deve decidere:
-
-### Per T07 (Workspace migration)
-- [ ] Quando fare la migration di produzione? Suggerito: weekend, maintenance window 30 min, notifica utenti 48h prima.
-- [ ] Quale data dump backup target retention? Suggerito: 30 giorni per rollback.
-
-### Per T12 (Trust Center)
-- [ ] Quale legal counsel per review DPA? Costo stimato 500-1500 EUR (1-2h).
-- [ ] DPO designato — chi è? Può essere founder se piccolo team, ma più formale = better signal.
-
-### Per T15 (Seat billing)
-- [ ] **Pricing model** confermato? Le 4 tier proposte (Starter/Pro/Agency/Custom) e i prezzi suggeriti vanno validati con founder + market research minima.
-- [ ] Migration esistenti subscriber: rimangono nel piano attuale o forzato upgrade?
-
-### Per T17 (Onboarding)
-- [ ] Industry buckets coperti dal mapping "suggested prompts": quale priorità? Casting (per Acasting), marketing-SaaS, e-commerce, B2B-SaaS, agency? 5 buckets minimum, 15 ideale.
+1. Uppdatera raden: status → ⚫ `Blocked`, Owner → behåll, lägg till kommentar "Blocked because X"
+2. Öppna GitHub-issue med label `roadmap-blocked` för extern spårning
+3. Notifiera founder
 
 ---
 
-## 📅 Milestone date target (da rifinire con team)
+## 🎯 Kritiska beslut att fatta (founder)
+
+Innan vissa task påbörjas måste founder besluta:
+
+### För T07 (Workspace migration)
+- [ ] När göra produktionsmigrationen? Föreslaget: helg, maintenance window 30 min, notifiera användare 48h innan.
+- [ ] Vilken retention för data dump backup target? Föreslaget: 30 dagar för rollback.
+
+### För T12 (Trust Center)
+- [ ] Vilken legal counsel för review av DPA? Uppskattad kostnad 500-1500 EUR (1-2h).
+- [ ] Utsedd DPO — vem är det? Kan vara founder om litet team, men mer formellt = bättre signal.
+
+### För T15 (Seat billing)
+- [ ] **Pricing model** bekräftad? De 4 föreslagna tiers (Starter/Pro/Agency/Custom) och de föreslagna priserna ska valideras med founder + minimal market research.
+- [ ] Migration av befintliga subscriber: stannar i nuvarande plan eller tvingad upgrade?
+
+### För T17 (Onboarding)
+- [ ] Industry buckets täckta av mappningen "suggested prompts": vilken prioritet? Casting (för Acasting), marketing-SaaS, e-commerce, B2B-SaaS, agency? 5 buckets minimum, 15 idealt.
+
+---
+
+## 📅 Milestone-måldatum (att finslipa med team)
 
 | Milestone | Target date | Status |
 |---|---|---|
@@ -154,7 +154,7 @@ Prima di iniziare alcuni task, founder deve decidere:
 
 ## 🔗 Cross-reference
 
-- [AGENTS.md](../../AGENTS.md) — istruzioni universali per agent
+- [AGENTS.md](../../AGENTS.md) — universella instruktioner för agent
 - [README.md](README.md) — overview roadmap
 - [00-mission-scope-rules.md](00-mission-scope-rules.md) — DO / DON'T / coding standards
 - [Fase 0 dettaglio](01-fase-0-pulizia.md)
@@ -164,6 +164,4 @@ Prima di iniziare alcuni task, founder deve decidere:
 
 ---
 
-**Last updated**: 2026-05-14 — Fase 0 completa (T02, T03, T05, T06 Done, T04 blocked su Sentry DSN). Fase 1 sbloccata.
-
-
+**Last updated**: 2026-05-14 — Fas 0 komplett (T02, T03, T05, T06 Done, T04 blocked på Sentry DSN). Fas 1 upplåst.

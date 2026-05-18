@@ -1,28 +1,28 @@
 # Enterprise Roadmap — AIO Pulse
 
-> 4 fasi, 10-14 settimane, target **SMB/prosumer + enterprise-lite**. Decisione strategica del 2026-05-13.
+> 4 faser, 10-14 veckor, mål **SMB/prosumer + enterprise-lite**. Strategiskt beslut från 2026-05-13.
 
 ---
 
-## 📍 Sei qui per
+## 📍 Du är här för att
 
-Trasformare AIO Pulse da "production-grade boilerplate" a **SaaS commerciale vendibile a SMB e mid-market** senza il peso compliance di SOC 2 / ISO 27001 / SAML / SCIM.
+Förvandla AIO Pulse från "production-grade boilerplate" till **kommersiell SaaS säljbar till SMB och mid-market** utan compliance-bördan från SOC 2 / ISO 27001 / SAML / SCIM.
 
-**NON** stai costruendo un enterprise stack Fortune-1000-ready. Quella roadmap esiste ma costa €400-700k + 12-18 mesi. Qui costruiamo lean per validare PMF commerciale a €50-110k EUR / 10-14 settimane.
+Du bygger **INTE** en enterprise-stack redo för Fortune-1000. Den roadmappen finns men kostar €400-700k + 12-18 månader. Här bygger vi lean för att validera kommersiell PMF för €50-110k EUR / 10-14 veckor.
 
-## 🗺️ Mappa dei documenti
+## 🗺️ Dokumentkarta
 
-| File                                                               | Cosa contiene                                                                             |
+| File                                                               | Vad det innehåller                                                                        |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| [README.md](README.md)                                             | Sei qui                                                                                   |
-| [00-mission-scope-rules.md](00-mission-scope-rules.md)             | Mission, scope esplicito IN/OUT, coding standards complete, definition of done universale |
-| [01-fase-0-pulizia.md](01-fase-0-pulizia.md)                       | 6 task (T01-T06) — fix S1/S2 da CODE_REVIEW.md, type safety, logger, Sentry               |
-| [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md)       | 3 task (T07-T09) — Workspace/Org migration + audit log + scoped API keys + design schema  |
-| [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md)                 | 5 task (T10-T14) — SSO Google/MS, MFA, Trust Center, status page, GDPR essentials         |
-| [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md) | 4 task (T15-T18) — seat billing, manual invoicing, onboarding flow, API docs              |
-| [task-tracker.md](task-tracker.md)                                 | Kanban view di tutti i 18 task con stato corrente                                         |
+| [README.md](README.md)                                             | Du är här                                                                                 |
+| [00-mission-scope-rules.md](00-mission-scope-rules.md)             | Mission, explicit IN/OUT-scope, kompletta coding standards, universell definition of done |
+| [01-fase-0-pulizia.md](01-fase-0-pulizia.md)                       | 6 tasks (T01-T06) — fix S1/S2 från CODE_REVIEW.md, type safety, logger, Sentry            |
+| [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md)       | 3 tasks (T07-T09) — Workspace/Org migration + audit log + scoped API keys + design schema |
+| [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md)                 | 5 tasks (T10-T14) — SSO Google/MS, MFA, Trust Center, status page, GDPR essentials        |
+| [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md) | 4 tasks (T15-T18) — seat billing, manuell fakturering, onboarding-flöde, API docs         |
+| [task-tracker.md](task-tracker.md)                                 | Kanban-vy över alla 18 tasks med aktuell status                                           |
 
-## 🚦 Sequenza obbligata
+## 🚦 Obligatorisk sekvens
 
 ```
 Fase 0 (T01-T06) ─── precondizione ───►  Fase 1 (T07-T09)
@@ -32,19 +32,19 @@ Fase 0 (T01-T06) ─── precondizione ───►  Fase 1 (T07-T09)
                                                 └── parallel ───►  Fase 3 (T15-T18)
 ```
 
-Fase 2 e Fase 3 possono partire in parallelo dopo che Fase 1 è completata. Mai partire Fase 1 con Fase 0 incompleta — il debito tecnico crescerebbe esponenzialmente.
+Fas 2 och Fas 3 kan startas parallellt efter att Fas 1 är slutförd. Starta aldrig Fas 1 med Fas 0 ofullständig — den tekniska skulden skulle växa exponentiellt.
 
-## ⏱️ Timeline indicativa
+## ⏱️ Vägledande tidslinje
 
-| Settimana | Fase                                   | Output atteso                                                       |
+| Settimana | Fase                                   | Förväntad output                                                    |
 | --------- | -------------------------------------- | ------------------------------------------------------------------- |
-| 1-4       | Fase 0                                 | Codebase type-safe, logger strutturato, zero console.log produzione |
+| 1-4       | Fase 0                                 | Type-safe kodbas, strukturerad logger, noll console.log i produktion |
 | 5-8       | Fase 1                                 | Organization + Workspace + AuditLog + Scoped API keys live          |
-| 9-11      | Fase 2 (può parallelizzare con Fase 3) | SSO Google/MS, MFA, Trust Center, status page, GDPR self-serve      |
-| 9-12      | Fase 3 (può parallelizzare con Fase 2) | Seat-based billing, onboarding wizard, API docs complete            |
-| 13-14     | Buffer / polish                        | Bug fixes, customer feedback adjustments                            |
+| 9-11      | Fase 2 (kan parallelliseras med Fas 3) | SSO Google/MS, MFA, Trust Center, status page, GDPR self-serve      |
+| 9-12      | Fase 3 (kan parallelliseras med Fas 2) | Seat-based billing, onboarding-wizard, kompletta API docs           |
+| 13-14     | Buffer / polish                        | Bug fixes, justeringar utifrån kundfeedback                         |
 
-## 💰 Budget per fase
+## 💰 Budget per fas
 
 | Fase       | Settimane | EUR (lean) | EUR (standard) |
 | ---------- | --------- | ---------- | -------------- |
@@ -54,42 +54,42 @@ Fase 2 e Fase 3 possono partire in parallelo dopo che Fase 1 è completata. Mai 
 | Fase 3     | 2-3       | 10.000     | 15.000         |
 | **Totale** | **10-14** | **70.000** | **110.000**    |
 
-Stima basata su 1 senior fullstack TypeScript/React + 1 part-time devops/security. Range varia con seniority freelance vs employed.
+Uppskattning baserad på 1 senior fullstack TypeScript/React + 1 part-time devops/security. Intervallet varierar med seniority freelance vs anställd.
 
 ## ✅ Definition of "Roadmap Complete"
 
-A fine Fase 3, AIO Pulse dovrebbe:
+I slutet av Fas 3 bör AIO Pulse:
 
-1. **Type-safe end-to-end**: 0 `(db as any)` non documentati, `pnpm type-check` PASS
-2. **Multi-tenant vera**: Organization → Workspace → Brand hierarchy live, migration esistenti completata
-3. **Audit trail completo**: ogni azione critical loggata in `audit_logs`, exportabile CSV
-4. **API keys scoped**: nessuna chiave "full access", scopes granulari
-5. **SSO live**: signup/login via Google + Microsoft OAuth oltre email/password
-6. **MFA disponibile**: TOTP opzionale per utenti, enforceable per workspace admin
-7. **GDPR self-serve**: data export + deletion in dashboard, DPA template scaricabile
-8. **Trust Center pubblico**: `/trust` con security overview, sub-processor list, contact
-9. **Status page live**: `status.aio-pulse.com` con monitoring real-time
-10. **Seat billing**: workspace member = seat fatturato, manual invoicing per custom plan
-11. **Onboarding self-serve**: nuovo user da signup a first analysis in <10 min senza handholding
-12. **API docs complete**: `/docs/api` con esempi per ogni endpoint + SDK starter
+1. **Type-safe end-to-end**: 0 odokumenterade `(db as any)`, `pnpm type-check` PASS
+2. **Äkta multi-tenant**: Organization → Workspace → Brand hierarki live, befintlig migration slutförd
+3. **Komplett audit trail**: varje kritisk åtgärd loggad i `audit_logs`, exporterbar som CSV
+4. **API keys scoped**: ingen "full access"-nyckel, granulära scopes
+5. **SSO live**: signup/login via Google + Microsoft OAuth utöver e-post/lösenord
+6. **MFA tillgängligt**: TOTP valfritt för användare, framtvingbart för workspace-admin
+7. **GDPR self-serve**: data export + deletion i dashboard, nedladdningsbar DPA-mall
+8. **Publikt Trust Center**: `/trust` med security overview, sub-processor list, contact
+9. **Status page live**: `status.aio-pulse.com` med real-time monitoring
+10. **Seat billing**: workspace-medlem = fakturerad seat, manuell fakturering för custom plan
+11. **Onboarding self-serve**: ny användare från signup till första analys på <10 min utan handholding
+12. **Kompletta API docs**: `/docs/api` med exempel för varje endpoint + SDK starter
 
-## 🎯 Cosa fare ORA (giorno 1)
+## 🎯 Vad du ska göra NU (dag 1)
 
-1. **Leggi** [00-mission-scope-rules.md](00-mission-scope-rules.md) per capire le regole di ingaggio
-2. **Apri** [task-tracker.md](task-tracker.md) e scegli T01 (primo task Fase 0)
-3. **Leggi il task** completo in [01-fase-0-pulizia.md](01-fase-0-pulizia.md)
-4. **Crea branch** `fase-0/T01-fix-onboarding-imports`
-5. **Esegui** rispettando le coding standards
-6. **Apri PR** con DoD checklist
-7. **Continua** con T02, T03, ecc.
+1. **Läs** [00-mission-scope-rules.md](00-mission-scope-rules.md) för att förstå spelreglerna
+2. **Öppna** [task-tracker.md](task-tracker.md) och välj T01 (första task i Fas 0)
+3. **Läs hela tasken** i [01-fase-0-pulizia.md](01-fase-0-pulizia.md)
+4. **Skapa branch** `fase-0/T01-fix-onboarding-imports`
+5. **Genomför** med respekt för coding standards
+6. **Öppna PR** med DoD checklist
+7. **Fortsätt** med T02, T03, osv.
 
-## 🔗 Documenti correlati (root del repo)
+## 🔗 Relaterade dokument (repo-roten)
 
-- [../../AGENTS.md](../../AGENTS.md) — istruzioni universali per coding agent (OpenCode, Cursor, Claude Code)
-- [../../README.md](../../README.md) — overview progetto
-- [../../SECURITY.md](../../SECURITY.md) — security baseline marzo 2026
-- CODE_REVIEW.md — issue list da Fase 0 (report storico rimosso dal repo)
-- [../../BILLING_SETUP.md](../../BILLING_SETUP.md) — Stripe config (rilevante Fase 3)
+- [../../AGENTS.md](../../AGENTS.md) — universella instruktioner för coding agent (OpenCode, Cursor, Claude Code)
+- [../../README.md](../../README.md) — projektöversikt
+- [../../SECURITY.md](../../SECURITY.md) — security baseline mars 2026
+- CODE_REVIEW.md — issue-lista från Fas 0 (historisk rapport borttagen från repot)
+- [../../BILLING_SETUP.md](../../BILLING_SETUP.md) — Stripe config (relevant Fas 3)
 - [../../ENVIRONMENTS.md](../../ENVIRONMENTS.md) — env vars
 
 ---

@@ -1,69 +1,69 @@
-# Guida Encryption Generator
+# Guide för Encryption Generator
 
-Guida pratica per generare, gestire e ruotare i secret crittografici usati da AIO Pulse.
+Praktisk guide för att generera, hantera och rotera de kryptografiska hemligheter som AIO Pulse använder.
 
 ---
 
-## 1. Secret richiesti dall'applicazione
+## 1. Hemligheter som applikationen kräver
 
-Il progetto utilizza 3 secret distinti, tutti **256-bit random in formato esadecimale** (64 caratteri). Sono definiti in `.env.local` (sviluppo) e nelle Environment Variables di Vercel (produzione).
+Projektet använder 3 distinkta hemligheter, alla **256-bit random i hexadecimalt format** (64 tecken). De definieras i `.env.local` (utveckling) och i Vercels Environment Variables (produktion).
 
-| Variabile | Scopo | Usata da |
+| Variabel | Syfte | Används av |
 |---|---|---|
-| `CRON_SECRET_TOKEN` | Autentica le chiamate agli endpoint `/api/cron/*` | `src/app/api/cron/monitoring/route.ts`, `.../digest/route.ts`, `.../weekly-review/route.ts`, `.../aeo-bridge/route.ts` |
-| `ENCRYPTION_KEY` | Cripta le API key degli utenti salvate in Supabase (tabella `user_api_keys`) | Archive Export System — le chiavi criptate sono irrecuperabili se si perde o si cambia questa |
-| `WEBHOOK_SIGNING_SECRET` | Firma HMAC-SHA256 dei webhook in uscita verso i subscriber | `src/lib/services/webhook-delivery.ts` |
+| `CRON_SECRET_TOKEN` | Autentiserar anropen till endpoints `/api/cron/*` | `src/app/api/cron/monitoring/route.ts`, `.../digest/route.ts`, `.../weekly-review/route.ts`, `.../aeo-bridge/route.ts` |
+| `ENCRYPTION_KEY` | Krypterar användarnas API-nycklar sparade i Supabase (tabellen `user_api_keys`) | Archive Export System — de krypterade nycklarna är oåterkalleliga om denna förloras eller ändras |
+| `WEBHOOK_SIGNING_SECRET` | HMAC-SHA256-signering av utgående webhooks mot subscribers | `src/lib/services/webhook-delivery.ts` |
 
 ---
 
-## 2. Comandi di generazione
+## 2. Genereringskommandon
 
-Scegli **una** delle opzioni in base agli strumenti che hai installati.
+Välj **ett** av alternativen baserat på vilka verktyg du har installerade.
 
-### Opzione 1 — Node.js (un comando per volta)
+### Alternativ 1 — Node.js (ett kommando i taget)
 
-Il modo più semplice se hai Node installato (già presente perché il progetto gira su Next.js).
+Enklaste sättet om du har Node installerat (redan tillgängligt eftersom projektet körs på Next.js).
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Lancia questo comando **3 volte** e copia ogni output rispettivamente in `CRON_SECRET_TOKEN`, `ENCRYPTION_KEY`, `WEBHOOK_SIGNING_SECRET`.
+Kör detta kommando **3 gånger** och kopiera varje output till respektive `CRON_SECRET_TOKEN`, `ENCRYPTION_KEY`, `WEBHOOK_SIGNING_SECRET`.
 
-### Opzione 2 — Node.js (tutti e 3 insieme, pronti da incollare)
+### Alternativ 2 — Node.js (alla 3 tillsammans, redo att klistra in)
 
 ```bash
 node -e "const c=require('crypto'); ['CRON_SECRET_TOKEN','ENCRYPTION_KEY','WEBHOOK_SIGNING_SECRET'].forEach(k=>console.log(k+'='+c.randomBytes(32).toString('hex')))"
 ```
 
-Output tipo:
+Output av typen:
 ```
 CRON_SECRET_TOKEN=a1b2c3...
 ENCRYPTION_KEY=d4e5f6...
 WEBHOOK_SIGNING_SECRET=7890ab...
 ```
 
-Copia-incolla diretto in `.env.local`.
+Kopiera-klistra direkt in i `.env.local`.
 
-### Opzione 3 — OpenSSL
+### Alternativ 3 — OpenSSL
 
-Se preferisci uno strumento di sistema standard (disponibile su macOS, Linux, Git Bash su Windows):
+Om du föredrar ett standard systemverktyg (tillgängligt på macOS, Linux, Git Bash på Windows):
 
 ```bash
 openssl rand -hex 32
 ```
 
-Lancia 3 volte.
+Kör 3 gånger.
 
-### Opzione 4 — PowerShell nativo (Windows, senza Node né OpenSSL)
+### Alternativ 4 — Nativt PowerShell (Windows, utan Node eller OpenSSL)
 
 ```powershell
 -join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Max 256) })
 ```
 
-> ⚠️ `Get-Random` di PowerShell **non è crittograficamente sicuro** per uso in produzione. Usa questa opzione solo in sviluppo locale. Per produzione preferisci Opzione 1, 2 o 3.
+> ⚠️ PowerShells `Get-Random` **är inte kryptografiskt säker** för produktionsbruk. Använd endast detta alternativ i lokal utveckling. För produktion, föredra Alternativ 1, 2 eller 3.
 
-### Opzione 5 — PowerShell crittografico (Windows)
+### Alternativ 5 — Kryptografiskt PowerShell (Windows)
 
 ```powershell
 $bytes = New-Object byte[] 32
@@ -71,52 +71,52 @@ $bytes = New-Object byte[] 32
 -join ($bytes | ForEach-Object { '{0:x2}' -f $_ })
 ```
 
-Questa versione usa un CSPRNG ed è sicura anche per produzione.
+Denna version använder en CSPRNG och är säker även för produktion.
 
 ---
 
-## 3. Regole di gestione
+## 3. Hanteringsregler
 
-### Rotazione
+### Rotation
 
-| Secret | Rigenerabile dopo il primo uso? | Impatto del cambio |
+| Hemlighet | Går att regenerera efter första användning? | Påverkan av byte |
 |---|---|---|
-| `CRON_SECRET_TOKEN` | ✅ Sì, quando vuoi | Aggiornare contestualmente su Vercel Cron / scheduler esterni che chiamano gli endpoint |
-| `WEBHOOK_SIGNING_SECRET` | ✅ Sì | I subscriber dei webhook dovranno aggiornare la loro chiave di verifica — coordinare il cambio |
-| `ENCRYPTION_KEY` | ❌ **NO — trattare come immutabile** | Cambiarla rende **irrecuperabili** tutte le API key utente già criptate. Per ruotarla serve una migrazione: decripta tutto con la vecchia chiave, ri-cripta con la nuova, poi switch |
+| `CRON_SECRET_TOKEN` | ✅ Ja, när du vill | Uppdatera samtidigt på Vercel Cron / externa schedulers som anropar endpoints |
+| `WEBHOOK_SIGNING_SECRET` | ✅ Ja | Webhook-subscribers måste uppdatera sin verifieringsnyckel — koordinera bytet |
+| `ENCRYPTION_KEY` | ❌ **NEJ — behandla som oföränderlig** | Att ändra den gör alla redan krypterade användar-API-nycklar **oåterkalleliga**. För att rotera den krävs en migrering: dekryptera allt med den gamla nyckeln, kryptera om med den nya, sedan switch |
 
-### Separazione ambienti
+### Miljöseparation
 
-**Non riutilizzare mai gli stessi secret tra sviluppo e produzione.** Genera **due set distinti**:
+**Återanvänd aldrig samma hemligheter mellan utveckling och produktion.** Generera **två distinkta uppsättningar**:
 
-- Set #1 → `.env.local` (dev, locale)
-- Set #2 → Vercel Environment Variables → scope: Production
+- Uppsättning #1 → `.env.local` (dev, lokalt)
+- Uppsättning #2 → Vercel Environment Variables → scope: Production
 
-Se condividi lo stesso `ENCRYPTION_KEY` tra dev e prod, un leak dell'ambiente dev compromette anche i dati di produzione.
+Om du delar samma `ENCRYPTION_KEY` mellan dev och prod komprometterar ett läckage av dev-miljön även produktionsdatan.
 
-### Dove NON metterli
+### Var de INTE ska placeras
 
-- ❌ `.env.example` — è committato in git
-- ❌ `README.md`, commenti nel codice, issue/PR
-- ❌ Screenshot, screen-share, log di chat
-- ❌ Slack/Discord/email in plaintext
-- ✅ `.env.local` (nel `.gitignore`)
-- ✅ Vercel Environment Variables (cifrate at-rest)
-- ✅ Password manager (1Password, Bitwarden) per backup
+- ❌ `.env.example` — den committas i git
+- ❌ `README.md`, kommentarer i koden, issues/PR
+- ❌ Skärmdumpar, skärmdelning, chattloggar
+- ❌ Slack/Discord/e-post i plaintext
+- ✅ `.env.local` (i `.gitignore`)
+- ✅ Vercel Environment Variables (krypterade at-rest)
+- ✅ Lösenordshanterare (1Password, Bitwarden) för backup
 
-### Se un secret viene esposto
+### Om en hemlighet exponeras
 
-1. **Rigeneralo immediatamente** con uno dei comandi sopra.
-2. Aggiorna `.env.local` e Vercel.
-3. Per `CRON_SECRET_TOKEN`: aggiorna gli scheduler.
-4. Per `WEBHOOK_SIGNING_SECRET`: notifica i subscriber e fornisci la nuova chiave.
-5. Per `ENCRYPTION_KEY` esposta: **non cambiarla senza migrare i dati**. Valuta se forzare gli utenti a reinserire le loro API key (soluzione più pulita) oppure esegui una migrazione offline.
+1. **Regenerera den omedelbart** med ett av kommandona ovan.
+2. Uppdatera `.env.local` och Vercel.
+3. För `CRON_SECRET_TOKEN`: uppdatera schedulers.
+4. För `WEBHOOK_SIGNING_SECRET`: notifiera subscribers och tillhandahåll den nya nyckeln.
+5. För exponerad `ENCRYPTION_KEY`: **ändra den inte utan att migrera datan**. Överväg att tvinga användarna att ange sina API-nycklar på nytt (renaste lösningen) eller utför en offline-migrering.
 
 ---
 
-## 4. Template `.env.local`
+## 4. Mall för `.env.local`
 
-Dopo aver generato i 3 secret, aggiungili a `.env.local` in questa sezione:
+Efter att du genererat de 3 hemligheterna, lägg till dem i `.env.local` i denna sektion:
 
 ```env
 # ─── Cron Jobs & Security ─────────────────────────────────────────── [REQUIRED]
@@ -125,17 +125,17 @@ ENCRYPTION_KEY=<output comando 2>
 WEBHOOK_SIGNING_SECRET=<output comando 3>
 ```
 
-Per l'elenco completo delle altre env var richieste, consulta `.env.example`.
+För den fullständiga listan över övriga env var som krävs, se `.env.example`.
 
 ---
 
-## 5. Verifica rapida
+## 5. Snabbverifiering
 
-Dopo aver settato i secret, verifica che siano caricati correttamente:
+Efter att du satt hemligheterna, verifiera att de laddas korrekt:
 
 ```bash
 # Dovrebbe stampare 64 (lunghezza hex = 32 byte * 2)
 node -e "require('dotenv').config({path:'.env.local'}); console.log('CRON:', (process.env.CRON_SECRET_TOKEN||'').length); console.log('ENC:', (process.env.ENCRYPTION_KEY||'').length); console.log('WH:', (process.env.WEBHOOK_SIGNING_SECRET||'').length)"
 ```
 
-Tutti e 3 devono stampare `64`. Se stampano `0` il secret non è settato; se stampano un altro numero è stato troncato o ha caratteri non-hex.
+Alla 3 måste skriva ut `64`. Om de skriver ut `0` är hemligheten inte satt; om de skriver ut ett annat tal har den trunkerats eller har icke-hex-tecken.

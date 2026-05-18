@@ -1,45 +1,45 @@
-# Fase 3 — Seat billing + Onboarding + API docs (T15-T18)
+# Fas 3 — Seat billing + Onboarding + API docs (T15-T18)
 
-> 2-3 settimane, 10-15k EUR. **Polish commerciale.** Parallelizable con Fase 2 dopo Fase 1.
+> 2-3 veckor, 10-15k EUR. **Kommersiell polish.** Parallelliserbar med Fas 2 efter Fas 1.
 
 ---
 
-## 🎯 Goal della fase
+## 🎯 Fasens mål
 
-Trasformare AIO Pulse da "tool tecnico" a **prodotto vendibile self-serve**: pricing chiaro, onboarding 10-minute, docs API che un dev capisce subito. + flessibilità billing per il founder-led sales custom mid-market.
+Förvandla AIO Pulse från "tekniskt verktyg" till **säljbar self-serve-produkt**: tydlig pricing, onboarding på 10 minuter, API docs som en dev förstår direkt. + flexibilitet i billing för founder-led sales custom mid-market.
 
-## ⚠️ Prerequisito
+## ⚠️ Förutsättning
 
-[Fase 1](02-fase-1-workspace-audit.md) completata: seat billing richiede Organization tier, onboarding wizard guida nuovo user attraverso Org/Workspace creation.
+[Fas 1](02-fase-1-workspace-audit.md) slutförd: seat billing kräver Organization tier, onboarding-wizarden guidar nya användare genom skapandet av Org/Workspace.
 
 ## 📋 Task overview
 
-| Task | Titolo | Effort | Deps |
+| Task | Titel | Effort | Deps |
 |---|---|---|---|
-| T15 | Seat-based billing via Stripe | 4-5 giorni | T07 |
-| T16 | Manual invoicing per custom plan | 2-3 giorni | T15 |
-| T17 | Onboarding wizard self-serve | 4-5 giorni | T07 |
-| T18 | API docs complete + SDK starter | 3-4 giorni | T09 |
+| T15 | Seat-based billing via Stripe | 4-5 dagar | T07 |
+| T16 | Manual invoicing per custom plan | 2-3 dagar | T15 |
+| T17 | Onboarding wizard self-serve | 4-5 dagar | T07 |
+| T18 | API docs complete + SDK starter | 3-4 dagar | T09 |
 
-**Totale**: ~2-3 settimane con 1 dev fulltime.
+**Totalt**: ~2-3 veckor med 1 dev på heltid.
 
 ---
 
 ## T15 — Seat-based billing via Stripe
 
-**Effort**: 4-5 giorni
+**Effort**: 4-5 dagar
 **Dependencies**: T07 (Organization tier)
 **Owner**: TBD
 
-### Cambio paradigma
+### Paradigmskifte
 
-**Attualmente**: 1 user → 1 subscription. Credit-based + monthly plan.
+**För närvarande**: 1 user → 1 subscription. Credit-based + monthly plan.
 
-**Target**: 1 organization → 1 subscription con **N seat** (= N workspace member attivi). Stripe gestisce seat count dinamicamente.
+**Target**: 1 organization → 1 subscription med **N seat** (= N aktiva workspace member). Stripe hanterar seat count dynamiskt.
 
-### Pricing model proposto (da validare con founder)
+### Föreslagen pricing model (att validera med founder)
 
-| Plan | Seat included | Extra seat | Crediti incluso /mese | Features |
+| Plan | Seat included | Extra seat | Krediter inkluderade /månad | Features |
 |---|---|---|---|---|
 | **Free** | 1 | n/a | 500 (50 query) | 1 workspace, 1 brand |
 | **Starter** | 1 | €15/seat | 5.000 (500 query) | 3 workspace, 5 brand/workspace, basic alerts |
@@ -47,15 +47,15 @@ Trasformare AIO Pulse da "tool tecnico" a **prodotto vendibile self-serve**: pri
 | **Agency** | 10 | €35/seat | 100.000 (10k query) | Unlimited workspace, white-label, priority support |
 | **Custom** | Negotiated | Negotiated | Custom | Custom SLA, dedicated CSM, custom integrations |
 
-→ **Da validare con founder**. Pricing è strategic decision, non dev decision.
+→ **Att validera med founder**. Pricing är ett strategiskt beslut, inte ett dev-beslut.
 
 ### Stripe configuration
 
-In Stripe dashboard:
-- Crea 4 Products: Starter / Pro / Agency / Custom (Custom = no price, hidden)
-- Per ogni product: 2 Prices (monthly + annual con sconto 17% = 2 mesi gratis)
-- Seat tier: Stripe "graduated pricing" per extra seat oltre included
-- Metered usage: NO (crediti gestiti app-side, non Stripe metered — più flessibile)
+I Stripe dashboard:
+- Skapa 4 Products: Starter / Pro / Agency / Custom (Custom = no price, hidden)
+- För varje product: 2 Prices (monthly + annual med 17% rabatt = 2 månader gratis)
+- Seat tier: Stripe "graduated pricing" för extra seat utöver included
+- Metered usage: NO (krediter hanteras app-side, inte Stripe metered — mer flexibelt)
 
 ### Schema update
 
@@ -92,13 +92,13 @@ model Organization {
 
 ### Acceptance criteria
 
-- [ ] Org admin può upgrade plan via Stripe Checkout
-- [ ] Quando member viene aggiunto al workspace e supera `seatLimit + extraSeats` → prompt "Add seat €15/mese" + Stripe checkout
-- [ ] Stripe webhook gestisce: subscription created/updated/deleted, payment succeeded/failed
-- [ ] Org admin vede billing history (invoices) e può scaricare PDF
-- [ ] Org admin può modificare payment method via Stripe Customer Portal
-- [ ] Annual billing offerto con sconto (17% = 2 mesi)
-- [ ] Past-due state: warning banner in dashboard, no nuova feature gate ma read-only se >30 day past-due
+- [ ] Org admin kan upgrade plan via Stripe Checkout
+- [ ] När en member läggs till i workspace och överskrider `seatLimit + extraSeats` → prompt "Add seat €15/månad" + Stripe checkout
+- [ ] Stripe webhook hanterar: subscription created/updated/deleted, payment succeeded/failed
+- [ ] Org admin ser billing history (invoices) och kan ladda ner PDF
+- [ ] Org admin kan ändra payment method via Stripe Customer Portal
+- [ ] Annual billing erbjuds med rabatt (17% = 2 månader)
+- [ ] Past-due state: warning banner i dashboard, ingen ny feature gate men read-only om >30 dagar past-due
 - [ ] Audit log: `billing.plan.changed`, `billing.payment.succeeded`, `billing.payment.failed`, `billing.subscription.cancelled`
 - [ ] Test: upgrade flow Free → Starter → Pro → Agency
 - [ ] Test: downgrade flow
@@ -118,27 +118,27 @@ model Organization {
 - `src/lib/services/billing.ts`
 - `BILLING_SETUP.md` (major update)
 
-### Migrazione billing esistenti
+### Migrering av befintlig billing
 
-Se esistono già user con `subscriptions` (legacy schema per-user):
-1. Per ogni `subscription.userId` → trovare la corrispondente `organization` (creata in T07)
-2. Migrare i campi a `organization.stripeCustomerId`, `organization.stripeSubId`, etc.
-3. Stripe API: aggiornare customer metadata per linkare a `organizationId` invece di `userId`
-4. Smoke test: invoice viene generata correttamente sul nuovo schema
+Om det redan finns användare med `subscriptions` (legacy schema per-user):
+1. För varje `subscription.userId` → hitta motsvarande `organization` (skapad i T07)
+2. Migrera fälten till `organization.stripeCustomerId`, `organization.stripeSubId`, etc.
+3. Stripe API: uppdatera customer metadata för att länka till `organizationId` istället för `userId`
+4. Smoke test: invoice genereras korrekt på det nya schemat
 
-Script di migration in `prisma/migrations/<timestamp>_seat_based_billing/data.sql` (manualmente curato — NO automation per billing).
+Migrationsskript i `prisma/migrations/<timestamp>_seat_based_billing/data.sql` (manuellt kurerat — NO automation för billing).
 
 ---
 
 ## T16 — Manual invoicing per custom plan
 
-**Effort**: 2-3 giorni
+**Effort**: 2-3 dagar
 **Dependencies**: T15
 **Owner**: TBD
 
 ### Use case
 
-Founder chiude deal mid-market via call → cliente vuole pagare via invoice (NET-30) con custom seat count + custom features.
+Founder stänger en mid-market-affär via call → kunden vill betala via invoice (NET-30) med custom seat count + custom features.
 
 ### Workflow
 
@@ -164,15 +164,15 @@ Founder chiude deal mid-market via call → cliente vuole pagare via invoice (NE
 
 - [ ] `/dashboard/admin/organizations/[orgId]` admin UI (visible only to user with `isAdmin = true` flag in `OrganizationMember` o env-based superadmin list)
 - [ ] Form "Create custom invoice": description, amount, currency, due date, NET term
-- [ ] Stripe Invoice API integration funzionante
-- [ ] Email send confirm con link
-- [ ] Invoice paid → org status updated automaticamente
+- [ ] Stripe Invoice API integration fungerande
+- [ ] Email send confirm med länk
+- [ ] Invoice paid → org status uppdaterad automatiskt
 - [ ] Audit log custom invoice flow
-- [ ] Documentazione founder-internal: `docs/operations/custom-invoicing-runbook.md`
+- [ ] Founder-intern dokumentation: `docs/operations/custom-invoicing-runbook.md`
 
 ### Files
 
-- `src/app/dashboard/admin/organizations/[orgId]/page.tsx` (nuovo admin UI)
+- `src/app/dashboard/admin/organizations/[orgId]/page.tsx` (nytt admin UI)
 - `src/app/dashboard/admin/organizations/[orgId]/invoicing/page.tsx`
 - `src/app/api/v1/admin/invoicing/route.ts`
 - `src/lib/services/custom-invoicing.ts`
@@ -180,19 +180,19 @@ Founder chiude deal mid-market via call → cliente vuole pagare via invoice (NE
 
 ### Superadmin flag
 
-Per ora: env-based `SUPERADMIN_EMAILS=email1,email2`. Future: db-based.
+För närvarande: env-based `SUPERADMIN_EMAILS=email1,email2`. Future: db-based.
 
 ---
 
 ## T17 — Onboarding wizard self-serve
 
-**Effort**: 4-5 giorni
+**Effort**: 4-5 dagar
 **Dependencies**: T07
 **Owner**: TBD
 
 ### Goal
 
-Nuovo user (signup) → first analysis completata in **<10 minuti** senza ricerca docs / handholding.
+Ny user (signup) → första analysen slutförd på **<10 minuter** utan att leta i docs / handholding.
 
 ### Wizard steps
 
@@ -227,24 +227,24 @@ Done — Dashboard
 
 ### In-app guides post-onboarding
 
-- Empty state per ogni dashboard panel: "No alerts yet. [Set up your first alert →]"
-- Tooltips strategici (3-5 max — no overlay invasivo)
-- "What's next?" widget in dashboard sidebar: 5 azioni progressive (set up alert, invite team, integrate webhook, upgrade plan, etc.)
+- Empty state för varje dashboard panel: "No alerts yet. [Set up your first alert →]"
+- Strategiska tooltips (3-5 max — ingen invasiv overlay)
+- "What's next?" widget i dashboardens sidebar: 5 progressiva åtgärder (set up alert, invite team, integrate webhook, upgrade plan, etc.)
 
 ### Acceptance criteria
 
-- [ ] Signup → automaticamente entra in onboarding (no skip-to-dashboard)
-- [ ] Step 1 chiede role → personalizza messaging
+- [ ] Signup → går automatiskt in i onboarding (no skip-to-dashboard)
+- [ ] Step 1 frågar role → personaliserar messaging
 - [ ] Step 2 setup brand: input validation, autofill industry suggestion
-- [ ] Step 3: 10 prompts suggested per industry, importable in 1 click
-- [ ] Step 4: scan running (real, non fake) — usa 2 LLM cheap (Gemini Flash + GPT-4o-mini) per onboarding (no waste credits su LLM expensive)
+- [ ] Step 3: 10 prompts suggested per industry, importable i 1 click
+- [ ] Step 4: scan running (real, inte fake) — använder 2 LLM cheap (Gemini Flash + GPT-4o-mini) för onboarding (no waste credits på LLM expensive)
 - [ ] Step 5: insight rendered + CTA upgrade
-- [ ] Time from signup to step 5: <10 minuti (test cronometrato)
-- [ ] Skip option visibile ma non default
-- [ ] Email "Welcome to AIO Pulse" send dopo step 5
-- [ ] Empty states per dashboard panel principali: brands, prompts, alerts, citations
-- [ ] "What's next?" widget in sidebar dashboard
-- [ ] Test E2E: full onboarding completo, da signup a primo insight, <10 min
+- [ ] Tid från signup till step 5: <10 minuter (tidtaget test)
+- [ ] Skip option synlig men inte default
+- [ ] Email "Welcome to AIO Pulse" send efter step 5
+- [ ] Empty states för dashboardens huvudsakliga paneler: brands, prompts, alerts, citations
+- [ ] "What's next?" widget i sidebar dashboard
+- [ ] Test E2E: full onboarding komplett, från signup till första insight, <10 min
 - [ ] Drop-off tracking: GA4 event per step completed/abandoned
 
 ### Files
@@ -258,11 +258,11 @@ Done — Dashboard
 - `src/lib/onboarding/suggested-prompts.ts` (mapping industry → 10 query)
 - `src/components/onboarding/WizardStepper.tsx`
 - `src/components/dashboard/WhatsNextWidget.tsx`
-- `src/components/dashboard/EmptyState.tsx` (riusabile)
+- `src/components/dashboard/EmptyState.tsx` (återanvändbar)
 
 ### Suggested prompts per industry (data)
 
-Mantenere file `src/lib/onboarding/suggested-prompts.ts`:
+Underhåll filen `src/lib/onboarding/suggested-prompts.ts`:
 
 ```ts
 export const SUGGESTED_PROMPTS: Record<string, string[]> = {
@@ -280,21 +280,21 @@ export const SUGGESTED_PROMPTS: Record<string, string[]> = {
 }
 ```
 
-→ Per Acasting il bucket è `casting-talent`, le 10 query iniziali derivate da [query-inventory.md](file:///c:/Users/loren/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/06-assets/query-inventory.md).
+→ För Acasting är bucketen `casting-talent`, de 10 inledande queries härledda från [query-inventory.md](file:///c:/Users/loren/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/06-assets/query-inventory.md).
 
 ---
 
 ## T18 — API docs complete + SDK starter
 
-**Effort**: 3-4 giorni
+**Effort**: 3-4 dagar
 **Dependencies**: T09 (scoped API keys)
 **Owner**: TBD
 
-### Status attuale
+### Nuvarande status
 
-Esiste `src/app/docs/api/page.tsx` ma CODE_REVIEW S4 segnala "Documentation pourrait être plus complète". Per Fase 3, deve diventare production-grade.
+`src/app/docs/api/page.tsx` finns men CODE_REVIEW S4 signalerar "Documentation pourrait être plus complète". För Fas 3 måste den bli production-grade.
 
-### Contenuti target
+### Målinnehåll
 
 #### `/docs/api` — Hub
 
@@ -303,27 +303,27 @@ Esiste `src/app/docs/api/page.tsx` ma CODE_REVIEW S4 segnala "Documentation pour
 - Rate limits + headers
 - Error format
 - Versioning
-- Links a ogni endpoint reference
+- Links till varje endpoint reference
 
 #### `/docs/api/<endpoint>` — Per endpoint
 
-Per ogni endpoint pubblico `/api/v1/*`:
+För varje publikt endpoint `/api/v1/*`:
 - HTTP method + path
 - Auth required (Bearer scope X)
-- Request schema (Zod-derived, auto-generated quando possibile)
+- Request schema (Zod-derived, auto-generated när möjligt)
 - Response schema
 - Example request (curl, JavaScript fetch, Python requests)
 - Example response JSON
 - Possible errors
 - Rate limit
 
-Strumento opzionale: **Mintlify**, **Redocly**, **Scalar**, o markdown statico in `src/app/docs/api/<endpoint>/page.tsx`.
+Valfritt verktyg: **Mintlify**, **Redocly**, **Scalar**, eller statisk markdown i `src/app/docs/api/<endpoint>/page.tsx`.
 
-**Raccomandazione**: markdown statico per ora (no extra tooling), upgrade a Mintlify se volume cresce.
+**Rekommendation**: statisk markdown för nu (ingen extra tooling), uppgradera till Mintlify om volymen växer.
 
 #### SDK starter snippets
 
-In `/docs/api/sdk` o `/docs/quickstart`:
+I `/docs/api/sdk` eller `/docs/quickstart`:
 
 **TypeScript**:
 ```ts
@@ -357,7 +357,7 @@ def get_brand_health_score(brand_id):
     return res.json()
 ```
 
-**curl** per ogni endpoint:
+**curl** för varje endpoint:
 ```bash
 curl -X GET 'https://aio-pulse.com/api/v1/brands/<brand_id>/health' \
   -H 'Authorization: Bearer aipulse_<your_key>'
@@ -365,27 +365,27 @@ curl -X GET 'https://aio-pulse.com/api/v1/brands/<brand_id>/health' \
 
 #### Use case docs (`/docs/use-cases`)
 
-Documenti come "5 min tutorial":
+Dokument i stil med "5 min tutorial":
 1. "Setup brand monitoring in 5 minutes" (signup → first scan)
 2. "Track competitor citations" (setup competitor → run analysis → review)
 3. "Generate llms.txt for your site" (input data → preview → download)
 4. "Setup weekly review automation" (configure → review markdown export)
-5. "Use Acasting case study" (per industry-specific, reference Acasting → applicare a brand simile)
+5. "Use Acasting case study" (för industry-specific, reference Acasting → tillämpa på liknande brand)
 
 ### Acceptance criteria
 
-- [ ] `/docs/api` hub completo con overview + links
-- [ ] Almeno 15 endpoint documentati con full reference
-- [ ] Example curl + TS + Python per ogni endpoint principale
-- [ ] `/docs/api/authentication` page con scope catalog completo
-- [ ] `/docs/api/errors` page con error code reference
-- [ ] `/docs/api/rate-limits` page con rate limit headers + tier
-- [ ] `/docs/quickstart` page con 5-min tutorial
-- [ ] `/docs/use-cases` con 5 use case docs
-- [ ] Search bar in docs (Algolia DocSearch free per OSS-style, o custom)
+- [ ] `/docs/api` hub komplett med overview + links
+- [ ] Minst 15 endpoint dokumenterade med full reference
+- [ ] Example curl + TS + Python för varje huvudsaklig endpoint
+- [ ] `/docs/api/authentication` page med komplett scope catalog
+- [ ] `/docs/api/errors` page med error code reference
+- [ ] `/docs/api/rate-limits` page med rate limit headers + tier
+- [ ] `/docs/quickstart` page med 5-min tutorial
+- [ ] `/docs/use-cases` med 5 use case docs
+- [ ] Search bar i docs (Algolia DocSearch free för OSS-style, eller custom)
 - [ ] Mobile-responsive
-- [ ] OG tags + structured data (per AEO bonus)
-- [ ] Linked dal dashboard footer + onboarding step 5
+- [ ] OG tags + structured data (för AEO bonus)
+- [ ] Länkad från dashboardens footer + onboarding step 5
 
 ### Files
 
@@ -394,49 +394,49 @@ Documenti come "5 min tutorial":
 - `src/app/docs/api/authentication/page.tsx`
 - `src/app/docs/api/errors/page.tsx`
 - `src/app/docs/api/rate-limits/page.tsx`
-- `src/app/docs/api/<endpoint>/page.tsx` (15+ nuovi)
+- `src/app/docs/api/<endpoint>/page.tsx` (15+ nya)
 - `src/app/docs/quickstart/page.tsx`
 - `src/app/docs/use-cases/page.tsx`
 - `src/app/docs/use-cases/<slug>/page.tsx` (5 use case)
 - `src/components/docs/CodeBlock.tsx` (with copy + language switcher)
 - `src/components/docs/ApiEndpointReference.tsx`
 
-### Opzionale (V2)
+### Valfritt (V2)
 
-- TypeScript SDK package pubblicato su npm (`@aio-pulse/sdk`)
-- OpenAPI spec auto-generato da Zod schemas + Swagger UI
+- TypeScript SDK package publicerat på npm (`@aio-pulse/sdk`)
+- OpenAPI spec auto-genererad från Zod schemas + Swagger UI
 
 ---
 
-## ✅ Definition of Done Fase 3
+## ✅ Definition of Done Fas 3
 
-- [ ] T15-T18 tutti merged in `main`
-- [ ] Seat-based billing funzionante in produzione (incluse migration esistenti)
-- [ ] Annual billing offerto con sconto
-- [ ] Custom invoicing flow operativo per founder-led sales
-- [ ] Onboarding wizard: nuovo user da signup a first analysis <10 min
-- [ ] API docs complete con 15+ endpoint reference
-- [ ] SDK starter (TS, Python, curl) per ogni endpoint
-- [ ] Use case docs 5 tutorial pubblicati
-- [ ] Empty states + What's Next widget in dashboard
-- [ ] BILLING_SETUP.md major rewrite riflette nuovo schema
-- [ ] task-tracker.md aggiornato
+- [ ] T15-T18 alla merged i `main`
+- [ ] Seat-based billing fungerande i produktion (inklusive migrering av befintliga)
+- [ ] Annual billing erbjuds med rabatt
+- [ ] Custom invoicing flow operativt för founder-led sales
+- [ ] Onboarding wizard: ny user från signup till first analysis <10 min
+- [ ] API docs complete med 15+ endpoint reference
+- [ ] SDK starter (TS, Python, curl) för varje endpoint
+- [ ] Use case docs 5 tutorial publicerade
+- [ ] Empty states + What's Next widget i dashboard
+- [ ] BILLING_SETUP.md major rewrite återspeglar nytt schema
+- [ ] task-tracker.md uppdaterad
 
 ---
 
 ## 🏁 Definition of Done Roadmap Complete
 
-Vedi [README.md](README.md) sezione "Definition of 'Roadmap Complete'" per i 12 criteri finali.
+Se [README.md](README.md) sektionen "Definition of 'Roadmap Complete'" för de 12 slutkriterierna.
 
-A questo punto AIO Pulse è **shippable as paying SaaS** per il target SMB/prosumer + enterprise-lite.
+Vid denna punkt är AIO Pulse **shippable as paying SaaS** för målgruppen SMB/prosumer + enterprise-lite.
 
-Next steps (post-roadmap, opzionale):
-- Customer feedback loop iterazioni
-- Bug bounty privato (HackerOne private program)
-- SOC 2 Type II avvio (se signal mid-market lo richiede)
+Next steps (post-roadmap, valfritt):
+- Customer feedback loop iterationer
+- Privat bug bounty (HackerOne private program)
+- SOC 2 Type II-uppstart (om mid-market-signalen kräver det)
 - International expansion EU regions (NO/DK/FI focus)
-- Vertical-specific features (es. casting-specific feature pack ispirato a Acasting use case)
+- Vertical-specific features (t.ex. casting-specific feature pack inspirerat av Acasting use case)
 
 ---
 
-**Tornare alla mappa**: [README.md](README.md).
+**Tillbaka till kartan**: [README.md](README.md).

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { createServerClient } from '@/lib/supabase'
+import { requireUser } from '@/lib/api-auth'
+import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 import type { WorkflowExecution, WorkflowStatus, WorkflowType } from '@/types'
 import type { Json } from '@/types/database'
@@ -120,6 +122,10 @@ async function completeWorkflow(
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireUser(request)
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
+
     const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
@@ -131,15 +137,22 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brand_id')
     const limit = parseInt(searchParams.get('limit') || '50', 10) || 50
 
-    let query = supabase
+    if (!brandId) {
+      return NextResponse.json(
+        { success: false, message: 'brand_id is required', data: [] },
+        { status: 400 },
+      )
+    }
+    if (!(await verifyBrandAccess(brandId, userId))) {
+      return NextResponse.json({ success: false, message: 'Forbidden', data: [] }, { status: 403 })
+    }
+
+    const query = supabase
       .from('workflow_executions')
       .select('*')
+      .eq('brand_id', brandId)
       .order('started_at', { ascending: false })
       .limit(limit)
-
-    if (brandId) {
-      query = query.eq('brand_id', brandId)
-    }
 
     const { data, error } = await query
 
@@ -180,6 +193,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireUser(request)
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
+
     const supabase = createServerClient()
     if (!supabase) {
       return NextResponse.json(
@@ -189,7 +206,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, brandId, promptId, userId, metadata } = body as CreateWorkflowInput
+    const { type, brandId, promptId, metadata } = body as CreateWorkflowInput
 
     if (!type) {
       return NextResponse.json(
@@ -215,6 +232,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // A workflow scoped to a brand requires access to that brand.
+    if (brandId && !(await verifyBrandAccess(brandId, userId))) {
+      return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
+    }
+
+    // userId is taken from the authenticated session, never from the body.
     const workflow = await createWorkflow(supabase, { type, brandId, promptId, userId, metadata })
 
     if (!workflow) {
@@ -227,10 +250,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: workflow }, { status: 201 })
   } catch (err) {
     logger.error('[workflows] POST error', { err })
-    return NextResponse.json(
-      { success: false, message: 'Internal server error', error: String(err) },
-      { status: 500 },
-    )
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }
 

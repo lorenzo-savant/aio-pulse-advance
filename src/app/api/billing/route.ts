@@ -1,28 +1,12 @@
-// PATH: src/app/api/billing/webhook/route.ts
+// PATH: src/app/api/billing/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { createServerClient } from '@/lib/supabase'
-import { createHmac } from 'crypto'
 import { logger } from '@/lib/logger'
 
-function verifyStripeSignature(payload: string, signature: string, secret: string): boolean {
-  const timestamp = signature
-    .split(',')
-    .find((s) => s.startsWith('t='))
-    ?.substring(2)
-  const sig = signature
-    .split(',')
-    .find((s) => s.startsWith('v1='))
-    ?.substring(3)
+export const runtime = 'nodejs'
 
-  if (!timestamp || !sig) return false
-
-  const signedPayload = `${timestamp}.${payload}`
-  const expectedSig = createHmac('sha256', secret).update(signedPayload).digest('hex')
-
-  return sig === expectedSig
-}
-
-// ─── POST /api/billing/webhook — Stripe webhook handler ─────────────────────
+// ─── POST /api/billing — Stripe webhook handler ─────────────────────────────
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
@@ -37,16 +21,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
   }
 
-  if (!verifyStripeSignature(body, sig, webhookSecret)) {
-    logger.error('Signature verification failed', { source: 'billing' })
-    return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
-  }
-
-  let event: any
+  // Stripe SDK: constant-time signature compare + timestamp tolerance
+  // (default 300s) → replay protection. Throws on any mismatch.
+  let event: Stripe.Event
   try {
-    event = JSON.parse(body)
-  } catch {
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_not_configured')
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+  } catch (err) {
+    logger.error('Signature verification failed', {
+      source: 'billing',
+      err: err instanceof Error ? err.message : 'unknown',
+    })
+    return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
   }
 
   const db = createServerClient()
@@ -57,7 +43,7 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object
+        const session = event.data.object as any
         const userId = session.metadata?.user_id
         const plan = session.metadata?.plan
         const customerId = session.customer
@@ -99,7 +85,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'customer.subscription.updated': {
-        const subscription = event.data.object
+        const subscription = event.data.object as any
         const customerId = subscription.customer
 
         const { data: sub } = await db
@@ -128,7 +114,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object
+        const subscription = event.data.object as any
         const customerId = subscription.customer
 
         const { data: sub } = await db
@@ -153,7 +139,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'invoice.payment_failed': {
-        const invoice = event.data.object
+        const invoice = event.data.object as any
         const customerId = invoice.customer
 
         const { data: sub } = await db

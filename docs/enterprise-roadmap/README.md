@@ -12,15 +12,15 @@ Trasformare AIO Pulse da "production-grade boilerplate" a **SaaS commerciale ven
 
 ## 🗺️ Mappa dei documenti
 
-| File | Cosa contiene |
-|---|---|
-| [README.md](README.md) | Sei qui |
-| [00-mission-scope-rules.md](00-mission-scope-rules.md) | Mission, scope esplicito IN/OUT, coding standards complete, definition of done universale |
-| [01-fase-0-pulizia.md](01-fase-0-pulizia.md) | 6 task (T01-T06) — fix S1/S2 da CODE_REVIEW.md, type safety, logger, Sentry |
-| [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md) | 3 task (T07-T09) — Workspace/Org migration + audit log + scoped API keys + design schema |
-| [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md) | 5 task (T10-T14) — SSO Google/MS, MFA, Trust Center, status page, GDPR essentials |
-| [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md) | 4 task (T15-T18) — seat billing, manual invoicing, onboarding flow, API docs |
-| [task-tracker.md](task-tracker.md) | Kanban view di tutti i 18 task con stato corrente |
+| File                                                               | Cosa contiene                                                                             |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| [README.md](README.md)                                             | Sei qui                                                                                   |
+| [00-mission-scope-rules.md](00-mission-scope-rules.md)             | Mission, scope esplicito IN/OUT, coding standards complete, definition of done universale |
+| [01-fase-0-pulizia.md](01-fase-0-pulizia.md)                       | 6 task (T01-T06) — fix S1/S2 da CODE_REVIEW.md, type safety, logger, Sentry               |
+| [02-fase-1-workspace-audit.md](02-fase-1-workspace-audit.md)       | 3 task (T07-T09) — Workspace/Org migration + audit log + scoped API keys + design schema  |
+| [03-fase-2-trust-gdpr.md](03-fase-2-trust-gdpr.md)                 | 5 task (T10-T14) — SSO Google/MS, MFA, Trust Center, status page, GDPR essentials         |
+| [04-fase-3-billing-onboarding.md](04-fase-3-billing-onboarding.md) | 4 task (T15-T18) — seat billing, manual invoicing, onboarding flow, API docs              |
+| [task-tracker.md](task-tracker.md)                                 | Kanban view di tutti i 18 task con stato corrente                                         |
 
 ## 🚦 Sequenza obbligata
 
@@ -36,23 +36,23 @@ Fase 2 e Fase 3 possono partire in parallelo dopo che Fase 1 è completata. Mai 
 
 ## ⏱️ Timeline indicativa
 
-| Settimana | Fase | Output atteso |
-|---|---|---|
-| 1-4 | Fase 0 | Codebase type-safe, logger strutturato, zero console.log produzione |
-| 5-8 | Fase 1 | Organization + Workspace + AuditLog + Scoped API keys live |
-| 9-11 | Fase 2 (può parallelizzare con Fase 3) | SSO Google/MS, MFA, Trust Center, status page, GDPR self-serve |
-| 9-12 | Fase 3 (può parallelizzare con Fase 2) | Seat-based billing, onboarding wizard, API docs complete |
-| 13-14 | Buffer / polish | Bug fixes, customer feedback adjustments |
+| Settimana | Fase                                   | Output atteso                                                       |
+| --------- | -------------------------------------- | ------------------------------------------------------------------- |
+| 1-4       | Fase 0                                 | Codebase type-safe, logger strutturato, zero console.log produzione |
+| 5-8       | Fase 1                                 | Organization + Workspace + AuditLog + Scoped API keys live          |
+| 9-11      | Fase 2 (può parallelizzare con Fase 3) | SSO Google/MS, MFA, Trust Center, status page, GDPR self-serve      |
+| 9-12      | Fase 3 (può parallelizzare con Fase 2) | Seat-based billing, onboarding wizard, API docs complete            |
+| 13-14     | Buffer / polish                        | Bug fixes, customer feedback adjustments                            |
 
 ## 💰 Budget per fase
 
-| Fase | Settimane | EUR (lean) | EUR (standard) |
-|---|---|---|---|
-| Fase 0 | 3-4 | 25.000 | 40.000 |
-| Fase 1 | 3-4 | 20.000 | 30.000 |
-| Fase 2 | 2-3 | 15.000 | 25.000 |
-| Fase 3 | 2-3 | 10.000 | 15.000 |
-| **Totale** | **10-14** | **70.000** | **110.000** |
+| Fase       | Settimane | EUR (lean) | EUR (standard) |
+| ---------- | --------- | ---------- | -------------- |
+| Fase 0     | 3-4       | 25.000     | 40.000         |
+| Fase 1     | 3-4       | 20.000     | 30.000         |
+| Fase 2     | 2-3       | 15.000     | 25.000         |
+| Fase 3     | 2-3       | 10.000     | 15.000         |
+| **Totale** | **10-14** | **70.000** | **110.000**    |
 
 Stima basata su 1 senior fullstack TypeScript/React + 1 part-time devops/security. Range varia con seniority freelance vs employed.
 
@@ -88,7 +88,7 @@ A fine Fase 3, AIO Pulse dovrebbe:
 - [../../AGENTS.md](../../AGENTS.md) — istruzioni universali per coding agent (OpenCode, Cursor, Claude Code)
 - [../../README.md](../../README.md) — overview progetto
 - [../../SECURITY.md](../../SECURITY.md) — security baseline marzo 2026
-- [../../CODE_REVIEW.md](../../CODE_REVIEW.md) — issue list da Fase 0
+- CODE_REVIEW.md — issue list da Fase 0 (report storico rimosso dal repo)
 - [../../BILLING_SETUP.md](../../BILLING_SETUP.md) — Stripe config (rilevante Fase 3)
 - [../../ENVIRONMENTS.md](../../ENVIRONMENTS.md) — env vars
 

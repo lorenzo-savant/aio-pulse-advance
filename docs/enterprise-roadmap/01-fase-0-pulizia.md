@@ -6,18 +6,18 @@
 
 ## 🎯 Goal della fase
 
-Eliminare il **debito tecnico bloccante** identificato in [CODE_REVIEW.md](../../CODE_REVIEW.md) (marzo 2026) prima che si amplifichi durante l'espansione architetturale di Fase 1.
+Eliminare il **debito tecnico bloccante** identificato in CODE_REVIEW.md (marzo 2026 — report storico rimosso dal repo) prima che si amplifichi durante l'espansione architetturale di Fase 1.
 
 ## 📋 Task overview
 
-| Task | Titolo | Effort | Deps |
-|---|---|---|---|
-| T01 | Fix imports + type bypass in `onboarding/route.ts` (S1) | ✅ Already done | — |
-| T02 | Generate strong Supabase types + refactor `supabase.ts` (S1) | 1-2 giorni | — |
-| T03 | Kill residual `(db as any)` across API routes (S2) — 125+ → 1 | 0.5-1 giorno | — |
-| T04 | Structured logger: pino + PII masking + Sentry forward (S2) | 2-3 giorni | — |
-| T05 | Replace 76 `console.log/error/warn` with logger (residual S2) | 2-3 giorni | T04 |
-| T06 | CI gate: type-check + lint + test in pre-commit + PR (S3) | 1 giorno | — |
+| Task | Titolo                                                        | Effort          | Deps |
+| ---- | ------------------------------------------------------------- | --------------- | ---- |
+| T01  | Fix imports + type bypass in `onboarding/route.ts` (S1)       | ✅ Already done | —    |
+| T02  | Generate strong Supabase types + refactor `supabase.ts` (S1)  | 1-2 giorni      | —    |
+| T03  | Kill residual `(db as any)` across API routes (S2) — 125+ → 1 | 0.5-1 giorno    | —    |
+| T04  | Structured logger: pino + PII masking + Sentry forward (S2)   | 2-3 giorni      | —    |
+| T05  | Replace 76 `console.log/error/warn` with logger (residual S2) | 2-3 giorni      | T04  |
+| T06  | CI gate: type-check + lint + test in pre-commit + PR (S3)     | 1 giorno        | —    |
 
 **Totale**: ~3-4 settimane con 1 dev fulltime.
 
@@ -202,17 +202,26 @@ pnpm dev
 - Sentry release tagging: `next.config.ts` deve passare `git rev-parse HEAD` come release per sourcemap upload corretto
 - Logger pino raccomandato (più veloce di winston, native JSON, ottimo Sentry integration via `pino-sentry-transport`)
 - Setup config:
+
   ```ts
   // src/lib/logger.ts
   import pino from 'pino'
-  
+
   const redactPaths = [
-    '*.password', '*.apiKey', '*.token', '*.authorization',
-    'email', 'password', 'apiKey', 'token',
-    'headers.authorization', 'headers.cookie',
-    'body.password', 'body.apiKey',
+    '*.password',
+    '*.apiKey',
+    '*.token',
+    '*.authorization',
+    'email',
+    'password',
+    'apiKey',
+    'token',
+    'headers.authorization',
+    'headers.cookie',
+    'body.password',
+    'body.apiKey',
   ]
-  
+
   export const logger = pino({
     level: process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
     redact: { paths: redactPaths, censor: '[REDACTED]' },

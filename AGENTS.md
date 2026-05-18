@@ -20,6 +20,7 @@ Trasformare AIO Pulse da "production-grade boilerplate" a **SaaS commerciale ven
 **Target segment**: agenzie marketing, SMB ($199-499/mese), prosumer ($49-99/mese), team mid-market via founder-led sales con quote custom.
 
 **Esplicitamente fuori scope** (non costruire, non proporre, non aggiungere):
+
 - ❌ SAML 2.0 SSO (Google + Microsoft OAuth bastano per il target)
 - ❌ SCIM 2.0 provisioning
 - ❌ SOC 2 / ISO 27001 / penetration test esterno
@@ -34,12 +35,12 @@ Se senti la tentazione di aggiungere uno di questi: **stop, chiedi conferma all'
 
 ## 3. Le 4 fasi della roadmap
 
-| Fase | Titolo | Durata | File con i task |
-|---|---|---|---|
-| **0** | Pulizia tecnica (prerequisito) | 3-4 sett | [01-fase-0-pulizia.md](docs/enterprise-roadmap/01-fase-0-pulizia.md) |
-| **1** | Workspace tier + audit log + scoped API keys | 3-4 sett | [02-fase-1-workspace-audit.md](docs/enterprise-roadmap/02-fase-1-workspace-audit.md) |
-| **2** | SSO + MFA + Trust Center + GDPR + status page | 2-3 sett | [03-fase-2-trust-gdpr.md](docs/enterprise-roadmap/03-fase-2-trust-gdpr.md) |
-| **3** | Seat billing + onboarding + API docs | 2-3 sett | [04-fase-3-billing-onboarding.md](docs/enterprise-roadmap/04-fase-3-billing-onboarding.md) |
+| Fase  | Titolo                                        | Durata   | File con i task                                                                            |
+| ----- | --------------------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| **0** | Pulizia tecnica (prerequisito)                | 3-4 sett | [01-fase-0-pulizia.md](docs/enterprise-roadmap/01-fase-0-pulizia.md)                       |
+| **1** | Workspace tier + audit log + scoped API keys  | 3-4 sett | [02-fase-1-workspace-audit.md](docs/enterprise-roadmap/02-fase-1-workspace-audit.md)       |
+| **2** | SSO + MFA + Trust Center + GDPR + status page | 2-3 sett | [03-fase-2-trust-gdpr.md](docs/enterprise-roadmap/03-fase-2-trust-gdpr.md)                 |
+| **3** | Seat billing + onboarding + API docs          | 2-3 sett | [04-fase-3-billing-onboarding.md](docs/enterprise-roadmap/04-fase-3-billing-onboarding.md) |
 
 **Vincolo di sequenza**: Fase 0 → Fase 1 → Fase 2/3 (queste due possono parallelizzare).
 
@@ -125,7 +126,7 @@ In tutti gli altri casi: procedi, documenta, apri PR.
 
 ## 9. Stato delle issue note (CODE_REVIEW.md, Marzo 2026)
 
-Prima di iniziare lavoro su Fase 1+, fixare i blocker del [CODE_REVIEW.md](CODE_REVIEW.md):
+Prima di iniziare lavoro su Fase 1+, fixare i blocker (da CODE_REVIEW.md, marzo 2026 — report storico rimosso dal repo):
 
 - **3 critical (S1)**: import broken in `onboarding/route.ts`, type bypass `(db as any)`, supabase return types weak → tutto in [Task T01-T02 di Fase 0](docs/enterprise-roadmap/01-fase-0-pulizia.md)
 - **5 errors (S2)**: 125+ `(db as any)`, 116+ `console.log`, promise non gestite, API key leak in error log → [Task T03-T05 di Fase 0](docs/enterprise-roadmap/01-fase-0-pulizia.md)
@@ -160,16 +161,14 @@ Quando inizi una sessione su questo progetto:
 
 ## 12. Documenti tecnici di riferimento (già esistenti nel repo)
 
-| Doc | Quando consultarlo |
-|---|---|
-| [README.md](README.md) | Overview + setup base |
-| [SECURITY.md](SECURITY.md) | Stato sicurezza marzo 2026, baseline da migliorare |
-| [CODE_REVIEW.md](CODE_REVIEW.md) | Issue list S1-S4 da fixare in Fase 0 |
-| [BILLING_SETUP.md](BILLING_SETUP.md) | Configurazione Stripe (test + live) |
-| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Deploy procedures Vercel |
-| [ENVIRONMENTS.md](ENVIRONMENTS.md) | Environment variables management |
-| [API_TEST_REPORT.md](API_TEST_REPORT.md) | API contract baseline |
-| [GUIDA_ENCRYPTION_GENERATOR.md](GUIDA_ENCRYPTION_GENERATOR.md) | Encryption tooling docs |
+| Doc                                                            | Quando consultarlo                                 |
+| -------------------------------------------------------------- | -------------------------------------------------- |
+| [README.md](README.md)                                         | Overview + setup base                              |
+| [SECURITY.md](SECURITY.md)                                     | Stato sicurezza marzo 2026, baseline da migliorare |
+| [BILLING_SETUP.md](BILLING_SETUP.md)                           | Configurazione Stripe (test + live)                |
+| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)                     | Deploy procedures Vercel                           |
+| [ENVIRONMENTS.md](ENVIRONMENTS.md)                             | Environment variables management                   |
+| [GUIDA_ENCRYPTION_GENERATOR.md](GUIDA_ENCRYPTION_GENERATOR.md) | Encryption tooling docs                            |
 
 ## 13. Contesto cliente
 

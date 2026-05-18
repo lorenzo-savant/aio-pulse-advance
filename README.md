@@ -91,7 +91,6 @@ To target a different market without code changes, set any of:
 | [docs/enterprise-roadmap/03-fase-2-trust-gdpr.md](docs/enterprise-roadmap/03-fase-2-trust-gdpr.md)                 | Phase 2: SSO, MFA, Trust Center, GDPR (T10-T14)                                        |
 | [docs/enterprise-roadmap/04-fase-3-billing-onboarding.md](docs/enterprise-roadmap/04-fase-3-billing-onboarding.md) | Phase 3: Billing, Onboarding, API Docs (T15-T18)                                       |
 | [docs/enterprise-roadmap/task-tracker.md](docs/enterprise-roadmap/task-tracker.md)                                 | Live Kanban board for all 18 tasks                                                     |
-| [CODE_REVIEW.md](CODE_REVIEW.md)                                                                                   | Known issues from March 2026 code review                                               |
 | [BILLING_SETUP.md](BILLING_SETUP.md)                                                                               | Stripe configuration (test + live)                                                     |
 | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)                                                                         | Vercel deployment procedures                                                           |
 | [SECURITY.md](SECURITY.md)                                                                                         | Security baseline                                                                      |

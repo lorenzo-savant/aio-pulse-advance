@@ -27,9 +27,9 @@ const schema = z.object({
   seedPrompts: z.boolean().optional().default(true),
 })
 
-// Categorie default per il primo seed di prompts post-onboarding.
-// Coprono il funnel di intent base (discovery → comparison → recommendation)
-// per dare al nuovo utente dati interessanti al primo scan.
+// Default categories for the first prompt seed after onboarding.
+// They cover the base intent funnel (discovery → comparison → recommendation)
+// to give the new user interesting data on the first scan.
 const DEFAULT_SEED_CATEGORIES = ['discovery', 'comparison', 'recommendation'] as const
 const DEFAULT_ENGINES = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
 

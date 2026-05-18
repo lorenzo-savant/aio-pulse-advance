@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(engines.length)
 
-  // ── FIX N+1: fetch alert rules UNA VOLTA sola prima del loop ─────────────
+  // ── FIX N+1: fetch alert rules ONCE before the loop ─────────────────────
   const { data: rules } = await db
     .from('alert_rules')
     .select('*')
@@ -283,7 +283,7 @@ export async function POST(req: NextRequest) {
 
         results.push(saved as unknown as MonitoringResult)
 
-        // ── Evaluate alert rules (usa rules già fetchate) ───────────────────
+        // ── Evaluate alert rules (use already-fetched rules) ────────────────
         if (rules && rules.length > 0) {
           const previousResult = (previousResults as unknown as MonitoringResult[])?.find(
             (r) => r.engine === engine,

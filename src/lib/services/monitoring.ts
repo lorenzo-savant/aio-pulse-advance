@@ -137,7 +137,7 @@ export async function runMonitoringCheck(
   let analysis: AnalysisOutput
   try {
     const rawParsed = parseJson<unknown>(analysisRaw)
-    // Zod valida e applica defaults — nessun campo silenziosamente undefined
+    // Zod validates and applies defaults — no field silently undefined
     analysis = analysisOutputSchema.parse(rawParsed)
   } catch (e) {
     throw new Error(

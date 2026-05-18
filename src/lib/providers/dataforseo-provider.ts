@@ -1,5 +1,6 @@
 import type { AIProviderRequest, AIProviderResult } from './types'
 import { BaseProvider } from './base-provider'
+import { GEO } from '@/lib/geo-config'
 
 export interface DataForSEOResult extends AIProviderResult {
   aiOverviews?: Array<{
@@ -28,9 +29,12 @@ interface DataForSEOConfig {
   depth?: number
 }
 
+// Geo target is driven by GEO (default: Sweden 2752/sv) so SERP / Google
+// AI Overview results represent the configured market, independent of the
+// serverless egress IP (DataForSEO geolocates server-side by location_code).
 const DEFAULT_CONFIG: DataForSEOConfig = {
-  location_code: 2840,
-  language_code: 'en',
+  location_code: GEO.dataForSeoLocationCode,
+  language_code: GEO.dataForSeoLanguageCode,
   device: 'desktop',
   depth: 10,
 }
@@ -234,8 +238,8 @@ export class DataForSEOProvider extends BaseProvider {
 
   async getKeywordSuggestions(
     keyword: string,
-    locationCode = 2840,
-    languageCode = 'en',
+    locationCode = GEO.dataForSeoLocationCode,
+    languageCode = GEO.dataForSeoLanguageCode,
   ): Promise<
     {
       keyword: string
@@ -290,8 +294,8 @@ export class DataForSEOProvider extends BaseProvider {
 
   async getKeywordIdeas(
     seedKeywords: string[],
-    locationCode = 2840,
-    languageCode = 'en',
+    locationCode = GEO.dataForSeoLocationCode,
+    languageCode = GEO.dataForSeoLanguageCode,
     limit = 100,
   ): Promise<
     {

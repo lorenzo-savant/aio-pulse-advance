@@ -2,6 +2,7 @@ import type { AnalysisResult, EngineId, IntentType } from '@/types'
 import { generateId } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { safeFetch } from '@/lib/utils/safe-fetch'
+import { GEO } from '@/lib/geo-config'
 
 // ─── SSRF Protection ───────────────────────────────────────────────────────────
 
@@ -79,6 +80,8 @@ export function buildAnalysisPrompt(content: string, engine: EngineId): string {
   }
 
   return `You are an expert in AIO (AI Optimization), AEO (Answer Engine Optimization), and GEO (Generative Engine Optimization). Analyze the following content for visibility and citation potential in ${engineContext[engine]}.
+
+MARKET CONTEXT: Evaluate specifically for the ${GEO.marketName} market and ${GEO.languageName}-language queries. Assume the target audience searches from ${GEO.marketName}. Do not assume a US/English-default context.
 
 CONTENT TO ANALYZE:
 """

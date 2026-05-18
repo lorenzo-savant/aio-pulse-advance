@@ -3,6 +3,7 @@ import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
+import { geoMethodologyNote } from '@/lib/geo-config'
 import {
   calculateAVIFromResults,
   calculateDomainSOAIV,
@@ -331,6 +332,11 @@ function generateHtmlReport(
     ${competitors.length > 0 ? `<div class="section">${competitorHtml}</div>` : ''}
 
     ${Object.keys(heatmap).length > 0 ? `<div class="section">${heatmapHtml}</div>` : ''}
+
+    <div class="section">
+      <h2>${locale === 'it' ? 'Metodologia e Limitazioni' : locale === 'sv' ? 'Metodik och Begränsningar' : 'Methodology & Limitations'}</h2>
+      <p style="font-size:13px;color:${mutedColor};line-height:1.6">${esc(geoMethodologyNote(locale))}</p>
+    </div>
 
     <div class="footer">
       ${t.generated} AIO Pulse | ${new Date().toISOString().split('T')[0]}

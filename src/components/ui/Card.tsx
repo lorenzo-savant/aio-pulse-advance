@@ -19,7 +19,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       className={cn(
         'relative overflow-hidden rounded-[20px] bg-card text-card-foreground shadow-lg',
         'transition-all duration-200 ease-out',
-        'dark:border dark:border-border/50',
+        'dark:border-border/50 dark:border',
         interactive && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-xl',
         glow && 'hover:shadow-[0_0_20px_-5px_rgba(67,24,255,0.3)]',
         className,

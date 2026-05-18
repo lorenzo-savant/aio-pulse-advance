@@ -71,8 +71,8 @@ export function AVIScoreCard({ brandId }: { brandId?: string }) {
 
   if (loading) {
     return (
-      <Card className="p-6 animate-pulse">
-        <div className="h-40 rounded bg-foreground/5" />
+      <Card className="animate-pulse p-6">
+        <div className="bg-foreground/5 h-40 rounded" />
       </Card>
     )
   }
@@ -81,14 +81,14 @@ export function AVIScoreCard({ brandId }: { brandId?: string }) {
 
   return (
     <Card className="p-6">
-      <div className="flex items-start justify-between mb-4">
+      <div className="mb-4 flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-foreground/60">AI Visibility Index</p>
+          <p className="text-foreground/60 text-sm font-medium">AI Visibility Index</p>
           <div className="mt-1 flex items-baseline gap-2">
             <span className={`text-4xl font-bold ${getScoreColor(data.avi)}`}>
               {data.avi.toFixed(1)}
             </span>
-            <span className="text-sm text-foreground/40">/100</span>
+            <span className="text-foreground/40 text-sm">/100</span>
           </div>
         </div>
         {data.delta !== 0 && (
@@ -119,7 +119,7 @@ export function AVIScoreCard({ brandId }: { brandId?: string }) {
                 </span>
                 <span className="font-medium">{percentage.toFixed(0)}%</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-foreground/10">
+              <div className="bg-foreground/10 h-2 overflow-hidden rounded-full">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${getBarColor(percentage)}`}
                   style={{ width: `${percentage}%` }}
@@ -131,7 +131,7 @@ export function AVIScoreCard({ brandId }: { brandId?: string }) {
       </div>
 
       {data.date && (
-        <p className="mt-4 text-xs text-foreground/40">
+        <p className="text-foreground/40 mt-4 text-xs">
           Last updated: {new Date(data.date).toLocaleDateString()}
         </p>
       )}

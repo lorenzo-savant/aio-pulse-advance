@@ -92,7 +92,10 @@ const REDACT_PATHS = [
 //   - everything else (development, test, preview): 'debug'
 function resolveLevel(): pino.LevelWithSilent {
   const envLevel = process.env['LOG_LEVEL']
-  if (envLevel && ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(envLevel)) {
+  if (
+    envLevel &&
+    ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'].includes(envLevel)
+  ) {
     return envLevel as pino.LevelWithSilent
   }
   return process.env.NODE_ENV === 'production' ? 'info' : 'debug'

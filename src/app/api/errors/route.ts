@@ -34,20 +34,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid error event' }, { status: 400 })
     }
 
+    // ── M-6: this is an UNAUTHENTICATED client beacon. Treat all body fields
+    // as hostile to prevent log / observability poisoning.
+    const UUID_RE = /^[0-9a-fA-F-]{36}$/
+    const truncate = (v: unknown, max: number): string => String(v ?? '').slice(0, max)
+
+    // Cap/sanitize free-text fields.
+    const safeName = truncate(event.name, 500)
+    const safeMessage = truncate(event.message, 2000)
+    const safeStack = event.stack != null ? truncate(event.stack, 8000) : undefined
+    const safeUrl = truncate(event.url, 2000)
+
+    // Do not trust client-supplied identifiers unless they look like UUIDs.
+    const safeUserId =
+      typeof event.userId === 'string' && UUID_RE.test(event.userId) ? event.userId : null
+    const safeBrandId =
+      typeof event.brandId === 'string' && UUID_RE.test(event.brandId) ? event.brandId : null
+
+    // Cap tags to an object/array with at most ~20 entries; drop otherwise.
+    let safeTags: ClientErrorEvent['tags'] | undefined
+    if (event.tags && typeof event.tags === 'object') {
+      const entries = Object.entries(event.tags as Record<string, unknown>)
+      if (entries.length <= 20) {
+        safeTags = Object.fromEntries(
+          entries.map(([k, val]) => [truncate(k, 200), truncate(val, 500)]),
+        )
+      }
+    }
+
     const logEntry = {
       event_type: 'client_error',
-      user_id: event.userId,
-      brand_id: event.brandId,
-      ip_address:
-        req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('cf-connecting-ip'),
-      user_agent: event.userAgent,
+      user_id: safeUserId,
+      brand_id: safeBrandId,
+      ip_address: clientIp,
+      user_agent: truncate(event.userAgent, 500),
       event_data: {
-        name: event.name,
-        message: event.message,
-        stack: event.stack,
-        url: event.url,
+        name: safeName,
+        message: safeMessage,
+        stack: safeStack,
+        url: safeUrl,
         severity: event.severity,
-        tags: event.tags,
+        tags: safeTags,
       },
       severity: event.severity,
     }
@@ -64,7 +91,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (event.severity === 'critical' || event.severity === 'high') {
-      logger.error('Critical client error', { source: 'errors', name: event.name, message: event.message, severity: event.severity })
+      logger.error('Critical client error', {
+        source: 'errors',
+        name: safeName,
+        message: safeMessage,
+        severity: event.severity,
+      })
     }
 
     return NextResponse.json({ success: true })

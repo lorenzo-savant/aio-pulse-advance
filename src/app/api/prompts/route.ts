@@ -116,7 +116,10 @@ export async function POST(req: NextRequest) {
 
   const parsed = promptSchema.safeParse(body)
   if (!parsed.success) {
-    logger.debug('Validation failed', { source: 'prompts', errors: parsed.error.flatten().fieldErrors })
+    logger.debug('Validation failed', {
+      source: 'prompts',
+      errors: parsed.error.flatten().fieldErrors,
+    })
     return NextResponse.json(
       {
         success: false,

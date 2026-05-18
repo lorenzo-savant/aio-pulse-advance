@@ -104,10 +104,16 @@ export default function BrandEditPage() {
           language: form.language,
           color: form.color,
           aliases: form.aliases
-            ? form.aliases.split(',').map((s) => s.trim()).filter(Boolean)
+            ? form.aliases
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [],
           competitors: form.competitors
-            ? form.competitors.split(',').map((s) => s.trim()).filter(Boolean)
+            ? form.competitors
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
             : [],
         }),
       })
@@ -208,9 +214,7 @@ export default function BrandEditPage() {
             <select
               className="input"
               value={form.language}
-              onChange={(e) =>
-                setForm({ ...form, language: e.target.value as BrandLanguage })
-              }
+              onChange={(e) => setForm({ ...form, language: e.target.value as BrandLanguage })}
             >
               {LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>
@@ -223,7 +227,8 @@ export default function BrandEditPage() {
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
                   Changing language won&apos;t re-translate existing prompts. After saving,
-                  you&apos;ll be offered to re-seed prompts in <strong>{form.language.toUpperCase()}</strong>.
+                  you&apos;ll be offered to re-seed prompts in{' '}
+                  <strong>{form.language.toUpperCase()}</strong>.
                 </span>
               </div>
             )}
@@ -275,18 +280,15 @@ export default function BrandEditPage() {
                 Re-seed prompts in {form.language.toUpperCase()}?
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Your existing prompts are still in the old language. Re-seed to generate
-                fresh prompts from the template library in your new market language.
-                Existing unique prompts won&apos;t be duplicated.
+                Your existing prompts are still in the old language. Re-seed to generate fresh
+                prompts from the template library in your new market language. Existing unique
+                prompts won&apos;t be duplicated.
               </p>
               <div className="mt-4 flex gap-2">
                 <Button onClick={handleReseed} loading={saving}>
                   Re-seed prompts
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push(`/dashboard/brands/${brandId}`)}
-                >
+                <Button variant="ghost" onClick={() => router.push(`/dashboard/brands/${brandId}`)}>
                   Skip for now
                 </Button>
               </div>

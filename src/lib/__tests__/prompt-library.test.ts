@@ -61,11 +61,7 @@ describe('PROMPT_TEMPLATES catalogue', () => {
   })
 })
 
-function makeTemplate(
-  en: string,
-  it: string = en,
-  sv: string = en,
-): PromptTemplate {
+function makeTemplate(en: string, it: string = en, sv: string = en): PromptTemplate {
   return {
     id: 'TEST',
     category: 'discovery',

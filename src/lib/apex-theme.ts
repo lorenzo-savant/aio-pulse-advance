@@ -75,9 +75,7 @@ export function getHorizonChartOptions(isDark: boolean): ApexOptions {
       labels: { colors: isDark ? '#CBD5E0' : '#A3AED0' },
       itemMargin: { horizontal: 12 },
     },
-    responsive: [
-      { breakpoint: 768, options: { chart: { height: 250 } } },
-    ],
+    responsive: [{ breakpoint: 768, options: { chart: { height: 250 } } }],
   }
 }
 
@@ -165,8 +163,6 @@ export function getHorizonPieOptions(isDark: boolean): ApexOptions {
         },
       },
     },
-    responsive: [
-      { breakpoint: 768, options: { chart: { height: 250 } } },
-    ],
+    responsive: [{ breakpoint: 768, options: { chart: { height: 250 } } }],
   }
 }

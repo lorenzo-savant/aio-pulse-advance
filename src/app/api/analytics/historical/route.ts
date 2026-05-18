@@ -9,6 +9,7 @@ import {
   autoGenerateSnapshots,
 } from '@/lib/services/analytics-service'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
@@ -52,9 +53,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Verify user has access to brand
-  const { data: brand } = await db.from('brands').select('id, user_id').eq('id', brandId).single()
-
-  if (!brand || brand.user_id !== userId) {
+  if (!(await verifyBrandAccess(brandId, userId))) {
     return err('Brand not found or access denied', 404)
   }
 

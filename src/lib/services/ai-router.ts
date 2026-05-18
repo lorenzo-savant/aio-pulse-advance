@@ -95,7 +95,7 @@ export async function simulateEngineResponse(
   promptText: string,
   engine: MonitoringEngine,
   language: PromptLang = 'en',
-): Promise<{ text: string; provider: string; citations?: string[] }> {
+): Promise<{ text: string; provider: string; citations?: string[]; retrieval: 'live' | 'model-memory' }> {
   const enginePersona: Record<MonitoringEngine, string> = {
     chatgpt: `You are ChatGPT. Respond in ${LANGUAGE_LABEL[language]} naturally and fluently, as if answering a user from that market. Include relevant brands, products, and services that would be recognized locally.`,
     gemini: `You are Google Gemini. Respond in ${LANGUAGE_LABEL[language]} with well-structured, factual information. Include brands and services relevant to that language's market.`,
@@ -109,7 +109,7 @@ export async function simulateEngineResponse(
   if (engine === 'chatgpt' && isOpenAIAvailable()) {
     try {
       const text = await callOpenAI(fullPrompt)
-      return { text, provider: 'openai:gpt-4o-mini' }
+      return { text, provider: 'openai:gpt-4o-mini', retrieval: 'model-memory' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`OpenAI: ${msg}`)
@@ -121,7 +121,7 @@ export async function simulateEngineResponse(
     // Try Google Search grounding first, fall back to plain generate.
     try {
       const { text, citations } = await callGeminiWithSearch(fullPrompt)
-      return { text, provider: 'gemini:flash-2.0+search', citations }
+      return { text, provider: 'gemini:flash-2.0+search', citations, retrieval: 'live' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Gemini (search): ${msg}`)
@@ -132,7 +132,7 @@ export async function simulateEngineResponse(
       })
       try {
         const text = await callGeminiFallback(fullPrompt)
-        return { text, provider: 'gemini:flash-2.0' }
+        return { text, provider: 'gemini:flash-2.0', retrieval: 'model-memory' }
       } catch (e2) {
         errors.push(`Gemini: ${e2 instanceof Error ? e2.message : String(e2)}`)
       }
@@ -142,7 +142,7 @@ export async function simulateEngineResponse(
   if (engine === 'perplexity' && isPerplexityAvailable()) {
     try {
       const { text, citations } = await callPerplexityWithCitations(fullPrompt)
-      return { text, provider: 'perplexity:sonar', citations }
+      return { text, provider: 'perplexity:sonar', citations, retrieval: 'live' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Perplexity: ${msg}`)
@@ -153,7 +153,7 @@ export async function simulateEngineResponse(
   if (engine === 'claude' && isAnthropicAvailable()) {
     try {
       const text = await callAnthropic(fullPrompt)
-      return { text, provider: 'anthropic:claude-sonnet' }
+      return { text, provider: 'anthropic:claude-sonnet', retrieval: 'model-memory' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Anthropic: ${msg}`)
@@ -165,7 +165,7 @@ export async function simulateEngineResponse(
   if (isGeminiAvailable()) {
     try {
       const text = await callGeminiFallback(fullPrompt)
-      return { text, provider: 'gemini:flash-2.0' }
+      return { text, provider: 'gemini:flash-2.0', retrieval: 'model-memory' }
     } catch (e) {
       errors.push(`Gemini fallback: ${e instanceof Error ? e.message : String(e)}`)
     }

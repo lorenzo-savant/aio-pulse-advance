@@ -1,3 +1,5 @@
+import { safeFetchText } from '@/lib/utils/safe-fetch'
+
 export interface BrandIntel {
   name: string
   description: string
@@ -66,23 +68,22 @@ const isSafeUrl = (url: string): boolean => {
 }
 
 export async function fetchHtmlContent(url: string): Promise<string> {
-  if (!isSafeUrl(url)) {
-    throw new Error('URL is not allowed for security reasons')
-  }
-
-  const res = await fetch(url, {
+  // Single hardened SSRF gate (private/loopback/metadata + obfuscated-IP +
+  // per-hop redirect validation + response size cap) — see safe-fetch.ts.
+  const { text, response } = await safeFetchText(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; AIO-Pulse/1.0)',
       Accept: 'text/html,application/xhtml+xml',
     },
-    signal: AbortSignal.timeout(15000),
+    timeout: 15000,
+    maxBytes: 5 * 1024 * 1024,
   })
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch ${url}: ${res.status}`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status}`)
   }
 
-  return res.text()
+  return text
 }
 
 export function extractTextFromHtml(html: string): string {

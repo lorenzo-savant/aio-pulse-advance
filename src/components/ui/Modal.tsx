@@ -22,13 +22,13 @@ export function Modal({ open, onOpenChange, children, className }: ModalProps) {
           />
           <div
             className={cn(
-              'animate-in zoom-in-95 relative z-10 w-full max-w-lg rounded-2xl border border-surface-input-border bg-card p-6 shadow-2xl',
+              'animate-in zoom-in-95 border-surface-input-border relative z-10 w-full max-w-lg rounded-2xl border bg-card p-6 shadow-2xl',
               className,
             )}
           >
             <button
               onClick={() => onOpenChange(false)}
-              className="absolute right-4 top-4 rounded-lg p-1 text-text-muted-surface hover:bg-surface-row-hover hover:text-text-on-surface"
+              className="text-text-muted-surface hover:bg-surface-row-hover hover:text-text-on-surface absolute right-4 top-4 rounded-lg p-1"
             >
               <X className="h-4 w-4" />
             </button>
@@ -57,7 +57,7 @@ export function ModalTitle({
   className?: string
   children: React.ReactNode
 }) {
-  return <h2 className={cn('text-xl font-bold text-text-on-surface', className)}>{children}</h2>
+  return <h2 className={cn('text-text-on-surface text-xl font-bold', className)}>{children}</h2>
 }
 
 export function ModalBody({

@@ -34,9 +34,13 @@ export function buildCspHeader(nonce: string): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' https://va.vercel-scripts.com${isDev ? " 'unsafe-eval'" : ''}`,
+    // 'unsafe-inline' is retained for style-src because Tailwind (and Next.js
+    // critical-CSS inlining) inject inline <style>/style attributes at runtime;
+    // a nonce/hash cannot cover them without breaking styling. Scripts remain
+    // nonce-locked above, so this does not weaken script-injection defenses.
     "style-src 'self' 'unsafe-inline'",
     "connect-src 'self' https://*.supabase.co https://*.vercel.com https://*.vercel.app https://vitals.vercel-insights.com https://api.openai.com https://generativelanguage.googleapis.com https://api.perplexity.ai https://api.anthropic.com",
-    "img-src 'self' data: https:",
+    "img-src 'self' data: https://*.supabase.co https://*.vercel.app",
     "font-src 'self' data:",
     "frame-ancestors 'none'",
   ].join('; ')

@@ -101,12 +101,7 @@ export async function getCurrentUserId(
   const devUserId = process.env.DEV_USER_ID
   const isProductionRuntime =
     process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production'
-  if (
-    devUserId &&
-    !isProductionRuntime &&
-    !authHeader &&
-    !cookieHeader?.includes('sb-')
-  ) {
+  if (devUserId && !isProductionRuntime && !authHeader && !cookieHeader?.includes('sb-')) {
     logger.info('[auth] Using DEV_USER_ID', { devUserId })
     return devUserId
   }
@@ -152,8 +147,9 @@ export async function getCurrentUserId(
     }
   }
 
-  // Fallback to dev user in development mode
-  if (devUserId) {
+  // Fallback to dev user in development mode — NEVER active in production.
+  // Mirrors the isProductionRuntime guard on the earlier dev branch (defense in depth).
+  if (devUserId && !isProductionRuntime) {
     logger.info('[auth] Falling back to DEV_USER_ID', { devUserId })
     return devUserId
   }

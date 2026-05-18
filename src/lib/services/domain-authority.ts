@@ -50,7 +50,10 @@ export async function calculateDomainAuthority(brandId: string, userId: string):
   }
 }
 
-async function fetchBrandMetrics(db: TypedSupabaseClient, brandId: string): Promise<BrandMetrics | null> {
+async function fetchBrandMetrics(
+  db: TypedSupabaseClient,
+  brandId: string,
+): Promise<BrandMetrics | null> {
   // Get snapshots for the past 30 days
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -79,7 +82,10 @@ async function fetchBrandMetrics(db: TypedSupabaseClient, brandId: string): Prom
     .gte('created_at', thirtyDaysAgo.toISOString())
 
   if (resultsError) {
-    logger.error('Error fetching monitoring results', { service: 'domain-authority', error: resultsError })
+    logger.error('Error fetching monitoring results', {
+      service: 'domain-authority',
+      error: resultsError,
+    })
   }
 
   // Get latest snapshot for competitor rates
@@ -107,8 +113,7 @@ async function fetchBrandMetrics(db: TypedSupabaseClient, brandId: string): Prom
   const hallucinationResults = results?.filter((r) => r.brand_mentioned) || []
   const hallucinationRate =
     hallucinationResults.length > 0
-      ? hallucinationResults.filter((r) => r.has_hallucination).length /
-        hallucinationResults.length
+      ? hallucinationResults.filter((r) => r.has_hallucination).length / hallucinationResults.length
       : 0
 
   // Calculate engine consistency (how evenly distributed across engines)

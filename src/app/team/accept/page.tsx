@@ -18,7 +18,7 @@ function AcceptContent() {
 
   useEffect(() => {
     if (!token && typeof window !== 'undefined') {
-const saved = sessionStorage.getItem('pending_invite_token')
+      const saved = sessionStorage.getItem('pending_invite_token')
       if (saved) {
         sessionStorage.removeItem('pending_invite_token')
         router.replace(`/team/accept?token=${saved}`)
@@ -46,7 +46,7 @@ const saved = sessionStorage.getItem('pending_invite_token')
       } = await supabase.auth.getSession()
 
       if (!session) {
-if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined') {
           sessionStorage.setItem('pending_invite_token', token || '')
         }
         const loginUrl = `/auth/login?redirect=${encodeURIComponent(`/team/accept?token=${token}`)}`
@@ -80,25 +80,25 @@ if (typeof window !== 'undefined') {
   }, [token])
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-page-bg p-4">
+    <div className="bg-page-bg relative flex min-h-screen items-center justify-center p-4">
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <Card className="w-full max-w-md border border-surface-input-border bg-card p-8">
+      <Card className="border-surface-input-border w-full max-w-md border bg-card p-8">
         <div className="text-center">
           {status === 'loading' && (
             <>
-              <Loader2 className="mx-auto h-12 w-12 animate-spin text-brand-400" />
-              <h2 className="mt-4 text-xl font-bold text-text-on-surface">Accepting Invitation</h2>
-              <p className="mt-2 text-text-muted-surface">{message}</p>
+              <Loader2 className="text-brand-400 mx-auto h-12 w-12 animate-spin" />
+              <h2 className="text-text-on-surface mt-4 text-xl font-bold">Accepting Invitation</h2>
+              <p className="text-text-muted-surface mt-2">{message}</p>
             </>
           )}
 
           {status === 'success' && (
             <>
               <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
-              <h2 className="mt-4 text-xl font-bold text-text-on-surface">Welcome!</h2>
-              <p className="mt-2 text-text-muted-surface">{message}</p>
+              <h2 className="text-text-on-surface mt-4 text-xl font-bold">Welcome!</h2>
+              <p className="text-text-muted-surface mt-2">{message}</p>
               <Button onClick={() => router.push('/dashboard')} className="mt-6">
                 Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -108,8 +108,8 @@ if (typeof window !== 'undefined') {
           {status === 'error' && (
             <>
               <XCircle className="mx-auto h-12 w-12 text-red-400" />
-              <h2 className="mt-4 text-xl font-bold text-text-on-surface">Unable to Accept</h2>
-              <p className="mt-2 text-text-muted-surface">{message}</p>
+              <h2 className="text-text-on-surface mt-4 text-xl font-bold">Unable to Accept</h2>
+              <p className="text-text-muted-surface mt-2">{message}</p>
               <div className="mt-6 flex justify-center gap-3">
                 <Button variant="outline" onClick={() => router.push('/login')}>
                   Sign In
@@ -128,8 +128,8 @@ export default function AcceptInvitationPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-page-bg">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+        <div className="bg-page-bg flex min-h-screen items-center justify-center">
+          <Loader2 className="text-brand-400 h-8 w-8 animate-spin" />
         </div>
       }
     >

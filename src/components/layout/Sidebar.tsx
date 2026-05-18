@@ -433,6 +433,13 @@ export function Sidebar() {
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>
+          <Link
+            href="/trust"
+            className="mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            Trust Center
+          </Link>
         </div>
       </aside>
 
@@ -492,6 +499,14 @@ export function Sidebar() {
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </Button>
+              <Link
+                href="/trust"
+                className="mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Shield className="h-3.5 w-3.5" />
+                Trust Center
+              </Link>
             </div>
           </motion.aside>
         )}

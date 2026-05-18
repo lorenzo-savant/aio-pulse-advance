@@ -10,7 +10,12 @@ function err(message: string, status = 500) {
 }
 
 const acceptSchema = z.object({
-  token: z.string(),
+  // Tokens are 32-byte hex (crypto.randomBytes(32).toString('hex') = 64 chars).
+  token: z
+    .string()
+    .min(32)
+    .max(128)
+    .regex(/^[A-Fa-f0-9]+$/, 'Malformed token'),
 })
 
 export async function POST(req: NextRequest) {
@@ -28,7 +33,10 @@ export async function POST(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 
@@ -42,7 +50,11 @@ export async function POST(req: NextRequest) {
   const parsed = acceptSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: formatValidationError(parsed.error), details: parsed.error.flatten().fieldErrors },
+      {
+        success: false,
+        message: formatValidationError(parsed.error),
+        details: parsed.error.flatten().fieldErrors,
+      },
       { status: 422 },
     )
   }
@@ -66,6 +78,21 @@ export async function POST(req: NextRequest) {
     return err('Invitation has expired', 400)
   }
 
+  // Invitation must still be pending (not already accepted/revoked) — reject
+  // replay of a previously-consumed token.
+  if (invitation.status && invitation.status !== 'pending') {
+    return err('Invitation is no longer valid', 400)
+  }
+
+  // The authenticated account's email MUST match the invited email — prevents
+  // any logged-in user who obtains a token from binding it to their account.
+  const { data: authUser } = await db.auth.admin.getUserById(userId)
+  const callerEmail = authUser?.user?.email?.toLowerCase() ?? null
+  if (!callerEmail || callerEmail !== String(invitation.email).toLowerCase()) {
+    logger.warn('Invitation email mismatch', { source: 'invitations' })
+    return err('This invitation was issued for a different email address', 403)
+  }
+
   const { data: brand } = await db
     .from('brands')
     .select('id, name, user_id')
@@ -87,6 +114,27 @@ export async function POST(req: NextRequest) {
     return err('You are already a team member', 400)
   }
 
+  // Atomically claim the invitation: only one concurrent request can flip
+  // pending→accepted. If no row comes back, the token was already consumed.
+  const { data: claimed, error: claimError } = await db
+    .from('brand_invitations')
+    .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+    .eq('id', invitation.id)
+    .eq('status', 'pending')
+    .select('id')
+    .maybeSingle()
+
+  if (claimError) {
+    logger.error('Failed to claim invitation', {
+      source: 'invitations',
+      error: String(claimError),
+    })
+    return err('Failed to accept invitation')
+  }
+  if (!claimed) {
+    return err('Invitation is no longer valid', 400)
+  }
+
   const { error: memberError } = await db.from('team_members').insert({
     brand_id: invitation.brand_id,
     user_id: userId,
@@ -96,20 +144,17 @@ export async function POST(req: NextRequest) {
     status: 'active',
   })
 
-  if (memberError) return err(memberError.message)
-
-  const { error: updateError } = await db
-    .from('brand_invitations')
-    .update({
-      status: 'accepted',
-      accepted_at: new Date().toISOString(),
+  if (memberError) {
+    // Roll back the claim so the (valid) invitation can be retried.
+    await db
+      .from('brand_invitations')
+      .update({ status: 'pending', accepted_at: null })
+      .eq('id', invitation.id)
+    logger.error('Failed to add team member after claim', {
+      source: 'invitations',
+      error: String(memberError),
     })
-    .eq('id', invitation.id)
-
-  if (updateError) {
-    logger.error('Failed to update invitation status', { source: 'invitations', error: String(updateError) })
-    // Fallback: try to delete if update fails
-    await db.from('brand_invitations').delete().eq('id', invitation.id)
+    return err('Failed to accept invitation')
   }
 
   return NextResponse.json({

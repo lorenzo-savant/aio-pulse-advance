@@ -195,16 +195,16 @@ SELECT
   gen_random_uuid(),
   COALESCE(
     (SELECT au.raw_user_meta_data->>'full_name'
-       FROM auth.users au WHERE au.id = b.user_id LIMIT 1),
-    (SELECT au.email FROM auth.users au WHERE au.id = b.user_id LIMIT 1),
+       FROM auth.users au WHERE au.id = b.user_id::uuid LIMIT 1),
+    (SELECT au.email FROM auth.users au WHERE au.id = b.user_id::uuid LIMIT 1),
     'Org-' || substr(b.user_id::text, 1, 8)
   ),
   'org-' || substr(b.user_id::text, 1, 8),
   b.user_id,
   COALESCE((SELECT plan FROM subscriptions WHERE user_id = b.user_id LIMIT 1), 'free'),
   COALESCE((SELECT status FROM subscriptions WHERE user_id = b.user_id LIMIT 1), 'active')
-FROM (SELECT DISTINCT user_id FROM brands WHERE deleted_at IS NULL) b
-WHERE NOT EXISTS (SELECT 1 FROM organizations o WHERE o.owner_id = b.user_id)
+FROM (SELECT DISTINCT user_id FROM brands) b
+WHERE NOT EXISTS (SELECT 1 FROM organizations o WHERE o.owner_id = b.user_id::uuid::uuid)
 ON CONFLICT (slug) DO NOTHING;
 
 -- 4b. owner -> organization_members.
@@ -250,12 +250,12 @@ SET
   workspace_id = COALESCE(b.workspace_id, (
     SELECT w.id FROM workspaces w
     JOIN organizations o ON o.id = w.organization_id
-    WHERE o.owner_id = b.user_id AND w.slug = 'default'
+    WHERE o.owner_id = b.user_id::uuid::uuid AND w.slug = 'default'
     LIMIT 1
   )),
   organization_id = COALESCE(b.organization_id, (
     SELECT o.id FROM organizations o
-    WHERE o.owner_id = b.user_id
+    WHERE o.owner_id = b.user_id::uuid::uuid
     LIMIT 1
   ))
 WHERE b.workspace_id IS NULL OR b.organization_id IS NULL;
@@ -268,8 +268,7 @@ DECLARE
 BEGIN
   SELECT COUNT(*) INTO orphan_count
   FROM brands
-  WHERE (workspace_id IS NULL OR organization_id IS NULL)
-    AND deleted_at IS NULL;
+  WHERE (workspace_id IS NULL OR organization_id IS NULL);
   IF orphan_count > 0 THEN
     RAISE NOTICE 'PR 7.1: % active brands still lack workspace/org. Resolve before PR 7.7.', orphan_count;
   END IF;

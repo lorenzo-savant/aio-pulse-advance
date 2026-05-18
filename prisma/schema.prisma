@@ -53,6 +53,12 @@ model Brand {
   llmsTxtVersions         LlmsTxtVersion[]
   weeklyReviews           WeeklyReview[]
   keywordRankings         KeywordRanking[]
+  gscPerformance          GscPerformance[]
+  keywordResearch         KeywordResearch[]
+  scraperConfigs          ScraperConfig[]
+  reportTemplates         ReportTemplate[]
+  reportDeliveries        ReportDelivery[]
+  aiConversations         AiConversation[]
 
   @@index([userId])
   @@index([slug])
@@ -497,7 +503,10 @@ model KeywordRanking {
   keyword           String
   url               String?
   position          Int      @default(0)
+  searchVolume      Int      @default(0) @map("search_volume")
+  intent            String?
   aiOverviewPresent Boolean  @default(false) @map("ai_overview_present")
+  aiOverviewCited   Boolean  @default(false) @map("ai_overview_cited")
   createdAt         DateTime @default(now()) @map("created_at")
 
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
@@ -506,6 +515,7 @@ model KeywordRanking {
   @@index([brandId])
   @@index([keyword])
   @@index([createdAt(sort: Desc)])
+  @@index([position])
   @@map("keyword_rankings")
 }
 
@@ -634,4 +644,249 @@ model AuditLog {
   @@index([action])
   @@index([resourceType, resourceId])
   @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW: GSC Performance — Google Search Console data sync
+// ─────────────────────────────────────────────────────────────────────────────
+model GscPerformance {
+  id          String   @id @default(uuid())
+  brandId     String   @map("brand_id")
+  date        DateTime @db.Date
+  query       String?
+  page        String?
+  country     String   @default("all")
+  device      String   @default("all")
+  clicks      Int      @default(0)
+  impressions Int      @default(0)
+  ctr         Float    @default(0)
+  position    Float    @default(0)
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, date, query, page, country, device])
+  @@index([brandId, date(sort: Desc)])
+  @@index([brandId, query])
+  @@index([brandId, position])
+  @@map("gsc_performance")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW: Keyword Research — DataForSEO enriched keyword data
+// ─────────────────────────────────────────────────────────────────────────────
+model KeywordResearch {
+  id                String   @id @default(uuid())
+  brandId           String   @map("brand_id")
+  keyword           String
+  searchVolume      Int      @default(0) @map("search_volume")
+  competition       Float    @default(0)
+  cpc               Float    @default(0)
+  trend             Json     @default("[]")
+  intent            String?
+  difficulty        Int?     @map("keyword_difficulty")
+  aiOverviewPresent Boolean  @default(false) @map("ai_overview_present")
+  top10Domains      Json     @default("[]") @map("top_10_domains")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, keyword])
+  @@index([brandId])
+  @@index([searchVolume(sort: Desc)])
+  @@index([intent])
+  @@map("keyword_research")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW: Scraper Config — Per-brand scraping settings (internal calibration)
+// ─────────────────────────────────────────────────────────────────────────────
+model ScraperConfig {
+  id              String   @id @default(uuid())
+  brandId         String   @map("brand_id")
+  engine          String
+  promptText      String   @map("prompt_text")
+  language        String   @default("en")
+  market          String   @default("global")
+  country         String   @default("us")
+  isActive        Boolean  @default(true) @map("is_active")
+  runFrequency    String   @default("daily") @map("run_frequency")
+  lastRunAt       DateTime? @map("last_run_at")
+  lastRunStatus   String?  @map("last_run_status")
+  lastRunDuration Int?     @map("last_run_duration_ms")
+  costCredits     Float    @default(0) @map("cost_credits")
+  successRate     Float    @default(0) @map("success_rate")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, engine, promptText(191)])
+  @@index([brandId])
+  @@index([engine])
+  @@index([isActive])
+  @@map("scraper_configs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW: Report Template — Client report templates (weekly/monthly/30-60-90)
+// ─────────────────────────────────────────────────────────────────────────────
+model ReportTemplate {
+  id            String   @id @default(uuid())
+  brandId       String   @map("brand_id")
+  name          String
+  type          String   // weekly, monthly, 30day, 60day, 90day, custom
+  language      String   @default("en")
+  sections      Json     @default("[]")
+  includeCharts Boolean  @default(true) @map("include_charts")
+  includeTables Boolean  @default(true) @map("include_tables")
+  includeRawData Boolean @default(false) @map("include_raw_data")
+  logoUrl       String?  @map("logo_url")
+  primaryColor  String   @default("#6366f1") @map("primary_color")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@index([type])
+  @@map("report_templates")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW: Report Delivery — Track report generation and delivery to clients
+// ─────────────────────────────────────────────────────────────────────────────
+model ReportDelivery {
+  id              String   @id @default(uuid())
+  brandId         String   @map("brand_id")
+  templateId      String?  @map("template_id")
+  type            String   // weekly, monthly, 30day, 60day, 90day
+  language        String   @default("en")
+  periodStart     DateTime @map("period_start") @db.Date
+  periodEnd       DateTime @map("period_end") @db.Date
+  generatedAt     DateTime @default(now()) @map("generated_at")
+  generatedBy     String   @map("generated_by")
+  format          String   @default("pdf")
+  fileUrl         String?  @map("file_url")
+  sentTo          String?  @map("sent_to")
+  sentAt          DateTime? @map("sent_at")
+  status          String   @default("generated")
+  metricsSnapshot Json     @default("{}") @map("metrics_snapshot")
+  scoreDelta      Json     @default("{}") @map("score_delta")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@index([type])
+  @@index([periodStart, periodEnd])
+  @@index([status])
+  @@map("report_deliveries")
+}
+
+model AiConversation {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  brandId     String?  @map("brand_id")
+  agentType   String   @default("brand_monitor") @map("agent_type")
+  title       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  messages    AiMessage[]
+  brand       Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([brandId])
+  @@index([agentType])
+  @@index([updatedAt])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  role           String
+  content        String
+  providerUsed   String?  @map("provider_used")
+  latencyMs      Int?     @map("latency_ms")
+  tokensUsed     Int?     @map("tokens_used")
+  costEstimate   Float?   @map("cost_estimate")
+  contextData    Json?    @default("{}") @map("context_data")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([role])
+  @@index([createdAt])
+  @@map("ai_messages")
+}
+
+// AI Cost Monitor - Comprehensive cost tracking and budget management
+model AiCostLog {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  brandId        String?  @map("brand_id")
+  provider       String   // gemini, chatgpt, perplexity, claude, etc.
+  model          String?  // specific model used (gemini-2.0-flash, claude-sonnet-4-20250514, etc.)
+  agentType      String?  @map("agent_type") // brand_monitor, competitor_analyst, etc.
+  conversationId String?  @map("conversation_id")
+  
+  // Usage metrics
+  inputTokens    Int      @default(0) @map("input_tokens")
+  outputTokens   Int      @default(0) @map("output_tokens")
+  totalTokens    Int      @default(0) @map("total_tokens")
+  costUsd        Float    @default(0) @map("cost_usd")
+  costCredits    Float    @default(0) @map("cost_credits")
+  latencyMs      Int?     @map("latency_ms")
+  
+  // Request metadata
+  endpoint       String?  // API endpoint used
+  success        Boolean  @default(true)
+  errorMessage   String?  @map("error_message")
+  cached         Boolean  @default(false)
+  
+  // Budget tracking
+  budgetAlert    Boolean  @default(false) @map("budget_alert") // triggered budget alert
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([brandId])
+  @@index([provider])
+  @@index([agentType])
+  @@index([createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([brandId, createdAt(sort: Desc)])
+  @@map("ai_cost_logs")
+}
+
+// AI Budget configuration per user/brand
+model AiBudget {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  brandId         String?  @map("brand_id")
+  
+  // Budget settings
+  monthlyLimitUsd Float    @default(100) @map("monthly_limit_usd")
+  dailyLimitUsd   Float?   @map("daily_limit_usd")
+  alertThreshold  Float    @default(0.8) @map("alert_threshold") // 80% default
+  
+  // Provider-specific limits
+  providerLimits  Json     @default("{}") @map("provider_limits") // {"gemini": 50, "claude": 30}
+  
+  // Tracking
+  currentMonthSpend Float  @default(0) @map("current_month_spend")
+  currentDaySpend   Float  @default(0) @map("current_day_spend")
+  lastAlertSent     DateTime? @map("last_alert_sent")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, brandId])
+  @@index([userId])
+  @@index([brandId])
+  @@map("ai_budgets")
 }

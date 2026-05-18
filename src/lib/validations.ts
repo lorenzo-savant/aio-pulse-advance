@@ -2,24 +2,37 @@ import { z } from 'zod'
 
 // ─── Analysis ─────────────────────────────────────────────────────────────────
 
-export const analyzeTextSchema = z.object({
-  input: z.string().min(1, 'Content is required').max(15_000, 'Content too long'),
-  mode: z.enum(['text', 'url']),
-  engine: z.enum(['all', 'chatgpt', 'gemini', 'perplexity', 'claude']).default('all'),
-  provider: z.enum(['gemini', 'openai', 'perplexity', 'anthropic']).default('gemini'),
-  model: z
-    .enum([
-      'default',
-      'gemini-flash',
-      'gemini-pro',
-      'gpt-4o-mini',
-      'gpt-4o',
-      'claude-sonnet',
-      'claude-haiku',
-      'perplexity-sonar',
-    ])
-    .default('default'),
-})
+export const analyzeTextSchema = z
+  .object({
+    input: z.string().min(1, 'Content is required').max(15_000, 'Content too long'),
+    mode: z.enum(['text', 'url']),
+    engine: z.enum(['all', 'chatgpt', 'gemini', 'perplexity', 'claude']).default('all'),
+    provider: z.enum(['gemini', 'openai', 'perplexity', 'anthropic']).default('gemini'),
+    model: z
+      .enum([
+        'default',
+        'gemini-flash',
+        'gemini-pro',
+        'gpt-4o-mini',
+        'gpt-4o',
+        'claude-sonnet',
+        'claude-haiku',
+        'perplexity-sonar',
+      ])
+      .default('default'),
+  })
+  .refine(
+    (d) => {
+      if (d.mode !== 'url') return true
+      try {
+        const u = new URL(d.input.includes('://') ? d.input : `https://${d.input}`)
+        return u.protocol === 'http:' || u.protocol === 'https:'
+      } catch {
+        return false
+      }
+    },
+    { message: 'A valid http(s) URL is required for url mode', path: ['input'] },
+  )
 
 export type AnalyzeTextInput = z.infer<typeof analyzeTextSchema>
 

@@ -169,7 +169,7 @@ function BillingPage() {
       <Card className="border-brand-500/20 bg-card p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
+            <div className="bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl">
               {(() => {
                 const Icon = PLAN_ICONS[currentPlan] || Zap
                 return <Icon className="h-6 w-6 text-primary" />
@@ -177,7 +177,7 @@ function BillingPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-foreground text-lg font-black">
+                <h2 className="text-lg font-black text-foreground">
                   {data?.planInfo?.name || 'Free'} Plan
                 </h2>
                 <Badge variant={data?.status === 'active' ? 'success' : 'warning'}>
@@ -185,7 +185,7 @@ function BillingPage() {
                 </Badge>
               </div>
               {data?.currentPeriodEnd && (
-                <p className="text-muted-foreground text-xs">
+                <p className="text-xs text-muted-foreground">
                   Renews {new Date(data.currentPeriodEnd).toLocaleDateString('sv-SE')}
                 </p>
               )}
@@ -211,7 +211,7 @@ function BillingPage() {
               className={cn(
                 'relative border bg-card p-6',
                 PLAN_COLORS[key],
-                isCurrentPlan && 'ring-2 ring-brand-500',
+                isCurrentPlan && 'ring-brand-500 ring-2',
               )}
             >
               {key === 'pro' && (
@@ -233,10 +233,10 @@ function BillingPage() {
                     )}
                   />
                 </div>
-                <h3 className="text-foreground text-lg font-black">{plan.name}</h3>
+                <h3 className="text-lg font-black text-foreground">{plan.name}</h3>
                 <div className="mt-2 flex items-baseline justify-center gap-1">
-                  <span className="text-foreground text-3xl font-black">${plan.price}</span>
-                  {plan.price > 0 && <span className="text-muted-foreground text-sm">/mo</span>}
+                  <span className="text-3xl font-black text-foreground">${plan.price}</span>
+                  {plan.price > 0 && <span className="text-sm text-muted-foreground">/mo</span>}
                 </div>
               </div>
 
@@ -310,7 +310,7 @@ function BillingPage() {
             },
           ].map((faq) => (
             <div key={faq.q} className="rounded-xl border border-border bg-card p-3">
-              <p className="text-foreground text-sm font-bold">{faq.q}</p>
+              <p className="text-sm font-bold text-foreground">{faq.q}</p>
               <p className="text-text-secondary-ui mt-1 text-xs">{faq.a}</p>
             </div>
           ))}
@@ -327,8 +327,8 @@ function UsageBar({ label, current, max }: { label: string; current: number; max
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-bold">{label}</span>
-        <span className="text-muted-foreground text-xs">
+        <span className="text-xs font-bold text-muted-foreground">{label}</span>
+        <span className="text-xs text-muted-foreground">
           {current} / {max}
         </span>
       </div>

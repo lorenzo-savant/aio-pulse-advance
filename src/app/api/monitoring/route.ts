@@ -176,7 +176,15 @@ export async function POST(req: NextRequest) {
     logger.debug('Credits approved', { source: 'monitoring', data: creditData.data })
   } catch (creditErr) {
     logger.error('Credit check failed', { source: 'monitoring', error: String(creditErr) })
-    // Continue anyway - credit check failure shouldn't block monitoring in dev mode
+    // Fail closed: never run paid LLM work if the credit gate could not be
+    // evaluated. Only bypass when an explicit dev flag is set.
+    if (process.env.ALLOW_CREDIT_BYPASS !== 'true') {
+      return NextResponse.json(
+        { success: false, message: 'Credit verification unavailable', error: 'CREDIT_CHECK_FAILED' },
+        { status: 503 },
+      )
+    }
+    logger.warn('Credit check bypassed via ALLOW_CREDIT_BYPASS', { source: 'monitoring' })
   }
 
   // ── Fetch previous results per change detection ───────────────────────────
@@ -202,10 +210,21 @@ export async function POST(req: NextRequest) {
   const workflowId = randomUUID()
   const workflowStartedAt = new Date().toISOString()
   const workflowSteps = [
-    { id: randomUUID(), name: 'Fetch prompt', status: 'completed', startedAt: workflowStartedAt, completedAt: workflowStartedAt },
+    {
+      id: randomUUID(),
+      name: 'Fetch prompt',
+      status: 'completed',
+      startedAt: workflowStartedAt,
+      completedAt: workflowStartedAt,
+    },
     { id: randomUUID(), name: 'Run engines', status: 'running', startedAt: workflowStartedAt },
     { id: randomUUID(), name: 'Save results', status: 'pending', startedAt: workflowStartedAt },
-    { id: randomUUID(), name: 'Update health score', status: 'pending', startedAt: workflowStartedAt },
+    {
+      id: randomUUID(),
+      name: 'Update health score',
+      status: 'pending',
+      startedAt: workflowStartedAt,
+    },
   ]
   const { error: workflowErr } = await db.from('workflow_executions').insert({
     id: workflowId,
@@ -230,7 +249,11 @@ export async function POST(req: NextRequest) {
       try {
         logger.debug('Running engine', { source: 'monitoring', engine, promptId: prompt.id })
         const resultData = await runMonitoringCheck(prompt as Prompt, brand, engine, userId)
-        logger.debug('Engine completed', { source: 'monitoring', engine, resultPreview: JSON.stringify(resultData).slice(0, 500) })
+        logger.debug('Engine completed', {
+          source: 'monitoring',
+          engine,
+          resultPreview: JSON.stringify(resultData).slice(0, 500),
+        })
 
         const truncatedData = {
           ...resultData,
@@ -249,7 +272,11 @@ export async function POST(req: NextRequest) {
           .single()
 
         if (insertError || !saved) {
-          logger.error('DB insert error', { source: 'monitoring', engine, error: JSON.stringify(insertError) })
+          logger.error('DB insert error', {
+            source: 'monitoring',
+            engine,
+            error: JSON.stringify(insertError),
+          })
           errors.push(`${engine}: DB insert failed - ${insertError?.message || 'Unknown error'}`)
           return
         }
@@ -289,7 +316,11 @@ export async function POST(req: NextRequest) {
                     brand,
                   )
                 } catch (dispatchErr) {
-                  logger.error('dispatchAlert failed', { source: 'monitoring', ruleId: rule.id, error: String(dispatchErr) })
+                  logger.error('dispatchAlert failed', {
+                    source: 'monitoring',
+                    ruleId: rule.id,
+                    error: String(dispatchErr),
+                  })
                 }
 
                 await db
@@ -321,10 +352,7 @@ export async function POST(req: NextRequest) {
   })
 
   // ── Update prompt last_run_at ─────────────────────────────────────────────
-  await db
-    .from('prompts')
-    .update({ last_run_at: new Date().toISOString() })
-    .eq('id', prompt.id)
+  await db.from('prompts').update({ last_run_at: new Date().toISOString() }).eq('id', prompt.id)
 
   // ── Upsert daily brand health score ──────────────────────────────────────
   if (results.length > 0) {
@@ -380,7 +408,6 @@ export async function POST(req: NextRequest) {
         error: String(kwErr),
       })
     }
-
   }
 
   // ── Finalise workflow ────────────────────────────────────────────────────
@@ -449,7 +476,8 @@ export async function GET(req: NextRequest) {
   const ownedBrandIds = (ownedBrands ?? []).map((b: { id: string }) => b.id)
   if (ownedBrandIds.length === 0) {
     return NextResponse.json({
-      success: true, data: [],
+      success: true,
+      data: [],
       pagination: { page, perPage: limit, total: 0, totalPages: 0 },
       timestamp: Date.now(),
     })

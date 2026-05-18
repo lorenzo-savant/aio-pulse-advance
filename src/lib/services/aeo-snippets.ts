@@ -64,7 +64,10 @@ function buildAnswerPrompt(question: string, language: 'en' | 'it' | 'sv'): stri
 }
 
 function trimAnswer(raw: string): string {
-  return raw.trim().replace(/^["'`\s]+|["'`\s]+$/g, '').replace(/\s+/g, ' ')
+  return raw
+    .trim()
+    .replace(/^["'`\s]+|["'`\s]+$/g, '')
+    .replace(/\s+/g, ' ')
 }
 
 export function buildFAQPageJsonLd(
@@ -81,9 +84,7 @@ export function buildFAQPageJsonLd(
   }
 }
 
-export async function runAEOGeneration(
-  input: AEOSnippetInput,
-): Promise<AEOSnippetRunResult> {
+export async function runAEOGeneration(input: AEOSnippetInput): Promise<AEOSnippetRunResult> {
   // aeo_runs, aeo_snippets tables not yet in Database type for this service
   const db = createServerClient() as any
   if (!db) throw new Error('Database not configured')
@@ -97,9 +98,10 @@ export async function runAEOGeneration(
     .single()
   if (!brand) throw new Error('Brand not found or access denied')
 
-  const language = (input.language
-    || (brand.language as 'en' | 'it' | 'sv' | null)
-    || 'en') as 'en' | 'it' | 'sv'
+  const language = (input.language || (brand.language as 'en' | 'it' | 'sv' | null) || 'en') as
+    | 'en'
+    | 'it'
+    | 'sv'
   const maxQuestions = Math.max(1, Math.min(input.maxQuestions ?? 10, 10))
   const detectGaps = input.detectGaps !== false
 
@@ -147,9 +149,8 @@ export async function runAEOGeneration(
   }
 
   // 2) For each PAA: generate answer + optional gap check
-  const brandDomain = Array.isArray(brand.domains) && brand.domains.length > 0
-    ? String(brand.domains[0])
-    : null
+  const brandDomain =
+    Array.isArray(brand.domains) && brand.domains.length > 0 ? String(brand.domains[0]) : null
 
   const items: AEOSnippetItem[] = []
   let modelUsed: string | null = null
@@ -212,7 +213,9 @@ export async function runAEOGeneration(
       language,
       paa_snippet: it.paaSnippet,
       paa_source_url: it.paaSourceUrl,
-      schema_jsonld: buildFAQPageJsonLd([{ question: it.question, answer: it.answer }]) as unknown as Json,
+      schema_jsonld: buildFAQPageJsonLd([
+        { question: it.question, answer: it.answer },
+      ]) as unknown as Json,
       gap_status: it.gapStatus,
       covered_url: it.coveredUrl,
       position: it.position,

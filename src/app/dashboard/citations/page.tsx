@@ -245,9 +245,7 @@ export default function CitationsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">
-            Citation Trends
-          </h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Citation Trends</h1>
           <p className="mt-1 text-muted-foreground">
             Track brand visibility across AI search engines over time.
           </p>
@@ -440,7 +438,7 @@ export default function CitationsPage() {
               <h2 className="mb-6 text-lg font-bold text-foreground">Competitor Breakdown</h2>
               <div className="space-y-4">
                 {/* Brand row */}
-                <div className="flex items-center justify-between rounded-xl border border-brand-500/20 bg-primary/5 px-4 py-3">
+                <div className="border-brand-500/20 bg-primary/5 flex items-center justify-between rounded-xl border px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="h-3 w-3 rounded-full bg-primary" />
                     <span className="font-bold text-foreground">{selectedBrand?.name}</span>

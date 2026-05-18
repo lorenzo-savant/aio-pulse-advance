@@ -108,11 +108,7 @@ export async function addWorkspaceMember(
   })
 }
 
-export async function updateWorkspaceMemberRole(
-  workspaceId: string,
-  userId: string,
-  role: Role,
-) {
+export async function updateWorkspaceMemberRole(workspaceId: string, userId: string, role: Role) {
   const db = createServerClient()
   if (!db) return null
 
@@ -127,11 +123,7 @@ export async function removeWorkspaceMember(workspaceId: string, userId: string)
   const db = createServerClient()
   if (!db) return null
 
-  return db
-    .from('workspace_members')
-    .delete()
-    .eq('workspace_id', workspaceId)
-    .eq('user_id', userId)
+  return db.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', userId)
 }
 
 export async function createWorkspace(

@@ -33,6 +33,20 @@ Sentry.init({
     if (process.env.NODE_ENV === 'development') {
       console.error('[Sentry] Event captured:', event)
     }
+
+    // PII scrubbing (parity with server config)
+    if (event.request) {
+      delete event.request.headers
+      delete event.request.cookies
+      if (event.request.data !== undefined) {
+        event.request.data = '[redacted]'
+      }
+    }
+    if (event.user) {
+      delete event.user.email
+      delete event.user.ip_address
+    }
+
     return event
   },
 })

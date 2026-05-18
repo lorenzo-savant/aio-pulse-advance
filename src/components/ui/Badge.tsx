@@ -58,7 +58,7 @@ interface SpinnerProps {
 
 const Spinner: React.FC<SpinnerProps> = ({ size = 'md', className }) => {
   const sizes = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
-  return <Loader2 className={cn('text-brand animate-spin', sizes[size], className)} />
+  return <Loader2 className={cn('animate-spin text-brand', sizes[size], className)} />
 }
 
 // ─── Input ────────────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <div className="space-y-1.5">
         {label && (
           <label
-            className="block text-xs font-medium uppercase tracking-wider text-text-secondary-surface"
+            className="text-text-secondary-surface block text-xs font-medium uppercase tracking-wider"
             htmlFor={inputId}
           >
             {label}
@@ -86,7 +86,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftElement && (
-            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted-surface">
+            <div className="text-text-muted-surface pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               {leftElement}
             </div>
           )}
@@ -94,8 +94,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full rounded-lg border border-surface-input-border bg-surface-input px-3 py-2.5 text-sm text-text-on-surface placeholder-text-muted-surface outline-none transition-all',
-              'focus:border-brand focus:ring-brand/20 focus:ring-2',
+              'border-surface-input-border bg-surface-input text-text-on-surface placeholder-text-muted-surface w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all',
+              'focus:ring-brand/20 focus:border-brand focus:ring-2',
               error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : '',
               leftElement && 'pl-10',
               rightElement && 'pr-10',
@@ -104,13 +104,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightElement && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted-surface">
+            <div className="text-text-muted-surface absolute right-3 top-1/2 -translate-y-1/2">
               {rightElement}
             </div>
           )}
         </div>
-        {error && <p className="text-xs text-error-500">{error}</p>}
-        {hint && !error && <p className="text-xs text-text-muted-surface">{hint}</p>}
+        {error && <p className="text-error-500 text-xs">{error}</p>}
+        {hint && !error && <p className="text-text-muted-surface text-xs">{hint}</p>}
       </div>
     )
   },
@@ -132,7 +132,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <div className="space-y-1.5">
         {label && (
           <label
-            className="block text-xs font-medium uppercase tracking-wider text-text-secondary-surface"
+            className="text-text-secondary-surface block text-xs font-medium uppercase tracking-wider"
             htmlFor={inputId}
           >
             {label}
@@ -142,15 +142,15 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full resize-none rounded-lg border border-surface-input-border bg-surface-input px-3 py-2.5 text-sm text-text-on-surface outline-none transition-all placeholder:text-text-muted-surface',
-            'focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20',
+            'border-surface-input-border bg-surface-input text-text-on-surface placeholder:text-text-muted-surface w-full resize-none rounded-lg border px-3 py-2.5 text-sm outline-none transition-all',
+            'focus:border-primary-600 focus:ring-primary-600/20 focus:ring-2',
             error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : '',
             className,
           )}
           {...props}
         />
-        {error && <p className="text-xs text-error-500">{error}</p>}
-        {hint && !error && <p className="text-xs text-text-muted-surface">{hint}</p>}
+        {error && <p className="text-error-500 text-xs">{error}</p>}
+        {hint && !error && <p className="text-text-muted-surface text-xs">{hint}</p>}
       </div>
     )
   },
@@ -178,7 +178,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       <div className="space-y-1.5">
         {label && (
           <label
-            className="block text-xs font-medium uppercase tracking-wider text-text-secondary-surface"
+            className="text-text-secondary-surface block text-xs font-medium uppercase tracking-wider"
             htmlFor={inputId}
           >
             {label}
@@ -188,8 +188,8 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full appearance-none rounded-lg border border-surface-input-border bg-surface-input px-3 py-2.5 text-sm text-text-on-surface outline-none transition-all',
-            'focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20',
+            'border-surface-input-border bg-surface-input text-text-on-surface w-full appearance-none rounded-lg border px-3 py-2.5 text-sm outline-none transition-all',
+            'focus:border-primary-600 focus:ring-primary-600/20 focus:ring-2',
             error ? 'border-error-500' : '',
             className,
           )}
@@ -201,7 +201,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        {error && <p className="text-xs text-error-500">{error}</p>}
+        {error && <p className="text-error-500 text-xs">{error}</p>}
       </div>
     )
   },

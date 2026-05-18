@@ -115,7 +115,10 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) {
-      logger.error('Failed to save orchestrated result', { route: '/api/queries/orchestrate', error })
+      logger.error('Failed to save orchestrated result', {
+        route: '/api/queries/orchestrate',
+        error,
+      })
     } else {
       savedResult = data
     }

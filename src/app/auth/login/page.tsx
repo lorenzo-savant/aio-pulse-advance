@@ -17,8 +17,15 @@ function LoginForm() {
   const emailParam = searchParams.get('email') || ''
   const confirmed = searchParams.get('confirmed') === 'true'
 
-  const [email, setEmail] = useState(emailParam)
-  const [password, setPassword] = useState('')
+  const isDev = process.env.NODE_ENV === 'development'
+
+  const defaultEmail = isDev
+    ? process.env.NEXT_PUBLIC_DEMO_EMAIL || 'demo@aio-pulse.com'
+    : emailParam || ''
+  const defaultPassword = isDev ? process.env.NEXT_PUBLIC_DEMO_PASSWORD || 'Demo1234!' : ''
+
+  const [email, setEmail] = useState(defaultEmail)
+  const [password, setPassword] = useState(defaultPassword)
   const [showPw, setShowPw] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -28,6 +35,58 @@ function LoginForm() {
   const [successMessage] = useState<string | null>(
     confirmed ? 'Email confirmed! Please sign in.' : null,
   )
+
+  async function handleDevBypass() {
+    setLoading(true)
+    setError(null)
+    try {
+      if (supabase) {
+        const demoEmail = process.env.NEXT_PUBLIC_DEMO_EMAIL || 'demo@aio-pulse.com'
+        const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD || 'Demo1234!'
+
+        // Try sign up first (creates account if it doesn't exist)
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: demoEmail,
+          password: demoPassword,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        })
+
+        // If signup failed because user exists, try sign in
+        if (signUpError && !signUpError.message.includes('already')) {
+          setError('Failed to create demo account: ' + signUpError.message)
+          setLoading(false)
+          return
+        }
+
+        // Try sign in (works for new accounts that auto-confirm, or existing ones)
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: demoEmail,
+          password: demoPassword,
+        })
+
+        if (signInError) {
+          if (signInError.message.includes('Email not confirmed')) {
+            setError(
+              'Demo account created but email not confirmed. Check your Supabase settings or disable email confirmation for dev.',
+            )
+          } else {
+            setError('Demo login failed: ' + signInError.message)
+          }
+          setLoading(false)
+          return
+        }
+      }
+      router.push('/dashboard')
+      router.refresh()
+    } catch (err) {
+      console.error('[dev-bypass] Error:', err)
+      setError('Failed to bypass auth')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function handlePasswordSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -165,6 +224,18 @@ function LoginForm() {
                 </div>
                 <p className="text-sm text-red-400">{error}</p>
               </div>
+            )}
+
+            {isDev && !magicLinkSent && (
+              <button
+                type="button"
+                onClick={handleDevBypass}
+                disabled={loading}
+                className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 py-3 text-sm font-semibold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-[0.98] disabled:opacity-60"
+              >
+                <Zap className="h-4 w-4" />
+                Developer Bypass — Skip Login
+              </button>
             )}
 
             {magicLinkSent ? (

@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/store'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher'
 
 const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard': 'Main Dashboard',
@@ -49,7 +50,9 @@ export function TopBar() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<{ type: string; id: string; name: string }[]>([])
+  const [searchResults, setSearchResults] = useState<{ type: string; id: string; name: string }[]>(
+    [],
+  )
   const [searching, setSearching] = useState(false)
   const [searchResultsOpen, setSearchResultsOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
@@ -60,6 +63,8 @@ export function TopBar() {
   const pathname = usePathname()
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const breadcrumb = getBreadcrumb(pathname)
+  const userId = useAppStore((s) => s.userId)
+  const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId) ?? ''
 
   useEffect(() => {
     setMounted(true)
@@ -69,10 +74,12 @@ export function TopBar() {
         if (res.ok) {
           const data = await res.json()
           const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
-          const recent = (data.data || []).filter((e: { created_at?: string; timestamp?: string }) => {
-            const t = e.created_at || e.timestamp
-            return t && new Date(t).getTime() > oneDayAgo
-          })
+          const recent = (data.data || []).filter(
+            (e: { created_at?: string; timestamp?: string }) => {
+              const t = e.created_at || e.timestamp
+              return t && new Date(t).getTime() > oneDayAgo
+            },
+          )
           setAlertCount(recent.length)
         }
       } catch {
@@ -152,7 +159,7 @@ export function TopBar() {
             <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
             <input
               ref={mobileSearchRef}
-              className="flex-1 bg-transparent text-lg text-foreground placeholder:text-muted-foreground outline-none"
+              className="flex-1 bg-transparent text-lg text-foreground outline-none placeholder:text-muted-foreground"
               placeholder="Search brands, prompts..."
               type="text"
               value={searchQuery}
@@ -206,6 +213,10 @@ export function TopBar() {
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
           </Button>
+
+          <div className="hidden lg:block">
+            <WorkspaceSwitcher currentWorkspaceId={currentWorkspaceId} userId={userId ?? ''} />
+          </div>
 
           <div className="flex flex-col">
             <span className="text-xs font-medium text-muted-foreground">{breadcrumb.section}</span>

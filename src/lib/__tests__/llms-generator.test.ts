@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  generateLlmsTxt,
-  generateLlmsFullTxt,
-  type LlmsInput,
-} from '../services/llms-generator'
+import { generateLlmsTxt, generateLlmsFullTxt, type LlmsInput } from '../services/llms-generator'
 
 const baseInput: LlmsInput = {
   brandName: 'Acme Corp',

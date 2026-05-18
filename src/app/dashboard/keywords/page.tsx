@@ -162,7 +162,7 @@ export default function KeywordsPage() {
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
             <select
-              className="text-foreground rounded-lg border border-input bg-input px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
               value={selectedBrand?.id || ''}
               onChange={(e) => {
                 const b = brands.find((x) => x.id === e.target.value)
@@ -185,9 +185,9 @@ export default function KeywordsPage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
-          className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
+          className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input py-2.5 pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary"
           placeholder="Search keywords..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -206,7 +206,7 @@ export default function KeywordsPage() {
               'border-b-2 px-4 pb-3 text-sm font-bold transition-colors',
               tab === t.id
                 ? 'border-brand-600 text-primary'
-                : 'text-muted-foreground hover:text-text-secondary-ui border-transparent',
+                : 'hover:text-text-secondary-ui border-transparent text-muted-foreground',
             )}
             onClick={() => setTab(t.id as typeof tab)}
           >
@@ -218,16 +218,16 @@ export default function KeywordsPage() {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-brand-400" />
+          <Loader2 className="text-brand-400 h-6 w-6 animate-spin" />
         </div>
       )}
 
       {/* No data */}
       {!loading && filteredKeywords.length === 0 && (
         <Card className="flex flex-col items-center justify-center border border-input bg-card p-12 text-center">
-          <Tag className="text-muted-foreground mb-4 h-12 w-12" />
+          <Tag className="mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="text-text-secondary-ui text-lg font-bold">No keywords tracked yet</h3>
-          <p className="text-muted-foreground mt-2 max-w-md text-sm">
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">
             Run monitoring and click &quot;Refresh&quot; to extract keywords from AI responses.
           </p>
         </Card>
@@ -246,14 +246,9 @@ export default function KeywordsPage() {
                   .filter((kw) => kw.cluster === cluster)
                   .slice(0, 40)
                 return (
-                  <div
-                    key={cluster}
-                    className={cn('rounded-2xl border p-4', meta.colorClass)}
-                  >
+                  <div key={cluster} className={cn('rounded-2xl border p-4', meta.colorClass)}>
                     <div className="mb-3">
-                      <h3 className="text-sm font-black uppercase tracking-widest">
-                        {meta.label}
-                      </h3>
+                      <h3 className="text-sm font-black uppercase tracking-widest">{meta.label}</h3>
                       <p className="mt-1 text-xs opacity-80">{meta.description}</p>
                       <p className="mt-1 text-xs opacity-60">
                         {clusterKeywords.length} keyword
@@ -272,7 +267,7 @@ export default function KeywordsPage() {
                           return (
                             <span
                               key={kw.id}
-                              className="inline-block rounded-full bg-background/40 px-2.5 py-1 font-medium transition-transform hover:scale-110"
+                              className="bg-background/40 inline-block rounded-full px-2.5 py-1 font-medium transition-transform hover:scale-110"
                               style={{ fontSize: `${size}rem` }}
                               title={`${count} occurrences · corr ${(kw.correlation_score ?? 0).toFixed(2)}`}
                             >
@@ -318,7 +313,7 @@ export default function KeywordsPage() {
                     const corr = kw.correlation_score ?? 0
                     const corrBadge = getCorrelationBadge(corr)
                     return (
-                      <tr key={kw.id} className="border-b border-border/50">
+                      <tr key={kw.id} className="border-border/50 border-b">
                         <td className="py-3">
                           <span className="font-medium text-foreground">{kw.keyword}</span>
                         </td>
@@ -335,12 +330,8 @@ export default function KeywordsPage() {
                         </td>
                         <td className="py-3 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            {corr > 0.1 && (
-                              <TrendingUp className="h-4 w-4 text-emerald-400" />
-                            )}
-                            {corr < -0.1 && (
-                              <TrendingDown className="h-4 w-4 text-red-400" />
-                            )}
+                            {corr > 0.1 && <TrendingUp className="h-4 w-4 text-emerald-400" />}
+                            {corr < -0.1 && <TrendingDown className="h-4 w-4 text-red-400" />}
                             {corr >= -0.1 && corr <= 0.1 && (
                               <Minus className="h-4 w-4 text-muted-foreground" />
                             )}

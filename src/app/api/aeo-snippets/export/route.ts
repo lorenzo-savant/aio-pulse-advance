@@ -30,7 +30,10 @@ export async function GET(req: NextRequest) {
 
   const db = createServerClient() as any
   if (!db) {
-    return NextResponse.json({ success: false, message: 'Database not configured' }, { status: 503 })
+    return NextResponse.json(
+      { success: false, message: 'Database not configured' },
+      { status: 503 },
+    )
   }
 
   const brandId = req.nextUrl.searchParams.get('brand_id')
@@ -53,7 +56,9 @@ export async function GET(req: NextRequest) {
 
   let q = db
     .from('aeo_snippets')
-    .select('keyword, question, answer, language, gap_status, covered_url, paa_source_url, created_at')
+    .select(
+      'keyword, question, answer, language, gap_status, covered_url, paa_source_url, created_at',
+    )
     .eq('brand_id', brandId)
     .order('created_at', { ascending: false })
     .limit(1000)
@@ -67,8 +72,14 @@ export async function GET(req: NextRequest) {
   }
 
   const headers = [
-    'keyword', 'question', 'answer', 'language',
-    'gap_status', 'covered_url', 'paa_source_url', 'created_at',
+    'keyword',
+    'question',
+    'answer',
+    'language',
+    'gap_status',
+    'covered_url',
+    'paa_source_url',
+    'created_at',
   ]
   const lines = [headers.join(',')]
   for (const r of (rows || []) as Array<Record<string, unknown>>) {
@@ -76,7 +87,7 @@ export async function GET(req: NextRequest) {
   }
   const csv = lines.join('\n')
 
-  const fname = `aeo-snippets-${(brand.name as string || 'brand').replace(/\W+/g, '-')}.csv`
+  const fname = `aeo-snippets-${((brand.name as string) || 'brand').replace(/\W+/g, '-')}.csv`
   return new NextResponse(csv, {
     status: 200,
     headers: {

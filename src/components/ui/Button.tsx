@@ -29,11 +29,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-brand-gradient text-white shadow-md hover:shadow-lg hover:brightness-110 active:brightness-95',
+        primary:
+          'bg-brand-gradient text-white shadow-md hover:shadow-lg hover:brightness-110 active:brightness-95',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-surface-300 dark:hover:bg-surface-300',
-        outline:
-          'border border-border bg-transparent text-foreground hover:bg-secondary',
+        outline: 'border border-border bg-transparent text-foreground hover:bg-secondary',
         ghost: 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground',
         danger: 'bg-error text-error-foreground hover:opacity-90 active:opacity-80',
         success: 'bg-success text-success-foreground hover:opacity-90 active:opacity-80',

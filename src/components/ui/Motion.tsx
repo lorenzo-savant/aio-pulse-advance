@@ -11,11 +11,7 @@ import {
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-    >
+    <motion.div variants={pageVariants} initial="hidden" animate="visible">
       {children}
     </motion.div>
   )
@@ -62,12 +58,7 @@ export function HoverCard({
   className?: string
 }) {
   return (
-    <motion.div
-      initial="rest"
-      whileHover="hover"
-      variants={cardHover}
-      className={className}
-    >
+    <motion.div initial="rest" whileHover="hover" variants={cardHover} className={className}>
       {children}
     </motion.div>
   )

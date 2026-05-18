@@ -9,11 +9,14 @@ const WEBHOOK_TIMEOUT_MS = 10_000
 const WEBHOOK_SECRET = process.env.WEBHOOK_SIGNING_SECRET
 
 function getWebhookSecret(): string {
+  // M-7: never fall back to a hardcoded secret in ANY environment — a
+  // predictable HMAC key lets attackers forge valid webhook signatures.
   if (!WEBHOOK_SECRET) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('WEBHOOK_SIGNING_SECRET must be set in production')
-    }
-    return 'dev-only-webhook-secret-do-not-use-in-production'
+    throw new Error(
+      'WEBHOOK_SIGNING_SECRET is not set. Generate one with ' +
+        '`openssl rand -hex 32` (or `node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"`) ' +
+        'and add it to your environment before delivering webhooks.',
+    )
   }
   return WEBHOOK_SECRET
 }
@@ -60,7 +63,10 @@ export async function deliverWebhook(
         .single()
       logId = data?.id || null
     } catch (err) {
-      logger.error('Failed to create webhook delivery log', { service: 'webhook-delivery', error: err })
+      logger.error('Failed to create webhook delivery log', {
+        service: 'webhook-delivery',
+        error: err,
+      })
     }
   }
 
@@ -131,7 +137,12 @@ export async function deliverWebhook(
       }
 
       if (attempt + 1 >= MAX_ATTEMPTS) {
-        logger.error('All webhook delivery attempts failed', { service: 'webhook-delivery', url, attempts: MAX_ATTEMPTS, error: errorMsg })
+        logger.error('All webhook delivery attempts failed', {
+          service: 'webhook-delivery',
+          url,
+          attempts: MAX_ATTEMPTS,
+          error: errorMsg,
+        })
         return { success: false, logId }
       }
     }
@@ -140,9 +151,15 @@ export async function deliverWebhook(
   return { success: false, logId }
 }
 
-export function buildWebhookPayload(
-  event: { id: string; type: string; title: string; message: string; data: Record<string, unknown>; alert_rule_id: string; brand_id: string },
-): WebhookPayload {
+export function buildWebhookPayload(event: {
+  id: string
+  type: string
+  title: string
+  message: string
+  data: Record<string, unknown>
+  alert_rule_id: string
+  brand_id: string
+}): WebhookPayload {
   return {
     event_type: event.type,
     event_id: event.id,

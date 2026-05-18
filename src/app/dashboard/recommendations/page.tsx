@@ -259,7 +259,7 @@ export default function RecommendationsPage() {
         </div>
 
         {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-error-muted bg-error-muted/30 px-4 py-3">
+          <div className="bg-error-muted/30 flex items-start gap-3 rounded-xl border border-error-muted px-4 py-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-error" />
             <p className="text-sm text-error">{error}</p>
           </div>
@@ -351,7 +351,11 @@ export default function RecommendationsPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
                             <div className="mb-2 flex flex-wrap gap-1.5">
-                              <Badge variant="default" size="sm" className={PRIORITY_STYLES[rec.priority]}>
+                              <Badge
+                                variant="default"
+                                size="sm"
+                                className={PRIORITY_STYLES[rec.priority]}
+                              >
                                 {rec.priority} priority
                               </Badge>
                               <Badge variant="default" size="sm">
@@ -435,9 +439,10 @@ export default function RecommendationsPage() {
                   const aviDelta = m.aviDelta ?? 0
                   const summary = review.summary || (review as any).summary || ''
                   const weekLabel = `W${review.week_number || '?'} ${review.year || ''}`
-                  const period = review.week_start && review.week_end
-                    ? `${review.week_start} — ${review.week_end}`
-                    : new Date(review.created_at).toLocaleDateString('sv-SE')
+                  const period =
+                    review.week_start && review.week_end
+                      ? `${review.week_start} — ${review.week_end}`
+                      : new Date(review.created_at).toLocaleDateString('sv-SE')
 
                   return (
                     <Card key={review.id} className="p-5">
@@ -467,7 +472,11 @@ export default function RecommendationsPage() {
                               <p
                                 className={cn(
                                   'text-lg font-bold',
-                                  aviDelta > 0 ? 'text-success' : aviDelta < 0 ? 'text-error' : 'text-foreground',
+                                  aviDelta > 0
+                                    ? 'text-success'
+                                    : aviDelta < 0
+                                      ? 'text-error'
+                                      : 'text-foreground',
                                 )}
                               >
                                 {aviDelta > 0 ? '+' : ''}
@@ -497,10 +506,7 @@ export default function RecommendationsPage() {
                             </div>
                           </div>
                         </div>
-                        <Badge
-                          variant={aviDelta >= 0 ? 'success' : 'danger'}
-                          className="shrink-0"
-                        >
+                        <Badge variant={aviDelta >= 0 ? 'success' : 'danger'} className="shrink-0">
                           {aviDelta >= 0 ? 'Improving' : 'Declining'}
                         </Badge>
                       </div>

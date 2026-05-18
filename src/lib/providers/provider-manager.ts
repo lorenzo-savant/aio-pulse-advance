@@ -11,6 +11,8 @@ import { PerplexityProvider } from './perplexity-provider'
 import { ClaudeProvider } from './claude-provider'
 import { DataForSEOProvider } from './dataforseo-provider'
 import { AzureOpenAIProvider } from './azure-openai-provider'
+import { BrightDataProvider } from './brightdata-provider'
+import { GscProvider } from './gsc-provider'
 import { BaseProvider } from './base-provider'
 import { enrichPromptWithBrandContext, type BrandContextOptions } from '../brand-enrichment'
 import type { Brand } from '@/types'
@@ -47,9 +49,10 @@ export interface ProviderManagerConfig {
 
 function generateJobKey(request: AIProviderRequest, providerId?: AIProviderId): string {
   // Use a longer prompt slice + simple hash to avoid collisions
-  const promptKey = request.prompt.length <= 200
-    ? request.prompt
-    : request.prompt.slice(0, 100) + '|' + request.prompt.length + '|' + request.prompt.slice(-50)
+  const promptKey =
+    request.prompt.length <= 200
+      ? request.prompt
+      : request.prompt.slice(0, 100) + '|' + request.prompt.length + '|' + request.prompt.slice(-50)
   const parts = [
     providerId || 'all',
     promptKey,
@@ -94,6 +97,8 @@ export class ProviderManager {
     this.registerProvider(new ClaudeProvider())
     this.registerProvider(new AzureOpenAIProvider())
     this.registerProvider(new DataForSEOProvider())
+    this.registerProvider(new BrightDataProvider())
+    this.registerProvider(new GscProvider())
   }
 
   private registerProvider(provider: BaseProvider): void {
@@ -286,11 +291,10 @@ export class ProviderManager {
           const provider = this.providers.get(id)
           if (!provider) return null
           return { id, provider, avgLatency: 0 }
-        })
-          .filter(
-            (p): p is { id: AIProviderId; provider: BaseProvider; avgLatency: number } =>
-              p !== null && p.provider.isConfigured(),
-          )
+        }).filter(
+          (p): p is { id: AIProviderId; provider: BaseProvider; avgLatency: number } =>
+            p !== null && p.provider.isConfigured(),
+        )
 
     if (sortedProviders.length === 0) {
       return {

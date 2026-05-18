@@ -5,6 +5,8 @@ export type AIProviderId =
   | 'claude'
   | 'dataforseo'
   | 'azure-openai'
+  | 'brightdata'
+  | 'gsc'
 
 export interface AIProviderConfig {
   id: AIProviderId
@@ -55,6 +57,8 @@ export const DEFAULT_TIMEOUT_CONFIG: Record<AIProviderId, ProviderTimeoutConfig>
   claude: { warningMs: 2500, timeoutMs: 60000, maxRetries: 1 },
   chatgpt: { warningMs: 3000, timeoutMs: 90000, maxRetries: 1 },
   dataforseo: { warningMs: 3000, timeoutMs: 120000, maxRetries: 1 },
+  brightdata: { warningMs: 5000, timeoutMs: 180000, maxRetries: 1 },
+  gsc: { warningMs: 3000, timeoutMs: 60000, maxRetries: 2 },
 }
 
 export const DEFAULT_PROVIDER_PRIORITY: AIProviderId[] = [
@@ -64,6 +68,8 @@ export const DEFAULT_PROVIDER_PRIORITY: AIProviderId[] = [
   'azure-openai',
   'chatgpt',
   'dataforseo',
+  'brightdata',
+  'gsc',
 ]
 
 export const PROVIDER_PRIORITY: AIProviderId[] = [
@@ -73,6 +79,8 @@ export const PROVIDER_PRIORITY: AIProviderId[] = [
   'azure-openai',
   'chatgpt',
   'dataforseo',
+  'brightdata',
+  'gsc',
 ]
 
 export const PROVIDER_NAMES: Record<AIProviderId, string> = {
@@ -82,4 +90,6 @@ export const PROVIDER_NAMES: Record<AIProviderId, string> = {
   claude: 'Anthropic Claude',
   dataforseo: 'Google AI Overview',
   'azure-openai': 'Azure OpenAI',
+  brightdata: 'Bright Data AI Scraper',
+  gsc: 'Google Search Console',
 }

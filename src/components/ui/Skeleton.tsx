@@ -6,12 +6,12 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className }: SkeletonProps) {
-  return <div className={cn('bg-surface-700 animate-pulse rounded-md', className)} />
+  return <div className={cn('animate-pulse rounded-md bg-surface-700', className)} />
 }
 
 export function CardSkeleton() {
   return (
-    <div className="border-surface-700 rounded-2xl border bg-surface-800/50 p-6">
+    <div className="bg-surface-800/50 rounded-2xl border border-surface-700 p-6">
       <Skeleton className="mb-4 h-4 w-1/3" />
       <Skeleton className="mb-4 h-20 w-full" />
       <div className="flex gap-2">
@@ -24,7 +24,7 @@ export function CardSkeleton() {
 
 export function TableRowSkeleton() {
   return (
-    <div className="border-surface-700 flex items-center gap-4 border-b py-4">
+    <div className="flex items-center gap-4 border-b border-surface-700 py-4">
       <Skeleton className="h-10 w-10 rounded-full" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-1/3" />
@@ -37,7 +37,7 @@ export function TableRowSkeleton() {
 
 export function StatsCardSkeleton() {
   return (
-    <div className="border-surface-700 rounded-2xl border bg-surface-800/50 p-6">
+    <div className="bg-surface-800/50 rounded-2xl border border-surface-700 p-6">
       <div className="mb-4 flex items-start justify-between">
         <Skeleton className="h-10 w-10 rounded-lg" />
         <Skeleton className="h-5 w-12 rounded-full" />
@@ -50,7 +50,7 @@ export function StatsCardSkeleton() {
 
 export function ChartSkeleton() {
   return (
-    <div className="border-surface-700 rounded-2xl border bg-surface-800/50 p-6">
+    <div className="bg-surface-800/50 rounded-2xl border border-surface-700 p-6">
       <Skeleton className="mb-6 h-6 w-1/3" />
       <Skeleton className="h-64 w-full" />
     </div>

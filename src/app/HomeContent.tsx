@@ -128,7 +128,7 @@ export function HomeContent() {
               Sign in
             </Link>
             <Link
-              className="shadow-accent/25 flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-lg transition-all hover:bg-accent-hover active:scale-95"
+              className="shadow-accent/25 hover:bg-accent-hover flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-lg transition-all active:scale-95"
               href="/dashboard"
             >
               Get Started
@@ -156,7 +156,7 @@ export function HomeContent() {
 
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              className="shadow-accent/25 hover:shadow-accent/30 flex items-center gap-2 rounded-2xl bg-accent px-8 py-4 text-base font-bold text-accent-foreground shadow-xl transition-all hover:bg-accent-hover active:scale-95"
+              className="shadow-accent/25 hover:shadow-accent/30 hover:bg-accent-hover flex items-center gap-2 rounded-2xl bg-accent px-8 py-4 text-base font-bold text-accent-foreground shadow-xl transition-all active:scale-95"
               href="/dashboard"
             >
               <Zap className="h-5 w-5" />
@@ -231,7 +231,7 @@ export function HomeContent() {
             Start your free audit today — no credit card required.
           </p>
           <Link
-            className="shadow-accent/25 inline-flex items-center gap-2 rounded-2xl bg-accent px-8 py-4 font-bold text-accent-foreground shadow-xl transition-all hover:bg-accent-hover active:scale-95"
+            className="shadow-accent/25 hover:bg-accent-hover inline-flex items-center gap-2 rounded-2xl bg-accent px-8 py-4 font-bold text-accent-foreground shadow-xl transition-all active:scale-95"
             href="/dashboard"
           >
             <Shield className="h-5 w-5" />

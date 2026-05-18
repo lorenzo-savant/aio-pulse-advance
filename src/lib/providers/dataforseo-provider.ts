@@ -227,4 +227,245 @@ export class DataForSEOProvider extends BaseProvider {
       ...customConfig,
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────
+  // KEYWORD RESEARCH — DataForSEO Keywords API
+  // ─────────────────────────────────────────────────────────────────
+
+  async getKeywordSuggestions(
+    keyword: string,
+    locationCode = 2840,
+    languageCode = 'en',
+  ): Promise<
+    {
+      keyword: string
+      searchVolume: number
+      competition: number
+      cpc: number
+      trend: number[]
+      categories: string[]
+    }[]
+  > {
+    const credentials = this.getCredentials()
+    const body = [{ keyword, location_code: locationCode, language_code: languageCode }]
+
+    const response = await fetch(
+      'https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error(`DataForSEO keywords error ${response.status}: ${await response.text()}`)
+    }
+
+    const data = (await response.json()) as {
+      tasks?: Array<{
+        result?: Array<{
+          keyword: string
+          search_volume: number
+          competition: number
+          cpc: number
+          trend?: Array<{ year: number; month: number; search_volume: number }>
+          categories?: string[]
+        }>
+      }>
+    }
+
+    return (data.tasks?.[0]?.result || []).map((r) => ({
+      keyword: r.keyword,
+      searchVolume: r.search_volume || 0,
+      competition: r.competition || 0,
+      cpc: r.cpc || 0,
+      trend: (r.trend || []).map((t) => t.search_volume),
+      categories: r.categories || [],
+    }))
+  }
+
+  async getKeywordIdeas(
+    seedKeywords: string[],
+    locationCode = 2840,
+    languageCode = 'en',
+    limit = 100,
+  ): Promise<
+    {
+      keyword: string
+      searchVolume: number
+      competition: number
+      cpc: number
+      trend: number[]
+    }[]
+  > {
+    const credentials = this.getCredentials()
+    const body = [
+      {
+        keywords: seedKeywords,
+        location_code: locationCode,
+        language_code: languageCode,
+        sort_by: 'search_volume',
+        limit,
+      },
+    ]
+
+    const response = await fetch(
+      'https://api.dataforseo.com/v3/keywords_data/keywords_generator/live',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error(`DataForSEO keyword ideas error ${response.status}: ${await response.text()}`)
+    }
+
+    const data = (await response.json()) as {
+      tasks?: Array<{
+        result?: Array<{
+          keyword: string
+          search_volume: number
+          competition: number
+          cpc: number
+          trend?: Array<{ search_volume: number }>
+        }>
+      }>
+    }
+
+    return (data.tasks?.[0]?.result || []).map((r) => ({
+      keyword: r.keyword,
+      searchVolume: r.search_volume || 0,
+      competition: r.competition || 0,
+      cpc: r.cpc || 0,
+      trend: (r.trend || []).map((t) => t.search_volume),
+    }))
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // BACKLINK ANALYSIS — DataForSEO Backlinks API
+  // ─────────────────────────────────────────────────────────────────
+
+  async getBacklinkSummary(
+    target: string,
+    mode: 'domain' | 'page' = 'domain',
+  ): Promise<{
+    rank: number
+    backlinksCount: number
+    referringDomains: number
+    referringPages: number
+    eduBacklinks: number
+    govBacklinks: number
+  }> {
+    const credentials = this.getCredentials()
+    const endpoint =
+      mode === 'domain'
+        ? 'https://api.dataforseo.com/v3/backlinks/domain_rank/live'
+        : 'https://api.dataforseo.com/v3/backlinks/page_rank/live'
+
+    const body = [{ target, mode }]
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      throw new Error(`DataForSEO backlinks error ${response.status}: ${await response.text()}`)
+    }
+
+    const data = (await response.json()) as {
+      tasks?: Array<{
+        result?: Array<{
+          rank?: number
+          backlinks?: number
+          referring_domains?: number
+          referring_pages?: number
+          edu_backlinks?: number
+          gov_backlinks?: number
+        }>
+      }>
+    }
+
+    const r = data.tasks?.[0]?.result?.[0] || {}
+    return {
+      rank: r.rank || 0,
+      backlinksCount: r.backlinks || 0,
+      referringDomains: r.referring_domains || 0,
+      referringPages: r.referring_pages || 0,
+      eduBacklinks: r.edu_backlinks || 0,
+      govBacklinks: r.gov_backlinks || 0,
+    }
+  }
+
+  async getBacklinksList(
+    target: string,
+    limit = 100,
+    offset = 0,
+  ): Promise<
+    {
+      sourceUrl: string
+      targetUrl: string
+      anchor: string
+      linkType: string
+      firstSeen: string
+      lastSeen: string
+    }[]
+  > {
+    const credentials = this.getCredentials()
+    const body = [
+      {
+        target,
+        mode: 'domain',
+        limit,
+        offset,
+        order_by: 'first_seen desc',
+      },
+    ]
+
+    const response = await fetch('https://api.dataforseo.com/v3/backlinks/referring_domains/live', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      throw new Error(
+        `DataForSEO backlinks list error ${response.status}: ${await response.text()}`,
+      )
+    }
+
+    const data = (await response.json()) as {
+      tasks?: Array<{
+        result?: Array<{
+          domain: string
+          backlinks_count: number
+        }>
+      }>
+    }
+
+    return (data.tasks?.[0]?.result || []).map((r) => ({
+      sourceUrl: `https://${r.domain}`,
+      targetUrl: target,
+      anchor: '',
+      linkType: 'dofollow',
+      firstSeen: '',
+      lastSeen: '',
+    }))
+  }
 }

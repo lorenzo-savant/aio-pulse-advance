@@ -11,6 +11,10 @@ interface AppStore {
   userId: string | null
   setUserId: (id: string | null) => void
 
+  // ── Workspace ────────────────────────────────────────────────────────────
+  currentWorkspaceId: string | null
+  setCurrentWorkspaceId: (id: string | null) => void
+
   // ── Share stats ───────────────────────────────────────────────────────────
   shareStats: { copies: number; shares: number }
   incrementCopies: () => void
@@ -39,6 +43,10 @@ export const useAppStore = create<AppStore>()(
       userId: null,
       setUserId: (id) => set({ userId: id }),
 
+      // Workspace
+      currentWorkspaceId: null,
+      setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
+
       // Share stats
       shareStats: { copies: 0, shares: 0 },
       incrementCopies: () =>
@@ -57,29 +65,31 @@ export const useAppStore = create<AppStore>()(
           const json = await res.json()
 
           if (json.success && json.data) {
-            const entries: ScanHistoryEntry[] = (json.data as Record<string, unknown>[]).map((row) => ({
-              id: row.id as string,
-              source: row.source as string,
-              type: row.type as 'text' | 'url',
-              summary: (row.summary as string) || '',
-              visibilityScore: row.visibility_score as number,
-              engineBreakdown: [],
-              suggestions: [],
-              keywords: [],
-              analyzedText: '',
-              intent: (row.intent as AnalysisResult['intent']) || 'Informational',
-              intentConfidence: (row.intent_confidence as number) || 0,
-              intentSignals: [],
-              contentType: (row.content_type as string) || 'article',
-              contentTypeConfidence: 0,
-              tone: (row.tone as string) || 'neutral',
-              toneConfidence: 0,
-              readingLevel: (row.reading_level as string) || 'intermediate',
-              audience: '',
-              timestamp: new Date(row.created_at as string).getTime(),
-              engine: row.engine as EngineId,
-              model: row.model as ModelId,
-            }))
+            const entries: ScanHistoryEntry[] = (json.data as Record<string, unknown>[]).map(
+              (row) => ({
+                id: row.id as string,
+                source: row.source as string,
+                type: row.type as 'text' | 'url',
+                summary: (row.summary as string) || '',
+                visibilityScore: row.visibility_score as number,
+                engineBreakdown: [],
+                suggestions: [],
+                keywords: [],
+                analyzedText: '',
+                intent: (row.intent as AnalysisResult['intent']) || 'Informational',
+                intentConfidence: (row.intent_confidence as number) || 0,
+                intentSignals: [],
+                contentType: (row.content_type as string) || 'article',
+                contentTypeConfidence: 0,
+                tone: (row.tone as string) || 'neutral',
+                toneConfidence: 0,
+                readingLevel: (row.reading_level as string) || 'intermediate',
+                audience: '',
+                timestamp: new Date(row.created_at as string).getTime(),
+                engine: row.engine as EngineId,
+                model: row.model as ModelId,
+              }),
+            )
             set({ scanHistory: entries })
           }
         } catch (err) {

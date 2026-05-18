@@ -25,9 +25,7 @@ export function StatCard({ label, value, icon: Icon, color = 'brand' }: StatCard
       </div>
       <div>
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <p className="text-[34px] font-bold leading-none tracking-tight text-foreground">
-          {value}
-        </p>
+        <p className="text-[34px] font-bold leading-none tracking-tight text-foreground">{value}</p>
       </div>
     </div>
   )

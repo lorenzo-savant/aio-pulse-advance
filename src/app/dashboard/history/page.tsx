@@ -64,7 +64,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className="rounded-2xl border border-input bg-secondary transition-all hover:bg-secondaryhover">
+    <div className="hover:bg-secondaryhover rounded-2xl border border-input bg-secondary transition-all">
       {/* Header row */}
       <div className="flex items-center gap-4 p-4">
         <MiniRing score={entry.visibilityScore} />
@@ -123,10 +123,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
               { label: 'Level', value: entry.readingLevel },
               { label: 'Audience', value: entry.audience },
             ].map(({ label, value }) => (
-              <div
-                key={label}
-                className="rounded-lg border border-input bg-secondary p-2.5"
-              >
+              <div key={label} className="rounded-lg border border-input bg-secondary p-2.5">
                 <p className="text-[9px] font-black uppercase tracking-wider text-foreground">
                   {label}
                 </p>
@@ -143,10 +140,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {entry.engineBreakdown.map((e) => (
-                  <div
-                    key={e.engine}
-                    className="rounded-lg border border-input bg-secondary p-2"
-                  >
+                  <div key={e.engine} className="rounded-lg border border-input bg-secondary p-2">
                     <p className="text-[10px] text-muted-foreground">{e.engine}</p>
                     <p
                       className={cn(
@@ -307,7 +301,7 @@ export default function HistoryPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
-                className="w-full rounded-xl border border-input bg-input py-2 pl-10 pr-4 text-sm text-foreground placeholder-text-muted-surface outline-none focus:border-primary"
+                className="placeholder-text-muted-surface w-full rounded-xl border border-input bg-input py-2 pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary"
                 placeholder="Search by source URL or text..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

@@ -83,7 +83,9 @@ describe('runTechnicalAudit', () => {
     expect(result.categories.llmsTxt.score).toBe(0)
     expect(result.categories.schemaMarkup.score).toBe(0)
     expect(result.categories.securityHeaders.score).toBeLessThan(50)
-    const gptCheck = result.categories.aiCrawlerAccess.checks.find((c) => c.id === 'ai-crawler-gptbot')
+    const gptCheck = result.categories.aiCrawlerAccess.checks.find(
+      (c) => c.id === 'ai-crawler-gptbot',
+    )
     expect(gptCheck?.status).toBe('fail')
   })
 
@@ -97,7 +99,9 @@ describe('runTechnicalAudit', () => {
   it('flags missing HTTPS for http:// urls', async () => {
     global.fetch = vi.fn(async () => mockResponse(HTML_POOR)) as typeof fetch
     const result = await runTechnicalAudit('http://insecure.example')
-    const httpsCheck = result.categories.securityHeaders.checks.find((c) => c.id === 'security-https')
+    const httpsCheck = result.categories.securityHeaders.checks.find(
+      (c) => c.id === 'security-https',
+    )
     expect(httpsCheck?.status).toBe('fail')
   })
 })

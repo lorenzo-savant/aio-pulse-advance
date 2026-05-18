@@ -16,6 +16,16 @@ import {
 const VALID_LOCALES = ['en', 'it', 'sv'] as const
 type Locale = (typeof VALID_LOCALES)[number]
 
+/** HTML-escape an untrusted value before interpolating into the report markup. */
+function esc(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 const i18n = {
   en: {
     title: 'AI Voice Report',
@@ -157,7 +167,7 @@ function generateHtmlReport(
             .map(
               (s) => `
             <tr>
-              <td>${s.domain}</td>
+              <td>${esc(s.domain)}</td>
               <td>${s.brandShare.toFixed(1)}</td>
               <td>${s.competitorShare.toFixed(1)}</td>
               <td>${s.otherShare.toFixed(1)}</td>
@@ -188,10 +198,10 @@ function generateHtmlReport(
             .map(
               (c) => `
             <tr>
-              <td>${c.name}</td>
+              <td>${esc(c.name)}</td>
               <td>${c.rank === 1 ? t.rank1 : c.rank === 2 ? t.rank2 : t.rank3}</td>
               <td>${c.gap > 0 ? '-' + c.gap.toFixed(1) : '+' + Math.abs(c.gap).toFixed(1)}</td>
-              <td>${c.weakestComponent}</td>
+              <td>${esc(c.weakestComponent)}</td>
             </tr>
           `,
             )
@@ -217,7 +227,7 @@ function generateHtmlReport(
         <thead>
           <tr>
             <th>${t.engine}</th>
-            ${categoryArr.map((c) => `<th>${c}</th>`).join('')}
+            ${categoryArr.map((c) => `<th>${esc(c)}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
@@ -225,7 +235,7 @@ function generateHtmlReport(
             .map(
               (e) => `
             <tr>
-              <td>${e}</td>
+              <td>${esc(e)}</td>
               ${categoryArr
                 .map((c) => {
                   const cell = heatmap[e]?.[c]
@@ -258,7 +268,7 @@ function generateHtmlReport(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${brandName} - ${t.title}</title>
+  <title>${esc(brandName)} - ${t.title}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: ${bgColor}; color: ${textColor}; line-height: 1.6; padding: 20px; }
@@ -290,8 +300,8 @@ function generateHtmlReport(
 <body>
   <div class="container">
     <div class="header">
-      <h1>${brandName}</h1>
-      <div class="subtitle">${t.title} | ${t.period}: ${fromDate} - ${toDate}</div>
+      <h1>${esc(brandName)}</h1>
+      <div class="subtitle">${t.title} | ${t.period}: ${esc(fromDate)} - ${esc(toDate)}</div>
     </div>
 
     <div class="hero-avi">
@@ -307,8 +317,8 @@ function generateHtmlReport(
           .map(
             ([key, val]) => `
           <div class="component-item">
-            <div class="value">${typeof val === 'number' ? val.toFixed(1) : val}</div>
-            <div class="name">${componentLabels[key] || key}</div>
+            <div class="value">${typeof val === 'number' ? val.toFixed(1) : esc(val)}</div>
+            <div class="name">${esc(componentLabels[key] || key)}</div>
           </div>
         `,
           )
@@ -461,8 +471,13 @@ export async function GET(req: NextRequest) {
   }
 
   if (download) {
+    const safeName =
+      String(brandName)
+        .replace(/[^a-zA-Z0-9_-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || 'report'
     headers['Content-Disposition'] =
-      `attachment; filename="${brandName}-report-${fromDate}-${toDate}.html"`
+      `attachment; filename="${safeName}-report-${fromDate}-${toDate}.html"`
   }
 
   return new NextResponse(html, { headers })

@@ -231,7 +231,10 @@ export async function checkDomainRanksForQuestion(
   question: string,
   language?: string,
 ): Promise<GapCheckResult> {
-  const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
+  const cleanDomain = domain
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/$/, '')
   const json = (await serpApiFetch({
     engine: 'google',
     q: `site:${cleanDomain} ${question}`,

@@ -70,11 +70,7 @@ export async function calculateCitationSnapshots(
   }
 
   // ── Fetch brand competitors for competitor rate calculation ────────────────
-  const { data: brand } = await db
-    .from('brands')
-    .select('competitors')
-    .eq('id', brandId)
-    .single()
+  const { data: brand } = await db.from('brands').select('competitors').eq('id', brandId).single()
 
   const competitors: string[] = brand?.competitors || []
 
@@ -82,14 +78,8 @@ export async function calculateCitationSnapshots(
   const engines = ['chatgpt', 'gemini', 'perplexity'] as const
   const rows = results as unknown as MonitoringResultRow[]
 
-  const categories = [
-    ...new Set(rows.map((r) => r.prompt?.category).filter(Boolean)),
-    'all',
-  ]
-  const languages = [
-    ...new Set(rows.map((r) => r.prompt?.language || 'en').filter(Boolean)),
-    'all',
-  ]
+  const categories = [...new Set(rows.map((r) => r.prompt?.category).filter(Boolean)), 'all']
+  const languages = [...new Set(rows.map((r) => r.prompt?.language || 'en').filter(Boolean)), 'all']
   const engineList = [...engines, 'all'] as const
 
   const snapshots: SnapshotRow[] = []
@@ -120,8 +110,7 @@ export async function calculateCitationSnapshots(
             : null
 
         const avgVisibility =
-          filtered.reduce((sum, r) => sum + (r.visibility_score || 0), 0) /
-          totalPrompts
+          filtered.reduce((sum, r) => sum + (r.visibility_score || 0), 0) / totalPrompts
         const avgSentiment =
           filtered.reduce((sum, r) => sum + (r.sentiment_score || 0), 0) / totalPrompts
 
@@ -171,7 +160,13 @@ export async function calculateCitationSnapshots(
     }
   }
 
-  logger.info('Citation snapshots calculated', { service: 'citation-snapshots', brandId, scanDate, inserted, errorCount: errors.length })
+  logger.info('Citation snapshots calculated', {
+    service: 'citation-snapshots',
+    brandId,
+    scanDate,
+    inserted,
+    errorCount: errors.length,
+  })
 
   return { inserted, errors }
 }

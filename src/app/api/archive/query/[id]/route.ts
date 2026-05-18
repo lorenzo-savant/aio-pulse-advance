@@ -2,6 +2,7 @@
 // GET /api/archive/query/[id]
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -40,13 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     // Verify user has access to this brand
-    const { data: brand } = await db
-      .from('brands')
-      .select('id, user_id')
-      .eq('id', archive.brand_id)
-      .single()
-
-    if (!brand || String(brand.user_id) !== userId) {
+    if (!(await verifyBrandAccess(archive.brand_id, userId))) {
       return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
     }
 
@@ -119,15 +114,15 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
 
     // Verify user has access
-    const { data: brand } = await db
-      .from('brands')
-      .select('user_id, organization_id')
-      .eq('id', archive.brand_id)
-      .single()
-
-    if (!brand || String(brand.user_id) !== userId) {
+    if (!(await verifyBrandAccess(archive.brand_id, userId))) {
       return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
     }
+
+    const { data: brand } = await db
+      .from('brands')
+      .select('organization_id')
+      .eq('id', archive.brand_id)
+      .single()
 
     // Soft delete
     const { error: updateError } = await db
@@ -143,7 +138,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     // Log to audit
     await db.from('archive_audit_log').insert({
-      organization_id: brand.organization_id,
+      organization_id: brand?.organization_id,
       user_id: userId,
       table_name: 'research_archives',
       record_id: id,

@@ -21,7 +21,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
         {error.message || 'An unexpected error occurred. Please try again.'}
       </p>
       <button
-        className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3 font-semibold text-white shadow-lg transition-all hover:bg-brand-500 active:scale-95"
+        className="bg-brand-600 hover:bg-brand-500 inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold text-white shadow-lg transition-all active:scale-95"
         onClick={reset}
       >
         <RefreshCw className="h-4 w-4" />

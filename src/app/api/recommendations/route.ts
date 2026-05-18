@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { callGemini } from '@/lib/services/gemini'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { rateLimitGate } from '@/lib/api-auth'
 import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
@@ -40,7 +41,10 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(limit)
 
-  if (fetchErr) return err(fetchErr.message)
+  if (fetchErr) {
+    logger.error('/api/recommendations failed', { err: fetchErr })
+    return err('Failed to load data')
+  }
 
   return NextResponse.json({
     success: true,
@@ -60,6 +64,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return err('Authentication failed')
   }
+
+  // Expensive Gemini-backed endpoint — throttle per user.
+  const limited = await rateLimitGate(req, `recommendations:${userId}`, 10)
+  if (limited) return limited
 
   let body: { brand_id?: string }
   try {
@@ -163,7 +171,10 @@ Respond ONLY with valid JSON (no markdown):
         based_on_count: (results?.length || 0) + (keywords?.length || 0),
       })
     } catch (dbError) {
-      logger.error('Failed to save recommendation result', { route: '/api/recommendations', error: dbError })
+      logger.error('Failed to save recommendation result', {
+        route: '/api/recommendations',
+        error: dbError,
+      })
     }
 
     return NextResponse.json({
@@ -173,7 +184,7 @@ Respond ONLY with valid JSON (no markdown):
     })
   } catch (error) {
     logger.error('Error generating recommendations', { route: '/api/recommendations', error })
-    return err(error instanceof Error ? error.message : 'Failed to generate recommendations')
+    return err('Failed to generate recommendations')
   }
 }
 

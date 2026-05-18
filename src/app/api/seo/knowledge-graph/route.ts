@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeKnowledgeGraph } from '@/lib/services/knowledge-graph'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { requireUser } from '@/lib/api-auth'
+import { safeFetchText, SsrfError } from '@/lib/utils/safe-fetch'
+import { logger } from '@/lib/logger'
 
 function extractJsonLd(html: string): object[] {
   const jsonLdScripts =
@@ -30,6 +33,9 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 
 export async function GET(request: NextRequest) {
+  const auth = await requireUser(request)
+  if (auth instanceof NextResponse) return auth
+
   const ip = getClientIp(request.headers)
   const rateCheck = await checkRateLimit(`knowledge-graph:${ip}`, 10, 60_000)
   if (!rateCheck.success) {
@@ -50,30 +56,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AIO-Pulse-KnowledgeGraph/1.0)',
-      },
+    const { text: html, response } = await safeFetchText(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AIO-Pulse-KnowledgeGraph/1.0)' },
+      timeout: 15000,
+      maxBytes: 5 * 1024 * 1024,
     })
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: `Failed to fetch URL: ${response.status} ${response.statusText}` },
-        { status: response.status },
+        { error: `Failed to fetch URL: ${response.status}` },
+        { status: 502 },
       )
     }
 
-    const html = await response.text()
     const jsonLd = extractJsonLd(html)
     const result = analyzeKnowledgeGraph(html, jsonLd)
 
     return NextResponse.json(result)
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: `Error analyzing knowledge graph: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      },
-      { status: 500 },
-    )
+    if (error instanceof SsrfError) {
+      return NextResponse.json({ error: 'URL not allowed' }, { status: 400 })
+    }
+    logger.error('knowledge-graph failed', { err: error })
+    return NextResponse.json({ error: 'Error analyzing knowledge graph' }, { status: 500 })
   }
 }

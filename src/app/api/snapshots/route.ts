@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { logger } from '@/lib/logger'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -113,7 +114,8 @@ export async function GET(req: NextRequest) {
   const { data, error: fetchError } = await query
 
   if (fetchError) {
-    return err(fetchError.message)
+    logger.error('/api/snapshots failed', { err: fetchError })
+    return err('Failed to load data')
   }
 
   // Also return latest snapshot summary

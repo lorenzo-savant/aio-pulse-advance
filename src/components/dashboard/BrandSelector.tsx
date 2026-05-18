@@ -27,8 +27,7 @@ export function BrandSelector({
   return (
     <select
       className={
-        className ||
-        'rounded-xl border border-border bg-input px-4 py-2 text-sm text-foreground'
+        className || 'rounded-xl border border-border bg-input px-4 py-2 text-sm text-foreground'
       }
       value={selectedId}
       onChange={(e) => onChange(e.target.value)}

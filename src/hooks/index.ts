@@ -15,8 +15,8 @@ interface UseToggleReturn {
 
 export function useToggle(initial = false): UseToggleReturn {
   const [value, setValue] = useState(initial)
-  const toggle   = useCallback(() => setValue((v) => !v), [])
-  const setTrue  = useCallback(() => setValue(true), [])
+  const toggle = useCallback(() => setValue((v) => !v), [])
+  const setTrue = useCallback(() => setValue(true), [])
   const setFalse = useCallback(() => setValue(false), [])
   return { value, toggle, setTrue, setFalse, set: setValue }
 }
@@ -52,7 +52,12 @@ export function useClipboard(resetMs = 2000): UseClipboardReturn {
     if (timerRef.current) clearTimeout(timerRef.current)
   }, [])
 
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
 
   return { copied, copy, reset }
 }
@@ -198,11 +203,11 @@ export function useKeywordAnalysis(
 
   const radarData = useMemo<RadarPoint[]>(
     () => [
-      { subject: 'Density',     A: seoScore.density,   fullMark: 100 },
-      { subject: 'Impact',      A: seoScore.strategy,  fullMark: 100 },
+      { subject: 'Density', A: seoScore.density, fullMark: 100 },
+      { subject: 'Impact', A: seoScore.strategy, fullMark: 100 },
       { subject: 'Market Ease', A: seoScore.difficulty, fullMark: 100 },
-      { subject: 'Visibility',  A: seoScore.visibility, fullMark: 100 },
-      { subject: 'Semantic',    A: 85,                 fullMark: 100 },
+      { subject: 'Visibility', A: seoScore.visibility, fullMark: 100 },
+      { subject: 'Semantic', A: 85, fullMark: 100 },
     ],
     [seoScore],
   )
@@ -269,7 +274,9 @@ export function useMediaQuery(query: string): boolean {
 
 export function usePrevious<T>(value: T): T | undefined {
   const ref = useRef<T | undefined>(undefined)
-  useEffect(() => { ref.current = value }, [value])
+  useEffect(() => {
+    ref.current = value
+  }, [value])
   return ref.current
 }
 

@@ -184,7 +184,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
   return (
     <Card className="border-input bg-card p-6">
       <div className="mb-5 flex items-center gap-3">
-        <Brain className="text-brand h-5 w-5" />
+        <Brain className="h-5 w-5 text-brand" />
         <h2 className="text-lg font-bold text-foreground">Manual Analyzer</h2>
         <span className="text-xs text-muted-foreground">Paste any AI response to analyze</span>
       </div>
@@ -196,7 +196,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
               Brand
             </label>
             <select
-              className="focus:border-brand w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none"
+              className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand"
               value={brandId}
               onChange={(e) => setBrandId(e.target.value)}
             >
@@ -219,7 +219,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                   className={cn(
                     'flex-1 rounded-xl border py-2.5 text-xs font-bold transition-all',
                     mode === m
-                      ? 'text-brand border-brand-500/50 bg-primary/15'
+                      ? 'border-brand-500/50 bg-primary/15 text-brand'
                       : 'border-input bg-input text-muted-foreground hover:border-input',
                   )}
                   onClick={() => setMode(m)}
@@ -232,7 +232,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
         </div>
 
         <textarea
-          className="focus:border-brand w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-text-muted-surface outline-none"
+          className="placeholder-text-muted-surface w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
           placeholder="Paste an AI-generated response here to analyze sentiment and detect hallucinations..."
           rows={5}
           value={text}
@@ -334,9 +334,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                     Confidence: {result.hallucination.confidence}%
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {result.hallucination.summary}
-                </p>
+                <p className="text-sm text-muted-foreground">{result.hallucination.summary}</p>
                 {result.hallucination.flags.map((flag, i) => (
                   <div
                     key={i}
@@ -413,7 +411,7 @@ export default function SentimentPage() {
         </div>
         {brands.length > 0 && (
           <select
-            className="focus:border-brand rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none"
+            className="rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand"
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
           >
@@ -428,7 +426,7 @@ export default function SentimentPage() {
 
       {loadingStats ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="text-brand h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
         </div>
       ) : stats ? (
         <>

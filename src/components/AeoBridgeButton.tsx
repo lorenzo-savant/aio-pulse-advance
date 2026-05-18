@@ -172,7 +172,7 @@ export function AeoBridgeButton({
             <div className="space-y-1">
               <div className="h-1 w-full overflow-hidden rounded-full bg-surface-800">
                 <div
-                  className="h-full animate-pulse bg-brand-500"
+                  className="bg-brand-500 h-full animate-pulse"
                   style={{ width: currentStatus === 'pending' ? '30%' : '60%' }}
                 />
               </div>

@@ -36,7 +36,7 @@ describe('Team Invitation Flow', () => {
     })
 
     it('handles current time as boundary', () => {
-      const now = new Date().toISOString()
+      const now = new Date(Date.now() + 100).toISOString()
 
       expect(isExpired(now)).toBe(false)
     })

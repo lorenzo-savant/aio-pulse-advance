@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Key, Bell, Save, Loader2, Eye, EyeOff, Trash2, Globe } from 'lucide-react'
+import { User, Key, Bell, Save, Loader2, Trash2, Globe } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
@@ -21,7 +21,7 @@ interface ApiKey {
   label: string
   is_active: boolean
   created_at: string
-  encrypted_key?: string
+  hasKey?: boolean
 }
 
 const PROVIDER_INFO: Record<
@@ -56,11 +56,9 @@ const PROVIDER_INFO: Record<
 
 function ApiKeysSection() {
   const t = useTranslations('settings.api_keys')
-  const supabase = createSupabaseBrowserClient()
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<Provider | null>(null)
-  const [showKey, setShowKey] = useState<Provider | null>(null)
   const [newKeys, setNewKeys] = useState<Record<Provider, string>>({
     openai: '',
     gemini: '',
@@ -76,15 +74,12 @@ function ApiKeysSection() {
   const loadKeys = async () => {
     setLoading(true)
     try {
-      if (!supabase) {
-        setKeys([])
-        return
-      }
-      const { data, error } = await supabase.from('user_api_keys').select('*')
-      if (error) throw error
-      setKeys(data || [])
-    } catch (err) {
-      console.error('Failed to load API keys:', err)
+      const res = await fetch('/api/keys')
+      if (!res.ok) throw new Error('load failed')
+      const json = await res.json()
+      setKeys(json.data || [])
+    } catch {
+      setKeys([])
     } finally {
       setLoading(false)
     }
@@ -99,44 +94,24 @@ function ApiKeysSection() {
       return
     }
 
-    if (!supabase) {
-      toast.success(`${PROVIDER_INFO[provider].label} API key saved (dev mode)`)
-      return
-    }
-
     setSaving(provider)
     try {
-      const existing = getExistingKey(provider)
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      const payload = {
-        user_id: user?.id || 'dev-user',
-        provider,
-        encrypted_key: key.trim(),
-        label: `${PROVIDER_INFO[provider].label} API Key`,
-        is_active: true,
-      }
-
-      if (existing) {
-        const { error } = await supabase
-          .from('user_api_keys')
-          .update({ encrypted_key: key.trim(), updated_at: new Date().toISOString() })
-          .eq('id', existing.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('user_api_keys').insert(payload)
-        if (error) throw error
-      }
+      const res = await fetch('/api/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider,
+          apiKey: key.trim(),
+          label: `${PROVIDER_INFO[provider].label} API Key`,
+        }),
+      })
+      if (!res.ok) throw new Error('save failed')
 
       toast.success(t('saved', { name: PROVIDER_INFO[provider].label }))
       setNewKeys((prev) => ({ ...prev, [provider]: '' }))
       await loadKeys()
-    } catch (err) {
+    } catch {
       toast.error(t('save_failed'))
-      console.error(err)
     } finally {
       setSaving(null)
     }
@@ -154,17 +129,14 @@ function ApiKeysSection() {
     })
     if (!confirmed) return
 
-    if (!supabase) {
-      toast.success('API key removed (dev mode)')
-      return
-    }
-
     try {
-      const { error } = await supabase.from('user_api_keys').delete().eq('id', existing.id)
-      if (error) throw error
+      const res = await fetch(`/api/keys?id=${encodeURIComponent(existing.id)}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('delete failed')
       toast.success(t('removed'))
       await loadKeys()
-    } catch (err) {
+    } catch {
       toast.error(t('save_failed'))
     }
   }
@@ -173,19 +145,15 @@ function ApiKeysSection() {
     const existing = getExistingKey(provider)
     if (!existing) return
 
-    if (!supabase) {
-      toast.success('API key toggled (dev mode)')
-      return
-    }
-
     try {
-      const { error } = await supabase
-        .from('user_api_keys')
-        .update({ is_active: !existing.is_active })
-        .eq('id', existing.id)
-      if (error) throw error
+      const res = await fetch('/api/keys', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: existing.id, isActive: !existing.is_active }),
+      })
+      if (!res.ok) throw new Error('toggle failed')
       await loadKeys()
-    } catch (err) {
+    } catch {
       toast.error(t('save_failed'))
     }
   }
@@ -213,7 +181,6 @@ function ApiKeysSection() {
               const existing = getExistingKey(provider)
               const info = PROVIDER_INFO[provider]
               const isSaving = saving === provider
-              const isShowing = showKey === provider
 
               return (
                 <div key={provider} className="bg-secondaryrow rounded-xl border border-input p-4">
@@ -239,16 +206,9 @@ function ApiKeysSection() {
 
                   {existing ? (
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 rounded-lg bg-input px-3 py-2 font-mono text-sm text-foreground">
-                        {isShowing ? existing.encrypted_key : '••••••••••••••••••••••••••••••'}
+                      <div className="flex-1 rounded-lg bg-input px-3 py-2 font-mono text-sm text-muted-foreground">
+                        •••••••••••••••••••••••••••••• (stored encrypted)
                       </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setShowKey(isShowing ? null : provider)}
-                      >
-                        {isShowing ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => handleDelete(provider)}>
                         <Trash2 className="h-4 w-4 text-red-400" />
                       </Button>

@@ -16,99 +16,99 @@
 @layer base {
   :root {
     /* ═══ BRAND ACCENT — Horizon Brand Purple ═══ */
-    --color-accent: 0.44 0.28 275;          /* #4318FF — brand.500 */
-    --color-accent-hover: 0.50 0.26 275;    /* #7551FF — brand.400 */
-    --color-accent-muted: 0.95 0.04 275;    /* ~#F4F7FE tinted purple */
-    --color-accent-foreground: 0.99 0 0;    /* white */
+    --color-accent: 0.44 0.28 275; /* #4318FF — brand.500 */
+    --color-accent-hover: 0.5 0.26 275; /* #7551FF — brand.400 */
+    --color-accent-muted: 0.95 0.04 275; /* ~#F4F7FE tinted purple */
+    --color-accent-foreground: 0.99 0 0; /* white */
 
     /* ═══ SURFACE SCALE — Horizon Light Gray-Blue ═══ */
-    --surface-0:   1.00 0.000 0;       /* #FFFFFF — pure white */
-    --surface-50:  0.985 0.003 240;    /* ~#FAFCFF */
-    --surface-100: 0.975 0.008 240;    /* #F4F7FE — Horizon page bg */
-    --surface-200: 0.955 0.012 240;    /* #EDF2F7 — card hover, input bg */
-    --surface-300: 0.925 0.015 240;    /* #E2E8F0 — borders */
-    --surface-400: 0.88  0.018 240;    /* #E0E5F2 — muted UI */
-    --surface-500: 0.62  0.025 240;    /* #A3AED0 — secondary text */
-    --surface-600: 0.55  0.030 240;    /* #8F9BBA — placeholder text */
-    --surface-700: 0.42  0.035 240;    /* #707EAE — labels */
-    --surface-800: 0.22  0.050 240;    /* #2B3674 — primary text */
-    --surface-900: 0.18  0.060 240;    /* #1B2559 — headings */
-    --surface-950: 0.10  0.050 240;    /* near-black */
+    --surface-0: 1 0 0; /* #FFFFFF — pure white */
+    --surface-50: 0.985 0.003 240; /* ~#FAFCFF */
+    --surface-100: 0.975 0.008 240; /* #F4F7FE — Horizon page bg */
+    --surface-200: 0.955 0.012 240; /* #EDF2F7 — card hover, input bg */
+    --surface-300: 0.925 0.015 240; /* #E2E8F0 — borders */
+    --surface-400: 0.88 0.018 240; /* #E0E5F2 — muted UI */
+    --surface-500: 0.62 0.025 240; /* #A3AED0 — secondary text */
+    --surface-600: 0.55 0.03 240; /* #8F9BBA — placeholder text */
+    --surface-700: 0.42 0.035 240; /* #707EAE — labels */
+    --surface-800: 0.22 0.05 240; /* #2B3674 — primary text */
+    --surface-900: 0.18 0.06 240; /* #1B2559 — headings */
+    --surface-950: 0.1 0.05 240; /* near-black */
 
     /* ═══ SEMANTIC SURFACES ═══ */
-    --background:          var(--surface-100);  /* #F4F7FE page bg */
-    --foreground:          var(--surface-800);  /* #2B3674 primary text */
-    --card:                var(--surface-0);    /* white cards */
-    --card-foreground:     var(--surface-900);
-    --popover:             var(--surface-0);
-    --popover-foreground:  var(--surface-900);
-    --primary:             var(--color-accent);
-    --primary-foreground:  var(--color-accent-foreground);
-    --secondary:           var(--surface-100);
+    --background: var(--surface-100); /* #F4F7FE page bg */
+    --foreground: var(--surface-800); /* #2B3674 primary text */
+    --card: var(--surface-0); /* white cards */
+    --card-foreground: var(--surface-900);
+    --popover: var(--surface-0);
+    --popover-foreground: var(--surface-900);
+    --primary: var(--color-accent);
+    --primary-foreground: var(--color-accent-foreground);
+    --secondary: var(--surface-100);
     --secondary-foreground: var(--surface-800);
-    --muted:               var(--surface-100);
-    --muted-foreground:    var(--surface-500);  /* #A3AED0 */
-    --accent:              var(--surface-100);
-    --accent-foreground:   var(--surface-800);
-    --destructive:         0.55 0.22 25;
+    --muted: var(--surface-100);
+    --muted-foreground: var(--surface-500); /* #A3AED0 */
+    --accent: var(--surface-100);
+    --accent-foreground: var(--surface-800);
+    --destructive: 0.55 0.22 25;
     --destructive-foreground: 0.99 0 0;
-    --border:              var(--surface-200);  /* lighter border */
-    --input:               var(--surface-0);    /* white inputs */
-    --ring:                var(--color-accent);
+    --border: var(--surface-200); /* lighter border */
+    --input: var(--surface-0); /* white inputs */
+    --ring: var(--color-accent);
 
     /* ═══ UI SURFACES ═══ */
-    --nav-bg:              var(--surface-0);
-    --nav-border:          var(--surface-200);  /* subtle */
-    --nav-text:            var(--surface-500);  /* #A3AED0 */
-    --nav-text-hover:      var(--surface-800);  /* #2B3674 */
-    --nav-active-bg:       var(--color-accent-muted);
-    --nav-active-text:     var(--color-accent);
+    --nav-bg: var(--surface-0);
+    --nav-border: var(--surface-200); /* subtle */
+    --nav-text: var(--surface-500); /* #A3AED0 */
+    --nav-text-hover: var(--surface-800); /* #2B3674 */
+    --nav-active-bg: var(--color-accent-muted);
+    --nav-active-text: var(--color-accent);
 
-    --auth-bg:             var(--surface-100);
-    --auth-card:           var(--surface-0);
-    --auth-input:          var(--surface-0);
-    --auth-input-border:   var(--surface-200);
-    --auth-label:          var(--surface-700);
+    --auth-bg: var(--surface-100);
+    --auth-card: var(--surface-0);
+    --auth-input: var(--surface-0);
+    --auth-input-border: var(--surface-200);
+    --auth-label: var(--surface-700);
 
-    --search-bg:           var(--surface-200);
-    --search-border:       transparent;         /* Horizon search has no border */
-    --search-text:         var(--surface-800);
-    --search-placeholder:  var(--surface-500);
+    --search-bg: var(--surface-200);
+    --search-border: transparent; /* Horizon search has no border */
+    --search-text: var(--surface-800);
+    --search-placeholder: var(--surface-500);
 
-    --dashboard-bg:        var(--surface-100);
-    --dashboard-card:      var(--surface-0);
-    --dashboard-border:    var(--surface-200);
-    --dashboard-text:      var(--surface-800);
-    --dashboard-muted:     var(--surface-500);
+    --dashboard-bg: var(--surface-100);
+    --dashboard-card: var(--surface-0);
+    --dashboard-border: var(--surface-200);
+    --dashboard-text: var(--surface-800);
+    --dashboard-muted: var(--surface-500);
 
     /* ═══ STATUS ═══ */
-    --success:             0.72 0.19 150;     /* #01B574 */
-    --success-foreground:  0.99 0 0;
-    --success-muted:       0.95 0.06 150;
+    --success: 0.72 0.19 150; /* #01B574 */
+    --success-foreground: 0.99 0 0;
+    --success-muted: 0.95 0.06 150;
 
-    --warning:             0.80 0.16 70;      /* #FFB547 */
-    --warning-foreground:  0.20 0.06 30;
-    --warning-muted:       0.96 0.05 70;
+    --warning: 0.8 0.16 70; /* #FFB547 */
+    --warning-foreground: 0.2 0.06 30;
+    --warning-muted: 0.96 0.05 70;
 
-    --error:               0.58 0.20 25;      /* #EE5D50 */
-    --error-foreground:    0.99 0 0;
-    --error-muted:         0.96 0.05 25;
+    --error: 0.58 0.2 25; /* #EE5D50 */
+    --error-foreground: 0.99 0 0;
+    --error-muted: 0.96 0.05 25;
 
-    --info:                0.55 0.18 255;     /* #3965FF */
-    --info-foreground:     0.99 0 0;
-    --info-muted:          0.95 0.05 255;
+    --info: 0.55 0.18 255; /* #3965FF */
+    --info-foreground: 0.99 0 0;
+    --info-muted: 0.95 0.05 255;
 
     /* ═══ RADII — Horizon uses 20px cards, 16px inputs ═══ */
-    --radius-sm:  0.375rem;   /* 6px */
-    --radius-md:  0.625rem;   /* 10px */
-    --radius-lg:  1rem;       /* 16px */
-    --radius-xl:  1.25rem;    /* 20px — Horizon card radius */
-    --radius-2xl: 1.875rem;   /* 30px — pill shapes */
+    --radius-sm: 0.375rem; /* 6px */
+    --radius-md: 0.625rem; /* 10px */
+    --radius-lg: 1rem; /* 16px */
+    --radius-xl: 1.25rem; /* 20px — Horizon card radius */
+    --radius-2xl: 1.875rem; /* 30px — pill shapes */
 
     /* ═══ SHADOWS — Horizon light mode uses very soft shadows ═══ */
-    --shadow-sm:  0 2px 5px -1px oklch(0.55 0.03 240 / 0.06);
-    --shadow-md:  0 4px 12px -2px oklch(0.55 0.03 240 / 0.10);
-    --shadow-lg:  0 18px 40px -12px oklch(0.55 0.03 240 / 0.14);
+    --shadow-sm: 0 2px 5px -1px oklch(0.55 0.03 240 / 0.06);
+    --shadow-md: 0 4px 12px -2px oklch(0.55 0.03 240 / 0.1);
+    --shadow-lg: 0 18px 40px -12px oklch(0.55 0.03 240 / 0.14);
     --shadow-glow: 0 0 30px -5px oklch(var(--color-accent) / 0.35);
 
     --transition-fast: 150ms ease;
@@ -125,93 +125,93 @@
 
   .dark {
     /* ═══ BRAND ACCENT — brighter for dark bg ═══ */
-    --color-accent:            0.55 0.22 275;   /* #7551FF — brand.400 */
-    --color-accent-hover:      0.62 0.24 275;   /* brighter hover */
-    --color-accent-muted:      0.18 0.10 275;   /* subtle purple bg */
-    --color-accent-foreground:  0.99 0 0;
+    --color-accent: 0.55 0.22 275; /* #7551FF — brand.400 */
+    --color-accent-hover: 0.62 0.24 275; /* brighter hover */
+    --color-accent-muted: 0.18 0.1 275; /* subtle purple bg */
+    --color-accent-foreground: 0.99 0 0;
 
     /* ═══ NAVY SCALE — Horizon dark backgrounds ═══ */
-    --surface-0:   0.06 0.03 250;    /* #0b1437 — deepest navy page bg */
-    --surface-50:  0.08 0.035 250;   /* slightly lighter */
-    --surface-100: 0.10 0.04 250;    /* #111c44 — card bg */
-    --surface-200: 0.14 0.045 250;   /* #1B254B — elevated surface */
-    --surface-300: 0.20 0.05 250;    /* borders on dark */
-    --surface-400: 0.32 0.05 250;    /* muted elements */
-    --surface-500: 0.48 0.04 250;    /* secondary text */
-    --surface-600: 0.60 0.035 250;   /* labels */
-    --surface-700: 0.72 0.03 250;    /* light body text */
-    --surface-800: 0.86 0.02 250;    /* primary text */
-    --surface-900: 0.94 0.01 250;    /* headings — near white */
-    --surface-950: 0.97 0.005 250;   /* brightest */
+    --surface-0: 0.06 0.03 250; /* #0b1437 — deepest navy page bg */
+    --surface-50: 0.08 0.035 250; /* slightly lighter */
+    --surface-100: 0.1 0.04 250; /* #111c44 — card bg */
+    --surface-200: 0.14 0.045 250; /* #1B254B — elevated surface */
+    --surface-300: 0.2 0.05 250; /* borders on dark */
+    --surface-400: 0.32 0.05 250; /* muted elements */
+    --surface-500: 0.48 0.04 250; /* secondary text */
+    --surface-600: 0.6 0.035 250; /* labels */
+    --surface-700: 0.72 0.03 250; /* light body text */
+    --surface-800: 0.86 0.02 250; /* primary text */
+    --surface-900: 0.94 0.01 250; /* headings — near white */
+    --surface-950: 0.97 0.005 250; /* brightest */
 
     /* ═══ SEMANTIC SURFACES (dark) ═══ */
-    --background:          var(--surface-0);
-    --foreground:          var(--surface-900);
-    --card:                var(--surface-100);
-    --card-foreground:     var(--surface-900);
-    --popover:             var(--surface-200);
-    --popover-foreground:  var(--surface-900);
-    --primary:             var(--color-accent);
-    --primary-foreground:  var(--color-accent-foreground);
-    --secondary:           var(--surface-200);
+    --background: var(--surface-0);
+    --foreground: var(--surface-900);
+    --card: var(--surface-100);
+    --card-foreground: var(--surface-900);
+    --popover: var(--surface-200);
+    --popover-foreground: var(--surface-900);
+    --primary: var(--color-accent);
+    --primary-foreground: var(--color-accent-foreground);
+    --secondary: var(--surface-200);
     --secondary-foreground: var(--surface-800);
-    --muted:               var(--surface-200);
-    --muted-foreground:    var(--surface-500);
-    --accent:              var(--surface-200);
-    --accent-foreground:   var(--surface-800);
-    --destructive:         0.60 0.20 25;
+    --muted: var(--surface-200);
+    --muted-foreground: var(--surface-500);
+    --accent: var(--surface-200);
+    --accent-foreground: var(--surface-800);
+    --destructive: 0.6 0.2 25;
     --destructive-foreground: 0.99 0 0;
-    --border:              var(--surface-300);
-    --input:               var(--surface-200);
-    --ring:                var(--color-accent);
+    --border: var(--surface-300);
+    --input: var(--surface-200);
+    --ring: var(--color-accent);
 
     /* ═══ UI SURFACES (dark) ═══ */
-    --nav-bg:              var(--surface-100);
-    --nav-border:          var(--surface-300);
-    --nav-text:            var(--surface-500);
-    --nav-text-hover:      var(--surface-900);
-    --nav-active-bg:       var(--color-accent-muted);
-    --nav-active-text:     0.65 0.20 275;
+    --nav-bg: var(--surface-100);
+    --nav-border: var(--surface-300);
+    --nav-text: var(--surface-500);
+    --nav-text-hover: var(--surface-900);
+    --nav-active-bg: var(--color-accent-muted);
+    --nav-active-text: 0.65 0.2 275;
 
-    --auth-bg:             var(--surface-0);
-    --auth-card:           var(--surface-100);
-    --auth-input:          var(--surface-200);
-    --auth-input-border:   var(--surface-300);
-    --auth-label:          var(--surface-500);
+    --auth-bg: var(--surface-0);
+    --auth-card: var(--surface-100);
+    --auth-input: var(--surface-200);
+    --auth-input-border: var(--surface-300);
+    --auth-label: var(--surface-500);
 
-    --search-bg:           var(--surface-200);
-    --search-border:       transparent;
-    --search-text:         var(--surface-900);
-    --search-placeholder:  var(--surface-500);
+    --search-bg: var(--surface-200);
+    --search-border: transparent;
+    --search-text: var(--surface-900);
+    --search-placeholder: var(--surface-500);
 
-    --dashboard-bg:        var(--surface-0);
-    --dashboard-card:      var(--surface-100);
-    --dashboard-border:    var(--surface-300);
-    --dashboard-text:      var(--surface-900);
-    --dashboard-muted:     var(--surface-500);
+    --dashboard-bg: var(--surface-0);
+    --dashboard-card: var(--surface-100);
+    --dashboard-border: var(--surface-300);
+    --dashboard-text: var(--surface-900);
+    --dashboard-muted: var(--surface-500);
 
     /* ═══ STATUS (dark) ═══ */
-    --success:             0.72 0.19 150;
-    --success-foreground:  0.99 0 0;
-    --success-muted:       0.20 0.08 150;
+    --success: 0.72 0.19 150;
+    --success-foreground: 0.99 0 0;
+    --success-muted: 0.2 0.08 150;
 
-    --warning:             0.80 0.16 70;
-    --warning-foreground:  0.20 0.06 30;
-    --warning-muted:       0.20 0.08 70;
+    --warning: 0.8 0.16 70;
+    --warning-foreground: 0.2 0.06 30;
+    --warning-muted: 0.2 0.08 70;
 
-    --error:               0.62 0.20 25;
-    --error-foreground:    0.99 0 0;
-    --error-muted:         0.20 0.08 25;
+    --error: 0.62 0.2 25;
+    --error-foreground: 0.99 0 0;
+    --error-muted: 0.2 0.08 25;
 
-    --info:                0.62 0.16 255;
-    --info-foreground:     0.99 0 0;
-    --info-muted:          0.20 0.08 255;
+    --info: 0.62 0.16 255;
+    --info-foreground: 0.99 0 0;
+    --info-muted: 0.2 0.08 255;
 
     /* ═══ SHADOWS (dark) ═══ */
-    --shadow-sm:  0 2px 5px oklch(0 0 0 / 0.35);
-    --shadow-md:  0 4px 12px oklch(0 0 0 / 0.45);
-    --shadow-lg:  0 18px 40px -12px oklch(0 0 0 / 0.55);
-    --shadow-glow: 0 0 30px -5px oklch(var(--color-accent) / 0.30);
+    --shadow-sm: 0 2px 5px oklch(0 0 0 / 0.35);
+    --shadow-md: 0 4px 12px oklch(0 0 0 / 0.45);
+    --shadow-lg: 0 18px 40px -12px oklch(0 0 0 / 0.55);
+    --shadow-glow: 0 0 30px -5px oklch(var(--color-accent) / 0.3);
 
     color-scheme: dark;
   }
@@ -296,7 +296,7 @@
 @layer components {
   /* ─── Horizon Brand Gradient (used for stat card icons, CTA buttons) ─── */
   .bg-brand-gradient {
-    background: linear-gradient(135deg, oklch(var(--color-accent)) 0%, oklch(0.50 0.20 300) 100%);
+    background: linear-gradient(135deg, oklch(var(--color-accent)) 0%, oklch(0.5 0.2 300) 100%);
   }
 
   .dark .bg-brand-gradient {
@@ -306,9 +306,9 @@
   /* ─── Horizon Card — the key visual element ─── */
   .card-horizon {
     background: oklch(var(--card));
-    border-radius: var(--radius-xl);  /* 20px */
+    border-radius: var(--radius-xl); /* 20px */
     box-shadow: var(--shadow-lg);
-    border: none;                     /* NO border in light mode */
+    border: none; /* NO border in light mode */
     transition: all var(--transition-base);
   }
 
@@ -335,7 +335,7 @@
     width: 3.5rem;
     height: 3.5rem;
     border-radius: 50%;
-    background: linear-gradient(135deg, oklch(var(--color-accent)) 0%, oklch(0.50 0.20 300) 100%);
+    background: linear-gradient(135deg, oklch(var(--color-accent)) 0%, oklch(0.5 0.2 300) 100%);
     color: white;
     flex-shrink: 0;
   }
@@ -528,12 +528,24 @@
     animation: fadeUp 0.4s ease-out forwards;
   }
 
-  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-  .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
-  .stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-  .stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-  .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
-  .stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+  .stagger-children > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger-children > *:nth-child(2) {
+    animation-delay: 50ms;
+  }
+  .stagger-children > *:nth-child(3) {
+    animation-delay: 100ms;
+  }
+  .stagger-children > *:nth-child(4) {
+    animation-delay: 150ms;
+  }
+  .stagger-children > *:nth-child(5) {
+    animation-delay: 200ms;
+  }
+  .stagger-children > *:nth-child(6) {
+    animation-delay: 250ms;
+  }
 
   @keyframes fadeUp {
     from {
@@ -558,8 +570,12 @@
   }
 
   @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 }
 

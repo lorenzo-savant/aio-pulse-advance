@@ -3,6 +3,7 @@
 
 import type { AnalysisResult, EngineId, AIProvider, ModelId } from '@/types'
 import { generateId } from '@/lib/utils'
+import { safeFetchText } from '@/lib/utils/safe-fetch'
 import { buildAnalysisPrompt, callGemini } from './gemini'
 import { callOpenAI } from './openai'
 import { callPerplexity } from './perplexity'
@@ -94,19 +95,18 @@ async function callAIProvider(
 
 export async function fetchUrlContent(url: string): Promise<string> {
   const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`
-  const res = await fetch(normalized, {
+  const { text: html, response: res } = await safeFetchText(normalized, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.9,it;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br',
     },
-    signal: AbortSignal.timeout(45_000),
+    timeout: 45_000,
   })
 
   if (!res.ok) throw new Error(`Failed to fetch URL: ${res.status}`)
-
-  const html = await res.text()
   const text = html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -146,7 +146,10 @@ export async function analyzeWithProvider(
       const fixed = repairTruncatedJson(cleaned)
       parsed = JSON.parse(fixed) as typeof parsed
     } catch (e2) {
-      logger.error('Failed to parse AI response', { service: 'analysis', rawPreview: cleaned.slice(0, 500) })
+      logger.error('Failed to parse AI response', {
+        service: 'analysis',
+        rawPreview: cleaned.slice(0, 500),
+      })
       throw new Error(
         `Failed to parse AI response: ${e2 instanceof Error ? e2.message : 'Invalid JSON'}. Please try again.`,
       )

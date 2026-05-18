@@ -206,7 +206,9 @@ export default function ReportsPage() {
         <div>
           <div className="flex items-center gap-3">
             <FileText className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-black tracking-tight text-foreground">White-Label Reports</h1>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">
+              White-Label Reports
+            </h1>
           </div>
           <p className="mt-1 text-muted-foreground">
             Customize and generate branded PDF reports for your clients.
@@ -215,7 +217,7 @@ export default function ReportsPage() {
         <div className="flex items-center gap-2">
           {brands.length > 1 && (
             <select
-              className="text-foreground rounded-lg border border-input bg-input px-3 py-2 text-sm"
+              className="rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground"
               value={selectedBrand?.id || ''}
               onChange={(e) => {
                 const b = brands.find((b) => b.id === e.target.value)
@@ -241,33 +243,33 @@ export default function ReportsPage() {
           {/* Branding */}
           <Card className="border border-input bg-card p-6">
             <h2 className="text-text-secondary-ui mb-4 flex items-center gap-2 text-lg font-bold">
-              <Palette className="text-muted-foreground h-5 w-5" /> Branding
+              <Palette className="h-5 w-5 text-muted-foreground" /> Branding
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="text-muted-foreground mb-1.5 block text-[10px] font-black uppercase tracking-widest">
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Report Brand Name
                 </label>
                 <input
-                  className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm outline-none focus:border-primary"
+                  className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
                   placeholder="Your Agency Name"
                   value={settings.brandName}
                   onChange={(e) => setSettings({ ...settings, brandName: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-muted-foreground mb-1.5 block text-[10px] font-black uppercase tracking-widest">
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Logo URL
                 </label>
                 <input
-                  className="text-foreground placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm outline-none focus:border-primary"
+                  className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
                   placeholder="https://youragency.com/logo.png"
                   value={settings.logoUrl}
                   onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-muted-foreground mb-1.5 block text-[10px] font-black uppercase tracking-widest">
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Primary Color
                 </label>
                 <div className="flex items-center gap-3">
@@ -278,7 +280,7 @@ export default function ReportsPage() {
                     onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
                   />
                   <input
-                    className="text-foreground w-32 rounded-xl border border-input bg-input px-4 py-2.5 font-mono text-sm outline-none focus:border-primary"
+                    className="w-32 rounded-xl border border-input bg-input px-4 py-2.5 font-mono text-sm text-foreground outline-none focus:border-primary"
                     value={settings.primaryColor}
                     onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
                   />
@@ -289,7 +291,7 @@ export default function ReportsPage() {
                   <p className="text-text-secondary-ui text-sm font-bold">
                     Show &quot;Powered by AIO Pulse&quot;
                   </p>
-                  <p className="text-muted-foreground text-[10px]">
+                  <p className="text-[10px] text-muted-foreground">
                     Display a small attribution in the report footer
                   </p>
                 </div>
@@ -329,7 +331,7 @@ export default function ReportsPage() {
                   onClick={() => setSettings({ ...settings, headerStyle: style.id })}
                 >
                   <p className="text-text-secondary-ui text-sm font-bold">{style.label}</p>
-                  <p className="text-muted-foreground text-[10px]">{style.desc}</p>
+                  <p className="text-[10px] text-muted-foreground">{style.desc}</p>
                   {settings.headerStyle === style.id && (
                     <Check className="mt-2 h-4 w-4 text-primary" />
                   )}
@@ -349,7 +351,7 @@ export default function ReportsPage() {
                 >
                   <div>
                     <p className="text-text-secondary-ui text-sm font-bold">{section.label}</p>
-                    <p className="text-muted-foreground text-[10px]">{section.desc}</p>
+                    <p className="text-[10px] text-muted-foreground">{section.desc}</p>
                   </div>
                   <button
                     className={cn(
@@ -401,7 +403,7 @@ export default function ReportsPage() {
                   <h3 className="text-lg font-black text-foreground">
                     {settings.brandName || 'Brand Report'}
                   </h3>
-                  <p className="mt-1 text-xs text-foreground/60">AI Visibility Report</p>
+                  <p className="text-foreground/60 mt-1 text-xs">AI Visibility Report</p>
                 </div>
               )}
               {settings.headerStyle === 'minimal' && (
@@ -444,13 +446,10 @@ export default function ReportsPage() {
             </div>
             <div className="space-y-3 p-4">
               {REPORT_SECTIONS.filter((s) => settings[s.key]).map((section) => (
-                <div
-                  key={section.key}
-                  className="rounded-lg border border-input bg-card p-3"
-                >
+                <div key={section.key} className="rounded-lg border border-input bg-card p-3">
                   <p className="text-text-secondary-ui text-xs font-bold">{section.label}</p>
-                  <div className="mt-1 h-2 w-3/4 rounded bg-input-border" />
-                  <div className="mt-1 h-2 w-1/2 rounded bg-input-border" />
+                  <div className="bg-input-border mt-1 h-2 w-3/4 rounded" />
+                  <div className="bg-input-border mt-1 h-2 w-1/2 rounded" />
                 </div>
               ))}
               {settings.showPoweredBy && (
@@ -463,11 +462,11 @@ export default function ReportsPage() {
           <Card className="border border-input bg-card p-5">
             <div className="space-y-3">
               <div>
-                <label className="text-muted-foreground mb-1.5 block text-[10px] font-black uppercase tracking-widest">
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Date Range
                 </label>
                 <select
-                  className="text-foreground w-full rounded-lg border border-input bg-input px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground"
                   value={dateRange}
                   onChange={(e) => setDateRange(Number(e.target.value))}
                 >
@@ -508,11 +507,13 @@ export default function ReportsPage() {
                 </Badge>
               </div>
 
-              <div className="mb-4 rounded-xl border border-border bg-secondary/40 p-4">
+              <div className="bg-secondary/40 mb-4 rounded-xl border border-border p-4">
                 <div className="flex items-start gap-3">
                   <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Schemalagda körningar</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Schemalagda körningar
+                    </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Varje dag 07:00 — alla aktiva brand skickas automatiskt till AEO-systemet.
                       Agenter analyserar och returnerar optimeringsförslag inom ~10 minuter.

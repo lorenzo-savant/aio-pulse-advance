@@ -39,7 +39,10 @@ export async function GET(req: NextRequest) {
   if (!rateCheck.success) {
     return NextResponse.json(
       { success: false, message: 'Rate limit exceeded. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 

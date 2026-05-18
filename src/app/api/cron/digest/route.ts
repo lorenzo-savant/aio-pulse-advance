@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { Resend } from 'resend'
+import { verifyCronAuth } from '@/lib/cron-auth'
 import { logger } from '@/lib/logger'
 
 // Lazy init — see src/lib/services/alerts.ts for rationale
@@ -29,14 +30,8 @@ interface BrandData {
 }
 
 export async function POST(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET_TOKEN
-  if (!cronSecret) {
-    return NextResponse.json({ success: false, message: 'Server misconfigured' }, { status: 500 })
-  }
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-  }
+  const cronError = verifyCronAuth(req)
+  if (cronError) return cronError
 
   const db = createServerClient()
   if (!db) {

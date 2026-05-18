@@ -75,8 +75,8 @@ function ScoreRing({ score, size = 120 }: { score: number; size?: number }) {
         />
       </svg>
       <div className="absolute text-center">
-        <span className="text-foreground text-2xl font-black">{score}</span>
-        <span className="text-muted-foreground block text-[9px] font-bold uppercase tracking-widest">
+        <span className="text-2xl font-black text-foreground">{score}</span>
+        <span className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
           Score
         </span>
       </div>
@@ -96,13 +96,13 @@ function EngineCard({ breakdown }: { breakdown: AnalysisResult['engineBreakdown'
   return (
     <div className="rounded-xl border border-input bg-secondary p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-foreground font-semibold">{breakdown.engine}</span>
+        <span className="font-semibold text-foreground">{breakdown.engine}</span>
         <div className="flex items-center gap-2">
           <Badge variant={statusColor}>{breakdown.status}</Badge>
-          <span className="text-foreground text-lg font-black">{breakdown.score}</span>
+          <span className="text-lg font-black text-foreground">{breakdown.score}</span>
         </div>
       </div>
-      <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-input-border">
+      <div className="bg-input-border mb-2 h-1.5 w-full overflow-hidden rounded-full">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-700',
@@ -138,7 +138,7 @@ function KeywordRow({
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2">
-      <span className="text-foreground flex-1 text-sm font-medium">{kw.word}</span>
+      <span className="flex-1 text-sm font-medium text-foreground">{kw.word}</span>
       <div className="flex items-center gap-2 text-xs">
         {kw.count !== undefined && (
           <>
@@ -195,7 +195,7 @@ function IntentMapping({
     <Card className="p-6">
       <div className="mb-4 flex items-center gap-2">
         <SearchCheck className="h-5 w-5 text-primary" />
-        <h2 className="text-foreground text-lg font-bold">Intent Mapping</h2>
+        <h2 className="text-lg font-bold text-foreground">Intent Mapping</h2>
       </div>
 
       <div className="mb-5 space-y-2">
@@ -211,7 +211,7 @@ function IntentMapping({
                     ? 'bg-primary text-foreground'
                     : isPast
                       ? 'text-muted-foreground'
-                      : 'text-muted-foreground bg-secondary',
+                      : 'bg-secondary text-muted-foreground',
                 )}
               >
                 {isActive ? Math.round(confidence) : idx + 1}
@@ -225,7 +225,7 @@ function IntentMapping({
                 {type}
               </span>
               {isActive && (
-                <span className="ml-auto rounded-lg bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
+                <span className="bg-primary/20 ml-auto rounded-lg px-2 py-0.5 text-xs font-semibold text-primary">
                   Active
                 </span>
               )}
@@ -236,7 +236,7 @@ function IntentMapping({
 
       {signals.length > 0 && (
         <div className="border-t pt-4">
-          <p className="text-muted-foreground mb-2 text-[10px] font-black uppercase tracking-widest">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
             Detected Intent Signals
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -300,7 +300,7 @@ function KeywordDensityAnalysis({
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-primary" />
-          <h2 className="text-foreground text-lg font-bold">Keyword Density Analysis</h2>
+          <h2 className="text-lg font-bold text-foreground">Keyword Density Analysis</h2>
         </div>
         <Badge variant="brand">{stats.total} keywords</Badge>
       </div>
@@ -323,7 +323,7 @@ function KeywordDensityAnalysis({
           },
         ].map((stat) => (
           <div key={stat.label} className={cn('rounded-lg border p-3', stat.bg)}>
-            <p className="text-muted-foreground text-xs">{stat.label}</p>
+            <p className="text-xs text-muted-foreground">{stat.label}</p>
             <p className={cn('text-lg font-bold', stat.color)}>{stat.value}</p>
           </div>
         ))}
@@ -337,7 +337,7 @@ function KeywordDensityAnalysis({
           return (
             <div key={kw.word} className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-foreground text-sm font-medium">{kw.word}</span>
+                <span className="text-sm font-medium text-foreground">{kw.word}</span>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-muted-foreground">{kw.count} occurrences</span>
                   <span
@@ -354,7 +354,7 @@ function KeywordDensityAnalysis({
                   </span>
                 </div>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-input-border">
+              <div className="bg-input-border h-1.5 w-full overflow-hidden rounded-full">
                 <div
                   className={cn(
                     'h-full rounded-full transition-all',
@@ -373,9 +373,9 @@ function KeywordDensityAnalysis({
       </div>
 
       <div className="mt-4 rounded-lg border border-input bg-secondary px-3 py-2">
-        <p className="text-muted-foreground text-xs">
-          <span className="text-foreground font-semibold">Target density:</span> 0.5% - 4.0%
-          per keyword
+        <p className="text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">Target density:</span> 0.5% - 4.0% per
+          keyword
         </p>
       </div>
     </Card>
@@ -429,7 +429,7 @@ function EngineRecommendations({ selectedEngine }: { selectedEngine: EngineId })
     <Card className="p-6">
       <div className="mb-4 flex items-center gap-2">
         <Lightbulb className="h-5 w-5 text-primary" />
-        <h2 className="text-foreground text-lg font-bold">
+        <h2 className="text-lg font-bold text-foreground">
           {selectedEngine === 'all'
             ? 'Cross-Engine'
             : ENGINES.find((e) => e.id === selectedEngine)?.label}{' '}
@@ -443,7 +443,7 @@ function EngineRecommendations({ selectedEngine }: { selectedEngine: EngineId })
             key={idx}
             className="flex items-start gap-3 rounded-lg border border-input bg-secondary px-4 py-3"
           >
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-black text-primary">
+            <span className="bg-primary/20 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-primary">
               {idx + 1}
             </span>
             <p className="text-text-secondary-ui text-sm leading-relaxed">{tip}</p>
@@ -545,10 +545,8 @@ export default function OptimizerPage() {
     <div className="animate-in space-y-8 bg-background">
       {/* Header */}
       <div>
-        <h1 className="text-foreground text-3xl font-black tracking-tight">
-          Content Optimizer
-        </h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-black tracking-tight text-foreground">Content Optimizer</h1>
+        <p className="mt-1 text-muted-foreground">
           Analyze content for AI search visibility & citation readiness.
         </p>
       </div>
@@ -560,13 +558,13 @@ export default function OptimizerPage() {
             className="flex w-full items-center justify-between"
             onClick={() => setShowHistory(!showHistory)}
           >
-            <span className="text-foreground text-sm font-bold">
+            <span className="text-sm font-bold text-foreground">
               Previous Analyses ({history.length})
             </span>
             {showHistory ? (
-              <ChevronUp className="text-muted-foreground h-4 w-4" />
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronDown className="text-muted-foreground h-4 w-4" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             )}
           </button>
           {showHistory && (
@@ -574,7 +572,7 @@ export default function OptimizerPage() {
               {history.map((h) => (
                 <button
                   key={h.id}
-                  className="flex w-full items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2 text-left transition-all hover:bg-secondaryhover"
+                  className="hover:bg-secondaryhover flex w-full items-center gap-3 rounded-lg border border-input bg-secondary px-3 py-2 text-left transition-all"
                   onClick={() => {
                     if (h.raw_response) {
                       setResult(h.raw_response as AnalysisResult)
@@ -595,12 +593,12 @@ export default function OptimizerPage() {
                     {h.visibility_score || 0}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-foreground truncate text-xs font-medium">
+                    <p className="truncate text-xs font-medium text-foreground">
                       {h.input_mode === 'url'
                         ? h.input
                         : h.summary || h.input?.substring(0, 80) + '...'}
                     </p>
-                    <p className="text-muted-foreground text-[10px]">
+                    <p className="text-[10px] text-muted-foreground">
                       {new Date(h.created_at).toLocaleString('sv-SE')} · {h.input_mode}
                     </p>
                   </div>
@@ -621,8 +619,8 @@ export default function OptimizerPage() {
               className={cn(
                 'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all',
                 mode === m
-                  ? 'bg-primary text-foreground shadow-lg shadow-brand-600/25'
-                  : 'text-text-secondary-ui border border-input hover:bg-secondaryhover',
+                  ? 'shadow-brand-600/25 bg-primary text-foreground shadow-lg'
+                  : 'text-text-secondary-ui hover:bg-secondaryhover border border-input',
               )}
               onClick={() => setMode(m)}
             >
@@ -636,7 +634,7 @@ export default function OptimizerPage() {
         {mode === 'text' ? (
           <div className="space-y-1">
             <textarea
-              className="text-foreground placeholder-muted-foreground w-full resize-none rounded-xl border border-input bg-input px-4 py-3 font-mono text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full resize-none rounded-xl border border-input bg-input px-4 py-3 font-mono text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
               maxLength={charLimit}
               placeholder="Paste your content here — article, landing page copy, blog post, product description..."
               rows={10}
@@ -656,7 +654,7 @@ export default function OptimizerPage() {
           </div>
         ) : (
           <input
-            className="text-foreground placeholder-muted-foreground w-full rounded-xl border border-input bg-input px-4 py-3 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+            className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
             placeholder="https://example.com/your-page"
             type="url"
             value={input}
@@ -668,7 +666,7 @@ export default function OptimizerPage() {
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end">
           {/* Provider */}
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               AI Provider
             </label>
             <div className="flex flex-wrap gap-2">
@@ -679,7 +677,7 @@ export default function OptimizerPage() {
                     'rounded-lg border px-3 py-1.5 text-xs font-bold transition-all',
                     provider === p.id
                       ? 'border-brand-500/50 bg-primary/15 text-primary'
-                      : 'text-muted-foreground border-input hover:bg-secondaryhover',
+                      : 'hover:bg-secondaryhover border-input text-muted-foreground',
                   )}
                   onClick={() => {
                     setProvider(p.id)
@@ -695,11 +693,11 @@ export default function OptimizerPage() {
 
           {/* Model */}
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               Model
             </label>
             <select
-              className="text-foreground rounded-xl border border-input bg-input px-3 py-2 text-sm outline-none focus:border-primary"
+              className="rounded-xl border border-input bg-input px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               value={model}
               onChange={(e) => setModel(e.target.value as ModelId)}
             >
@@ -713,7 +711,7 @@ export default function OptimizerPage() {
 
           {/* Engine */}
           <div className="flex-1 space-y-1">
-            <label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               Target Engine
             </label>
             <div className="flex flex-wrap gap-2">
@@ -724,7 +722,7 @@ export default function OptimizerPage() {
                     'rounded-lg border px-3 py-1.5 text-xs font-bold transition-all',
                     engine === e.id
                       ? 'border-brand-500/50 bg-primary/15 text-primary'
-                      : 'text-muted-foreground border-input hover:bg-secondaryhover',
+                      : 'hover:bg-secondaryhover border-input text-muted-foreground',
                   )}
                   onClick={() => setEngine(e.id)}
                 >
@@ -763,7 +761,7 @@ export default function OptimizerPage() {
             {/* Score */}
             <Card className="flex flex-col items-center justify-center p-8">
               <ScoreRing score={result.visibilityScore} size={140} />
-              <p className="text-foreground mt-4 text-center text-sm font-semibold">
+              <p className="mt-4 text-center text-sm font-semibold text-foreground">
                 Overall Visibility Score
               </p>
               <div className="mt-4 flex gap-2">
@@ -784,7 +782,7 @@ export default function OptimizerPage() {
 
             {/* Summary */}
             <Card className="p-6 lg:col-span-2">
-              <p className="text-muted-foreground mb-4 text-[10px] font-black uppercase tracking-widest">
+              <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 AI Summary
               </p>
               <p className="text-text-secondary-ui leading-relaxed">{result.summary}</p>
@@ -807,26 +805,23 @@ export default function OptimizerPage() {
                   { icon: Mic, label: 'Tone', value: result.tone, conf: result.toneConfidence },
                   { icon: Brain, label: 'Level', value: result.readingLevel, conf: null },
                 ].map(({ icon: Icon, label, value, conf }) => (
-                  <div
-                    key={label}
-                    className="rounded-lg border border-input bg-secondary p-3"
-                  >
-                    <Icon className="text-muted-foreground mb-1.5 h-3.5 w-3.5" />
-                    <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
+                  <div key={label} className="rounded-lg border border-input bg-secondary p-3">
+                    <Icon className="mb-1.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       {label}
                     </p>
-                    <p className="text-foreground mt-0.5 text-sm font-semibold">{value}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-foreground">{value}</p>
                     {conf !== null && conf !== undefined && (
-                      <p className="text-muted-foreground text-[10px]">{conf}% confidence</p>
+                      <p className="text-[10px] text-muted-foreground">{conf}% confidence</p>
                     )}
                   </div>
                 ))}
               </div>
 
               <div className="mt-4 flex items-center gap-2 rounded-lg border border-input bg-secondary px-3 py-2">
-                <Users className="text-muted-foreground h-3.5 w-3.5" />
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
                 <p className="text-text-secondary-ui text-xs">
-                  <span className="text-foreground font-semibold">Audience: </span>
+                  <span className="font-semibold text-foreground">Audience: </span>
                   {result.audience}
                 </p>
               </div>
@@ -841,9 +836,7 @@ export default function OptimizerPage() {
               signals={result.intentSignals}
             />
             <div>
-              <h2 className="text-foreground mb-4 text-lg font-bold">
-                Engine-by-Engine Breakdown
-              </h2>
+              <h2 className="mb-4 text-lg font-bold text-foreground">Engine-by-Engine Breakdown</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {result.engineBreakdown.map((b) => (
                   <EngineCard key={b.engine} breakdown={b} />
@@ -857,7 +850,7 @@ export default function OptimizerPage() {
             {/* Keywords */}
             <Card className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-foreground text-lg font-bold">Keywords</h2>
+                <h2 className="text-lg font-bold text-foreground">Keywords</h2>
                 <Badge variant="brand">{result.keywords.length} found</Badge>
               </div>
               <div className="space-y-2">
@@ -880,7 +873,7 @@ export default function OptimizerPage() {
 
             {/* Radar Chart */}
             <Card className="p-6">
-              <h2 className="text-foreground mb-4 text-lg font-bold">SEO Radar</h2>
+              <h2 className="mb-4 text-lg font-bold text-foreground">SEO Radar</h2>
               <ResponsiveContainer height={260} width="100%">
                 <RadarChart data={radarData}>
                   <PolarGrid />
@@ -912,12 +905,12 @@ export default function OptimizerPage() {
           {/* Suggestions */}
           <Card className="p-6">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-foreground text-lg font-bold">
+              <h2 className="text-lg font-bold text-foreground">
                 <TrendingUp className="mr-2 inline h-5 w-5 text-primary" />
                 Improvement Suggestions
               </h2>
               <button
-                className="hover:text-foreground text-muted-foreground flex items-center gap-1 text-xs"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 onClick={toggleDetails}
               >
                 {showDetails ? 'Collapse' : 'Expand all'}
@@ -934,7 +927,7 @@ export default function OptimizerPage() {
                   key={i}
                   className="flex items-start gap-4 rounded-xl border border-input bg-secondary px-4 py-3"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[11px] font-black text-primary">
+                  <span className="bg-primary/20 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black text-primary">
                     {i + 1}
                   </span>
                   <p className="text-text-secondary-ui text-sm leading-relaxed">{s}</p>

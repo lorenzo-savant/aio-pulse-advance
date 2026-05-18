@@ -11,7 +11,8 @@ const schema = z.object({
   brandName: z.string().min(1).max(100),
   domain: z
     .preprocess(
-      (v) => (typeof v === 'string' && v.length > 0 && !/^https?:\/\//i.test(v) ? `https://${v}` : v),
+      (v) =>
+        typeof v === 'string' && v.length > 0 && !/^https?:\/\//i.test(v) ? `https://${v}` : v,
       z.string().url().optional().or(z.literal('')),
     )
     .optional(),
@@ -100,8 +101,7 @@ export async function POST(req: NextRequest) {
           category: brand.industry || data.industry || 'general',
           competitor: competitors[0] || 'alternatives',
           competitor2: competitors[1] || 'others',
-          location:
-            brandLanguage === 'sv' ? 'Sweden' : brandLanguage === 'it' ? 'Italy' : 'global',
+          location: brandLanguage === 'sv' ? 'Sweden' : brandLanguage === 'it' ? 'Italy' : 'global',
           use_case: `${brand.industry || data.industry || 'general'} solutions`,
         }
 
@@ -151,10 +151,7 @@ export async function POST(req: NextRequest) {
         data: {
           brand,
           promptsCreated,
-          nextStep:
-            promptsCreated > 0
-              ? 'run_first_scan'
-              : 'create_prompts',
+          nextStep: promptsCreated > 0 ? 'run_first_scan' : 'create_prompts',
         },
         message: `Brand "${brand.name}" created${
           promptsCreated > 0 ? ` with ${promptsCreated} default prompts` : ''
@@ -183,7 +180,10 @@ export async function GET(req: NextRequest) {
 
   const db = createServerClient()
   if (!db) {
-    return NextResponse.json({ success: false, message: 'Database not configured' }, { status: 503 })
+    return NextResponse.json(
+      { success: false, message: 'Database not configured' },
+      { status: 503 },
+    )
   }
   const { data: brands } = await db
     .from('brands')

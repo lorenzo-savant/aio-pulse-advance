@@ -3,8 +3,17 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Sparkles, Loader2, RefreshCw, Copy, Check, ExternalLink,
-  Target, CheckCircle2, HelpCircle, Download, Search,
+  Sparkles,
+  Loader2,
+  RefreshCw,
+  Copy,
+  Check,
+  ExternalLink,
+  Target,
+  CheckCircle2,
+  HelpCircle,
+  Download,
+  Search,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -178,8 +187,8 @@ export default function AEOSnippetsPage() {
             AEO Snippets
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Generate answer-engine-ready Q&A snippets from Google&rsquo;s &ldquo;People Also Ask&rdquo;,
-            with FAQPage JSON-LD and gap detection against your own domain.
+            Generate answer-engine-ready Q&A snippets from Google&rsquo;s &ldquo;People Also
+            Ask&rdquo;, with FAQPage JSON-LD and gap detection against your own domain.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -193,7 +202,9 @@ export default function AEOSnippetsPage() {
               }}
             >
               {brands.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
               ))}
             </select>
           )}
@@ -218,7 +229,9 @@ export default function AEOSnippetsPage() {
             placeholder="Seed keyword (e.g. 'best running shoes for flat feet')"
             value={keywordInput}
             onChange={(e) => setKeywordInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') void runGeneration() }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void runGeneration()
+            }}
             className="rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
           />
           <select
@@ -245,28 +258,61 @@ export default function AEOSnippetsPage() {
             disabled={running || !selectedBrand || !keywordInput.trim()}
           >
             {running ? (
-              <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Running...</>
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Running...
+              </>
             ) : (
-              <><Sparkles className="mr-1.5 h-3.5 w-3.5" />Generate</>
+              <>
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                Generate
+              </>
             )}
           </Button>
         </div>
         {quota && quota.limit > 0 && (
           <p className="mt-3 text-xs text-muted-foreground">
-            SerpAPI quota: <span className="font-bold text-foreground">{quota.used}/{quota.limit}</span>
-            {' '}({quota.remaining} remaining this month)
+            SerpAPI quota:{' '}
+            <span className="font-bold text-foreground">
+              {quota.used}/{quota.limit}
+            </span>{' '}
+            ({quota.remaining} remaining this month)
           </p>
         )}
       </Card>
 
       {/* Counts */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {([
-          { k: 'all' as const, label: 'Total', icon: Sparkles, v: counts.total, color: 'text-brand' },
-          { k: 'gap' as const, label: 'Gaps', icon: Target, v: counts.gap, color: 'text-amber-400' },
-          { k: 'covered' as const, label: 'Covered', icon: CheckCircle2, v: counts.covered, color: 'text-emerald-400' },
-          { k: 'unknown' as const, label: 'Unknown', icon: HelpCircle, v: counts.unknown, color: 'text-muted-foreground' },
-        ]).map((c) => {
+        {[
+          {
+            k: 'all' as const,
+            label: 'Total',
+            icon: Sparkles,
+            v: counts.total,
+            color: 'text-brand',
+          },
+          {
+            k: 'gap' as const,
+            label: 'Gaps',
+            icon: Target,
+            v: counts.gap,
+            color: 'text-amber-400',
+          },
+          {
+            k: 'covered' as const,
+            label: 'Covered',
+            icon: CheckCircle2,
+            v: counts.covered,
+            color: 'text-emerald-400',
+          },
+          {
+            k: 'unknown' as const,
+            label: 'Unknown',
+            icon: HelpCircle,
+            v: counts.unknown,
+            color: 'text-muted-foreground',
+          },
+        ].map((c) => {
           const Ico = c.icon
           const active = filter === c.k
           return (
@@ -274,7 +320,7 @@ export default function AEOSnippetsPage() {
               key={c.k}
               className={cn(
                 'cursor-pointer p-5 transition-all',
-                active ? 'border-brand ring-2 ring-brand/40' : 'hover:border-input',
+                active ? 'ring-brand/40 border-brand ring-2' : 'hover:border-input',
               )}
               onClick={() => setFilter(c.k)}
             >
@@ -300,27 +346,29 @@ export default function AEOSnippetsPage() {
             className={cn(
               'rounded-full border px-3 py-1 text-xs transition-colors',
               !keywordFilter
-                ? 'border-brand bg-brand/10 text-brand'
+                ? 'bg-brand/10 border-brand text-brand'
                 : 'border-input text-muted-foreground hover:text-foreground',
             )}
             onClick={() => setKeywordFilter('')}
           >
             All
           </button>
-          {Array.from(new Set(runs.map((r) => r.keyword))).slice(0, 10).map((k) => (
-            <button
-              key={k}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs transition-colors',
-                keywordFilter === k
-                  ? 'border-brand bg-brand/10 text-brand'
-                  : 'border-input text-muted-foreground hover:text-foreground',
-              )}
-              onClick={() => setKeywordFilter(k)}
-            >
-              {k}
-            </button>
-          ))}
+          {Array.from(new Set(runs.map((r) => r.keyword)))
+            .slice(0, 10)
+            .map((k) => (
+              <button
+                key={k}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs transition-colors',
+                  keywordFilter === k
+                    ? 'bg-brand/10 border-brand text-brand'
+                    : 'border-input text-muted-foreground hover:text-foreground',
+                )}
+                onClick={() => setKeywordFilter(k)}
+              >
+                {k}
+              </button>
+            ))}
         </div>
       )}
 
@@ -339,15 +387,19 @@ export default function AEOSnippetsPage() {
           {snippets.map((s) => (
             <Card key={s.id} className="p-5 transition-all hover:border-input">
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <Badge variant="default" size="sm" className="font-bold">{s.keyword}</Badge>
+                <Badge variant="default" size="sm" className="font-bold">
+                  {s.keyword}
+                </Badge>
                 {s.gap_status === 'gap' && (
                   <Badge variant="warning" size="sm" className="font-bold">
-                    <Target className="mr-1 h-3 w-3" />Gap
+                    <Target className="mr-1 h-3 w-3" />
+                    Gap
                   </Badge>
                 )}
                 {s.gap_status === 'covered' && (
                   <Badge variant="success" size="sm" className="font-bold">
-                    <CheckCircle2 className="mr-1 h-3 w-3" />Covered
+                    <CheckCircle2 className="mr-1 h-3 w-3" />
+                    Covered
                   </Badge>
                 )}
                 {s.answer_model && (
@@ -362,9 +414,15 @@ export default function AEOSnippetsPage() {
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Button variant="ghost" size="sm" onClick={() => copySchema(s)}>
                   {copiedId === s.id ? (
-                    <><Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />Copied</>
+                    <>
+                      <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
+                      Copied
+                    </>
                   ) : (
-                    <><Copy className="mr-1.5 h-3.5 w-3.5" />Copy JSON-LD</>
+                    <>
+                      <Copy className="mr-1.5 h-3.5 w-3.5" />
+                      Copy JSON-LD
+                    </>
                   )}
                 </Button>
                 {s.covered_url && (

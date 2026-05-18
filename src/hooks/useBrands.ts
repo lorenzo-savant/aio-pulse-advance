@@ -46,7 +46,9 @@ export function useBrands(autoSelectFirst = true): UseBrandsReturn {
       }
     }
     load()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectBrandById = (id: string) => {

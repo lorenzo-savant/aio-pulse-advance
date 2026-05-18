@@ -245,7 +245,7 @@ export default function ApiDocsPage() {
 
       <Card className="p-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
-          <Lock className="h-5 w-5 text-brand-400" />
+          <Lock className="text-brand-400 h-5 w-5" />
           Authentication
         </h2>
         <div className="space-y-4 text-sm text-gray-400">
@@ -263,7 +263,7 @@ export default function ApiDocsPage() {
 
       <Card className="p-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
-          <List className="h-5 w-5 text-brand-400" />
+          <List className="text-brand-400 h-5 w-5" />
           Pagination
         </h2>
         <div className="space-y-4 text-sm text-gray-400">
@@ -285,7 +285,7 @@ export default function ApiDocsPage() {
 
       <Card className="p-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
-          <AlertCircle className="h-5 w-5 text-brand-400" />
+          <AlertCircle className="text-brand-400 h-5 w-5" />
           Error Responses
         </h2>
         <div className="space-y-4 text-sm text-gray-400">
@@ -376,7 +376,7 @@ export default function ApiDocsPage() {
 
       <Card className="p-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
-          <Clock className="h-5 w-5 text-brand-400" />
+          <Clock className="text-brand-400 h-5 w-5" />
           Rate Limits
         </h2>
         <div className="space-y-2 text-sm text-gray-400">

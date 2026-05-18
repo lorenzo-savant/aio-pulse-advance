@@ -117,9 +117,7 @@ export default function WorkflowsPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Pages / Workflows</p>
-            <h1 className="mt-1 text-[34px] font-bold tracking-tight text-foreground">
-              Workflows
-            </h1>
+            <h1 className="mt-1 text-[34px] font-bold tracking-tight text-foreground">Workflows</h1>
             <p className="mt-1 text-muted-foreground">
               Track and manage background job executions.
             </p>
@@ -244,7 +242,7 @@ export default function WorkflowsPage() {
                               e.stopPropagation()
                               rerunWorkflow(workflow.id)
                             }}
-                            className="flex items-center gap-1 rounded-lg bg-brand-muted px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-muted/80"
+                            className="hover:bg-brand-muted/80 flex items-center gap-1 rounded-lg bg-brand-muted px-3 py-1.5 text-xs font-medium text-brand"
                           >
                             <RotateCcw className="h-3 w-3" />
                             Re-run
@@ -255,7 +253,7 @@ export default function WorkflowsPage() {
                                 e.stopPropagation()
                                 cancelWorkflow(workflow.id)
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-error-muted px-3 py-1.5 text-xs font-medium text-error hover:bg-error-muted/80"
+                              className="hover:bg-error-muted/80 flex items-center gap-1 rounded-lg bg-error-muted px-3 py-1.5 text-xs font-medium text-error"
                             >
                               <Pause className="h-3 w-3" />
                               Cancel
@@ -264,7 +262,7 @@ export default function WorkflowsPage() {
                         </div>
 
                         {workflow.error && (
-                          <div className="mb-4 rounded-lg border border-error-muted bg-error-muted/30 p-3">
+                          <div className="bg-error-muted/30 mb-4 rounded-lg border border-error-muted p-3">
                             <p className="text-xs text-error">{workflow.error}</p>
                           </div>
                         )}

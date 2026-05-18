@@ -81,11 +81,11 @@ function AuthCallbackContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-950 px-6">
       <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" />
-      <div className="pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-600/15 blur-3xl" />
+      <div className="bg-brand-600/15 pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
 
       <div className="animate-in relative z-10 w-full max-w-sm text-center">
         <div className="mb-8 flex justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 shadow-xl shadow-brand-600/30">
+          <div className="bg-brand-600 shadow-brand-600/30 flex h-12 w-12 items-center justify-center rounded-2xl shadow-xl">
             <Shield className="h-6 w-6 text-white" />
           </div>
         </div>
@@ -93,7 +93,7 @@ function AuthCallbackContent() {
         <div className="glass rounded-2xl p-8">
           {status === 'loading' && (
             <>
-              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-brand-400" />
+              <Loader2 className="text-brand-400 mx-auto mb-4 h-12 w-12 animate-spin" />
               <h2 className="mb-2 text-xl font-bold text-white">Verifying</h2>
               <p className="text-sm text-gray-400">{message}</p>
             </>
@@ -118,7 +118,7 @@ function AuthCallbackContent() {
               <p className="mb-4 text-sm text-gray-400">{message}</p>
               <a
                 href="/auth/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-brand-500"
+                className="bg-brand-600 hover:bg-brand-500 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white transition-all"
               >
                 Back to Login
               </a>
@@ -135,7 +135,7 @@ export default function AuthCallbackPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-surface-950">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+          <Loader2 className="text-brand-400 h-8 w-8 animate-spin" />
         </div>
       }
     >

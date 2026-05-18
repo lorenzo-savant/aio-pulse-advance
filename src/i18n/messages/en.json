@@ -801,35 +801,6 @@
     "visibility_label": "Visibility",
     "sentiment": "Sentiment"
   },
-  "reports": {
-    "page_title": "White-Label Reports",
-    "page_subtitle": "Customize and generate branded PDF reports for your clients.",
-    "branding": "Branding",
-    "report_brand_name": "Report Brand Name",
-    "logo_url": "Logo URL",
-    "primary_color": "Primary Color",
-    "show_powered_by": "Show \"Powered by AIO Pulse\"",
-    "powered_description": "Display a small attribution in the report footer",
-    "header_style": "Header Style",
-    "minimal": "Minimal",
-    "banner": "Banner",
-    "centered": "Centered",
-    "report_sections": "Report Sections",
-    "executive_summary": "Executive Summary",
-    "engine_breakdown": "Engine Breakdown",
-    "competitor_analysis": "Competitor Analysis",
-    "sentiment_analysis": "Sentiment Analysis",
-    "keywords_label": "Keywords",
-    "recommendations": "Recommendations",
-    "date_range": "Date Range",
-    "save_settings": "Save Settings",
-    "generate_pdf": "Generate PDF Report",
-    "ai_visibility_report": "AI Visibility Report",
-    "aeo_agent_system": "AEO Agent System",
-    "automatic_analysis": "Automatisk analys körs dagligen 07:00. Kör manuellt vid behov.",
-    "scheduled_runs": "Schemalagda körningar",
-    "daily_runs": "Varje dag 07:00 — alla aktiva brand skickas automatiskt till AEO-systemet. Agenter analyserar och returnerar optimeringsförslag inom ~10 minuter."
-  },
   "competitor": {
     "page_title": "Competitor Comparison",
     "page_subtitle": "Benchmark your AI visibility against up to 3 competitors.",
@@ -1087,5 +1058,178 @@
       "no_data": "No GEO score data yet",
       "run_first": "Run an analysis to see your GEO score"
     }
+  },
+  "gsc": {
+    "top_pages": "Top Pages",
+    "top_queries": "Top Queries",
+    "position": "Position",
+    "mobile": "Mobile",
+    "page": "Page",
+    "clicks": "Clicks",
+    "auto_sync": "Auto Sync",
+    "sync_success": "Synced rows successfully",
+    "ctr": "CTR",
+    "last_sync": "Last Sync",
+    "tablet": "Tablet",
+    "impressions": "Impressions",
+    "not_configured": "GSC not configured",
+    "title": "Google Search Console",
+    "sync_error": "Sync failed",
+    "sync_status": "Sync Status",
+    "device_breakdown": "Device Breakdown",
+    "sync_now": "Sync Now",
+    "query": "Query",
+    "daily_trend": "Daily Trend",
+    "desktop": "Desktop",
+    "country_breakdown": "Country Breakdown"
+  },
+  "keyword_research": {
+    "intent": "Intent",
+    "title": "Keyword Research",
+    "intents": {
+      "navigational": "Navigational",
+      "informational": "Informational",
+      "transactional": "Transactional",
+      "commercial": "Commercial"
+    },
+    "competition_levels": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "competition": "Competition",
+    "difficulty": "Difficulty",
+    "trending": "Trending",
+    "cpc": "CPC",
+    "search_volume": "Search Volume",
+    "refresh_now": "Refresh Keywords",
+    "refresh_error": "Keyword refresh failed",
+    "not_configured": "DataForSEO not configured",
+    "refresh_success": "Keywords updated"
+  },
+  "ai_agents": {
+    "typing": "AI is analyzing your data...",
+    "subtitle": "Ask questions about your brand data in real-time",
+    "send": "Send",
+    "colleagues_online": "colleagues online",
+    "agents": {
+      "brand_monitor": {
+        "name": "Brand Monitor",
+        "description": "Real-time brand health and visibility analysis"
+      },
+      "keyword_expert": {
+        "name": "Keyword Expert",
+        "description": "Search volume, trends, and intent analysis"
+      },
+      "report_builder": {
+        "name": "Report Builder",
+        "description": "Generate and customize performance reports"
+      },
+      "competitor_analyst": {
+        "name": "Competitor Analyst",
+        "description": "Competitive positioning and gap analysis"
+      }
+    },
+    "placeholder": "Ask about brand health, competitors, keywords...",
+    "real_time": "Live data",
+    "suggestions": [
+      "How is my brand health trending?",
+      "Which competitors are gaining visibility?",
+      "What keywords should I target next?",
+      "Generate a 30-day performance report",
+      "Why did my citation rate drop?"
+    ],
+    "shared_insights": "Shared Insights",
+    "error": "Failed to get response. Please try again.",
+    "title": "AI Assistant",
+    "team_chat": "Team Collaboration"
+  },
+  "reports": {
+    "preview": "Preview",
+    "csv": "CSV",
+    "create_report": "Create Report",
+    "error": "Failed to generate report",
+    "success": "Report generated successfully",
+    "download": "Download",
+    "sections": {
+      "keyword_performance": "Keyword Performance",
+      "gsc_performance": "Search Console Performance",
+      "competitor_comparison": "Competitor Comparison",
+      "visibility_trends": "Visibility Trends",
+      "health_scores": "Health Scores",
+      "citation_analysis": "Citation Analysis",
+      "recommendations": "Recommendations",
+      "executive_summary": "Executive Summary"
+    },
+    "period": "Period",
+    "pdf": "PDF",
+    "subtitle": "Generate and export brand performance reports",
+    "report_type": "Report Type",
+    "weekly": "Weekly Report",
+    "no_reports": "No reports generated yet",
+    "history": "Report History",
+    "title": "Report Center",
+    "generate": "Generate",
+    "format": "Format",
+    "custom": "Custom Period",
+    "generating": "Generating report...",
+    "markdown": "Markdown",
+    "monthly": "Monthly Report",
+    "scheduled": "Scheduled Reports"
+  },
+  "brand_overview": {
+    "score_table": {
+      "previous": "Previous",
+      "current": "Current",
+      "good": "Good",
+      "poor": "Poor",
+      "status": "Status",
+      "fair": "Fair",
+      "excellent": "Excellent",
+      "change": "Change",
+      "title": "Score Table",
+      "metric": "Metric"
+    },
+    "title": "Brand Overview",
+    "visibility": "Visibility",
+    "infographic": {
+      "title": "Brand Infographic",
+      "download_png": "Download PNG",
+      "download_pdf": "Download PDF",
+      "share": "Share Report"
+    },
+    "health_score": "Health Score",
+    "trend_down": "Trending Down",
+    "position_avg": "Avg Position",
+    "trend_up": "Trending Up",
+    "trend_stable": "Stable",
+    "sentiment": "Sentiment",
+    "mention_count": "Mentions",
+    "citation_rate": "Citation Rate",
+    "period": {
+      "90d": "90 Days",
+      "30d": "30 Days",
+      "7d": "7 Days",
+      "60d": "60 Days"
+    },
+    "subtitle": "Real-time brand monitoring and performance insights"
+  },
+  "scraper": {
+    "mentions_found": "Mentions Found",
+    "title": "Brand Mention Scraper",
+    "last_scrape": "Last Scrape",
+    "geolocation": "Geolocation",
+    "run_error": "Scrape failed",
+    "results": "Scrape Results",
+    "status": "Scraper Status",
+    "ai_overview_cited": "AI Overview Cited",
+    "schedule": "Schedule",
+    "keywords": "Keywords",
+    "snapshot": "Snapshot",
+    "run_now": "Run Scraper",
+    "dataset": "Dataset ID",
+    "not_configured": "Bright Data not configured",
+    "run_success": "Scraped successfully",
+    "sources": "Sources"
   }
 }

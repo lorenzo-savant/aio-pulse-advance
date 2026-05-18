@@ -32,7 +32,15 @@ export async function GET(req: NextRequest) {
   // Resolve owned brands (handles user_id format mismatch on legacy rows)
   const { data: ownedBrands } = await db.from('brands').select('id').eq('user_id', userId)
   const ownedIds = (ownedBrands ?? []).map((b: { id: string }) => b.id)
-  const filterIds = brandId && ownedIds.includes(brandId) ? [brandId] : ownedIds
+  const rawFilterIds = brandId && ownedIds.includes(brandId) ? [brandId] : ownedIds
+
+  // M-10: PostgREST filter injection hardening — only allow UUID-shaped values
+  // into the `.or()` interpolation, and require userId itself to be UUID-shaped.
+  const UUID_RE = /^[0-9a-fA-F-]{36}$/
+  const filterIds = rawFilterIds.filter((id: string) => UUID_RE.test(id))
+  if (!UUID_RE.test(userId)) {
+    return err('Authentication failed')
+  }
 
   let query = db
     .from('scan_history')
@@ -62,7 +70,7 @@ export async function GET(req: NextRequest) {
       })
     }
     logger.error('Scan load error', { route: '/api/scans', error })
-    return err(msg)
+    return err('Failed to load data')
   }
 
   return NextResponse.json({
@@ -130,7 +138,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     logger.error('Scan save error', { route: '/api/scans', error })
-    return err(error.message)
+    return err('Request failed')
   }
 
   return NextResponse.json({
@@ -159,15 +167,11 @@ export async function DELETE(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { error } = await db
-    .from('scan_history')
-    .delete()
-    .eq('id', scanId)
-    .eq('user_id', userId)
+  const { error } = await db.from('scan_history').delete().eq('id', scanId).eq('user_id', userId)
 
   if (error) {
     logger.error('Scan delete error', { route: '/api/scans', error })
-    return err(error.message)
+    return err('Request failed')
   }
 
   return NextResponse.json({ success: true, timestamp: Date.now() })

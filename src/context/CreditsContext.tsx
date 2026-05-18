@@ -32,14 +32,15 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(errorMessage)
-      setCredits((prev) =>
-        prev ?? {
-          userId: 'local',
-          totalCredits: DEFAULT_CREDITS,
-          usedCredits: 0,
-          availableCredits: DEFAULT_CREDITS,
-          lastUpdated: new Date().toISOString(),
-        },
+      setCredits(
+        (prev) =>
+          prev ?? {
+            userId: 'local',
+            totalCredits: DEFAULT_CREDITS,
+            usedCredits: 0,
+            availableCredits: DEFAULT_CREDITS,
+            lastUpdated: new Date().toISOString(),
+          },
       )
     } finally {
       setIsLoading(false)

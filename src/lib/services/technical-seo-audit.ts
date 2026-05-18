@@ -1,3 +1,5 @@
+import { safeFetch } from '@/lib/utils/safe-fetch'
+
 export interface AuditCheck {
   id: string
   name: string
@@ -32,18 +34,16 @@ async function fetchWithTimeout(
   userAgent?: string,
 ): Promise<Response | null> {
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), ms)
-    const response = await fetch(url, {
-      signal: controller.signal,
+    return await safeFetch(url, {
+      timeout: ms,
       headers: {
-        'User-Agent': userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'User-Agent':
+          userAgent ||
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
       },
     })
-    clearTimeout(timeout)
-    return response
   } catch {
     return null
   }

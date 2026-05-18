@@ -30,7 +30,9 @@ function makeEvent(type: string, dataObject: Record<string, unknown>) {
 // ── Mock setup ─────────────────────────────────────────────────────────────────
 
 // Chain-able mock for Supabase query builder
-function createChainMock(resolvedValue: { data: unknown; error: unknown } = { data: null, error: null }) {
+function createChainMock(
+  resolvedValue: { data: unknown; error: unknown } = { data: null, error: null },
+) {
   const chain: Record<string, ReturnType<typeof vi.fn>> = {}
   chain.insert = vi.fn().mockResolvedValue(resolvedValue)
   chain.upsert = vi.fn().mockResolvedValue(resolvedValue)
@@ -55,6 +57,14 @@ vi.mock('@/lib/logger', () => ({
     error: vi.fn(),
     debug: vi.fn(),
   },
+}))
+
+vi.mock('@/lib/services/audit-log', () => ({
+  logAudit: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('@/lib/services/organization-auth', () => ({
+  getCurrentOrganization: vi.fn().mockResolvedValue(null),
 }))
 
 // We need dynamic import so mocks are registered before the module loads
@@ -291,9 +301,7 @@ describe('Billing Webhook Handler', () => {
       const res = await POST(req as any)
 
       expect(res.status).toBe(200)
-      expect(mockChain.update).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'trialing' }),
-      )
+      expect(mockChain.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'trialing' }))
     })
 
     it('does nothing when subscription is not found in DB', async () => {
@@ -423,9 +431,7 @@ describe('Billing Webhook Handler', () => {
       const req = makeRequest(body, { 'stripe-signature': makeSignature(body) })
       await POST(req as any)
 
-      expect(mockChain.insert).toHaveBeenCalledWith(
-        expect.objectContaining({ amount: 600 }),
-      )
+      expect(mockChain.insert).toHaveBeenCalledWith(expect.objectContaining({ amount: 600 }))
     })
 
     it('maps correct user_id from session metadata', async () => {
@@ -631,9 +637,7 @@ describe('Billing Webhook Handler', () => {
       const req = makeRequest(body, { 'stripe-signature': makeSignature(body) })
       await POST(req as any)
 
-      expect(mockChain.insert).toHaveBeenCalledWith(
-        expect.objectContaining({ amount: 75 }),
-      )
+      expect(mockChain.insert).toHaveBeenCalledWith(expect.objectContaining({ amount: 75 }))
     })
   })
 })

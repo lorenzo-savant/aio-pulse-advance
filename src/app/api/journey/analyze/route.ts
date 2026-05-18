@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { requireUser, rateLimitGate } from '@/lib/api-auth'
 import {
   analyzeJourney,
   calculateJourneyScore,
@@ -7,8 +8,11 @@ import {
   getJourneyScoreBreakdown,
 } from '@/lib/services/agentic-journey'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+const MAX_TURNS = 50
+const MAX_PROMPT_LEN = 8000
 
 interface JourneyTurn {
   id: string
@@ -17,7 +21,13 @@ interface JourneyTurn {
   timestamp: number
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requireUser(request)
+  if (auth instanceof NextResponse) return auth
+
+  const limited = await rateLimitGate(request, 'journey-analyze', 20)
+  if (limited) return limited
+
   try {
     const body = await request.json()
     const turns: JourneyTurn[] = body.turns
@@ -29,9 +39,22 @@ export async function POST(request: Request) {
       )
     }
 
+    if (turns.length > MAX_TURNS) {
+      return NextResponse.json(
+        { error: `Too many turns (max ${MAX_TURNS})` },
+        { status: 400 },
+      )
+    }
+
     for (const turn of turns) {
       if (!turn.prompt || typeof turn.prompt !== 'string') {
         return NextResponse.json({ error: 'Each turn must have a prompt string' }, { status: 400 })
+      }
+      if (turn.prompt.length > MAX_PROMPT_LEN) {
+        return NextResponse.json(
+          { error: `Turn prompt too long (max ${MAX_PROMPT_LEN} chars)` },
+          { status: 400 },
+        )
       }
     }
 

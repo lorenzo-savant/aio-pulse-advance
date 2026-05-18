@@ -1,26 +1,12 @@
 // PATH: src/app/api/billing/webhook/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { createServerClient } from '@/lib/supabase'
-import { createHmac } from 'crypto'
 import { logger } from '@/lib/logger'
+import { logAudit } from '@/lib/services/audit-log'
+import { getCurrentOrganization } from '@/lib/services/organization-auth'
 
-function verifyStripeSignature(payload: string, signature: string, secret: string): boolean {
-  const timestamp = signature
-    .split(',')
-    .find((s) => s.startsWith('t='))
-    ?.substring(2)
-  const sig = signature
-    .split(',')
-    .find((s) => s.startsWith('v1='))
-    ?.substring(3)
-
-  if (!timestamp || !sig) return false
-
-  const signedPayload = `${timestamp}.${payload}`
-  const expectedSig = createHmac('sha256', secret).update(signedPayload).digest('hex')
-
-  return sig === expectedSig
-}
+export const runtime = 'nodejs'
 
 // ─── POST /api/billing/webhook — Stripe webhook handler ─────────────────────
 export async function POST(req: NextRequest) {
@@ -37,16 +23,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
   }
 
-  if (!verifyStripeSignature(body, sig, webhookSecret)) {
-    logger.error('Signature verification failed', { source: 'webhook' })
-    return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
-  }
-
-  let event: any
+  // Stripe SDK: constant-time signature compare + timestamp tolerance
+  // (default 300s) → replay protection. Throws on any mismatch.
+  let event: Stripe.Event
   try {
-    event = JSON.parse(body)
-  } catch {
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_not_configured')
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+  } catch (err) {
+    logger.error('Signature verification failed', {
+      source: 'webhook',
+      err: err instanceof Error ? err.message : 'unknown',
+    })
+    return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
   }
 
   const db = createServerClient()
@@ -57,7 +45,7 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object
+        const session = event.data.object as any
         const userId = session.metadata?.user_id
         const plan = session.metadata?.plan
         const customerId = session.customer
@@ -70,7 +58,6 @@ export async function POST(req: NextRequest) {
         if (userId && packageId && credits) {
           const totalCredits = parseInt(credits) + (parseInt(bonus) || 0)
 
-          // Add credits to user account
           await db.from('credits').insert({
             user_id: userId,
             amount: totalCredits,
@@ -94,12 +81,23 @@ export async function POST(req: NextRequest) {
             { onConflict: 'user_id' },
           )
           logger.info('Subscription activated', { source: 'webhook' })
+
+          const org = await getCurrentOrganization(userId)
+          if (org) {
+            void logAudit({
+              organizationId: org.id,
+              actorId: userId,
+              action: 'billing.plan.changed',
+              resourceType: 'subscription',
+              metadata: { plan, source: 'checkout' },
+            })
+          }
         }
         break
       }
 
       case 'customer.subscription.updated': {
-        const subscription = event.data.object
+        const subscription = event.data.object as any
         const customerId = subscription.customer
 
         const { data: sub } = await db
@@ -123,12 +121,24 @@ export async function POST(req: NextRequest) {
             .eq('user_id', sub.user_id)
 
           logger.info('Subscription updated', { source: 'webhook' })
+
+          const org = await getCurrentOrganization(sub.user_id)
+          if (org) {
+            void logAudit({
+              organizationId: org.id,
+              actorId: sub.user_id,
+              action: 'billing.payment.succeeded',
+              resourceType: 'subscription',
+              resourceId: subscription.id,
+              metadata: { status: subscription.status },
+            })
+          }
         }
         break
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object
+        const subscription = event.data.object as any
         const customerId = subscription.customer
 
         const { data: sub } = await db
@@ -148,12 +158,24 @@ export async function POST(req: NextRequest) {
             .eq('user_id', sub.user_id)
 
           logger.info('Subscription canceled', { source: 'webhook' })
+
+          const org = await getCurrentOrganization(sub.user_id)
+          if (org) {
+            void logAudit({
+              organizationId: org.id,
+              actorId: sub.user_id,
+              action: 'billing.plan.changed',
+              resourceType: 'subscription',
+              resourceId: subscription.id,
+              metadata: { plan: 'free', reason: 'canceled' },
+            })
+          }
         }
         break
       }
 
       case 'invoice.payment_failed': {
-        const invoice = event.data.object
+        const invoice = event.data.object as any
         const customerId = invoice.customer
 
         const { data: sub } = await db
@@ -166,6 +188,17 @@ export async function POST(req: NextRequest) {
           await db.from('subscriptions').update({ status: 'past_due' }).eq('user_id', sub.user_id)
 
           logger.warn('Payment failed', { source: 'webhook' })
+
+          const org = await getCurrentOrganization(sub.user_id)
+          if (org) {
+            void logAudit({
+              organizationId: org.id,
+              actorId: sub.user_id,
+              action: 'billing.payment.failed',
+              resourceType: 'subscription',
+              metadata: { invoiceId: invoice.id },
+            })
+          }
         }
         break
       }

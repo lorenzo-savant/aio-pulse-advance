@@ -1,13 +1,18 @@
 // PATH: src/app/api/reviews/weekly/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getCurrentUserId } from '@/lib/supabase'
+import { AuthError, createServerClient, getCurrentUserId } from '@/lib/supabase'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   const cookieHeader = req.headers.get('cookie')
-  const userId = await getCurrentUserId(authHeader, cookieHeader, req)
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  let userId: string
+  try {
+    userId = await getCurrentUserId(authHeader, cookieHeader, req)
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return NextResponse.json({ error: e.message }, { status: e.statusCode ?? 401 })
+    }
+    return NextResponse.json({ error: 'Authentication failed' }, { status: 401 })
   }
 
   const { searchParams } = new URL(req.url)
@@ -25,7 +30,9 @@ export async function GET(req: NextRequest) {
     try {
       let query = db
         .from('weekly_reviews')
-        .select('id, brand_id, week_number, year, week_start, week_end, metrics, markdown, created_at')
+        .select(
+          'id, brand_id, week_number, year, week_start, week_end, metrics, markdown, created_at',
+        )
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(limit)
@@ -65,5 +72,9 @@ export async function GET(req: NextRequest) {
     return recs.some((rec: any) => rec.type === 'weekly-review')
   })
 
-  return NextResponse.json({ success: true, reviews: weeklyReviews, source: 'recommendation_histories' })
+  return NextResponse.json({
+    success: true,
+    reviews: weeklyReviews,
+    source: 'recommendation_histories',
+  })
 }

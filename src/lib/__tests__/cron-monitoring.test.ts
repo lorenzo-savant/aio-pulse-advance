@@ -598,10 +598,10 @@ describe('generateWeeklyReview', () => {
     // We need different return values for different .from() calls
     let fromCallCount = 0
     const responses = [
-      { data: currentScore },    // brand_health_scores (current)
-      { data: prevScore },        // brand_health_scores (previous)
+      { data: currentScore }, // brand_health_scores (current)
+      { data: prevScore }, // brand_health_scores (previous)
       { count: monitoringCount }, // monitoring_results (count)
-      { count: halCount },        // monitoring_results (hallucinations)
+      { count: halCount }, // monitoring_results (hallucinations)
     ]
 
     const mockDb: any = {
@@ -636,7 +636,15 @@ describe('generateWeeklyReview', () => {
 
   it('calculates positive aviDelta and highlight', async () => {
     const db = buildMockSupabase({
-      currentScore: [{ avi_score: 75, health_score: 70, mention_rate: 60, citation_rate: 40, sentiment_score: 0.3 }],
+      currentScore: [
+        {
+          avi_score: 75,
+          health_score: 70,
+          mention_rate: 60,
+          citation_rate: 40,
+          sentiment_score: 0.3,
+        },
+      ],
       prevScore: [{ avi_score: 65, health_score: 60 }],
       monitoringCount: 12,
       halCount: 0,

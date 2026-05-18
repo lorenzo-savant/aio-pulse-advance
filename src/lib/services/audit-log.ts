@@ -17,6 +17,7 @@ export type AuditAction =
   | 'workspace.member.removed'
   | 'workspace.member.role.changed'
   | 'brand.created'
+  | 'brand.updated'
   | 'brand.deleted'
   | 'brand.restored'
   | 'brand.moved'

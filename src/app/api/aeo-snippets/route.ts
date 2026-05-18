@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-
   const brandId = req.nextUrl.searchParams.get('brand_id')
   const gap = req.nextUrl.searchParams.get('gap')
   const keyword = req.nextUrl.searchParams.get('keyword')

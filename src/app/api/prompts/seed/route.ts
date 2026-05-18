@@ -44,7 +44,11 @@ export async function POST(req: NextRequest) {
   const parsed = seedSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: formatValidationError(parsed.error), details: parsed.error.flatten().fieldErrors },
+      {
+        success: false,
+        message: formatValidationError(parsed.error),
+        details: parsed.error.flatten().fieldErrors,
+      },
       { status: 422 },
     )
   }

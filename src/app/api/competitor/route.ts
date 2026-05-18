@@ -80,7 +80,10 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    if (fetchErr) return err(fetchErr.message)
+    if (fetchErr) {
+      logger.error('/api/competitor failed', { err: fetchErr })
+      return err('Failed to load data')
+    }
 
     return NextResponse.json({
       success: true,
@@ -97,7 +100,10 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(limit)
 
-  if (fetchErr) return err(fetchErr.message)
+  if (fetchErr) {
+    logger.error('/api/competitor failed', { err: fetchErr })
+    return err('Failed to load data')
+  }
 
   return NextResponse.json({
     success: true,
@@ -202,7 +208,6 @@ export async function POST(req: NextRequest) {
     })
   } catch (error: unknown) {
     logger.error('Competitor analysis error', { source: 'competitor', error: String(error) })
-    const message = error instanceof Error ? error.message : 'Comparison failed'
-    return NextResponse.json({ success: false, message }, { status: 500 })
+    return NextResponse.json({ success: false, message: 'Comparison failed' }, { status: 500 })
   }
 }

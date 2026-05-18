@@ -17,17 +17,17 @@ async function auth(req: NextRequest): Promise<string | NextResponse> {
   }
 }
 
-export async function GET(
-  req: NextRequest,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const userId = await auth(req)
   if (userId instanceof NextResponse) return userId
 
   const { id } = await ctx.params
   const db = createServerClient() as any
   if (!db) {
-    return NextResponse.json({ success: false, message: 'Database not configured' }, { status: 503 })
+    return NextResponse.json(
+      { success: false, message: 'Database not configured' },
+      { status: 503 },
+    )
   }
 
   const { data: snippet } = await db

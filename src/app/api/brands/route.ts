@@ -6,6 +6,9 @@ import { createServerClient, getCurrentUserId, AuthError, dbNotConfigured } from
 import { slugify } from '@/lib/utils'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
+import { logAudit } from '@/lib/services/audit-log'
+import { getCurrentOrganization } from '@/lib/services/organization-auth'
+import { checkPermission } from '@/lib/services/workspace-auth'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -17,6 +20,8 @@ const brandSchema = z.object({
   domains: z.array(z.string().max(200)).max(20).optional().default([]),
   competitors: z.array(z.string().max(100)).max(20).optional().default([]),
   industry: z.string().max(100).optional(),
+  workspaceId: z.string().uuid().optional(),
+  organizationId: z.string().uuid().optional(),
   // Accept empty string from dropdowns with a default placeholder option
   language: z
     .preprocess((v) => (v === '' || v == null ? 'en' : v), z.enum(['en', 'it', 'sv']))
@@ -29,21 +34,25 @@ const brandSchema = z.object({
     .default('#6366f1'),
 })
 
-// Safe columns that always exist — avoid report_* to prevent schema cache errors
+// Safe columns that always exist — include workspace/org scoping
 const BRAND_LIST_COLS =
-  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
+  'id, user_id, workspace_id, organization_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
-async function getUserBrandIds(db: any, userId: string): Promise<string[]> {
-  // Get brands owned by user
-  const { data: ownedBrands } = await db.from('brands').select('id').eq('user_id', userId)
+async function getUserBrandIds(db: any, userId: string, workspaceId?: string): Promise<string[]> {
+  let query = db.from('brands').select('id').eq('user_id', userId)
+
+  if (workspaceId) {
+    query = query.eq('workspace_id', workspaceId)
+  }
+
+  const { data: ownedBrands } = await query
 
   const ownedIds = (ownedBrands || []).map((b: any) => b.id)
 
-  // Get brands where user is a team member
   const { data: teamMemberships } = await db
     .from('team_members')
     .select('brand_id')
@@ -52,17 +61,23 @@ async function getUserBrandIds(db: any, userId: string): Promise<string[]> {
 
   const teamIds = (teamMemberships || []).map((m: any) => m.brand_id)
 
-  // Return combined list
   return [...ownedIds, ...teamIds]
 }
 
 async function canEditBrand(db: any, brandId: string, userId: string): Promise<boolean> {
-  // Check if user owns the brand
-  const { data: brand } = await db.from('brands').select('user_id').eq('id', brandId).single()
+  const { data: brand } = await db
+    .from('brands')
+    .select('user_id, workspace_id')
+    .eq('id', brandId)
+    .single()
 
   if (String(brand?.user_id) === userId) return true
 
-  // Check if user is an editor/owner on the team
+  if (brand?.workspace_id) {
+    const hasPermission = await checkPermission(userId, brand.workspace_id, 'edit_brand')
+    if (hasPermission) return true
+  }
+
   const { data: membership } = await db
     .from('team_members')
     .select('role')
@@ -76,7 +91,7 @@ async function canEditBrand(db: any, brandId: string, userId: string): Promise<b
 }
 
 // ─── GET /api/brands ──────────────────────────────────────────────────────────
-// Returns all brands belonging to the authenticated user.
+// Returns all brands belonging to the authenticated user, optionally scoped to a workspace.
 export async function GET(req: NextRequest) {
   try {
     let userId: string
@@ -102,14 +117,14 @@ export async function GET(req: NextRequest) {
 
     const db = createServerClient()
 
-    // If no database configured, return empty array (dev mode without DB)
     if (!db) {
       logger.warn('No database configured, returning empty array', { route: '/api/brands' })
       return NextResponse.json({ success: true, data: [], timestamp: Date.now() })
     }
 
-    // Get brands user owns + brands they're team member of
-    const brandIds = await getUserBrandIds(db, userId)
+    const workspaceId = req.nextUrl.searchParams.get('workspaceId')
+
+    const brandIds = await getUserBrandIds(db, userId, workspaceId ?? undefined)
 
     if (brandIds.length === 0) {
       return NextResponse.json({ success: true, data: [], timestamp: Date.now() })
@@ -134,7 +149,7 @@ export async function GET(req: NextRequest) {
 }
 
 // ─── POST /api/brands ─────────────────────────────────────────────────────────
-// Creates a new brand.
+// Creates a new brand with workspace/org scoping.
 export async function POST(req: NextRequest) {
   let userId: string
   try {
@@ -183,18 +198,49 @@ export async function POST(req: NextRequest) {
     return err('Database not configured', 503)
   }
 
+  let workspaceId: string | undefined = parsed.data.workspaceId ?? undefined
+  let organizationId: string | undefined = parsed.data.organizationId ?? undefined
+
+  if (!workspaceId || !organizationId) {
+    const org = await getCurrentOrganization(userId)
+    if (org) {
+      organizationId = organizationId ?? org.id
+      workspaceId = workspaceId ?? org.defaultWorkspaceId ?? undefined
+    }
+  }
+
+  const insertData: any = {
+    ...parsed.data,
+    user_id: userId,
+    slug,
+  }
+
+  if (workspaceId) insertData.workspace_id = workspaceId
+  if (organizationId) insertData.organization_id = organizationId
+
   const { data, error } = await db
     .from('brands')
-    .insert({ ...parsed.data, user_id: userId, slug })
+    .insert(insertData as any)
     .select(BRAND_LIST_COLS)
     .single()
 
   if (error) {
-    // Supabase returns 23505 for unique constraint violations (duplicate slug)
     if (error.code === '23505') {
       return err('A brand with this name already exists', 409)
     }
     return err(error.message)
+  }
+
+  if (organizationId) {
+    void logAudit({
+      organizationId,
+      workspaceId: workspaceId ?? undefined,
+      actorId: userId,
+      action: 'brand.created',
+      resourceType: 'brand',
+      resourceId: data.id,
+      metadata: { name: parsed.data.name, slug },
+    })
   }
 
   return NextResponse.json({ success: true, data, timestamp: Date.now() }, { status: 201 })

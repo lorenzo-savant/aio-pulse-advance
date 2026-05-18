@@ -44,11 +44,7 @@ export async function GET(req: NextRequest) {
   if (!db) return err('Database not configured', 503)
 
   // Verify user has access to this brand (owner or team member)
-  const { data: brand } = await db
-    .from('brands')
-    .select('id, user_id')
-    .eq('id', brandId)
-    .single()
+  const { data: brand } = await db.from('brands').select('id, user_id').eq('id', brandId).single()
 
   if (!brand) {
     return err('Brand not found', 404)
@@ -80,7 +76,10 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1)
 
-  if (error) return err(error.message)
+  if (error) {
+    logger.error('/api/team failed', { err: error })
+    return err('Failed to load data')
+  }
 
   // Load display names from profiles (best effort)
   let profileMap: Record<string, string> = {}
@@ -154,7 +153,11 @@ export async function POST(req: NextRequest) {
   const parsed = inviteSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: formatValidationError(parsed.error), details: parsed.error.flatten().fieldErrors },
+      {
+        success: false,
+        message: formatValidationError(parsed.error),
+        details: parsed.error.flatten().fieldErrors,
+      },
       { status: 422 },
     )
   }
@@ -209,7 +212,7 @@ export async function POST(req: NextRequest) {
 
   if (inviteError) {
     logger.error('Invitation error', { source: 'team', error: String(inviteError) })
-    return err(inviteError.message)
+    return err('Request failed')
   }
 
   // Send invitation email
@@ -301,7 +304,10 @@ export async function DELETE(req: NextRequest) {
 
     const { error } = await db.from('team_members').delete().eq('id', memberId)
 
-    if (error) return err(error.message)
+    if (error) {
+      logger.error('/api/team delete member failed', { err: error })
+      return err('Request failed')
+    }
   }
 
   if (invitationId) {
@@ -326,7 +332,10 @@ export async function DELETE(req: NextRequest) {
 
     const { error } = await db.from('brand_invitations').delete().eq('id', invitationId)
 
-    if (error) return err(error.message)
+    if (error) {
+      logger.error('/api/team delete invitation failed', { err: error })
+      return err('Request failed')
+    }
   }
 
   return NextResponse.json({ success: true, message: 'Removed successfully' })
@@ -393,7 +402,10 @@ export async function PATCH(req: NextRequest) {
     .update({ role: body.role, updated_at: new Date().toISOString() })
     .eq('id', memberId)
 
-  if (error) return err(error.message)
+  if (error) {
+    logger.error('/api/team update role failed', { err: error })
+    return err('Request failed')
+  }
 
   return NextResponse.json({ success: true, message: 'Role updated' })
 }

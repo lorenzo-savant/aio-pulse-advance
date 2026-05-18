@@ -34,12 +34,7 @@ export async function GET() {
   }
 
   try {
-    const aiKeys = [
-      'OPENAI_API_KEY',
-      'GEMINI_API_KEY',
-      'ANTHROPIC_API_KEY',
-      'PERPLEXITY_API_KEY',
-    ]
+    const aiKeys = ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY', 'PERPLEXITY_API_KEY']
     const configured = aiKeys.filter((k) => !!process.env[k]).length
     health.services.ai_providers = `${configured}/4 configured`
   } catch (e) {

@@ -51,11 +51,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
+  if (!(await verifyBrandAccess(brandId, userId))) {
+    return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+  }
+
   const { data: brand, error: brandError } = await db
     .from('brands')
     .select('id, name, domain')
     .eq('id', brandId)
-    .eq('user_id', userId)
     .single()
 
   if (brandError || !brand) {
@@ -81,9 +84,7 @@ export async function GET(request: NextRequest) {
       results,
     })
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Tracking failed' },
-      { status: 500 },
-    )
+    logger.error('/api/serp/tracker failed', { err: error })
+    return NextResponse.json({ error: 'Tracking failed' }, { status: 500 })
   }
 }

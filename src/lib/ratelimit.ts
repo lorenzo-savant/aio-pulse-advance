@@ -160,12 +160,18 @@ export async function checkRateLimit(
 
 // ─── getClientIp ─────────────────────────────────────────────────────────────
 // Extracts real client IP from Next.js request headers.
-// Handles Vercel, Cloudflare, and direct connections.
+//
+// On Vercel, the platform itself sets `x-forwarded-for` and the LEFTMOST
+// (first) entry is the real client IP as observed by Vercel's edge — any
+// client-supplied values are appended after it. We therefore trust ONLY the
+// first `x-forwarded-for` entry, with `x-real-ip` (also set by Vercel) as a
+// secondary fallback. Arbitrary client-settable headers (e.g. cf-connecting-ip
+// when not behind Cloudflare) are intentionally NOT trusted to prevent
+// rate-limit-key spoofing.
 export function getClientIp(headers: { get: (key: string) => string | null }): string {
   return (
-    headers.get('x-real-ip') ??
-    headers.get('cf-connecting-ip') ??
     headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    headers.get('x-real-ip')?.trim() ??
     'unknown'
   )
 }

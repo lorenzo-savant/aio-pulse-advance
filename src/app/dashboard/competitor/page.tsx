@@ -306,7 +306,7 @@ function HistoricalSection() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-input/50">
+                  <tr className="border-input/50 border-b">
                     <td className="py-3">
                       <div className="flex items-center gap-2">
                         <div className="h-3 w-3 rounded-full bg-primary" />
@@ -358,16 +358,14 @@ function HistoricalSection() {
                     </td>
                   </tr>
                   {competitorStats.map((comp) => (
-                    <tr key={comp.name} className="border-b border-input/50">
+                    <tr key={comp.name} className="border-input/50 border-b">
                       <td className="py-3">
                         <div className="flex items-center gap-2">
                           <div
                             className="h-3 w-3 rounded-full"
                             style={{ backgroundColor: comp.color }}
                           />
-                          <span className="font-medium text-muted-foreground">
-                            {comp.name}
-                          </span>
+                          <span className="font-medium text-muted-foreground">{comp.name}</span>
                         </div>
                       </td>
                       <td className="py-3 text-center font-black text-foreground">
@@ -470,7 +468,7 @@ function ResultCard({
   const isWinner = rank === 0
 
   return (
-    <Card className={cn('p-5 transition-all', isWinner && 'ring-1 ring-brand-500/40')}>
+    <Card className={cn('p-5 transition-all', isWinner && 'ring-brand-500/40 ring-1')}>
       <div className="mb-4 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
@@ -489,7 +487,7 @@ function ResultCard({
         {result.engineBreakdown.slice(0, 4).map((e) => (
           <div key={e.engine} className="flex items-center gap-2 text-xs">
             <span className="w-16 shrink-0 text-muted-foreground">{e.engine}</span>
-            <div className="h-1 flex-1 rounded-full bg-input-border">
+            <div className="bg-input-border h-1 flex-1 rounded-full">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{ width: `${e.score}%`, background: color }}
@@ -636,9 +634,7 @@ export default function CompetitorPage() {
 
       {savedAnalyses.length > 0 && !results && (
         <Card className="p-5">
-          <h3 className="mb-3 text-sm font-bold text-muted-foreground">
-            Previous Comparisons
-          </h3>
+          <h3 className="mb-3 text-sm font-bold text-muted-foreground">Previous Comparisons</h3>
           <div className="space-y-2">
             {savedAnalyses.map((sa) => (
               <button
@@ -673,7 +669,7 @@ export default function CompetitorPage() {
               Your URL (Primary)
             </label>
             <input
-              className="w-full rounded-xl border border-brand-500/30 bg-input px-4 py-3 text-sm text-foreground placeholder-text-muted-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+              className="border-brand-500/30 placeholder-text-muted-surface w-full rounded-xl border bg-input px-4 py-3 text-sm text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder="https://yoursite.com/page-to-analyze"
               type="url"
               value={primaryUrl}
@@ -689,7 +685,7 @@ export default function CompetitorPage() {
               {competitorUrls.map((url, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <input
-                    className="flex-1 rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-text-muted-surface outline-none transition-all focus:border-primary"
+                    className="placeholder-text-muted-surface flex-1 rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none transition-all focus:border-primary"
                     placeholder={`https://competitor${i + 1}.com/their-page`}
                     type="url"
                     value={url}
@@ -777,9 +773,7 @@ export default function CompetitorPage() {
 
           {radarData.length > 0 && (
             <Card className="p-6">
-              <h2 className="mb-6 text-lg font-bold text-foreground">
-                Engine-by-Engine Radar
-              </h2>
+              <h2 className="mb-6 text-lg font-bold text-foreground">Engine-by-Engine Radar</h2>
               <ResponsiveContainer height={320} width="100%">
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="#1f2937" />
@@ -814,9 +808,7 @@ export default function CompetitorPage() {
           )}
 
           <Card className="p-6">
-            <h2 className="mb-5 text-lg font-bold text-foreground">
-              Score Delta vs Your Site
-            </h2>
+            <h2 className="mb-5 text-lg font-bold text-foreground">Score Delta vs Your Site</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -839,13 +831,11 @@ export default function CompetitorPage() {
                   {rankedResults.map((r, i) => {
                     const delta = r.score - results.primary.score
                     return (
-                      <tr key={r.url} className="border-b border-input/50">
+                      <tr key={r.url} className="border-input/50 border-b">
                         <td className="max-w-[200px] truncate py-3 text-xs text-muted-foreground">
                           {r.url}
                         </td>
-                        <td className="py-3 text-center font-black text-foreground">
-                          {r.score}
-                        </td>
+                        <td className="py-3 text-center font-black text-foreground">{r.score}</td>
                         <td className="py-3 text-center">
                           {r.isPrimary ? (
                             <span className="text-xs text-muted-foreground">baseline</span>

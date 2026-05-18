@@ -100,7 +100,9 @@ describe('verifyBrandAccess', () => {
       error: { message: 'not found' },
     }
     // Team membership succeeds
-    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })] = {
+    queryResults[
+      resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })
+    ] = {
       data: { brand_id: BRAND_ID },
       error: null,
     }
@@ -159,7 +161,9 @@ describe('verifyBrandAccess', () => {
       data: null,
       error: { message: 'not found' },
     }
-    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })] = {
+    queryResults[
+      resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })
+    ] = {
       data: { brand_id: BRAND_ID },
       error: null,
     }
@@ -219,7 +223,9 @@ describe('verifyBrandOwnership', () => {
       error: null,
     }
     // team membership would succeed — but should not be checked
-    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: OTHER_USER, status: 'accepted' })] = {
+    queryResults[
+      resultKey('team_members', { brand_id: BRAND_ID, user_id: OTHER_USER, status: 'accepted' })
+    ] = {
       data: { brand_id: BRAND_ID },
       error: null,
     }
@@ -406,7 +412,9 @@ describe('canEditBrand', () => {
       data: { user_id: 'someone-else' },
       error: null,
     }
-    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })] = {
+    queryResults[
+      resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })
+    ] = {
       data: { role: 'editor' },
       error: null,
     }
@@ -419,7 +427,9 @@ describe('canEditBrand', () => {
       data: { user_id: 'someone-else' },
       error: null,
     }
-    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })] = {
+    queryResults[
+      resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })
+    ] = {
       data: { role: 'owner' },
       error: null,
     }
@@ -454,7 +464,10 @@ describe('canEditBrand', () => {
 // getAccessibleBrandIds
 // ═══════════════════════════════════════════════════════════════════════════
 describe('getAccessibleBrandIds', () => {
-  function createMockDb(ownedBrands: { id: string }[] | null, teamMemberships: { brand_id: string }[] | null) {
+  function createMockDb(
+    ownedBrands: { id: string }[] | null,
+    teamMemberships: { brand_id: string }[] | null,
+  ) {
     const mockDb = {
       from: vi.fn((table: string) => {
         const chain: Record<string, unknown> = {
@@ -472,7 +485,13 @@ describe('getAccessibleBrandIds', () => {
           return { select: () => ({ eq: () => ({ data: ownedBrands, error: null }) }) }
         }
         if (table === 'team_members') {
-          return { select: () => ({ eq: (_f: string, _v: string) => ({ eq: () => ({ data: teamMemberships, error: null }) }) }) }
+          return {
+            select: () => ({
+              eq: (_f: string, _v: string) => ({
+                eq: () => ({ data: teamMemberships, error: null }),
+              }),
+            }),
+          }
         }
         return chain
       }),
@@ -499,7 +518,10 @@ describe('getAccessibleBrandIds', () => {
   })
 
   it('returns empty array when db is null', async () => {
-    const result = await getAccessibleBrandIds(null as unknown as ReturnType<typeof createServerClient>, USER_ID)
+    const result = await getAccessibleBrandIds(
+      null as unknown as ReturnType<typeof createServerClient>,
+      USER_ID,
+    )
     expect(result).toEqual([])
   })
 

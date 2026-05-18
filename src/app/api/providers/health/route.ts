@@ -44,7 +44,10 @@ export async function POST() {
       timestamp: new Date().toISOString(),
     })
   } catch (err) {
-    logger.error('Provider health refresh error', { source: 'providers/health', error: String(err) })
+    logger.error('Provider health refresh error', {
+      source: 'providers/health',
+      error: String(err),
+    })
     return NextResponse.json(
       { success: false, message: 'Failed to refresh provider health' },
       { status: 500 },

@@ -21,6 +21,7 @@ interface QueryResponse {
   mentionDetected: boolean
   success: boolean
   error?: string
+  retrieval?: 'live' | 'model-memory'
 }
 
 interface OrchestratedResult {
@@ -60,13 +61,20 @@ class QueryOrchestrator {
     if (useCache) {
       const cached = this.responseCache.get(cacheKey)
       if (cached && Date.now() - cached.timestamp.getTime() < CACHE_TTL_MS) {
-        logger.debug('Cache hit', { service: 'query-orchestrator', cacheKey: cacheKey.slice(0, 40) })
+        logger.debug('Cache hit', {
+          service: 'query-orchestrator',
+          cacheKey: cacheKey.slice(0, 40),
+        })
         return cached
       }
     }
 
     // 2. Execute all providers in parallel
-    logger.info('Executing providers in parallel', { service: 'query-orchestrator', providerCount: engines.length, engines })
+    logger.info('Executing providers in parallel', {
+      service: 'query-orchestrator',
+      providerCount: engines.length,
+      engines,
+    })
     const startTime = Date.now()
 
     const promises = engines.map((engine) => this.executeProvider(engine, promptText, requestId))
@@ -78,7 +86,11 @@ class QueryOrchestrator {
       if (result.status === 'fulfilled') {
         return result.value
       } else {
-        logger.error('Provider failed', { service: 'query-orchestrator', provider: engines[index], error: result.reason })
+        logger.error('Provider failed', {
+          service: 'query-orchestrator',
+          provider: engines[index],
+          error: result.reason,
+        })
         return {
           provider: engines[index],
           engine: engines[index],
@@ -133,7 +145,12 @@ class QueryOrchestrator {
     }
 
     // 6. Log results
-    logger.info('Orchestration complete', { service: 'query-orchestrator', successCount, totalEngines: engines.length, totalTimeMs })
+    logger.info('Orchestration complete', {
+      service: 'query-orchestrator',
+      successCount,
+      totalEngines: engines.length,
+      totalTimeMs,
+    })
 
     return orchestratedResult
   }
@@ -169,10 +186,15 @@ class QueryOrchestrator {
         citedUrls,
         mentionDetected,
         success: true,
+        retrieval: result.retrieval,
       }
     } catch (error) {
       const responseTimeMs = Date.now() - startTime
-      logger.error('Provider execution failed', { service: 'query-orchestrator', provider: providerName, error })
+      logger.error('Provider execution failed', {
+        service: 'query-orchestrator',
+        provider: providerName,
+        error,
+      })
 
       return {
         provider: providerName,

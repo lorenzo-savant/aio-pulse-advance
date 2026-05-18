@@ -83,63 +83,64 @@ export async function POST(req: NextRequest) {
       return total + (CREDIT_COSTS[engine] ?? defaultCost)
     }, 0)
 
-    // Check if user has free queries remaining today (for free tier)
+    // Check if user has free queries remaining today (for free tier).
+    // Atomic: consume_free_query() increments a per-day counter under a row
+    // lock, so concurrent requests cannot each pass the free check.
     if (!isPaidUser) {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      const { data: usedCount, error: freeErr } = await (db as any).rpc('consume_free_query', {
+        p_user_id: userId,
+        p_limit: FREE_QUERIES_PER_DAY,
+      })
 
-      const { data: todayUsage } = await db
-        .from('credit_usage')
-        .select('count')
-        .eq('user_id', userId)
-        .gte('created_at', today.toISOString())
+      if (freeErr) {
+        logger.error('consume_free_query RPC failed', {
+          source: 'credits',
+          err: freeErr.message,
+        })
+        return err('Failed to check credits', 503)
+      }
 
-      const queriesToday = todayUsage?.length || 0
-
-      if (queriesToday < FREE_QUERIES_PER_DAY) {
-        // User has free queries available
+      if (typeof usedCount === 'number') {
         return NextResponse.json({
           success: true,
           data: {
             allowed: true,
             cost: 0,
             type: 'free',
-            remaining: FREE_QUERIES_PER_DAY - queriesToday - 1,
-            message: `Free query (${FREE_QUERIES_PER_DAY - queriesToday} remaining today)`,
+            remaining: Math.max(0, FREE_QUERIES_PER_DAY - usedCount),
+            message: `Free query (${Math.max(0, FREE_QUERIES_PER_DAY - usedCount)} remaining today)`,
           },
           timestamp: Date.now(),
         })
       }
+      // usedCount === null → daily free limit reached; fall through to paid path.
     }
 
-    // Check credit balance for paid users or free users who exceeded free limit
-    const { data: credits, error: creditsError } = await db
-      .from('credits')
-      .select('amount')
-      .eq('user_id', userId)
+    // Atomic balance-check + deduction in a single locked DB operation
+    // (deduct_credits): prevents concurrent requests from double-spending.
+    const description = `Query with ${engines.join(', ')}`
 
-    if (creditsError) throw creditsError
+    const { data: newBalance, error: deductError } = await (db as any).rpc('deduct_credits', {
+      p_user_id: userId,
+      p_amount: creditsNeeded,
+      p_description: description,
+    })
 
-    const totalPurchased =
-      credits
-        ?.filter((c: any) => c.amount > 0)
-        .reduce((sum: number, c: any) => sum + c.amount, 0) || 0
+    if (deductError) {
+      logger.error('deduct_credits RPC failed', {
+        source: 'credits',
+        err: deductError.message,
+      })
+      return err('Failed to check credits', 503)
+    }
 
-    const totalUsed =
-      credits
-        ?.filter((c: any) => c.amount < 0)
-        .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0) || 0
-
-    const balance = totalPurchased - totalUsed
-
-    if (balance < creditsNeeded) {
+    if (newBalance === null || newBalance === undefined) {
       return NextResponse.json({
         success: false,
-        message: `Insufficient credits. Need ${creditsNeeded}, have ${balance}`,
+        message: `Insufficient credits. Need ${creditsNeeded}`,
         data: {
           allowed: false,
           cost: creditsNeeded,
-          balance,
           type: 'purchase',
         },
         error: 'INSUFFICIENT_CREDITS',
@@ -147,18 +148,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Deduct credits + record usage atomically
-    // Insert both in sequence — if deduction fails, usage is not recorded
-    const description = `Query with ${engines.join(', ')}`
-
-    const { error: deductError } = await db.from('credits').insert({
-      user_id: userId,
-      amount: -creditsNeeded,
-      source: 'query_usage',
-      description,
-    })
-
-    if (deductError) throw deductError
+    const balance = Number(newBalance) + creditsNeeded
 
     // Record usage (non-critical — log errors but don't fail the request)
     await db

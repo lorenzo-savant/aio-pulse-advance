@@ -2,13 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { generateWeeklyReview } from '@/lib/services/weekly-review'
+import { verifyCronAuth } from '@/lib/cron-auth'
 
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET_TOKEN
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const cronError = verifyCronAuth(req)
+  if (cronError) return cronError
 
   const db = createServerClient()
   if (!db) {

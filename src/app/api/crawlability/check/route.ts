@@ -18,8 +18,7 @@ export async function GET(request: Request) {
 
   // IP-based rate limit (CF audit Area H — no-auth endpoint hardening)
   const ip = getClientIp({
-    get: (k) =>
-      request.headers.get(k) || null,
+    get: (k) => request.headers.get(k) || null,
   })
   const rate = await checkRateLimit(`crawlability-check:${ip}`, 30, 60_000)
   if (!rate.success) {

@@ -1,47 +1,90 @@
-import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase'
+import { requireUser } from '@/lib/api-auth'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { encryptSecret } from '@/lib/crypto/secret-box'
+import { logger } from '@/lib/logger'
 
-function isPlaintextKey(key: string): boolean {
-  const length = key.length
-  const hasNoSpaces = !key.includes(' ')
-  const hasNoSpecialChars = /^[A-Za-z0-9_\-]+$/.test(key)
-  const looksLikeBase64 = /^[A-Za-z0-9+/]+=*$/.test(key) && length > 20
-  const looksLikeHex = /^[a-fA-F0-9]+$/.test(key) && (length === 32 || length === 64)
+const ALLOWED_PROVIDERS = ['openai', 'gemini', 'perplexity', 'anthropic'] as const
 
-  if (length >= 20 && length <= 80 && hasNoSpaces) {
-    if (looksLikeBase64 || looksLikeHex || hasNoSpecialChars) {
-      return true
-    }
-  }
-  return false
-}
-
-function hashApiKey(key: string): string {
-  return createHash('sha256').update(key).digest('hex')
+function rateLimited(resetAt: number): NextResponse {
+  return NextResponse.json(
+    { success: false, message: 'Rate limit exceeded. Try again later.' },
+    {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)) },
+    },
+  )
 }
 
 export async function GET(req: NextRequest) {
-  let userId: string
-  try {
-    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
-  } catch (e) {
-    if (e instanceof AuthError)
-      return NextResponse.json({ success: false, message: e.message }, { status: 401 })
-    return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
-  }
+  const auth = await requireUser(req)
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const ip = getClientIp(req.headers)
   const rateCheck = await checkRateLimit(`keys-get:${ip}`, 30, 60_000)
-  if (!rateCheck.success) {
+  if (!rateCheck.success) return rateLimited(rateCheck.resetAt)
+
+  const supabase = createServerClient()
+  if (!supabase) {
     return NextResponse.json(
-      { success: false, message: 'Rate limit exceeded. Try again later.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
-      },
+      { success: false, message: 'Database not configured' },
+      { status: 503 },
     )
+  }
+
+  // Metadata only — the secret material (encrypted_key) is NEVER returned to the client.
+  const { data, error } = await supabase
+    .from('user_api_keys')
+    .select('id, provider, label, is_active, created_at')
+    .eq('user_id', userId)
+
+  if (error) {
+    logger.error('keys GET failed', { err: error.message })
+    return NextResponse.json(
+      { success: false, message: 'Failed to load API keys' },
+      { status: 500 },
+    )
+  }
+
+  const keys = (data || []).map((k: any) => ({ ...k, hasKey: true }))
+  return NextResponse.json({ success: true, data: keys })
+}
+
+export async function POST(req: NextRequest) {
+  const auth = await requireUser(req)
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
+
+  const ip = getClientIp(req.headers)
+  const rateCheck = await checkRateLimit(`keys-mut:${ip}`, 10, 60_000)
+  if (!rateCheck.success) return rateLimited(rateCheck.resetAt)
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ success: false, message: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { provider, apiKey, label } = body as {
+    provider?: string
+    apiKey?: string
+    label?: string
+  }
+
+  if (!provider || !apiKey) {
+    return NextResponse.json(
+      { success: false, message: 'Provider and API key required' },
+      { status: 400 },
+    )
+  }
+  if (!ALLOWED_PROVIDERS.includes(provider as (typeof ALLOWED_PROVIDERS)[number])) {
+    return NextResponse.json({ success: false, message: 'Unsupported provider' }, { status: 400 })
+  }
+  if (typeof apiKey !== 'string' || apiKey.length < 8 || apiKey.length > 512) {
+    return NextResponse.json({ success: false, message: 'Invalid API key' }, { status: 400 })
   }
 
   const supabase = createServerClient()
@@ -52,42 +95,69 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const { data, error } = await supabase
+  let encryptedKey: string
+  try {
+    encryptedKey = encryptSecret(apiKey.trim())
+  } catch (e) {
+    logger.error('keys POST: encryption unavailable', { err: e instanceof Error ? e.message : e })
+    return NextResponse.json(
+      { success: false, message: 'Key encryption is not configured on the server' },
+      { status: 503 },
+    )
+  }
+
+  const { data: existing } = await supabase
     .from('user_api_keys')
-    .select('id, provider, label, is_active, created_at')
+    .select('id')
     .eq('user_id', userId)
+    .eq('provider', provider)
+    .single()
 
-  if (error) throw error
+  if (existing) {
+    const { error } = await supabase
+      .from('user_api_keys')
+      .update({
+        encrypted_key: encryptedKey,
+        label: label || provider,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+      .eq('user_id', userId)
+    if (error) {
+      logger.error('keys POST update failed', { err: error.message })
+      return NextResponse.json(
+        { success: false, message: 'Failed to save API key' },
+        { status: 500 },
+      )
+    }
+  } else {
+    const { error } = await supabase.from('user_api_keys').insert({
+      user_id: userId,
+      provider,
+      encrypted_key: encryptedKey,
+      label: label || provider,
+      is_active: true,
+    })
+    if (error) {
+      logger.error('keys POST insert failed', { err: error.message })
+      return NextResponse.json(
+        { success: false, message: 'Failed to save API key' },
+        { status: 500 },
+      )
+    }
+  }
 
-  const keys = (data || []).map((k: any) => ({
-    ...k,
-    hasKey: true,
-  }))
-
-  return NextResponse.json({ success: true, data: keys })
+  return NextResponse.json({ success: true, message: 'API key saved' })
 }
 
-export async function POST(req: NextRequest) {
-  let userId: string
-  try {
-    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
-  } catch (e) {
-    if (e instanceof AuthError)
-      return NextResponse.json({ success: false, message: e.message }, { status: 401 })
-    return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
-  }
+export async function PATCH(req: NextRequest) {
+  const auth = await requireUser(req)
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const ip = getClientIp(req.headers)
   const rateCheck = await checkRateLimit(`keys-mut:${ip}`, 10, 60_000)
-  if (!rateCheck.success) {
-    return NextResponse.json(
-      { success: false, message: 'Rate limit exceeded. Try again later.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
-      },
-    )
-  }
+  if (!rateCheck.success) return rateLimited(rateCheck.resetAt)
 
   let body: unknown
   try {
@@ -96,11 +166,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { provider, apiKey, label } = body as { provider?: string; apiKey?: string; label?: string }
-
-  if (!provider || !apiKey) {
+  const { id, isActive } = body as { id?: string; isActive?: boolean }
+  if (!id || typeof isActive !== 'boolean') {
     return NextResponse.json(
-      { success: false, message: 'Provider and API key required' },
+      { success: false, message: 'id and isActive required' },
       { status: 400 },
     )
   }
@@ -113,57 +182,27 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Check if key exists for this provider
-  const { data: existing } = await supabase
+  const { error } = await supabase
     .from('user_api_keys')
-    .select('id')
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq('id', id)
     .eq('user_id', userId)
-    .eq('provider', provider)
-    .single()
 
-  if (existing) {
-    // Check if key looks like plaintext - if so, hash it
-    const keyToStore = isPlaintextKey(apiKey) ? hashApiKey(apiKey) : apiKey
-
-    // Update existing key
-    const { error } = await supabase
-      .from('user_api_keys')
-      .update({
-        encrypted_key: keyToStore,
-        label: label || provider,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id)
-
-    if (error) throw error
-  } else {
-    // Check if key looks like plaintext - if so, hash it
-    const keyToStore = isPlaintextKey(apiKey) ? hashApiKey(apiKey) : apiKey
-
-    // Insert new key
-    const { error } = await supabase.from('user_api_keys').insert({
-      user_id: userId,
-      provider,
-      encrypted_key: keyToStore,
-      label: label || provider,
-      is_active: true,
-    })
-
-    if (error) throw error
+  if (error) {
+    logger.error('keys PATCH failed', { err: error.message })
+    return NextResponse.json(
+      { success: false, message: 'Failed to update API key' },
+      { status: 500 },
+    )
   }
 
-  return NextResponse.json({ success: true, message: 'API key saved' })
+  return NextResponse.json({ success: true, message: 'API key updated' })
 }
 
 export async function DELETE(req: NextRequest) {
-  let userId: string
-  try {
-    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
-  } catch (e) {
-    if (e instanceof AuthError)
-      return NextResponse.json({ success: false, message: e.message }, { status: 401 })
-    return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
-  }
+  const auth = await requireUser(req)
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
@@ -195,9 +234,15 @@ export async function DELETE(req: NextRequest) {
     )
   }
 
-  const { error } = await supabase.from('user_api_keys').delete().eq('id', id)
+  const { error } = await supabase.from('user_api_keys').delete().eq('id', id).eq('user_id', userId)
 
-  if (error) throw error
+  if (error) {
+    logger.error('keys DELETE failed', { err: error.message })
+    return NextResponse.json(
+      { success: false, message: 'Failed to delete API key' },
+      { status: 500 },
+    )
+  }
 
   return NextResponse.json({ success: true, message: 'API key deleted' })
 }

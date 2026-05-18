@@ -43,7 +43,7 @@ function AnimatedCounter({ value, isVisible }: { value: string; isVisible: boole
   return (
     <>
       {count}
-      <span className="text-brand absolute -right-2 top-0 text-2xl font-bold opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
+      <span className="absolute -right-2 top-0 text-2xl font-bold text-brand opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
         +
       </span>
     </>
@@ -94,12 +94,12 @@ export function AnimatedStats() {
           className="group text-center transition-transform duration-300 hover:-translate-y-1"
         >
           <div className="relative inline-flex">
-            <span className="text-5xl font-black tracking-tight text-text-on-surface transition-all duration-300 group-hover:scale-110">
+            <span className="text-text-on-surface text-5xl font-black tracking-tight transition-all duration-300 group-hover:scale-110">
               <AnimatedCounter value={stat.value} isVisible={isVisible} />
               {suffixes[stat.value]}
             </span>
           </div>
-          <p className="mt-2 text-sm font-medium text-text-muted-surface">{stat.label}</p>
+          <p className="text-text-muted-surface mt-2 text-sm font-medium">{stat.label}</p>
         </div>
       ))}
     </div>

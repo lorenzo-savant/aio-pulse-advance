@@ -524,7 +524,12 @@ describe('Cron auth — weekly review route', () => {
     vi.restoreAllMocks()
   })
 
-  it('returns 401 when CRON_SECRET_TOKEN is not set (combined check)', async () => {
+  // verifyCronAuth deliberately distinguishes "server misconfigured" (no
+  // CRON_SECRET_TOKEN set → 500) from "unauthorized" (token mismatch → 401),
+  // see src/lib/cron-auth.ts. The 500 surfaces a real ops bug rather than
+  // silently masking it as a 401. The companion test for the monitoring
+  // route (earlier in this file) also expects 500 — keep them consistent.
+  it('returns 500 when CRON_SECRET_TOKEN is not set', async () => {
     delete process.env.CRON_SECRET_TOKEN
     const { POST } = await import('@/app/api/cron/weekly-review/route')
     const req = new NextRequest('http://localhost/api/cron/weekly-review', {
@@ -532,7 +537,7 @@ describe('Cron auth — weekly review route', () => {
       headers: { authorization: 'Bearer anything' },
     })
     const res = await POST(req)
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(500)
   })
 
   it('returns 401 when token is wrong', async () => {

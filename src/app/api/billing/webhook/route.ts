@@ -24,17 +24,29 @@ export async function POST(req: NextRequest) {
   }
 
   // Stripe SDK: constant-time signature compare + timestamp tolerance
-  // (default 300s) → replay protection. Throws on any mismatch.
+  // (default 300s) → replay protection. constructEvent throws on signature
+  // mismatch AND on JSON-parse failure of the payload (with a valid signature).
+  // Distinguishing the two gives a more useful response to a legit integrator
+  // testing webhook delivery, without leaking whether the signature itself
+  // verified to a probe attacker (both still return 400).
   let event: Stripe.Event
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_not_configured')
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
   } catch (err) {
-    logger.error('Signature verification failed', {
-      source: 'webhook',
-      err: err instanceof Error ? err.message : 'unknown',
-    })
-    return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
+    const msg = err instanceof Error ? err.message : 'unknown'
+    // Stripe verifies signature first, then JSON.parses the body. A SyntaxError
+    // means signature passed and the body is malformed; anything else is a
+    // signature failure. Checking the concrete type (and Error#name as a
+    // fallback for any wrapping) is more robust than message-substring sniffing,
+    // which produced false positives against Stripe's sig-mismatch messages.
+    const isPayloadError =
+      err instanceof SyntaxError || (err instanceof Error && err.name === 'SyntaxError')
+    logger.error('Webhook validation failed', { source: 'webhook', err: msg, isPayloadError })
+    return NextResponse.json(
+      { error: isPayloadError ? 'Invalid payload' : 'Webhook signature verification failed' },
+      { status: 400 },
+    )
   }
 
   const db = createServerClient()

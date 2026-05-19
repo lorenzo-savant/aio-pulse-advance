@@ -56,9 +56,11 @@ describe('safeFetch', () => {
       mockResolve4.mockResolvedValue(['127.0.0.1'])
       mockResolve6.mockResolvedValue([])
 
+      // 127.0.0.1 is an IPv4 literal — caught by the private-IPv4 check
+      // before the hostname blocklist, so reported as BLOCKED_IP (more precise).
       await expect(safeFetch('http://127.0.0.1/test')).rejects.toThrow(SsrfError)
       await expect(safeFetch('http://127.0.0.1/test')).rejects.toMatchObject({
-        code: 'BLOCKED_HOST',
+        code: 'BLOCKED_IP',
       })
     })
 
@@ -88,9 +90,12 @@ describe('safeFetch', () => {
       mockResolve4.mockResolvedValue(['169.254.169.254'])
       mockResolve6.mockResolvedValue([])
 
+      // 169.254.0.0/16 is a link-local IPv4 range — caught as BLOCKED_IP, not
+      // BLOCKED_HOST (the hostname blocklist only catches the named alias
+      // 'metadata.googleusercontent.com', which is covered by the test above).
       await expect(safeFetch('http://169.254.169.254/latest/meta-data')).rejects.toThrow(SsrfError)
       await expect(safeFetch('http://169.254.169.254/latest/meta-data')).rejects.toMatchObject({
-        code: 'BLOCKED_HOST',
+        code: 'BLOCKED_IP',
       })
     })
   })

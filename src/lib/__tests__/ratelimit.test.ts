@@ -72,9 +72,12 @@ describe('Rate Limiting', () => {
       expect(getClientIp(headers)).toBe('192.168.1.1')
     })
 
-    it('extracts cf-connecting-ip', () => {
+    // cf-connecting-ip is intentionally NOT trusted on Vercel deployments —
+    // an arbitrary client could spoof it. See the security comment on
+    // getClientIp in src/lib/ratelimit.ts.
+    it('ignores cf-connecting-ip (anti-spoofing on non-Cloudflare deploys)', () => {
       const headers = createHeaders({ 'cf-connecting-ip': '203.0.113.1' })
-      expect(getClientIp(headers)).toBe('203.0.113.1')
+      expect(getClientIp(headers)).toBe('unknown')
     })
 
     it('extracts first IP from x-forwarded-for', () => {
@@ -82,13 +85,15 @@ describe('Rate Limiting', () => {
       expect(getClientIp(headers)).toBe('203.0.113.1')
     })
 
-    it('prefers x-real-ip over other headers', () => {
+    // x-forwarded-for is the platform-set primary signal on Vercel; x-real-ip
+    // is the documented secondary fallback. cf-connecting-ip is ignored.
+    it('prefers x-forwarded-for over x-real-ip, ignores cf-connecting-ip', () => {
       const headers = createHeaders({
         'x-real-ip': '10.0.0.1',
         'cf-connecting-ip': '203.0.113.1',
         'x-forwarded-for': '192.168.1.1',
       })
-      expect(getClientIp(headers)).toBe('10.0.0.1')
+      expect(getClientIp(headers)).toBe('192.168.1.1')
     })
 
     it('returns unknown when no headers', () => {

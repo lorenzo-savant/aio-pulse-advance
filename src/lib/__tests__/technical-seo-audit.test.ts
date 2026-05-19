@@ -1,6 +1,27 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { runTechnicalAudit } from '../services/technical-seo-audit'
 
+// runTechnicalAudit calls safeFetch, which does DNS resolution + private-IP
+// rejection before any HTTP request. The synthetic URLs in these tests
+// (good.example / bad.example) don't resolve via real DNS, so safeFetch would
+// throw and the test's global.fetch mock would never be reached — the result
+// is that mocked robots.txt / llms.txt content is treated as missing, and
+// e.g. the GPTBot check flips from 'fail' to 'info'.
+// Mock safeFetch to pass through directly to the test's global.fetch mock.
+vi.mock('@/lib/utils/safe-fetch', () => ({
+  safeFetch: vi.fn((url: string | URL, opts?: RequestInit) =>
+    fetch(typeof url === 'string' ? url : url.toString(), opts),
+  ),
+  SsrfError: class SsrfError extends Error {
+    constructor(
+      public code: string,
+      message: string,
+    ) {
+      super(message)
+    }
+  },
+}))
+
 const HTML_RICH = `<!doctype html>
 <html>
 <head>

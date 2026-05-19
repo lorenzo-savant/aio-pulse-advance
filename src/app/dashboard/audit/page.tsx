@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   FileSearch,
   Globe,
@@ -458,7 +459,11 @@ function CategoryCard({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function AuditPage() {
-  const [url, setUrl] = useState('')
+  // Allow deep-linking from other surfaces (e.g. the GEO Score page) via
+  // /dashboard/audit?url=<encoded>. Falls back to empty so direct visits
+  // behave as before.
+  const searchParams = useSearchParams()
+  const [url, setUrl] = useState(() => searchParams?.get('url') ?? '')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<AuditResult | null>(null)
   const [error, setError] = useState('')

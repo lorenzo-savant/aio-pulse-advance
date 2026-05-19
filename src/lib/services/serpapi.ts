@@ -14,10 +14,31 @@ function getKeys(): string[] {
     .filter((k) => k.length > 0)
 }
 
-function getPerKeyLimit(): number {
-  const raw = process.env.SERPAPI_MONTHLY_LIMIT
-  const parsed = raw ? parseInt(raw, 10) : NaN
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100
+const DEFAULT_PER_KEY_LIMIT = 100
+
+// Per-key monthly limits, aligned by index to SERPAPI_KEYS.
+//   SERPAPI_MONTHLY_LIMIT=250            → every key gets 250
+//   SERPAPI_MONTHLY_LIMIT=250,250,1000   → key0=250, key1=250, key2=1000
+// A shorter list carries its last value forward (so "250,1000" with 3 keys
+// → 250,1000,1000); invalid/blank tokens fall back to the carried value or
+// the default. Unset → DEFAULT_PER_KEY_LIMIT for all keys.
+export function getPerKeyLimits(keyCount: number): number[] {
+  if (keyCount <= 0) return []
+  const raw = (process.env.SERPAPI_MONTHLY_LIMIT || '').trim()
+  const tokens = raw.length > 0 ? raw.split(',') : []
+  const parsed = tokens.map((t) => {
+    const n = parseInt(t.trim(), 10)
+    return Number.isFinite(n) && n > 0 ? n : null
+  })
+
+  const limits: number[] = []
+  let carried = DEFAULT_PER_KEY_LIMIT
+  for (let i = 0; i < keyCount; i++) {
+    const v = i < parsed.length ? parsed[i] : null
+    if (v != null) carried = v
+    limits.push(carried)
+  }
+  return limits
 }
 
 function currentMonth(): string {
@@ -72,13 +93,15 @@ export async function getSerpApiQuota(): Promise<{
   perKey: Array<{ index: number; used: number; remaining: number }>
 }> {
   const keys = getKeys()
-  const limit = getPerKeyLimit() * keys.length
   if (keys.length === 0) return { limit: 0, used: 0, remaining: 0, perKey: [] }
+  const limits = getPerKeyLimits(keys.length)
   const usage = await readUsage()
   const perKey = keys.map((_, i) => {
     const used = usage.get(i) || 0
-    return { index: i, used, remaining: Math.max(0, getPerKeyLimit() - used) }
+    const keyLimit = limits[i] ?? DEFAULT_PER_KEY_LIMIT
+    return { index: i, used, remaining: Math.max(0, keyLimit - used) }
   })
+  const limit = limits.reduce((a, b) => a + b, 0)
   const used = perKey.reduce((a, k) => a + k.used, 0)
   return { limit, used, remaining: Math.max(0, limit - used), perKey }
 }
@@ -96,7 +119,7 @@ export async function serpApiFetch(params: Record<string, string>): Promise<unkn
   const keys = getKeys()
   if (keys.length === 0) throw new Error('SERPAPI_KEYS not configured')
 
-  const limit = getPerKeyLimit()
+  const limits = getPerKeyLimits(keys.length)
   const usage = await readUsage()
 
   let lastErr: Error | null = null
@@ -104,9 +127,12 @@ export async function serpApiFetch(params: Record<string, string>): Promise<unkn
 
   for (let attempt = 0; attempt < keys.length; attempt++) {
     const idx = (keyIndex + attempt) % keys.length
+    const keyLimit = limits[idx] ?? DEFAULT_PER_KEY_LIMIT
     const already = usage.get(idx) || 0
-    if (already >= limit) {
-      lastErr = new Error(`SerpAPI key #${idx + 1} monthly quota exhausted (${already}/${limit})`)
+    if (already >= keyLimit) {
+      lastErr = new Error(
+        `SerpAPI key #${idx + 1} monthly quota exhausted (${already}/${keyLimit})`,
+      )
       continue
     }
     allExhausted = false
@@ -141,11 +167,11 @@ export async function serpApiFetch(params: Record<string, string>): Promise<unkn
       }
 
       const newCount = await incrementUsage(idx)
-      if (newCount >= limit) {
+      if (newCount >= keyLimit) {
         logger.warn(`SerpAPI key #${idx + 1} reached monthly limit`, {
           service: 'serpapi',
           used: newCount,
-          limit,
+          limit: keyLimit,
         })
       }
       keyIndex = (idx + 1) % keys.length
@@ -158,7 +184,7 @@ export async function serpApiFetch(params: Record<string, string>): Promise<unkn
 
   if (allExhausted) {
     throw new SerpApiQuotaExceeded(
-      `All ${keys.length} SerpAPI keys reached their monthly limit of ${limit} searches.`,
+      `All ${keys.length} SerpAPI keys reached their monthly limits (${limits.join('/')} searches).`,
     )
   }
 

@@ -455,11 +455,14 @@ export async function trackKeywords(brandId: string): Promise<void> {
       }
     }
 
-    // Keep only keywords that appear in ≥2 responses (signal filter)
-    // and top 200 by total occurrences
+    // Keep keywords that appear in enough responses (signal filter)
+    // For small samples (< 10 results), require only 1 occurrence
+    // For larger samples, require ≥2 to filter noise
     const keywordData: Record<string, KeywordData> = {}
+    const totalResultCount = results.length
+    const minDocThreshold = totalResultCount < 10 ? 1 : 2
     const ranked = [...stats.entries()]
-      .filter(([, s]) => s.docsInMention + s.docsInNoMention >= 2)
+      .filter(([, s]) => s.docsInMention + s.docsInNoMention >= minDocThreshold)
       .sort((a, b) => b[1].totalOccurrences - a[1].totalOccurrences)
       .slice(0, 200)
 

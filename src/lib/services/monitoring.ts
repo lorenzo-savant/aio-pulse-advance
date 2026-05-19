@@ -63,7 +63,11 @@ const analysisOutputSchema = z.object({
 
 type AnalysisOutput = z.infer<typeof analysisOutputSchema>
 
-function buildAnalysisPrompt(responseText: string, brand: Brand, promptText: string): string {
+export function buildAnalysisPrompt(
+  responseText: string,
+  brand: Brand,
+  promptText: string,
+): string {
   return `You are an AI brand monitoring analyst. Analyze this AI-generated response for mentions and sentiment about the brand "${brand.name}".
 
 BRAND INFO:
@@ -119,7 +123,7 @@ export async function runMonitoringCheck(
     text: responseText,
     provider: simulationProvider,
     citations: engineCitations = [],
-  } = await routerSimulate(prompt.text, engine, language)
+  } = await routerSimulate(prompt.text, engine, language, brand)
   logger.info('Engine simulation completed', {
     service: 'monitoring',
     engine,

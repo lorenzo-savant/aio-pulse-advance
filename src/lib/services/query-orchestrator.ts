@@ -8,7 +8,7 @@
 // - Fallback system (handles partial failures)
 // - Result aggregation from all providers
 
-import type { MonitoringEngine } from '@/types'
+import type { Brand, MonitoringEngine } from '@/types'
 import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
@@ -50,11 +50,12 @@ class QueryOrchestrator {
     options?: {
       cacheKey?: string
       useCache?: boolean
+      brand?: Brand | null
     },
   ): Promise<OrchestratedResult> {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
 
-    const cacheKey = options?.cacheKey || this.generateCacheKey(promptText, engines)
+    const cacheKey = options?.cacheKey || this.generateCacheKey(promptText, engines, options?.brand)
     const useCache = options?.useCache !== false
 
     // 1. Check cache
@@ -77,7 +78,10 @@ class QueryOrchestrator {
     })
     const startTime = Date.now()
 
-    const promises = engines.map((engine) => this.executeProvider(engine, promptText, requestId))
+    const brand = options?.brand ?? null
+    const promises = engines.map((engine) =>
+      this.executeProvider(engine, promptText, requestId, brand),
+    )
 
     const results = await Promise.allSettled(promises)
 
@@ -162,6 +166,7 @@ class QueryOrchestrator {
     engine: MonitoringEngine,
     promptText: string,
     requestId: string,
+    brand?: Brand | null,
   ): Promise<QueryResponse> {
     const startTime = Date.now()
     const providerName = this.getProviderName(engine)
@@ -170,7 +175,7 @@ class QueryOrchestrator {
       // Import and execute the engine simulation
       const { simulateEngineResponse } = await import('./ai-router')
 
-      const result = await simulateEngineResponse(promptText, engine)
+      const result = await simulateEngineResponse(promptText, engine, 'en', brand)
 
       const responseTimeMs = Date.now() - startTime
 
@@ -269,9 +274,14 @@ class QueryOrchestrator {
   /**
    * Generate cache key
    */
-  private generateCacheKey(prompt: string, engines: MonitoringEngine[]): string {
+  private generateCacheKey(
+    prompt: string,
+    engines: MonitoringEngine[],
+    brand?: Brand | null,
+  ): string {
     const normalized = prompt.toLowerCase().trim().slice(0, 100)
-    return `orch:${normalized}:${engines.sort().join(',')}`
+    const brandTag = brand ? `:brand=${brand.id}` : ''
+    return `orch:${normalized}:${engines.sort().join(',')}${brandTag}`
   }
 
   /**

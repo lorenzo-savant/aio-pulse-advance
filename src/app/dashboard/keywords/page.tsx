@@ -98,8 +98,10 @@ export default function KeywordsPage() {
     setError(null)
     try {
       const [allRes, correlatedRes] = await Promise.all([
-        fetch(`/api/keywords?brand_id=${selectedBrand.id}&limit=100`),
-        fetch(`/api/keywords?brand_id=${selectedBrand.id}&type=correlated&limit=20`),
+        fetch(`/api/keywords?brand_id=${selectedBrand.id}&source=tracking&limit=100`),
+        fetch(
+          `/api/keywords?brand_id=${selectedBrand.id}&source=tracking&type=correlated&limit=20`,
+        ),
       ])
       const allData = await allRes.json()
       const correlatedData = await correlatedRes.json()

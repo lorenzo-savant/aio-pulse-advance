@@ -129,16 +129,39 @@ export async function POST(req: NextRequest) {
 
   // ── Verify brand access if brand_id provided ──────────────────────────────
   const db = createServerClient()
+  let brandContext:
+    | {
+        name: string
+        industry?: string | null
+        description?: string | null
+        competitors?: string[] | null
+      }
+    | undefined
   if (brandId && db) {
     const brand = await verifyBrandAccess(brandId, userId)
     if (!brand) {
       brandId = null // Invalid brand, ignore
+    } else {
+      brandContext = {
+        name: brand.name,
+        industry: brand.industry,
+        description: brand.description,
+        competitors: brand.competitors,
+      }
     }
   }
 
   // ── Analyze ───────────────────────────────────────────────────────────────
   try {
-    const result = await analyzeWithProvider(input, mode, engine, input, provider, model)
+    const result = await analyzeWithProvider(
+      input,
+      mode,
+      engine,
+      input,
+      provider,
+      model,
+      brandContext,
+    )
 
     // ── Save to database ───────────────────────────────────────────────────
     if (userId && !userId.startsWith('anonymous:') && db) {

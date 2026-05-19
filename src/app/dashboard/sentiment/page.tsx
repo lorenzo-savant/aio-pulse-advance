@@ -1,7 +1,18 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { AlertTriangle, Smile, Frown, Meh, Brain, Loader2, Zap } from 'lucide-react'
+import {
+  AlertTriangle,
+  Smile,
+  Frown,
+  Meh,
+  Brain,
+  Loader2,
+  Zap,
+  Info,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 import {
   BarChart,
   Bar,
@@ -12,6 +23,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
@@ -83,7 +95,19 @@ const TOOLTIP_STYLE = () => ({
   labelStyle: { color: 'rgb(var(--color-text-on-surface))', fontWeight: 700 },
 })
 
-function SentimentGauge({ score }: { score: number }) {
+function SentimentGauge({
+  score,
+  negLabel,
+  neuLabel,
+  posLabel,
+  scoreLabel,
+}: {
+  score: number
+  negLabel: string
+  neuLabel: string
+  posLabel: string
+  scoreLabel: string
+}) {
   const deg = ((score + 1) / 2) * 180
   const color = score > 0.2 ? '#10b981' : score < -0.2 ? '#f43f5e' : '#6b7280'
 
@@ -118,13 +142,13 @@ function SentimentGauge({ score }: { score: number }) {
         />
         <circle cx="100" cy="100" r="5" fill={color} />
         <text x="6" y="115" fontSize="10" fill={GAUGE_LABEL_COLOR}>
-          Neg
+          {negLabel}
         </text>
         <text x="89" y="18" fontSize="10" fill={GAUGE_LABEL_COLOR}>
-          Neu
+          {neuLabel}
         </text>
         <text x="175" y="115" fontSize="10" fill={GAUGE_LABEL_COLOR}>
-          Pos
+          {posLabel}
         </text>
       </svg>
       <div className="mt-1 text-center">
@@ -133,7 +157,7 @@ function SentimentGauge({ score }: { score: number }) {
           {score.toFixed(2)}
         </p>
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Sentiment Score
+          {scoreLabel}
         </p>
       </div>
     </div>
@@ -141,6 +165,7 @@ function SentimentGauge({ score }: { score: number }) {
 }
 
 function ManualAnalyzer({ brands }: { brands: Brand[] }) {
+  const t = useTranslations('sentiment')
   const [text, setText] = useState('')
   const [brandId, setBrandId] = useState('')
   const [mode, setMode] = useState<'both' | 'sentiment' | 'hallucination'>('both')
@@ -155,9 +180,15 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
   } | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const MODE_LABELS: Record<string, string> = {
+    both: t('mode_both'),
+    sentiment: t('mode_sentiment'),
+    hallucination: t('mode_hallucination'),
+  }
+
   const analyze = async () => {
     if (!text.trim() || !brandId) {
-      toast.error('Enter text and select a brand')
+      toast.error(t('enter_text'))
       return
     }
     setLoading(true)
@@ -175,7 +206,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
       if (!json.success) throw new Error(json.message)
       setResult(json.data ?? null)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Analysis failed')
+      toast.error(err instanceof Error ? err.message : t('analysis_failed'))
     } finally {
       setLoading(false)
     }
@@ -185,22 +216,22 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
     <Card className="border-input bg-card p-6">
       <div className="mb-5 flex items-center gap-3">
         <Brain className="h-5 w-5 text-brand" />
-        <h2 className="text-lg font-bold text-foreground">Manual Analyzer</h2>
-        <span className="text-xs text-muted-foreground">Paste any AI response to analyze</span>
+        <h2 className="text-lg font-bold text-foreground">{t('manual_analyzer')}</h2>
+        <span className="text-xs text-muted-foreground">{t('paste_ai_response')}</span>
       </div>
 
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Brand
+              {t('brand_label')}
             </label>
             <select
               className="w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand"
               value={brandId}
               onChange={(e) => setBrandId(e.target.value)}
             >
-              <option value="">Select brand...</option>
+              <option value="">{t('select_brand')}</option>
               {brands.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -210,7 +241,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
           </div>
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Analysis Mode
+              {t('analysis_mode')}
             </label>
             <div className="flex gap-2">
               {(['both', 'sentiment', 'hallucination'] as const).map((m) => (
@@ -224,7 +255,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                   )}
                   onClick={() => setMode(m)}
                 >
-                  {m}
+                  {MODE_LABELS[m]}
                 </button>
               ))}
             </div>
@@ -233,7 +264,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
 
         <textarea
           className="placeholder-text-muted-surface w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
-          placeholder="Paste an AI-generated response here to analyze sentiment and detect hallucinations..."
+          placeholder={t('textarea_placeholder')}
           rows={5}
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -241,7 +272,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
 
         <Button className="w-full" loading={loading} onClick={analyze}>
           <Zap className="h-4 w-4" />
-          {loading ? 'Analyzing...' : 'Analyze Text'}
+          {loading ? t('analyzing') : t('analyze_text')}
         </Button>
       </div>
 
@@ -250,7 +281,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
           {result.sentiment && (
             <div>
               <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Sentiment Result
+                {t('sentiment_result')}
               </p>
               <div
                 className={cn(
@@ -270,11 +301,11 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                   </span>
                   <div className="text-right">
                     <p className="text-sm font-bold text-foreground">
-                      Score: {result.sentiment.score > 0 ? '+' : ''}
+                      {t('score')}: {result.sentiment.score > 0 ? '+' : ''}
                       {result.sentiment.score.toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Confidence: {result.sentiment.confidence}%
+                      {t('confidence')}: {result.sentiment.confidence}%
                     </p>
                   </div>
                 </div>
@@ -304,7 +335,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
           {result.hallucination && (
             <div>
               <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Hallucination Check
+                {t('hallucination_check')}
               </p>
               <div
                 className={cn(
@@ -318,7 +349,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                   {result.hallucination.has_hallucination ? (
                     <AlertTriangle className="h-4 w-4 text-red-400" />
                   ) : (
-                    <span className="text-emerald-500">✓</span>
+                    <span className="text-emerald-500">&#10003;</span>
                   )}
                   <span
                     className={cn(
@@ -327,11 +358,11 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                     )}
                   >
                     {result.hallucination.has_hallucination
-                      ? `${result.hallucination.flags.length} issue(s) detected`
-                      : 'No hallucinations detected'}
+                      ? t('issues_detected', { count: result.hallucination.flags.length })
+                      : t('no_hallucinations')}
                   </span>
                   <span className="ml-auto text-xs text-muted-foreground">
-                    Confidence: {result.hallucination.confidence}%
+                    {t('confidence')}: {result.hallucination.confidence}%
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">{result.hallucination.summary}</p>
@@ -340,9 +371,9 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                     key={i}
                     className="mt-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs"
                   >
-                    <p className="font-bold text-red-400">"{flag.text}"</p>
+                    <p className="font-bold text-red-400">&quot;{flag.text}&quot;</p>
                     <p className="mt-0.5 text-muted-foreground">
-                      {flag.type} · {flag.severity} severity
+                      {flag.type} &middot; {flag.severity} {t('severity')}
                     </p>
                   </div>
                 ))}
@@ -355,7 +386,84 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
   )
 }
 
+function InfoSection() {
+  const t = useTranslations('sentiment')
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Card className="border-border bg-card">
+      <button
+        className="flex w-full items-center justify-between px-6 py-4 text-left"
+        onClick={() => setOpen(!open)}
+      >
+        <div className="flex items-center gap-3">
+          <Info className="h-5 w-5 text-brand" />
+          <span className="text-sm font-bold text-foreground">{t('guide_title')}</span>
+        </div>
+        {open ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+      {open && (
+        <div className="border-t border-border px-6 pb-6 pt-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                {t('guide_what_is')?.split('.')[0]}
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{t('guide_what_is')}</p>
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                {t('guide_how_it_works')?.split('.')[0]}
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {t('guide_how_it_works')}
+              </p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                {t('guide_what_to_do')?.split('.')[0]}
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {t('guide_what_to_do')}
+              </p>
+            </div>
+            <div className="border-brand-500/10 bg-brand-500/5 rounded-lg border p-4">
+              <p className="mb-1 text-xs font-bold text-brand">
+                {t('guide_sentiment_value')?.split('.')[0]}
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {t('guide_sentiment_value')}
+              </p>
+            </div>
+            <div className="rounded-lg border border-red-500/10 bg-red-500/5 p-4">
+              <p className="mb-1 text-xs font-bold text-red-500">
+                {t('guide_hallucination_value')?.split('.')[0]}
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {t('guide_hallucination_value')}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 border-t border-border pt-3">
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              {t('guide_industry_terms')}
+            </p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {t('guide_footer_disclaimer')}
+            </p>
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 export default function SentimentPage() {
+  const t = useTranslations('sentiment')
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState('')
   const [stats, setStats] = useState<SentimentStats | null>(null)
@@ -402,12 +510,8 @@ export default function SentimentPage() {
     <div className="animate-in space-y-8">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">
-            Sentiment & Hallucinations
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            How AI systems feel about your brand — and what they get wrong.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         {brands.length > 0 && (
           <select
@@ -424,6 +528,8 @@ export default function SentimentPage() {
         )}
       </div>
 
+      <InfoSection />
+
       {loadingStats ? (
         <div className="flex justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-brand" />
@@ -432,25 +538,31 @@ export default function SentimentPage() {
         <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <Card className="flex flex-col items-center justify-center border-input bg-card p-8">
-              <SentimentGauge score={stats.avgSentimentScore} />
+              <SentimentGauge
+                score={stats.avgSentimentScore}
+                negLabel={t('neg_label')}
+                neuLabel={t('neu_label')}
+                posLabel={t('pos_label')}
+                scoreLabel={t('sentiment_score_label')}
+              />
               <div className="mt-6 flex gap-4 text-center">
                 <div>
                   <p className="text-lg font-black text-emerald-500">
                     {stats.sentimentCounts.positive}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Positive</p>
+                  <p className="text-[10px] text-muted-foreground">{t('positive')}</p>
                 </div>
                 <div>
                   <p className="text-lg font-black text-muted-foreground">
                     {stats.sentimentCounts.neutral}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Neutral</p>
+                  <p className="text-[10px] text-muted-foreground">{t('neutral')}</p>
                 </div>
                 <div>
                   <p className="text-lg font-black text-red-500">
                     {stats.sentimentCounts.negative}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Negative</p>
+                  <p className="text-[10px] text-muted-foreground">{t('negative')}</p>
                 </div>
               </div>
             </Card>
@@ -458,25 +570,25 @@ export default function SentimentPage() {
             <div className="grid grid-cols-2 gap-4 lg:col-span-2">
               {[
                 {
-                  label: 'Total Analyzed',
+                  label: t('total_analyzed'),
                   value: stats.totalResults,
                   icon: Brain,
                   color: 'text-brand',
                 },
                 {
-                  label: 'With Brand Mention',
+                  label: t('with_brand_mention'),
                   value: stats.mentionedResults,
                   icon: Smile,
                   color: 'text-emerald-500',
                 },
                 {
-                  label: 'Hallucinations',
+                  label: t('hallucinations'),
                   value: stats.hallucinationCount,
                   icon: AlertTriangle,
                   color: 'text-red-500',
                 },
                 {
-                  label: 'Hallucination Rate',
+                  label: t('hallucination_rate'),
                   value: `${(stats.hallucinationRate * 100).toFixed(1)}%`,
                   icon: AlertTriangle,
                   color: stats.hallucinationRate > 0.1 ? 'text-red-500' : 'text-emerald-500',
@@ -493,9 +605,7 @@ export default function SentimentPage() {
 
           {engineData.length > 0 && (
             <Card className="border-border bg-secondary p-6">
-              <h2 className="mb-6 text-lg font-bold text-foreground">
-                Average Sentiment by Engine
-              </h2>
+              <h2 className="mb-6 text-lg font-bold text-foreground">{t('average_sentiment')}</h2>
               <ResponsiveContainer height={220} width="100%">
                 <BarChart data={engineData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
@@ -503,9 +613,12 @@ export default function SentimentPage() {
                   <YAxis domain={[-1, 1]} tick={{ fontSize: 11, fill: TICK_COLOR }} />
                   <Tooltip
                     {...TOOLTIP_STYLE()}
-                    formatter={(v: number) => [v > 0 ? `+${v.toFixed(2)}` : v.toFixed(2), 'Score']}
+                    formatter={(v: number) => [
+                      v > 0 ? `+${v.toFixed(2)}` : v.toFixed(2),
+                      t('score'),
+                    ]}
                   />
-                  <Bar dataKey="score" name="Sentiment Score" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="score" name={t('average_sentiment')} radius={[4, 4, 0, 0]}>
                     {engineData.map((entry) => (
                       <Cell
                         key={entry.engine}
@@ -520,10 +633,8 @@ export default function SentimentPage() {
 
           {stats.totalResults === 0 && (
             <div className="rounded-2xl border border-input bg-secondary px-6 py-10 text-center">
-              <p className="mb-2 text-lg font-bold text-foreground">No data yet</p>
-              <p className="text-muted-foreground">
-                Run monitoring checks from the Prompts page to populate sentiment data.
-              </p>
+              <p className="mb-2 text-lg font-bold text-foreground">{t('no_data')}</p>
+              <p className="text-muted-foreground">{t('run_monitoring')}</p>
             </div>
           )}
         </>

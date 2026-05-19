@@ -5,6 +5,12 @@ import { callGemini } from '@/lib/services/gemini'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { rateLimitGate } from '@/lib/api-auth'
 import { logger } from '@/lib/logger'
+import { buildGlossaryContext } from '@/lib/data/glossary'
+import {
+  buildModelBehaviorContext,
+  buildInterpretabilityGapContext,
+  buildSemanticMonopolyContext,
+} from '@/lib/data/research'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -89,7 +95,7 @@ export async function POST(req: NextRequest) {
   const { data: results } = await db
     .from('monitoring_results')
     .select(
-      'engine, brand_mentioned, mention_position, visibility_score, sentiment, sentiment_score, competitor_mentions, prompt_text',
+      'engine, brand_mentioned, mention_position, visibility_score, sentiment, sentiment_score, competitor_mentions, response_text, prompt_text',
     )
     .eq('brand_id', body.brand_id)
     .order('created_at', { ascending: false })
@@ -98,36 +104,71 @@ export async function POST(req: NextRequest) {
   // Fetch keyword data
   const { data: keywords } = await db
     .from('keyword_tracking')
-    .select('keyword, frequency, mention_correlation')
+    .select('keyword, mention_count, correlation_score')
     .eq('brand_id', body.brand_id)
-    .order('frequency', { ascending: false })
+    .order('mention_count', { ascending: false })
     .limit(20)
 
   // Build context for AI
   const monitoringSummary = summarizeMonitoring(results || [], brand)
-  const keywordSummary = (keywords || [])
+  const keywSummary = (keywords || [])
+    .filter((k: any) => k.keyword)
+    .slice(0, 15)
     .map(
       (k: any) =>
-        `"${k.keyword}" (freq: ${k.frequency}, correlation: ${(k.mention_correlation * 100).toFixed(0)}%)`,
+        `"${k.keyword}" (${k.mention_count || 0} occurrences, correlation: ${((k.correlation_score || 0) * 100).toFixed(0)}%)`,
     )
     .join(', ')
 
-  const prompt = `You are an AIO (AI Optimization) consultant. Based on the monitoring data below, generate actionable content recommendations for the brand "${brand.name}" (${(brand as unknown as { industry?: string }).industry || 'general business'}).
+  const responseExcerpts = extractResponseExcerpts(results || [])
+  const desc = (brand as { description?: string | null }).description
+  const glossaryContext = buildGlossaryContext()
+  const modelBehaviorContext = buildModelBehaviorContext()
+  const gapContext = buildInterpretabilityGapContext()
+  const monopolyContext = buildSemanticMonopolyContext(
+    (brand as { industry?: string | null }).industry || undefined,
+  )
+  const prompt = `You are an AIO (AI Optimization) consultant specializing in GEO (Generative Engine Optimization). Below is real monitoring data for "${brand.name}". Based SPECIFICALLY on the actual responses from AI engines and the metrics below, identify concrete weaknesses and generate targeted recommendations.
+
+${glossaryContext}
+
+${modelBehaviorContext}
+
+${monopolyContext}
+
+${gapContext}
+
+BRAND: ${brand.name}
+INDUSTRY: ${(brand as { industry?: string | null }).industry || 'general business'}
+DESCRIPTION: ${desc || 'Not specified'}
+DOMAIN: ${(brand as { domain?: string | null }).domain || 'Not specified'}
+TARGET MARKET: ${(brand as { language?: string }).language === 'sv' ? 'Sweden (Swedish-language)' : (brand as { language?: string }).language === 'it' ? 'Italy (Italian-language)' : 'International (English)'}
 
 MONITORING DATA:
 ${monitoringSummary}
 
-TOP KEYWORDS: ${keywordSummary || 'No keyword data yet'}
+TOP KEYWORDS: ${keywSummary || 'No keyword data yet'}
 
 COMPETITORS: ${brand.competitors?.join(', ') || 'None specified'}
 
-Generate exactly 8 recommendations. Each should have:
-1. A specific, actionable title
-2. Priority (high/medium/low)
-3. Expected impact on AI visibility (high/medium/low)
-4. Which AI engines it targets most
-5. A detailed description (2-3 sentences)
-6. Category: one of "content_creation", "content_optimization", "technical_seo", "authority_building", "competitive_strategy"
+PER-ENGINE WEAKNESSES:
+${buildEngineWeaknesses(results || [])}
+
+ACTUAL AI RESPONSE EXCERPTS (verbatim from monitoring):
+${responseExcerpts}
+
+INSTRUCTIONS:
+Analyze the monitoring data and response excerpts above. Identify specific weaknesses or gaps. Then generate exactly 8 recommendations that DIRECTLY address the problems found in the data.
+
+For each recommendation:
+1. Title: specific, references concrete content or issue (NOT generic like "impro X")
+2. Priority: high/medium/low — based on severity of the weakness
+3. Impact: high/medium/low — expected effect on AI visibility
+4. Engines: choose from the engines that have the specific weakness
+5. Description: 2-3 sentences, MUST reference the actual monitoring data or response excerpt that justifies this recommendation
+6. Category: pick the best single category that fits
+
+IMPORTANT: Recommendations MUST be different from each other and tied to specific data points above. Do NOT generate generic SEO advice.
 
 Respond ONLY with valid JSON (no markdown):
 {
@@ -138,10 +179,10 @@ Respond ONLY with valid JSON (no markdown):
       "impact": "high|medium|low",
       "engines": ["chatgpt", "gemini", "perplexity", "claude"],
       "description": "...",
-      "category": "..."
+      "category": "content_creation|content_optimization|technical_seo|authority_building|competitive_strategy"
     }
   ],
-  "summary": "2-3 sentence overview of the brand's current AI visibility status and key areas for improvement"
+  "summary": "2-3 sentence overview that references the specific data points driving these recommendations"
 }`
 
   try {
@@ -186,6 +227,61 @@ Respond ONLY with valid JSON (no markdown):
     logger.error('Error generating recommendations', { route: '/api/recommendations', error })
     return err('Failed to generate recommendations')
   }
+}
+
+function extractResponseExcerpts(results: any[]): string {
+  if (results.length === 0) return 'No monitoring data available.'
+
+  const byEngine = new Map<string, string[]>()
+  for (const r of results) {
+    if (!byEngine.has(r.engine)) byEngine.set(r.engine, [])
+    const arr = byEngine.get(r.engine)!
+    const text = r.response_text || ''
+    if (text.length > 80) {
+      const snippet = text
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 400)
+      arr.push(snippet)
+    }
+  }
+
+  const lines: string[] = []
+  for (const [engine, texts] of byEngine) {
+    if (texts.length > 0) {
+      lines.push(`--- ${engine} actual response excerpt ---`)
+      texts.slice(0, 1).forEach((t) => lines.push(`"${t}..."`))
+    }
+  }
+  return lines.length > 0 ? lines.join('\n') : 'No response text available.'
+}
+
+function buildEngineWeaknesses(results: any[]): string {
+  if (results.length === 0) return 'No monitoring data yet.'
+
+  const byEngine = new Map<string, { scores: number[]; sentiments: string[] }>()
+  for (const r of results) {
+    if (!byEngine.has(r.engine)) byEngine.set(r.engine, { scores: [], sentiments: [] })
+    const s = byEngine.get(r.engine)!
+    if (r.visibility_score != null) s.scores.push(r.visibility_score)
+    if (r.sentiment) s.sentiments.push(r.sentiment)
+  }
+
+  const lines: string[] = []
+  for (const [engine, data] of byEngine) {
+    const avgScore =
+      data.scores.length > 0
+        ? (data.scores.reduce((a, b) => a + b, 0) / data.scores.length).toFixed(0)
+        : 'N/A'
+    const negCount = data.sentiments.filter((s) => s === 'negative').length
+    const weak = parseInt(avgScore) < 60
+    lines.push(
+      `${engine}: avg visibility ${avgScore}/100${weak ? ' ⚠️ (below 60 — needs improvement)' : ''}` +
+        (negCount > 0 ? `, ${negCount} negative sentiment(s)` : ''),
+    )
+  }
+  return lines.length > 0 ? lines.join('\n') : 'No engine data available.'
 }
 
 function summarizeMonitoring(results: any[], brand: any): string {

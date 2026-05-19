@@ -9,9 +9,9 @@ import {
 } from '../services/credit-calculator'
 
 describe('Credit Calculator - MODEL_PRICING', () => {
-  it('should have pricing for all 13 models', () => {
+  it('should have pricing for all 14 models', () => {
     const models = getAllModels()
-    expect(models).toHaveLength(13)
+    expect(models).toHaveLength(14)
   })
 
   it('should have pricing for OpenAI models', () => {

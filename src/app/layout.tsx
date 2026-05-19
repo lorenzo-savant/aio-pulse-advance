@@ -79,6 +79,34 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       lang={locale}
     >
       <body className="font-sans antialiased" suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'Organization',
+                  '@id': `${APP_URL}/#organization`,
+                  name: APP_NAME,
+                  url: APP_URL,
+                  description: APP_DESCRIPTION,
+                  foundingDate: '2024',
+                  sameAs: ['https://github.com/Looziolooz/aio-pulse-advance'],
+                },
+                {
+                  '@type': 'WebSite',
+                  '@id': `${APP_URL}/#website`,
+                  url: APP_URL,
+                  name: APP_NAME,
+                  description: APP_DESCRIPTION,
+                  publisher: { '@id': `${APP_URL}/#organization` },
+                  inLanguage: 'en',
+                },
+              ],
+            }),
+          }}
+        />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Analytics />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

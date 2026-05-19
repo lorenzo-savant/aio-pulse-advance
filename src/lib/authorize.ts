@@ -2,7 +2,8 @@ import { createServerClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
 // Base columns that always exist and are needed for access checks
-const BRAND_BASE_COLS = 'id, name, slug, competitors, aliases, domain, color'
+const BRAND_BASE_COLS =
+  'id, name, slug, competitors, aliases, domain, color, description, industry, language'
 
 // Extended columns for reports/export (may not exist in older schemas)
 const BRAND_REPORT_COLS =

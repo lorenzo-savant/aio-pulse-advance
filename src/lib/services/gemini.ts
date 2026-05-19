@@ -3,6 +3,12 @@ import { generateId } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { safeFetch } from '@/lib/utils/safe-fetch'
 import { GEO } from '@/lib/geo-config'
+import { buildAnalysisGlossaryContext } from '@/lib/data/glossary'
+import {
+  buildModelBehaviorContext,
+  buildInterpretabilityGapContext,
+  buildSemanticMonopolyContext,
+} from '@/lib/data/research'
 
 // ─── SSRF Protection ───────────────────────────────────────────────────────────
 
@@ -70,7 +76,16 @@ interface GeminiResponse {
 
 // ─── Prompt Builder ───────────────────────────────────────────────────────────
 
-export function buildAnalysisPrompt(content: string, engine: EngineId): string {
+export function buildAnalysisPrompt(
+  content: string,
+  engine: EngineId,
+  brand?: {
+    name: string
+    industry?: string | null
+    description?: string | null
+    competitors?: string[] | null
+  },
+): string {
   const engineContext: Record<EngineId, string> = {
     all: 'all major AI search engines (ChatGPT, Gemini, Perplexity, Claude)',
     chatgpt: 'ChatGPT / SearchGPT (OpenAI)',
@@ -79,10 +94,28 @@ export function buildAnalysisPrompt(content: string, engine: EngineId): string {
     claude: 'Anthropic Claude (logical depth, chain-of-thought quality)',
   }
 
+  const brandSection = brand
+    ? `\nBRAND CONTEXT: This content belongs to "${brand.name}"${brand.industry ? ` (${brand.industry})` : ''}.${brand.description ? ` The brand mission: "${brand.description}".` : ''}${brand.competitors?.length ? ` Main competitors: ${brand.competitors.join(', ')}.` : ''}
+Tailor suggestions to help this brand stand out against competitors in AI search results.\n`
+    : ''
+
+  const glossaryContext = buildAnalysisGlossaryContext()
+  const modelBehaviorContext = buildModelBehaviorContext()
+  const monopolyContext = buildSemanticMonopolyContext(brand?.industry || undefined)
+  const gapContext = buildInterpretabilityGapContext()
+
   return `You are an expert in AIO (AI Optimization), AEO (Answer Engine Optimization), and GEO (Generative Engine Optimization). Analyze the following content for visibility and citation potential in ${engineContext[engine]}.
 
-MARKET CONTEXT: Evaluate specifically for the ${GEO.marketName} market and ${GEO.languageName}-language queries. Assume the target audience searches from ${GEO.marketName}. Do not assume a US/English-default context.
+${glossaryContext}
 
+${modelBehaviorContext}
+
+${monopolyContext}
+
+${gapContext}
+
+MARKET CONTEXT: Evaluate specifically for the ${GEO.marketName} market and ${GEO.languageName}-language queries. Assume the target audience searches from ${GEO.marketName}. Do not assume a US/English-default context.
+${brandSection}
 CONTENT TO ANALYZE:
 """
 ${content.slice(0, 8000)}
@@ -385,32 +418,36 @@ export async function analyzeCompetitor(url: string): Promise<CompetitorResult> 
 
 const ENGINE_SIGNALS: Record<string, string[]> = {
   chatgpt: [
-    'Define key terms clearly in the first paragraph',
-    'Use numbered lists for step-by-step content',
-    'Include concrete examples with measurable outcomes',
-    'Add FAQ sections with question-answer format',
-    'Cite authoritative sources explicitly',
+    'Use scannable lists and comparison tables — ChatGPT has attention heads specialized for list detection',
+    'Front-load key facts in the first 100 words for efficient extraction',
+    'Include quantified benefits with specific numbers per fact (high semantic density)',
+    'Offer multiple options or alternatives with pros/cons for each',
+    'Use "top", "best", "recommended" triggers that align with OpenAI RLHF preferences',
+    'Add FAQ sections with question-answer pairs that match conversation training data',
   ],
   gemini: [
-    'Optimize for Knowledge Graph entity recognition',
-    'Use structured data / schema markup',
-    'Include geographic and temporal signals',
-    'Improve E-E-A-T signals (author bio, credentials)',
-    'Add clear topic headings that match search queries',
+    'Include explicit authority signals: author bios, credentials, "last updated" dates',
+    'Use structured data markup (JSON-LD Schema.org) — Gemini has high attention to citations and sources',
+    'Cite multiple authoritative sources inline — temporal attention heads favor named sources',
+    'Update content regularly with visible changelog — Gemini has the highest recency bias',
+    'Align with E-E-A-T signals (experience, expertise, authoritativeness, trustworthiness)',
+    'Include geographic and temporal signals for location-based queries',
   ],
   perplexity: [
-    'Increase factual density with statistics and data',
-    'Add publication dates and source attribution',
-    'Use direct, declarative sentence structures',
-    'Include numerical data and comparative metrics',
-    'Add primary source links and citations',
+    'Achieve source diversity — appear on multiple authoritative domains, not just your site',
+    'Add inline citations with direct source links for every factual claim',
+    'Include time-stamped current data — Perplexity demonstrates "source diversity" bias',
+    'Use direct, declarative sentence structures for efficient extraction',
+    'Include numerical data and comparative metrics with sources',
+    'For deep research mode: ensure Wikipedia and academic source presence',
   ],
   claude: [
-    'Develop logical argument chains with clear reasoning',
-    'Acknowledge nuance, counterarguments, and edge cases',
-    'Use precise technical language appropriate to context',
-    'Structure content with clear conceptual hierarchy',
-    'Include comparative analysis and synthesis',
+    'Build reasoning chains with causal language ("because", "therefore", "evidence shows")',
+    'Acknowledge nuance, counterarguments, and edge cases — Claude has a "safety bias"',
+    'Include evidence-backed claims with explicit reasoning chain',
+    'Structure content as claim → evidence → implication for Claude attention patterns',
+    'Use academic and authoritative sources — Claude favors scholarly references',
+    'Include "why this matters" context at the start for explanation preference',
   ],
 }
 

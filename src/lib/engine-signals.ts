@@ -1,34 +1,36 @@
 // Pure constants — safe to import from client components.
 // Extracted from gemini.ts to avoid pulling server-only deps (dns/promises).
 
+// Based on Kalyani Khona — "LLM Model Behavior Research" (2025)
+// Each engine has distinct attention patterns shaped by fine-tuning philosophy
 export const ENGINE_SIGNALS: Record<string, string[]> = {
   chatgpt: [
-    'Define key terms clearly in the first paragraph',
-    'Use numbered lists for step-by-step content',
-    'Include concrete examples with measurable outcomes',
-    'Add FAQ sections with question-answer format',
-    'Cite authoritative sources explicitly',
+    'Use scannable lists and comparison tables for list-detection attention heads',
+    'Front-load key facts in first 100 words for efficient extraction',
+    'Include quantified benefits — strong attention to numbers and metrics',
+    'Offer multiple options with pros/cons for RLHF "helpful assistant" preference',
+    'Add FAQ sections matching conversational training data',
   ],
   gemini: [
-    'Optimize for Knowledge Graph entity recognition',
-    'Use structured data / schema markup',
-    'Include geographic and temporal signals',
-    'Improve E-E-A-T signals (author bio, credentials)',
-    'Add clear topic headings that match search queries',
+    'Include author credentials and publication dates for authority signal attention',
+    'Use JSON-LD structured data markup — high citation-source weighting',
+    'Cite multiple authoritative sources with inline attribution',
+    'Update content regularly — highest recency bias of all models',
+    'Align with E-E-A-T signals (experience, expertise, trustworthiness)',
   ],
   perplexity: [
-    'Increase factual density with statistics and data',
-    'Add publication dates and source attribution',
-    'Use direct, declarative sentence structures',
-    'Include numerical data and comparative metrics',
-    'Add primary source links and citations',
+    'Achieve source diversity — appear on multiple authoritative domains',
+    'Add inline citations with direct links for every factual claim',
+    'Include time-stamped current data and statistics',
+    'Use declarative sentence structure for efficient extraction',
+    'For deep research: ensure Wikipedia and academic source presence',
   ],
   claude: [
-    'Develop logical argument chains with clear reasoning',
-    'Acknowledge nuance, counterarguments, and edge cases',
-    'Use precise technical language appropriate to context',
-    'Structure content with clear conceptual hierarchy',
-    'Include comparative analysis and synthesis',
+    'Build reasoning chains with causal language ("because", "therefore")',
+    'Acknowledge nuance and counterarguments — Constitutional AI safety bias',
+    'Include evidence-backed claims with explicit reasoning chain structure',
+    'Use authoritative academic sources — higher scholarly trust weighting',
+    'Structure content as claim → evidence → implication',
   ],
 }
 

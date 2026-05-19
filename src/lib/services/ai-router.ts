@@ -2,11 +2,12 @@
 // AI Router — routes engine simulation and brand analysis to the 4 core providers.
 // Core providers: ChatGPT (OpenAI), Gemini (Google), Perplexity, Claude (Anthropic).
 
-import type { MonitoringEngine } from '@/types'
+import type { Brand, MonitoringEngine } from '@/types'
 import { isOpenAIAvailable, callOpenAI } from './openai'
 import { isPerplexityAvailable, callPerplexityWithCitations } from './perplexity'
 import { isAnthropicAvailable, callAnthropic } from './anthropic'
 import { logger } from '@/lib/logger'
+import { enrichPromptWithBrandContext } from '@/lib/brand-enrichment'
 import type { PromptLang } from '@/lib/prompt-library'
 
 const LANGUAGE_LABEL: Record<PromptLang, string> = {
@@ -19,7 +20,7 @@ async function callGeminiFallback(prompt: string): Promise<string> {
   const apiKey = process.env['GEMINI_API_KEY']
   if (!apiKey) throw new Error('GEMINI_API_KEY non configurata')
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -60,7 +61,7 @@ async function callGeminiWithSearch(
   const apiKey = process.env['GEMINI_API_KEY']
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -95,7 +96,13 @@ export async function simulateEngineResponse(
   promptText: string,
   engine: MonitoringEngine,
   language: PromptLang = 'en',
-): Promise<{ text: string; provider: string; citations?: string[]; retrieval: 'live' | 'model-memory' }> {
+  brand?: Brand | null,
+): Promise<{
+  text: string
+  provider: string
+  citations?: string[]
+  retrieval: 'live' | 'model-memory'
+}> {
   const enginePersona: Record<MonitoringEngine, string> = {
     chatgpt: `You are ChatGPT. Respond in ${LANGUAGE_LABEL[language]} naturally and fluently, as if answering a user from that market. Include relevant brands, products, and services that would be recognized locally.`,
     gemini: `You are Google Gemini. Respond in ${LANGUAGE_LABEL[language]} with well-structured, factual information. Include brands and services relevant to that language's market.`,
@@ -103,7 +110,13 @@ export async function simulateEngineResponse(
     claude: `You are Claude. Respond in ${LANGUAGE_LABEL[language]} with nuanced analysis and locally relevant brands.`,
   }
 
-  const fullPrompt = `${enginePersona[engine]}\n\nUser question: "${promptText}"\n\nProvide a realistic, helpful response (150-300 words).`
+  const basePrompt = `${enginePersona[engine]}\n\nUser question: "${promptText}"\n\nProvide a realistic, helpful response (150-300 words).`
+  const fullPrompt = enrichPromptWithBrandContext(basePrompt, brand ?? null, {
+    includeDomain: true,
+    includeAliases: true,
+    includeCompetitors: true,
+    includeIndustry: true,
+  })
   const errors: string[] = []
 
   if (engine === 'chatgpt' && isOpenAIAvailable()) {
@@ -121,7 +134,7 @@ export async function simulateEngineResponse(
     // Try Google Search grounding first, fall back to plain generate.
     try {
       const { text, citations } = await callGeminiWithSearch(fullPrompt)
-      return { text, provider: 'gemini:flash-2.0+search', citations, retrieval: 'live' }
+      return { text, provider: 'gemini:flash-2.5+search', citations, retrieval: 'live' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Gemini (search): ${msg}`)
@@ -132,7 +145,7 @@ export async function simulateEngineResponse(
       })
       try {
         const text = await callGeminiFallback(fullPrompt)
-        return { text, provider: 'gemini:flash-2.0', retrieval: 'model-memory' }
+        return { text, provider: 'gemini:flash-2.5', retrieval: 'model-memory' }
       } catch (e2) {
         errors.push(`Gemini: ${e2 instanceof Error ? e2.message : String(e2)}`)
       }
@@ -165,7 +178,7 @@ export async function simulateEngineResponse(
   if (isGeminiAvailable()) {
     try {
       const text = await callGeminiFallback(fullPrompt)
-      return { text, provider: 'gemini:flash-2.0', retrieval: 'model-memory' }
+      return { text, provider: 'gemini:flash-2.5', retrieval: 'model-memory' }
     } catch (e) {
       errors.push(`Gemini fallback: ${e instanceof Error ? e.message : String(e)}`)
     }
@@ -189,7 +202,7 @@ export async function analyzeResponseForBrand(
   if (isGeminiAvailable()) {
     try {
       const text = await callGeminiFallback(analysisPrompt)
-      return { text, provider: 'gemini:flash-2.0' }
+      return { text, provider: 'gemini:flash-2.5' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Gemini: ${msg}`)

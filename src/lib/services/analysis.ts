@@ -126,10 +126,16 @@ export async function analyzeWithProvider(
   source: string,
   provider: AIProvider,
   model: ModelId,
+  brand?: {
+    name: string
+    industry?: string | null
+    description?: string | null
+    competitors?: string[] | null
+  },
 ): Promise<AnalysisResult> {
   const contentToAnalyze = mode === 'url' ? await fetchUrlContent(input) : input
 
-  const prompt = buildAnalysisPrompt(contentToAnalyze, engine)
+  const prompt = buildAnalysisPrompt(contentToAnalyze, engine, brand)
   const rawResponse = await callAIProvider(prompt, provider, model)
 
   const cleaned = rawResponse

@@ -1,3 +1,115 @@
+# AIO Pulse — Update Changelog v2.1.0
+
+**Date:** May 20, 2026
+**Status:** Feature additions, bug fixes, test-suite repair, security hardening
+**Breaking Changes:** None
+**Data Loss Risk:** None — two additive migrations only
+
+---
+
+## 🎯 Summary
+
+Major session adding three new dashboard surfaces (Strategy Advisor, GEO Score, Citation Sources, Glossary), fixing latent bugs in Workflows and Optimizer, hardening per-key SerpApi quota tracking, repairing all pre-existing test failures, and harmonising static-readiness audit into the live GEO Score view. All changes type-check + lint clean; `next build` passes; 700/702 vitest tests pass (2 deliberate skips).
+
+---
+
+## ✨ New Features
+
+### 1. Strategy Advisor — `/dashboard/advisor` + `POST /api/advisor`
+- LLM-powered, brand-grounded recommendations: 1–3 ranked actions per ask, with impact/effort, rationale, concrete actions, and citation of the data facts they're grounded in.
+- Provider chain: **Groq** (Llama 3.3 70B) → Gemini 2.5 Flash → OpenAI gpt-4o-mini, falling back if the previous isn't configured.
+- Context builder (`src/lib/services/advisor.ts`) is deterministic — pulls brand, latest health + 7-day delta, monitoring activity, prompts, AEO gaps, and the latest cached site audit. Output is zod-validated.
+- 9 unit tests for the schema + JSON extraction.
+
+### 2. GEO Score page — `/dashboard/geo-score` + `GET /api/geo-score`
+- 0–100 Generative Engine Optimization composite from `brand_health_scores`. Five weighted pillars (Citation 30%, Presence 25%, Authority 20%, Position 15%, Trust 10%) with explicit derivation from monitoring data.
+- Letter grade (A–F), period delta, history line, per-engine breakdown, prioritized recommendations.
+- Pure scoring service in `src/lib/services/geo-score.ts` with 9 unit tests.
+
+### 3. Citation Sources page — `/dashboard/citation-sources` + `GET /api/citation-sources`
+- Aggregates `monitoring_results.cited_urls` by domain. Shows which sites AI engines actually cite when answering brand prompts.
+- Owned-domain vs external split, top-cited domains with engine badges + sample links, citations-over-time chart, per-engine breakdown.
+
+### 4. Glossary — `/dashboard/glossary` + `GET /api/glossary`
+- Searchable AI SEO / LLM Visibility terminology, sourced from `mattbertramlive/ai-seo-llm-visibility-glossary` (CC BY 4.0).
+- `src/lib/data/glossary.ts` data + `src/lib/data/research.ts` model-behavior profiles also injected as system-prompt context for the Gemini analyzer and the Strategy Advisor.
+
+### 5. Harmonious AEO-readiness integration (no new card, no new endpoint)
+- Inline *"Site readiness X (B) ↗"* indicator added inside the existing GEO Score gauge card.
+- `/dashboard/audit` now reads `?url=` query param to support deep-linking from the GEO Score page.
+- `buildAdvisorContext` also reads the cached site audit, so the Strategist reasons over static readiness + live AI visibility together.
+- Shared utility: `src/lib/services/site-audit-summary.ts`.
+
+### 6. Workflows — Rerun + Cancel actions
+- `POST /api/workflows?id=…&action=rerun|cancel` now actually does something. Cancel marks the workflow + open steps cancelled. Rerun delegates to the canonical `/api/monitoring` pipeline (zero duplicated logic, no fake reruns).
+
+---
+
+## 🔧 Improvements
+
+- **Per-key SerpApi quota** — `SERPAPI_MONTHLY_LIMIT` now accepts either a single value or a comma-separated list aligned to `SERPAPI_KEYS` (e.g. `250,250,1000` for two free keys + Starter). 10 unit tests.
+- **Stripe webhook** distinguishes JSON-parse failures (`Invalid payload`) from signature mismatches (`Webhook signature verification failed`). Both still return 400.
+- **GEO Score gauge UI** redesigned — background ring uses the score color at 15% opacity (cohesive shape, not two stripes), grade letter is a connected corner badge, period-aware delta label, optional `was X.X` previous-value line.
+- **Optimizer** — fixed duplicate recommendation list. `EngineRecommendations` and `Improvement Suggestions` are now complementary instead of rendering the same 5 items twice when engine="all".
+- **`research.ts` hedge wording** — all over-confident architectural claims ("Heads specialized for X") rewritten to observation language ("Observed: stronger response to X"). License notice block added documenting CC BY 4.0 source.
+- **`.env.example` overhauled** — every env var read by the code is documented with a direct dashboard URL; vars not used by any code (`MAX_EXPORT_FILESIZE`, `EXPORT_JOB_TIMEOUT`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) removed; new keys documented (`GROQ_API_KEY`, `BRIGHT_DATA_*`, `GSC_*`, `AIO_*` market overrides, `ALLOW_CREDIT_BYPASS`, `LOG_LEVEL`). Top-of-file *Feature → keys* cheat sheet added.
+
+---
+
+## 🐛 Bug Fixes
+
+- **Test suite repair:** 7 pre-existing failures, 0 remaining. One global `@sentry/nextjs` mock in `vitest.setup.ts` fixed 5 module-load failures; `BLOCKED_IP` vs `BLOCKED_HOST` mismatches and `safeFetch` DNS bypass for synthetic test URLs corrected in tests; `cf-connecting-ip` / `x-real-ip` precedence tests aligned with the security-conscious source.
+- **`keyword_tracking` table** — pre-existing latent bug. The recommendations + keywords routes (and `keyword-tracker.ts`) queried `public.keyword_tracking` for months but no migration ever created it. Created `20260520000000_add_keyword_tracking.sql` matching the shape `src/types/database.ts` already expected, applied to live DB.
+- **`serpapi_usage` table + RPC** — quota tracking referenced a table and RPC that didn't exist; rotation-at-limit silently never fired. Created `20260519000000_add_serpapi_usage.sql` with table + `increment_serpapi_usage` function (SECURITY DEFINER, atomic upsert), applied to live DB.
+- **`layout.tsx` schema.org `sameAs`** — corrected from `https://github.com/anomalyco/aio-pulse-advance` (invented) to the real `https://github.com/Looziolooz/aio-pulse-advance`.
+- **`glossary.ts` typing regression** — replaced `Array<...> & any[]` (type-erasing) with proper optional fields on `GlossaryTerm`.
+
+---
+
+## 🗃️ Database migrations (applied to `ncnxsathmuhggliuayjx`)
+
+| File | What it creates |
+|---|---|
+| `supabase/migrations/20260519000000_add_serpapi_usage.sql` | `serpapi_usage` table (month, key_index, count) + `increment_serpapi_usage` RPC, RLS on |
+| `supabase/migrations/20260520000000_add_keyword_tracking.sql` | `keyword_tracking` table (18 columns matching `src/types/database.ts`) + unique `(brand_id, keyword)` + updated_at trigger, RLS on |
+
+Both are additive, idempotent (`CREATE … IF NOT EXISTS`), and safe to re-run.
+
+---
+
+## 🔐 Security / hardening notes
+
+- Stripe webhook now uses `err instanceof SyntaxError` to detect payload errors (precise) rather than message-substring sniffing (false-positive prone).
+- `safeFetch` test suite now correctly distinguishes `BLOCKED_IP` (private IPv4/IPv6 literals) from `BLOCKED_HOST` (named hostnames in blocklist) — the source was correct; the tests were sloppy.
+- `getClientIp` security stance documented in tests: `cf-connecting-ip` deliberately ignored (anti-spoofing on non-Cloudflare deploys), `x-forwarded-for` preferred over `x-real-ip` (Vercel-set primary signal).
+- `verifyCronAuth` 500-vs-401 distinction preserved and documented in tests.
+- `next build` correctly fails with `SECURITY FATAL: DEV_USER_ID environment variable is set` when `.env.local` carries `DEV_USER_ID` — the guard is working as designed. Verified that build succeeds when `DEV_USER_ID` is unset (the Vercel scenario).
+
+---
+
+## ⚙️ Configuration required for full functionality
+
+These environment variables need to be set in **`.env.local` for dev** and in **Vercel project settings for production**:
+
+| Var | Required for |
+|---|---|
+| `SERPAPI_KEYS` | AEO Snippets generator (`/dashboard/aeo-snippets`) |
+| `SERPAPI_MONTHLY_LIMIT` | Per-key cap; supports `250,250,1000` list format |
+| `GROQ_API_KEY` | Strategy Advisor (preferred backend; falls back to Gemini → OpenAI if absent) |
+
+Already-required vars (no change): Supabase, ≥1 of OpenAI/Gemini/Perplexity/Anthropic, `CRON_SECRET_TOKEN`, `ENCRYPTION_KEY`, `WEBHOOK_SIGNING_SECRET`, `NEXT_PUBLIC_APP_URL`.
+
+---
+
+## 📊 Verification
+
+- `tsc --noEmit` — clean across the project
+- `npm run lint` — clean across the project
+- `npx vitest run` — **700 passed / 2 skipped / 0 failed** (43 test files)
+- `npm run build` — succeeds when `DEV_USER_ID` is not set (i.e., the Vercel build scenario)
+
+---
+
 # AIO Pulse — Update Changelog v1.1.0
 
 **Date:** March 12, 2026  

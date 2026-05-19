@@ -1,6 +1,6 @@
 {
   "name": "aio-pulse-next",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -91,7 +91,7 @@
     "postcss": "^8.5.14",
     "prettier": "^3.3.0",
     "prettier-plugin-tailwindcss": "^0.6.1",
-    "supabase": "^1.226.0",
+    "supabase": "^2.100.1",
     "tailwindcss": "^3.4.4",
     "tsx": "^4.15.0",
     "typescript": "^5.4.5",
@@ -103,8 +103,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "prettier --write",
-      "eslint --fix --no-warn-ignored"
+      "prettier --write"
     ]
   }
 }

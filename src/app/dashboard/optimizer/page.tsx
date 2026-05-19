@@ -37,7 +37,8 @@ import { useToggle, useClipboard, useKeywordAnalysis } from '@/hooks'
 import { exportAnalysisToCsv } from '@/lib/export'
 import { cn } from '@/lib/utils'
 import { ENGINES, ANALYSIS_MODELS, AI_PROVIDERS } from '@/lib/constants'
-import type { AnalysisResult, EngineId, ModelId, AIProvider } from '@/types'
+import { ENGINE_SIGNALS, getEngineSignals } from '@/lib/engine-signals'
+import type { AnalysisResult, AIOScore, EngineId, ModelId, AIProvider } from '@/types'
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
 
@@ -384,46 +385,34 @@ function KeywordDensityAnalysis({
 
 // ─── Engine Recommendations ─────────────────────────────────────────────────
 
-function EngineRecommendations({ selectedEngine }: { selectedEngine: EngineId }) {
-  const recommendations: Record<EngineId, string[]> = {
-    all: [
-      'Create clear, scannable headings that match common query patterns',
-      'Include authoritative citations and source links',
-      'Structure content with bullet points and numbered lists',
-      'Add FAQ sections using question-answer format',
-      'Ensure content demonstrates E-E-A-T signals (experience, expertise, author credentials)',
-    ],
-    chatgpt: [
-      'Define key terms clearly in the first paragraph',
-      'Use numbered lists for step-by-step content',
-      'Include concrete examples with measurable outcomes',
-      'Add FAQ sections with question-answer format',
-      'Cite authoritative sources explicitly',
-    ],
-    gemini: [
-      'Optimize for Knowledge Graph entity recognition',
-      'Use structured data / schema markup',
-      'Include geographic and temporal signals',
-      'Improve E-E-A-T signals (author bio, credentials)',
-      'Add clear topic headings that match search queries',
-    ],
-    perplexity: [
-      'Increase factual density with statistics and data',
-      'Add publication dates and source attribution',
-      'Use direct, declarative sentence structures',
-      'Include numerical data and comparative metrics',
-      'Add primary source links and citations',
-    ],
-    claude: [
-      'Develop logical argument chains with clear reasoning',
-      'Acknowledge nuance, counterarguments, and edge cases',
-      'Use precise technical language appropriate to context',
-      'Structure content with clear conceptual hierarchy',
-      'Include comparative analysis and synthesis',
-    ],
+function EngineRecommendations({
+  selectedEngine,
+  engineBreakdown,
+}: {
+  selectedEngine: EngineId
+  engineBreakdown?: AIOScore[]
+}) {
+  // Engine-specific *signals* — what each engine optimizes for. Distinct from
+  // the AI-generated, content-specific `result.suggestions` shown in the
+  // "Improvement Suggestions" card below; mixing them produced a duplicate
+  // list when engine === 'all'.
+  const getTips = (): string[] => {
+    if (selectedEngine === 'all') {
+      if (engineBreakdown && engineBreakdown.length > 0) {
+        const sorted = [...engineBreakdown].sort((a, b) => a.score - b.score)
+        const worst = sorted.slice(0, 2)
+        return worst.flatMap((e) => {
+          const engineId = e.engine.toLowerCase()
+          const signals = getEngineSignals(engineId)
+          return signals.slice(0, 3)
+        })
+      }
+      return getEngineSignals('chatgpt').slice(0, 5)
+    }
+    return getEngineSignals(selectedEngine)
   }
 
-  const tips = recommendations[selectedEngine]
+  const tips = getTips()
 
   return (
     <Card className="p-6">
@@ -900,7 +889,7 @@ export default function OptimizerPage() {
           <KeywordDensityAnalysis keywords={result.keywords} analyzedText={result.analyzedText} />
 
           {/* Engine Recommendations */}
-          <EngineRecommendations selectedEngine={engine} />
+          <EngineRecommendations selectedEngine={engine} engineBreakdown={result.engineBreakdown} />
 
           {/* Suggestions */}
           <Card className="p-6">

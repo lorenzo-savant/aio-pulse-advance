@@ -18,6 +18,7 @@
 
 import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
+import { withSerpCache } from './serp-cache'
 
 const BRAVE_BASE_URL = 'https://api.search.brave.com/res/v1'
 const BRAVE_DEFAULT_PER_KEY_LIMIT = 2000 // free-tier monthly cap
@@ -36,8 +37,7 @@ function getKeys(): string[] {
     .filter((k) => k.length > 0)
 }
 
-// Per-key monthly limits aligned by index to BRAVE_API_KEYS — same shape
-// as SERPAPI_MONTHLY_LIMIT to keep operator muscle-memory across providers.
+// Per-key monthly limits aligned by index to BRAVE_API_KEYS.
 //   BRAVE_MONTHLY_LIMIT=2000             → every key gets 2000 (the free cap)
 //   BRAVE_MONTHLY_LIMIT=2000,10000       → key0=2000 (free), key1=10000 (paid)
 export function getPerKeyLimits(keyCount: number): number[] {
@@ -70,7 +70,7 @@ export function isBraveSearchAvailable(): boolean {
 }
 
 // brave_api_usage table created by 20260520040000_add_brave_api_usage.sql.
-// Cast at the boundary — same pattern as serpapi.ts.
+// Cast at the boundary.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 async function readUsage(): Promise<Map<number, number>> {
@@ -365,14 +365,20 @@ export async function checkDomainRanksForQuestion(
     .replace(/^www\./, '')
     .replace(/\/$/, '')
 
-  const json = (await callBrave({
-    path: 'web/search',
-    params: {
-      q: `site:${cleanDomain} ${question}`,
-      count: '5',
-      ...localeParams(language),
+  const locale = localeParams(language)
+  const q = `site:${cleanDomain} ${question}`
+  const json = (await withSerpCache(
+    {
+      provider: 'brave',
+      endpoint: 'web/search',
+      params: { q, count: 5, ...locale },
     },
-  })) as BraveWebSearchResponse
+    () =>
+      callBrave({
+        path: 'web/search',
+        params: { q, count: '5', ...locale },
+      }),
+  )) as BraveWebSearchResponse
 
   const first = (json.web?.results || [])[0]
   if (!first?.url) return { covered: false, coveredUrl: null, position: null }
@@ -408,14 +414,23 @@ export async function searchBrandRanking(
   brandDomain: string,
   language?: string,
 ): Promise<BraveRankingResult> {
-  const json = (await callBrave({
-    path: 'web/search',
-    params: {
-      q: keyword,
-      count: '20',
-      ...localeParams(language),
+  // Cache key does NOT include brandDomain — the SERP response is the same
+  // regardless of which brand we're checking; brand matching happens in
+  // post-processing. This is the win: 10 brands tracking the same keyword
+  // share a single Brave hit.
+  const locale = localeParams(language)
+  const json = (await withSerpCache(
+    {
+      provider: 'brave',
+      endpoint: 'web/search',
+      params: { q: keyword, count: 20, ...locale },
     },
-  })) as BraveWebSearchResponse
+    () =>
+      callBrave({
+        path: 'web/search',
+        params: { q: keyword, count: '20', ...locale },
+      }),
+  )) as BraveWebSearchResponse
 
   const cleanDomain = brandDomain
     .replace(/^https?:\/\//, '')
@@ -470,13 +485,19 @@ export async function summarizeQuery(
   query: string,
   language?: string,
 ): Promise<BraveSummary | null> {
-  const json = (await callBrave({
-    path: 'summarizer/search',
-    params: {
-      q: query,
-      ...localeParams(language),
+  const locale = localeParams(language)
+  const json = (await withSerpCache(
+    {
+      provider: 'brave',
+      endpoint: 'summarizer/search',
+      params: { q: query, ...locale },
     },
-  })) as BraveSummarizerResponse
+    () =>
+      callBrave({
+        path: 'summarizer/search',
+        params: { q: query, ...locale },
+      }),
+  )) as BraveSummarizerResponse
 
   const answer = json.summary?.text?.trim()
   if (!answer) return null

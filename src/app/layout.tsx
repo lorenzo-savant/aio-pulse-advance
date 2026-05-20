@@ -5,7 +5,6 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'react-hot-toast'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
-import { QueryProvider } from '@/providers'
 import '@/styles/globals.css'
 import { APP_NAME, APP_DESCRIPTION, APP_URL } from '@/lib/constants'
 
@@ -110,7 +109,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Analytics />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <QueryProvider>{children}</QueryProvider>
+            {children}
             <Toaster
               position="top-right"
               toastOptions={{

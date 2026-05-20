@@ -139,6 +139,10 @@
         "label": "Optimera",
         "description": "Förbättra innehåll för AI-sökning"
       },
+      "tools": {
+        "label": "Verktyg",
+        "description": "Verktyg för GEO-arbetsflöden"
+      },
       "account": {
         "label": "Konto",
         "description": "Hantera ditt konto"
@@ -168,6 +172,7 @@
       "recommendations": "Rekommendationer",
       "strategy_advisor": "Strategy Advisor",
       "engine_info": "Motorinfo",
+      "prompt_generator": "Promptgenerator",
       "billing": "Fakturering",
       "credits": "Krediter",
       "settings": "Inställningar",
@@ -1255,5 +1260,20 @@
     "not_configured": "Bright Data not configured",
     "run_success": "Scraped successfully",
     "sources": "Sources"
+  },
+  "prompt_generator": {
+    "page_title": "Promptgenerator",
+    "page_subtitle": "Skapa GEO-optimerade promptar för alla varumärken i din bransch",
+    "industry": "Bransch",
+    "select_industry": "Välj en bransch",
+    "brand": "Varumärke",
+    "competitors": "Konkurrenter",
+    "location": "Plats",
+    "language": "Språk",
+    "generate": "Skapa Promptar",
+    "generating": "Skapar...",
+    "clear": "Rensa",
+    "results_title": "Genererade Promptar",
+    "no_results": "Inga promptar genererades. Prova en annan bransch eller ett annat varumärke."
   }
 }

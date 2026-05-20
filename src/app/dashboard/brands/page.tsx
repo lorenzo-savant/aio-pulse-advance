@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { useBrandsQuery, useDeleteBrandMutation } from '@/hooks/useBrandsQuery'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -134,11 +134,11 @@ export default function BrandsPage() {
   const t = useTranslations()
   const { confirm, ConfirmDialog } = useConfirmDialog()
 
-  // React Query — visible in TanStack devtools, cached, optimistic deletes
+  // Plain fetch — no external query library
   const { data: brands = [], isLoading: loading, error: queryError, refetch } = useBrandsQuery()
   const deleteBrand = useDeleteBrandMutation()
 
-  const error = queryError instanceof Error ? queryError.message : null
+  const error = queryError
 
   const loadBrands = async () => {
     await refetch()

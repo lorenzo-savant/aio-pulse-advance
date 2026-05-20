@@ -46,52 +46,16 @@ function LoginForm() {
     setLoading(true)
     setError(null)
     try {
-      if (supabase) {
-        const demoEmail = process.env.NEXT_PUBLIC_DEMO_EMAIL
-        const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD
-        if (!demoEmail || !demoPassword) {
-          setError(
-            'Dev bypass not configured. Set NEXT_PUBLIC_DEMO_EMAIL and NEXT_PUBLIC_DEMO_PASSWORD in .env.local (dev only).',
-          )
-          setLoading(false)
-          return
-        }
+      const res = await fetch('/api/auth/dev-login', { method: 'POST' })
+      const data = await res.json()
 
-        // Try sign up first (creates account if it doesn't exist)
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: demoEmail,
-          password: demoPassword,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        })
-
-        // If signup failed because user exists, try sign in
-        if (signUpError && !signUpError.message.includes('already')) {
-          setError('Failed to create demo account: ' + signUpError.message)
-          setLoading(false)
-          return
-        }
-
-        // Try sign in (works for new accounts that auto-confirm, or existing ones)
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: demoEmail,
-          password: demoPassword,
-        })
-
-        if (signInError) {
-          if (signInError.message.includes('Email not confirmed')) {
-            setError(
-              'Demo account created but email not confirmed. Check your Supabase settings or disable email confirmation for dev.',
-            )
-          } else {
-            setError('Demo login failed: ' + signInError.message)
-          }
-          setLoading(false)
-          return
-        }
+      if (!res.ok) {
+        setError(data.error || 'Failed to bypass auth')
+        setLoading(false)
+        return
       }
-      router.push('/dashboard')
+
+      router.push(data.redirectTo || '/dashboard')
       router.refresh()
     } catch (err) {
       console.error('[dev-bypass] Error:', err)

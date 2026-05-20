@@ -37,6 +37,7 @@ const PUBLIC_ROUTES = new Set<string>([
   'errors/route.ts', // client error beacon — intentionally unauth, input-sanitized
   'health/route.ts', // public health/readiness probe — no tenant data
   'security/csp-report/route.ts', // CSP violation collector — public by spec
+  'auth/dev-login/route.ts', // dev-only demo login — early-returns 403 in production (NODE_ENV check)
 ])
 
 function walkRouteFiles(dir: string): string[] {

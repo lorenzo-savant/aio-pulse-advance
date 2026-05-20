@@ -139,6 +139,10 @@
         "label": "Ottimizza",
         "description": "Migliora i contenuti per la ricerca AI"
       },
+      "tools": {
+        "label": "Strumenti",
+        "description": "Strumenti per flussi di lavoro GEO"
+      },
       "account": {
         "label": "Account",
         "description": "Gestisci il tuo account"
@@ -168,6 +172,7 @@
       "recommendations": "Raccomandazioni",
       "strategy_advisor": "Strategy Advisor",
       "engine_info": "Info Motori",
+      "prompt_generator": "Generatore di Prompt",
       "billing": "Fatturazione",
       "credits": "Crediti",
       "settings": "Impostazioni",
@@ -1255,5 +1260,20 @@
     "not_configured": "Bright Data not configured",
     "run_success": "Scraped successfully",
     "sources": "Sources"
+  },
+  "prompt_generator": {
+    "page_title": "Generatore di Prompt",
+    "page_subtitle": "Genera prompt GEO-ottimizzati per qualsiasi brand del tuo settore",
+    "industry": "Settore",
+    "select_industry": "Seleziona un settore",
+    "brand": "Nome Brand",
+    "competitors": "Competitor",
+    "location": "Località",
+    "language": "Lingua",
+    "generate": "Genera Prompt",
+    "generating": "Generazione in corso...",
+    "clear": "Cancella",
+    "results_title": "Prompt Generati",
+    "no_results": "Nessun prompt generato. Prova con un altro settore o brand."
   }
 }

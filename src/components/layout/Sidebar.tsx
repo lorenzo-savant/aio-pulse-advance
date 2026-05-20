@@ -29,6 +29,7 @@ import {
   Sparkles,
   Coins,
   Radio,
+  Wand2,
   GitBranch,
   Sparkle,
   Link2,
@@ -199,6 +200,18 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     step: 5,
+    labelKey: 'sidebar.sections.tools.label',
+    descriptionKey: 'sidebar.sections.tools.description',
+    items: [
+      {
+        href: '/dashboard/tools/prompt-generator',
+        icon: Wand2,
+        labelKey: 'sidebar.items.prompt_generator',
+      },
+    ],
+  },
+  {
+    step: 6,
     labelKey: 'sidebar.sections.account.label',
     items: [
       { href: '/dashboard/billing', icon: CreditCard, labelKey: 'sidebar.items.billing' },

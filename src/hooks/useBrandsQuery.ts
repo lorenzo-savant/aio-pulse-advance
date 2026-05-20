@@ -1,9 +1,7 @@
 'use client'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useCallback } from 'react'
 import type { Brand } from '@/types'
-
-const KEY = ['brands'] as const
 
 interface BrandsResponse {
   success: boolean
@@ -11,54 +9,60 @@ interface BrandsResponse {
   message?: string
 }
 
-async function fetchBrands(): Promise<Brand[]> {
-  const res = await fetch('/api/brands')
-  const text = await res.text()
-  if (!text.trim()) return []
-  let json: BrandsResponse
-  try {
-    json = JSON.parse(text)
-  } catch {
-    throw new Error(`Server error (${res.status}): ${text.slice(0, 200)}`)
-  }
-  if (!res.ok || !json.success) {
-    throw new Error(json.message || `Server error ${res.status}`)
-  }
-  return json.data ?? []
-}
-
-/** React Query version — full Brand type, cache-backed, devtools-visible. */
 export function useBrandsQuery() {
-  return useQuery({
-    queryKey: KEY,
-    queryFn: fetchBrands,
-    staleTime: 30_000,
-  })
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const refetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/brands')
+      const text = await res.text()
+      if (!text.trim()) {
+        setBrands([])
+        return
+      }
+      let json: BrandsResponse
+      try {
+        json = JSON.parse(text)
+      } catch {
+        throw new Error(`Server error (${res.status}): ${text.slice(0, 200)}`)
+      }
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || `Server error ${res.status}`)
+      }
+      setBrands(json.data ?? [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load brands')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void refetch()
+  }, [refetch])
+
+  return { data: brands, isLoading: loading, error, refetch }
 }
 
 export function useDeleteBrandMutation() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: string): Promise<void> => {
+  const [loading, setLoading] = useState(false)
+
+  const mutateAsync = useCallback(async (id: string): Promise<void> => {
+    setLoading(true)
+    try {
       const res = await fetch(`/api/brands/${id}`, { method: 'DELETE' })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
         throw new Error(json.message || `Delete failed: ${res.status}`)
       }
-    },
-    onMutate: async (id) => {
-      // Optimistic update: remove from cache instantly
-      await qc.cancelQueries({ queryKey: KEY })
-      const previous = qc.getQueryData<Brand[]>(KEY)
-      qc.setQueryData<Brand[]>(KEY, (old) => (old ?? []).filter((b) => b.id !== id))
-      return { previous }
-    },
-    onError: (_err, _id, ctx) => {
-      // Rollback if server failed
-      if (ctx?.previous) qc.setQueryData(KEY, ctx.previous)
-    },
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: KEY })
-    },
-  })
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { mutateAsync, isLoading: loading }
 }

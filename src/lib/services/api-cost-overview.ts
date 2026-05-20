@@ -113,13 +113,20 @@ async function loadSerpSnapshot(): Promise<{
         label: p.label,
       }
     }
-    // DataForSEO
+    // DataForSEO — initialize with monitor-supplied utilization but leave
+    // calls + capCents to be hydrated from the actual dataforseo_usage row
+    // below. We start capCents at the env-default ($20) so it's correct
+    // even if the row query soft-fails; the hydrate step then overwrites
+    // with the live value when available.
+    const capRaw = process.env['DATAFORSEO_MONTHLY_CAP_CENTS']
+    const capParsed = capRaw ? parseInt(capRaw, 10) : NaN
+    const defaultCapCents = Number.isFinite(capParsed) && capParsed > 0 ? capParsed : 2000
     return {
       provider: 'dataforseo',
       configured: p.configured,
-      calls: 0, // will be hydrated below from the label `(N calls)`
+      calls: 0,
       costCents: p.costCents,
-      capCents: p.costCents + Math.round((1 - p.utilization) * p.costCents), // not exact; corrected below
+      capCents: defaultCapCents,
       capCalls: null,
       utilization: p.utilization,
       label: p.label,
@@ -142,10 +149,8 @@ async function loadSerpSnapshot(): Promise<{
       if (dfsProvider) {
         dfsProvider.calls = (dfsRow?.count as number | undefined) ?? 0
         dfsProvider.costCents = (dfsRow?.cost_cents as number | undefined) ?? 0
-        // capCents from env / default. Mirror the helper logic.
-        const capRaw = process.env['DATAFORSEO_MONTHLY_CAP_CENTS']
-        const capParsed = capRaw ? parseInt(capRaw, 10) : NaN
-        dfsProvider.capCents = Number.isFinite(capParsed) && capParsed > 0 ? capParsed : 2000 // default $20
+        // capCents was seeded above from env default — DFS row never
+        // contains the cap, so no override needed here.
       }
     } catch (err) {
       logger.warn('api-cost-overview: dataforseo hydrate failed', { err: String(err) })

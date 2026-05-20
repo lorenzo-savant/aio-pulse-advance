@@ -63,7 +63,7 @@ const MODEL_MAP: Record<ModelId, string> = {
   'gemini-pro': 'gemini-2.5-pro',
   'gpt-4o-mini': 'gpt-4o-mini',
   'gpt-4o': 'gpt-4o',
-  'claude-sonnet': 'claude-sonnet-4-5',
+  'claude-sonnet': 'claude-sonnet-4-6',
   'claude-haiku': 'claude-haiku-4-5-20251001',
   'perplexity-sonar': 'sonar',
 }

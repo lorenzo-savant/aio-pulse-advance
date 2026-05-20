@@ -2,7 +2,7 @@ import type { AIProviderRequest, AIProviderResult } from './types'
 import { BaseProvider } from './base-provider'
 
 const CLAUDE_MODELS = {
-  SONNET_4_5: 'claude-sonnet-4-5',
+  SONNET_4_6: 'claude-sonnet-4-6',
   OPUS_4_6: 'claude-opus-4-6',
   HAIKU_4_5: 'claude-haiku-4-5-20251001',
 }
@@ -38,7 +38,7 @@ export class ClaudeProvider extends BaseProvider {
     const apiKey = process.env['ANTHROPIC_API_KEY']
 
     const body: Record<string, unknown> = {
-      model: request.model || CLAUDE_MODELS.SONNET_4_5,
+      model: request.model || CLAUDE_MODELS.SONNET_4_6,
       max_tokens: request.maxTokens ?? 4096,
       temperature: request.temperature ?? 0.3,
       messages: [{ role: 'user', content: request.prompt }],

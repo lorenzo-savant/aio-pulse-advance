@@ -15,6 +15,7 @@ import { BrightDataProvider } from './brightdata-provider'
 import { GscProvider } from './gsc-provider'
 import { BaseProvider } from './base-provider'
 import { enrichPromptWithBrandContext, type BrandContextOptions } from '../brand-enrichment'
+import { logger } from '@/lib/logger'
 import type { Brand } from '@/types'
 
 export interface JobResult {
@@ -396,10 +397,16 @@ export class ProviderManager {
         return result
       }
 
-      return this.executeWithFallback({
-        ...request,
-        prompt: `Original request failed with ${preferredProvider}. Retrying with fallback.\n\n${request.prompt}`,
+      // Do NOT prepend a "previous provider failed" preamble to the prompt —
+      // the fallback LLM should receive exactly the user's intent, not
+      // operator-debugging context that would leak into the response.
+      // Log the failure for observability instead.
+      logger.warn('preferred provider failed, falling back', {
+        service: 'provider-manager',
+        preferredProvider,
+        error: result.error,
       })
+      return this.executeWithFallback(request)
     }
 
     return this.executeWithFallback(request)

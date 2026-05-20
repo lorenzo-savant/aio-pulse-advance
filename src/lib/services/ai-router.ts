@@ -18,7 +18,7 @@ const LANGUAGE_LABEL: Record<PromptLang, string> = {
 
 async function callGeminiFallback(prompt: string): Promise<string> {
   const apiKey = process.env['GEMINI_API_KEY']
-  if (!apiKey) throw new Error('GEMINI_API_KEY non configurata')
+  if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
   const res = await fetch(url, {
@@ -36,7 +36,7 @@ async function callGeminiFallback(prompt: string): Promise<string> {
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
   }
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) throw new Error('Risposta vuota da Gemini')
+  if (!text) throw new Error('Empty response from Gemini')
   return text
 }
 
@@ -185,7 +185,7 @@ export async function simulateEngineResponse(
   }
 
   throw new Error(
-    `Tutti i provider AI hanno fallito per la simulazione di "${engine}":\n` +
+    `All AI providers failed simulating engine "${engine}":\n` +
       errors.map((e, i) => `  ${i + 1}. ${e}`).join('\n'),
   )
 }
@@ -233,7 +233,7 @@ export async function analyzeResponseForBrand(
   }
 
   throw new Error(
-    "Tutti i provider AI hanno fallito per l'analisi brand:\n" +
+    'All AI providers failed for brand analysis:\n' +
       errors.map((e, i) => `  ${i + 1}. ${e}`).join('\n'),
   )
 }

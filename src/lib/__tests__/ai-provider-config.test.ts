@@ -45,7 +45,7 @@ describe('All provider model versions are defined', () => {
     expect(fnStr).toMatch(/gpt-/)
   })
 
-  it('anthropic uses claude-sonnet-4-5 in legacy service', async () => {
+  it('anthropic uses claude-sonnet-4-6 in legacy service', async () => {
     const src = await import('../services/anthropic')
     const fnStr = src.callAnthropic.toString()
     expect(fnStr).toContain('claude')

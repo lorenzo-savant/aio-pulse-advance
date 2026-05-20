@@ -730,7 +730,7 @@ function buildSystemPrompt(): string {
     '4. `actions` must be concrete next steps with REAL names and topics from the CONTEXT — never placeholders.',
     '   - FORBIDDEN in actions: literal "X", "Topic X", "some keywords", "various", "specific topics", "etc", "[brand]", "[competitor]".',
     '   - If you cannot name a concrete topic, keyword, competitor, or prompt text from CONTEXT, drop the action.',
-    "   - Good: \"Rewrite the prompt 'Vad är acasting.se?' (0/4 engines mention brand) as 'Bästa castingplattformen i Sverige för skådespelare'\".",
+    "   - Good: \"Rewrite the prompt '<exact prompt text from CONTEXT.promptInsights.worstPerforming>' (0/4 engines mention brand) as '<a more specific re-formulation that includes the brand category + location>'\". Reference REAL prompts from CONTEXT, not invented ones.",
     '   - Bad: "Seed new prompts for topic X" — exactly the placeholder pattern this rule exists to stop.',
     '5. `impact` and `effort` are your honest estimates. Prefer high-impact / low-effort.',
     '6. Confidence calibration — match data richness, not just presence of every field:',

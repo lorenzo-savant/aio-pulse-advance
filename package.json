@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "echo 'lint disabled: next lint removed in Next.js 16; migrate to ESLint flat config (eslint.config.mjs + @eslint/eslintrc). Type safety enforced by npm run type-check.'",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "test": "vitest",

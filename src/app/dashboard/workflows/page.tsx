@@ -228,9 +228,34 @@ export default function WorkflowsPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-brand" />
               </div>
             ) : filteredWorkflows.length === 0 ? (
-              <div className="flex flex-col items-center p-12 text-center">
-                <Workflow className="mb-3 h-10 w-10 text-muted-foreground" />
-                <p className="text-muted-foreground">No workflow executions found</p>
+              <div className="flex flex-col items-center gap-2 p-12 text-center">
+                <Workflow className="mb-1 h-10 w-10 text-muted-foreground" />
+                {workflows.length === 0 ? (
+                  // True empty state: there are no rows at all (not just a
+                  // filter or brand-scope mismatch). Workflows are created
+                  // when a monitoring check runs against a prompt — so guide
+                  // the user there explicitly rather than leaving them at a
+                  // dead end.
+                  <>
+                    <p className="font-medium text-foreground">No workflow executions yet</p>
+                    <p className="max-w-sm text-sm text-muted-foreground">
+                      A workflow is created every time a monitoring check runs against a prompt.
+                      Open a prompt and click <span className="font-semibold">Run</span> to create
+                      the first one.
+                    </p>
+                    <a
+                      href="/dashboard/prompts"
+                      className="bg-brand-gradient mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+                    >
+                      Go to Prompts
+                    </a>
+                  </>
+                ) : (
+                  // Rows exist but the active filter / status hides them all.
+                  <p className="text-muted-foreground">
+                    No workflow executions match the current filter.
+                  </p>
+                )}
               </div>
             ) : (
               filteredWorkflows.map((workflow) => {

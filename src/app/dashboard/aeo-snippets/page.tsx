@@ -150,6 +150,23 @@ export default function AEOSnippetsPage() {
       })
       const json = await res.json()
       if (!res.ok || !json.success) throw new Error(json.message || 'Run failed')
+
+      // Soft-error surfacing: the API can return success:true with items=[]
+      // when DataForSEO's PAA box for this keyword is empty (common for
+      // narrow Swedish/Italian niches). Without surfacing this, the user
+      // sees their input clear and nothing new in the list — looking like
+      // a silent failure. Show the server's `errors` array so the cause is
+      // visible.
+      const runResult = json.data as { items?: unknown[]; errors?: string[] } | undefined
+      const items = runResult?.items ?? []
+      const apiErrors = runResult?.errors ?? []
+      if (items.length === 0 && apiErrors.length > 0) {
+        setError(apiErrors.join(' • '))
+      } else if (apiErrors.length > 0) {
+        // Partial success — some questions failed (LLM call or gap check);
+        // we still got snippets. Surface the partial errors as a hint.
+        setError(`Generated with warnings: ${apiErrors.slice(0, 3).join(' • ')}`)
+      }
       setKeywordInput('')
       await load()
     } catch (e) {

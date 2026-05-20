@@ -28,11 +28,11 @@
 | ID | Title | Status | Owner | Branch | PR | Updated |
 |---|---|---|---|---|---|---|
 | T01 | Fix imports + type bypass in `onboarding/route.ts` (S1) | 🟢 Done | — | — | — | 2026-05-14 |
-| T02 | Generate strong Supabase types + refactor `supabase.ts` (S1) | 🟢 Done | OpenCode | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
-| T03 | Kill `(db as any)` across API routes (S2) — 14 instances fixed | 🟢 Done | OpenCode | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
+| T02 | Generate strong Supabase types + refactor `supabase.ts` (S1) | 🟢 Done | agent | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
+| T03 | Kill `(db as any)` across API routes (S2) — 14 instances fixed | 🟢 Done | agent | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
 | T04 | Structured logger: pino setup + PII masking + Sentry forward | ⚫ Blocked (no Sentry DSN) | — | — | — | 2026-05-14 |
-| T05 | Replace console.* with logger | 🟢 Done | OpenCode | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
-| T06 | CI gate: type-check + lint + test in pre-commit + PR | 🟢 Done | OpenCode | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
+| T05 | Replace console.* with logger | 🟢 Done | agent | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
+| T06 | CI gate: type-check + lint + test in pre-commit + PR | 🟢 Done | agent | fase-0/T02-T06-residual-cleanup | — | 2026-05-14 |
 
 Detalj: [01-fase-0-pulizia.md](01-fase-0-pulizia.md)
 

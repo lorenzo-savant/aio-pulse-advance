@@ -1,4 +1,4 @@
-# AIO Pulse — Instruktioner för coding agent (OpenCode / Cursor / Claude Code)
+# AIO Pulse — Instruktioner för coding agents (Cursor / Claude Code / andra)
 
 > **Projektets ingång för AI-agenter.** Läs detta innan du gör några ändringar.
 
@@ -132,7 +132,7 @@ Innan arbete på Fas 1+ påbörjas, fixa blockerarna (från CODE_REVIEW.md, mars
 - **5 errors (S2)**: 125+ `(db as any)`, 116+ `console.log`, ohanterade promises, API key leak i error log → [Task T03-T05 i Fas 0](docs/enterprise-roadmap/01-fase-0-pulizia.md)
 - **4 warnings (S3)**: naming inconsistencies, magic numbers, CSS organization → opportunistisk cleanup under Fas 0
 
-## 10. Rekommenderat arbetsmönster för OpenCode
+## 10. Rekommenderat arbetsmönster för coding agents
 
 När du startar en session på detta projekt:
 

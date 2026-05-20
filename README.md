@@ -83,7 +83,7 @@ To target a different market without code changes, set any of:
 
 | Document                                                                                                           | Description                                                                            |
 | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| [AGENTS.md](AGENTS.md)                                                                                             | Instructions for coding agents (OpenCode / Cursor / Claude Code) — **read this first** |
+| [AGENTS.md](AGENTS.md)                                                                                             | Instructions for coding agents (Cursor / Claude Code / others) — **read this first**   |
 | [docs/enterprise-roadmap/README.md](docs/enterprise-roadmap/README.md)                                             | Full roadmap: 4 phases, 18 tasks, 10-14 week timeline                                  |
 | [docs/enterprise-roadmap/00-mission-scope-rules.md](docs/enterprise-roadmap/00-mission-scope-rules.md)             | Mission, scope (IN/OUT), coding standards, definition of done                          |
 | [docs/enterprise-roadmap/01-fase-0-pulizia.md](docs/enterprise-roadmap/01-fase-0-pulizia.md)                       | Phase 0: Technical cleanup (T01-T06)                                                   |

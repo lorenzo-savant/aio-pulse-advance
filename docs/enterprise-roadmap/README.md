@@ -85,7 +85,7 @@ I slutet av Fas 3 bör AIO Pulse:
 
 ## 🔗 Relaterade dokument (repo-roten)
 
-- [../../AGENTS.md](../../AGENTS.md) — universella instruktioner för coding agent (OpenCode, Cursor, Claude Code)
+- [../../AGENTS.md](../../AGENTS.md) — universella instruktioner för coding agents (Cursor, Claude Code, andra)
 - [../../README.md](../../README.md) — projektöversikt
 - [../../SECURITY.md](../../SECURITY.md) — security baseline mars 2026
 - CODE_REVIEW.md — issue-lista från Fas 0 (historisk rapport borttagen från repot)

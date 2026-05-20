@@ -379,6 +379,75 @@ export async function checkDomainRanksForQuestion(
   return { covered: true, coveredUrl: first.url, position: 1 }
 }
 
+// ─── Generic SERP ranking (Brave index — citation tracking, NOT Google rank) ─
+
+export interface BraveOrganicResult {
+  title: string
+  url: string
+  rank: number
+  description?: string
+}
+
+export interface BraveRankingResult {
+  /** First position the brandDomain appears at in Brave's organic results, or 0 if absent. */
+  position: number
+  /** First matching URL, or null. */
+  url: string | null
+  /** Top 10 organic results (always returned, useful for UI / context). */
+  organicResults: BraveOrganicResult[]
+}
+
+/**
+ * Track where a brand domain appears in Brave's organic results for a given
+ * query. This is the citation-tracking equivalent of Google rank tracking —
+ * per the v2 API strategy ("Google rank tracking" → "AI engine citation
+ * tracking"). For real Google AI Overview detection use DataForSEO instead.
+ */
+export async function searchBrandRanking(
+  keyword: string,
+  brandDomain: string,
+  language?: string,
+): Promise<BraveRankingResult> {
+  const json = (await callBrave({
+    path: 'web/search',
+    params: {
+      q: keyword,
+      count: '20',
+      ...localeParams(language),
+    },
+  })) as BraveWebSearchResponse
+
+  const cleanDomain = brandDomain
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/$/, '')
+
+  const results = (json.web?.results || []).slice(0, 20).map((r, i) => ({
+    title: r.title || '',
+    url: r.url || '',
+    rank: i + 1,
+    description: r.description,
+  }))
+
+  let position = 0
+  let url: string | null = null
+  if (cleanDomain) {
+    for (const r of results) {
+      if (r.url.includes(cleanDomain)) {
+        position = r.rank
+        url = r.url
+        break
+      }
+    }
+  }
+
+  return {
+    position,
+    url,
+    organicResults: results.slice(0, 10),
+  }
+}
+
 // ─── Summarizer (AI Overview substitute) ─────────────────────────────────────
 
 export interface BraveSummary {

@@ -33,7 +33,6 @@ const AUTH_TOKENS = [
 // Routes that are intentionally public and may use the DB WITHOUT user auth.
 // Each entry MUST have a one-line justification.
 const PUBLIC_ROUTES = new Set<string>([
-  'billing/route.ts', // Stripe webhook — authenticated by Stripe signature
   'billing/webhook/route.ts', // Stripe webhook — authenticated by Stripe signature
   'errors/route.ts', // client error beacon — intentionally unauth, input-sanitized
   'health/route.ts', // public health/readiness probe — no tenant data

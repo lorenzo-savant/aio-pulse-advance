@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
+import { suggestedClusterFor } from './keyword-tracker'
 
 interface BrandInfo {
   name: string
@@ -112,6 +113,14 @@ function classifyKeyword(keyword: string, brand: BrandInfo): 'identity' | 'produ
   if (competitorTokens.some((c) => wholeWordMatch(lower, c))) {
     return 'market'
   }
+
+  // Industry vocabulary / geo signal: pre-classified bucket overrides the
+  // generic term scoring below. "skådespelare" / "audition" should always
+  // be Product (casting domain vocab) regardless of whether they happen to
+  // contain the substring "best" or "market". "stockholm" / "milano" are
+  // geo signals → Market Context.
+  const suggested = suggestedClusterFor(lower)
+  if (suggested) return suggested
 
   const identityTerms = [
     'brand',

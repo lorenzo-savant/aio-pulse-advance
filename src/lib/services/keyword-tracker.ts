@@ -402,6 +402,81 @@ const STOP_WORDS = new Set([
 
 const PURE_NUMBER = /^\d+$/
 
+// Lightweight Swedish (and partially Italian) stemmer. Collapses
+// singular/plural and a few common verb conjugations so the keyword table
+// doesn't show "plattform" (84) and "plattformar" (63) as two separate
+// rows for the same concept — they're the same word, just inflected.
+//
+// Deliberately NOT a full Snowball stemmer: those over-aggressively
+// strip suffixes and produce nonsense roots that don't read like real
+// words in the UI. The rules here are conservative — they only trigger
+// on suffixes that are unambiguous plural markers in the casting /
+// monitoring vocabulary we actually see.
+//
+// Order matters: longer suffixes must be tried first to avoid
+// "plattformar" being stripped to "plattorm" by the 2-char "ar" rule.
+const SWEDISH_PLURAL_SUFFIXES: Array<{ suffix: string; min: number }> = [
+  { suffix: 'erna', min: 6 }, // determinate plural: rollerna → roll
+  { suffix: 'orna', min: 6 }, // determinate plural: kvinnorna → kvinna
+  { suffix: 'arna', min: 6 }, // determinate plural: pojkarna → pojke
+  { suffix: 'ioner', min: 7 }, // produktioner → produktion (keep -ion)
+  { suffix: 'ningar', min: 8 }, // bokningar → bokning
+  { suffix: 'ringar', min: 8 }, // sökringar (rare) → sökring
+  { suffix: 'ister', min: 6 }, // statister → statist
+  { suffix: 'are', min: 6 }, // skådespelare → skådespel (lossy — leave)
+  { suffix: 'ormar', min: 7 }, // plattformar → plattform
+  { suffix: 'ater', min: 6 }, // teater (already singular) — skip with min
+]
+const ITALIAN_PLURAL_SUFFIXES: Array<{ suffix: string; min: number }> = [
+  { suffix: 'azioni', min: 7 }, // piattaformazioni → piattaformazione (rare)
+  { suffix: 'oni', min: 5 }, // recensioni → recensione (replaces with -one)
+  // Generic Italian plurals (-e → -a, -i → -o) are too lossy to apply
+  // blindly — they conflate gender, so we skip them.
+]
+
+function stemSwedish(word: string): string {
+  // Try longer suffixes first.
+  for (const { suffix, min } of SWEDISH_PLURAL_SUFFIXES) {
+    if (word.length >= min && word.endsWith(suffix)) {
+      // Special cases that need a re-attached vowel:
+      if (suffix === 'ioner') return word.slice(0, -2) // produktioner → produktion (drop "er")
+      if (suffix === 'are') return word // skådespelare — leave as-is (the agent noun IS the singular)
+      if (suffix === 'erna' || suffix === 'orna' || suffix === 'arna') {
+        return word.slice(0, -4) + (suffix === 'arna' ? 'e' : 'a')
+      }
+      return word.slice(0, -suffix.length)
+    }
+  }
+  // Generic plural -ar / -er / -or only if word is reasonably long
+  if (word.length >= 6) {
+    if (word.endsWith('ar')) return word.slice(0, -2)
+    if (word.endsWith('er')) return word.slice(0, -2)
+    if (word.endsWith('or')) return word.slice(0, -2)
+  }
+  return word
+}
+
+function stemItalian(word: string): string {
+  for (const { suffix, min } of ITALIAN_PLURAL_SUFFIXES) {
+    if (word.length >= min && word.endsWith(suffix)) {
+      if (suffix === 'oni') return word.slice(0, -3) + 'one'
+      return word.slice(0, -suffix.length)
+    }
+  }
+  return word
+}
+
+function stem(word: string): string {
+  // Try Swedish first (most letters covered by ASCII + åäö), fall back to
+  // Italian. English plurals are intentionally left alone — the only
+  // aggressive rule that'd be safe is "-ies" → "-y" but that fires too
+  // often on Swedish words.
+  if (/[åäö]/.test(word)) return stemSwedish(word)
+  const sw = stemSwedish(word)
+  if (sw !== word) return sw
+  return stemItalian(word)
+}
+
 function tokenize(text: string): string[] {
   return text
     .toLowerCase()
@@ -411,6 +486,8 @@ function tokenize(text: string): string[] {
       (word) =>
         word.length >= 3 && word.length <= 30 && !PURE_NUMBER.test(word) && !STOP_WORDS.has(word),
     )
+    .map(stem)
+    .filter((word) => !STOP_WORDS.has(word)) // re-filter: stem may produce a stopword
 }
 
 function countTokens(text: string): Map<string, number> {
@@ -419,6 +496,129 @@ function countTokens(text: string): Map<string, number> {
     counts.set(w, (counts.get(w) || 0) + 1)
   }
   return counts
+}
+
+// ─── Bigram detection ───────────────────────────────────────────────────────
+//
+// Two-word phrases like "sociala medier" (Swedish for "social media") often
+// appear as separate top-frequency keywords with near-identical document
+// support. The phrase carries more intent than either word alone. We detect
+// them by finding pairs of consecutive tokens that co-occur frequently
+// enough relative to either token's own count.
+//
+// Heuristic chosen over PMI / log-likelihood because it's transparent for
+// the dashboard ("appeared together in ≥10 responses") and easy to debug.
+const BIGRAM_MIN_COOCCURRENCES = 5
+const BIGRAM_COHESION_THRESHOLD = 0.4 // pair must co-occur in ≥40% of the rarer token's docs
+
+function extractBigrams(text: string): string[] {
+  // Re-tokenize WITHOUT stemming for bigram detection — phrase pairs are
+  // more recognizable in their natural inflection (e.g. "sociala medier"
+  // not "social medier"). Stem the joined phrase after pairing.
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-zåäöüßéèêëàâáãíîìôòóúùçñ\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && w.length <= 30 && !PURE_NUMBER.test(w) && !STOP_WORDS.has(w))
+  const pairs: string[] = []
+  for (let i = 0; i < words.length - 1; i++) {
+    pairs.push(`${words[i]} ${words[i + 1]}`)
+  }
+  return pairs
+}
+
+// ─── Industry vocabulary classifier ────────────────────────────────────────
+//
+// Some terms are obviously domain-specific (skådespelare, audition, casting,
+// regissör) and should be Product cluster regardless of whether they hit
+// the generic productTerms list. Encoded here as a stem→cluster map so we
+// don't need a network call to classify; mirrors the industry presets in
+// prompt-generator.ts.
+const INDUSTRY_VOCABULARY = new Set<string>([
+  // Casting / talent (Swedish + English)
+  'skådespelare',
+  'skådespel',
+  'skådespelar',
+  'statist',
+  'audition',
+  'casting',
+  'roll',
+  'roller',
+  'rollen',
+  'regissör',
+  'producent',
+  'manus',
+  'film',
+  'tv',
+  'reklam',
+  'reklamfilm',
+  'fotograf',
+  'fotografering',
+  'modell',
+  'modellbyrå',
+  'talang',
+  'talanger',
+  'agentur',
+  'agency',
+  'profil',
+  'portfolio',
+  'showreel',
+  'bookning',
+  'bokning',
+  'audition',
+  'castningsdirektör',
+  // Italian casting
+  'attore',
+  'attrice',
+  'comparsa',
+  'figurante',
+  'provini',
+  'regista',
+])
+
+// ─── Geo detection ─────────────────────────────────────────────────────────
+//
+// Major Swedish + Italian cities. Geo signals are interesting for
+// local-market brands (acasting.se = Sweden) because they answer the
+// "where does this brand operate?" question — Market Context cluster.
+const GEO_TOKENS = new Set<string>([
+  // Swedish cities / regions
+  'stockholm',
+  'göteborg',
+  'malmö',
+  'uppsala',
+  'västerås',
+  'örebro',
+  'linköping',
+  'helsingborg',
+  'jönköping',
+  'norrköping',
+  'lund',
+  'umeå',
+  'gävle',
+  'borås',
+  'sverige',
+  'skåne',
+  'småland',
+  'norrland',
+  // Italian cities
+  'milano',
+  'roma',
+  'torino',
+  'napoli',
+  'firenze',
+  'bologna',
+  'venezia',
+  'palermo',
+  'genova',
+  'verona',
+  'italia',
+])
+
+export function suggestedClusterFor(stemmed: string): 'product' | 'market' | null {
+  if (INDUSTRY_VOCABULARY.has(stemmed)) return 'product'
+  if (GEO_TOKENS.has(stemmed)) return 'market'
+  return null
 }
 
 export async function trackKeywords(brandId: string): Promise<void> {
@@ -445,11 +645,45 @@ export async function trackKeywords(brandId: string): Promise<void> {
     const mentionCount = mentionResults.length
     const noMentionCount = noMentionResults.length
 
-    // Per-response token counts (cached to avoid re-tokenising)
-    const tokenizedResults = results.map((r) => ({
-      result: r,
-      tokens: countTokens(r.response_text || ''),
-    }))
+    // Per-response token counts (cached to avoid re-tokenising). Also
+    // extract candidate bigrams that we'll promote to keywords if they
+    // pass the cohesion threshold below.
+    const tokenizedResults = results.map((r) => {
+      const text = r.response_text || ''
+      const tokens = countTokens(text)
+      const bigrams = new Set<string>()
+      for (const bg of extractBigrams(text)) bigrams.add(bg)
+      return { result: r, tokens, bigrams }
+    })
+
+    // Pre-pass: count bigram document frequency. We keep a bigram as a
+    // single token IF it co-occurred in enough documents AND its
+    // appearance is concentrated (not just two common words that happen
+    // to be adjacent sometimes).
+    const bigramDocCount = new Map<string, number>()
+    for (const tr of tokenizedResults) {
+      for (const bg of tr.bigrams) bigramDocCount.set(bg, (bigramDocCount.get(bg) || 0) + 1)
+    }
+    const promotedBigrams = new Set<string>()
+    for (const [bg, count] of bigramDocCount) {
+      if (count < BIGRAM_MIN_COOCCURRENCES) continue
+      const [a, b] = bg.split(' ')
+      if (!a || !b) continue
+      const aDocs = tokenizedResults.filter((tr) => tr.tokens.has(stem(a))).length
+      const bDocs = tokenizedResults.filter((tr) => tr.tokens.has(stem(b))).length
+      const rarer = Math.min(aDocs, bDocs) || 1
+      if (count / rarer >= BIGRAM_COHESION_THRESHOLD) promotedBigrams.add(bg)
+    }
+
+    // Inject promoted bigrams into the per-response token maps so they
+    // are counted alongside unigrams. The bigram string IS the keyword
+    // (no further stemming — we want "sociala medier" to read naturally).
+    for (const tr of tokenizedResults) {
+      for (const bg of tr.bigrams) {
+        if (!promotedBigrams.has(bg)) continue
+        tr.tokens.set(bg, (tr.tokens.get(bg) || 0) + 1)
+      }
+    }
 
     // Global aggregates per keyword
     interface Stats {
@@ -483,12 +717,14 @@ export async function trackKeywords(brandId: string): Promise<void> {
       }
     }
 
-    // Keep keywords that appear in enough responses (signal filter)
-    // For small samples (< 10 results), require only 1 occurrence
-    // For larger samples, require ≥2 to filter noise
+    // Keep keywords that appear in enough responses (signal filter).
+    // Threshold scales with sample size:
+    //   - <10 results: 1 doc (any signal counts, sample is too small to filter)
+    //   - 10-49: 2 docs
+    //   - 50+: 3 docs (filter the long tail of one-off mentions)
     const keywordData: Record<string, KeywordData> = {}
     const totalResultCount = results.length
-    const minDocThreshold = totalResultCount < 10 ? 1 : 2
+    const minDocThreshold = totalResultCount < 10 ? 1 : totalResultCount < 50 ? 2 : 3
     const ranked = [...stats.entries()]
       .filter(([, s]) => s.docsInMention + s.docsInNoMention >= minDocThreshold)
       .sort((a, b) => b[1].totalOccurrences - a[1].totalOccurrences)

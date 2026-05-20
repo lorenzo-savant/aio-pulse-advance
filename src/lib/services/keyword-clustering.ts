@@ -35,29 +35,74 @@ const BRAND_LOOKALIKES: Array<{ brandMatch: RegExp; lookalikes: string[] }> = [
   { brandMatch: /\bacasting\b/i, lookalikes: ['acast'] },
 ]
 
-// Implicit competitor signals for brands whose `competitors` column is empty
-// in onboarding. Without these, the Market Context cluster is always 0
-// because no keyword matches `brand.competitors`. We bootstrap a sane
-// default from the brand name / industry — these are well-known
-// competitors that appear in monitoring data even when not configured.
-// User can still curate brand.competitors to override.
-const IMPLICIT_COMPETITORS: Array<{ brandMatch: RegExp; competitors: string[] }> = [
-  // Casting / talent platforms — Swedish + global. Mirrors the Casting
-  // industry preset from prompt-generator.ts so monitoring and tooling
-  // agree on the set.
+// Implicit competitor signals — by industry vertical. When brand.competitors
+// is empty, the classifier seeds from the matching vertical's well-known
+// competitors so Market Context isn't perpetually empty. User-configured
+// competitors always override the implicit set.
+//
+// Aligned with the presets in src/lib/services/prompt-generator.ts. Add a
+// new vertical here when adding to prompt-generator.
+const INDUSTRY_IMPLICIT_COMPETITORS: Record<string, string[]> = {
+  casting: ['stagepool', 'starnow', 'backstage', 'spotlight', 'statist.se', 'actoraccess'],
+  saas: ['notion', 'airtable', 'monday', 'asana', 'clickup', 'linear'],
+  ecommerce: ['shopify', 'woocommerce', 'bigcommerce', 'wix', 'squarespace', 'amazon'],
+  local: ['google maps', 'yelp', 'tripadvisor', 'facebook'],
+}
+
+// Match brand.industry free-text to a vertical key. Same logic as in
+// keyword-tracker.ts so the two stay aligned.
+const INDUSTRY_PATTERNS: Array<{
+  vertical: keyof typeof INDUSTRY_IMPLICIT_COMPETITORS
+  patterns: RegExp[]
+}> = [
   {
-    brandMatch: /\bacasting\b/i,
-    competitors: ['stagepool', 'starnow', 'backstage', 'spotlight', 'statist.se'],
+    vertical: 'casting',
+    patterns: [
+      /\bcasting\b/i,
+      /\btalent\b/i,
+      /\bactor\b/i,
+      /\baudition\b/i,
+      /\bfilm\b/i,
+      /\bmedia\b/i,
+    ],
+  },
+  {
+    vertical: 'saas',
+    patterns: [
+      /\bsaas\b/i,
+      /\bsoftware\b/i,
+      /\b(b2b|enterprise|martech)\b/i,
+      /\bcloud\b/i,
+      /\bapi\b/i,
+    ],
+  },
+  {
+    vertical: 'ecommerce',
+    patterns: [/\be-?commerce\b/i, /\bretail\b/i, /\bshop\b/i, /\bstore\b/i],
+  },
+  {
+    vertical: 'local',
+    patterns: [/\blocal\b/i, /\bsalon\b/i, /\bclinic\b/i, /\brestaurant\b/i, /\bservice\b/i],
   },
 ]
+
+function verticalForIndustry(
+  industry: string | null,
+): keyof typeof INDUSTRY_IMPLICIT_COMPETITORS | null {
+  if (!industry) return null
+  for (const entry of INDUSTRY_PATTERNS) {
+    if (entry.patterns.some((p) => p.test(industry))) return entry.vertical
+  }
+  return null
+}
 
 function implicitCompetitorsFor(brand: BrandInfo): string[] {
   // If the user has configured competitors, trust them — don't auto-add.
   if (brand.competitors && brand.competitors.length > 0) return []
-  for (const entry of IMPLICIT_COMPETITORS) {
-    if (entry.brandMatch.test(brand.name)) return entry.competitors.map((c) => c.toLowerCase())
-  }
-  return []
+  const vertical = verticalForIndustry(brand.industry)
+  if (!vertical) return []
+  const list = INDUSTRY_IMPLICIT_COMPETITORS[vertical]
+  return list ? list.map((c) => c.toLowerCase()) : []
 }
 
 function lookalikesFor(brandName: string): Set<string> {
@@ -115,11 +160,11 @@ function classifyKeyword(keyword: string, brand: BrandInfo): 'identity' | 'produ
   }
 
   // Industry vocabulary / geo signal: pre-classified bucket overrides the
-  // generic term scoring below. "skådespelare" / "audition" should always
-  // be Product (casting domain vocab) regardless of whether they happen to
-  // contain the substring "best" or "market". "stockholm" / "milano" are
-  // geo signals → Market Context.
-  const suggested = suggestedClusterFor(lower)
+  // generic term scoring below. "skådespelare" / "audition" → Product
+  // (casting domain vocab); "subscription" / "pricing" → Product (SaaS);
+  // "stockholm" / "milano" → Market Context (geo).
+  // The brand.industry field picks the right vocab set; geo is industry-blind.
+  const suggested = suggestedClusterFor(lower, brand.industry)
   if (suggested) return suggested
 
   const identityTerms = [

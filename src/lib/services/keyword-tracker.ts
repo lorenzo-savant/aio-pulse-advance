@@ -427,11 +427,33 @@ const SWEDISH_PLURAL_SUFFIXES: Array<{ suffix: string; min: number }> = [
   { suffix: 'ormar', min: 7 }, // plattformar → plattform
   { suffix: 'ater', min: 6 }, // teater (already singular) — skip with min
 ]
-const ITALIAN_PLURAL_SUFFIXES: Array<{ suffix: string; min: number }> = [
-  { suffix: 'azioni', min: 7 }, // piattaformazioni → piattaformazione (rare)
-  { suffix: 'oni', min: 5 }, // recensioni → recensione (replaces with -one)
-  // Generic Italian plurals (-e → -a, -i → -o) are too lossy to apply
-  // blindly — they conflate gender, so we skip them.
+const ITALIAN_PLURAL_SUFFIXES: Array<{ suffix: string; min: number; replace?: string }> = [
+  { suffix: 'azioni', min: 7, replace: 'azione' }, // recensioni di azioni → azione
+  { suffix: 'zioni', min: 6, replace: 'zione' }, // recensioni → recensione
+  { suffix: 'sioni', min: 6, replace: 'sione' }, // decisioni → decisione
+  { suffix: 'ssioni', min: 7, replace: 'ssione' }, // discussioni → discussione
+  { suffix: 'oni', min: 5, replace: 'one' }, // (catch-all fallback for above)
+  // Generic -i → -o and -e → -a are too gender-lossy to apply blindly.
+  // We only apply them on tokens >= 6 chars to reduce damage, AND only
+  // when the result is still a plausible word stem (length stays >= 4).
+  { suffix: 'i', min: 6, replace: 'o' }, // attori → attoro (lossy but useful for casting nouns)
+  { suffix: 'e', min: 6, replace: 'a' }, // attrici → attrica (less useful, often wrong)
+]
+
+const ENGLISH_PLURAL_SUFFIXES: Array<{ suffix: string; min: number; replace?: string }> = [
+  // English noun plurals — only the well-behaved suffixes. Skip irregulars
+  // (children, geese, etc.) — they're rare in monitoring text and the
+  // alternative is a full lemma dictionary, which is overkill here.
+  { suffix: 'ies', min: 5, replace: 'y' }, // categories → category
+  { suffix: 'sses', min: 6, replace: 'ss' }, // businesses → business
+  { suffix: 'shes', min: 6, replace: 'sh' }, // brushes → brush
+  { suffix: 'ches', min: 6, replace: 'ch' }, // benches → bench
+  { suffix: 'xes', min: 5, replace: 'x' }, // boxes → box
+  { suffix: 'oes', min: 5, replace: 'o' }, // heroes → hero
+  // Generic -s strip last — very common but careful not to strip from words
+  // ending in -ss (loss), -us (bus), -is (analysis). Min 5 chars + extra
+  // guards in the function body.
+  { suffix: 's', min: 5 },
 ]
 
 function stemSwedish(word: string): string {
@@ -457,27 +479,76 @@ function stemSwedish(word: string): string {
 }
 
 function stemItalian(word: string): string {
-  for (const { suffix, min } of ITALIAN_PLURAL_SUFFIXES) {
+  for (const { suffix, min, replace } of ITALIAN_PLURAL_SUFFIXES) {
     if (word.length >= min && word.endsWith(suffix)) {
-      if (suffix === 'oni') return word.slice(0, -3) + 'one'
-      return word.slice(0, -suffix.length)
+      const stripped = word.slice(0, -suffix.length)
+      if (stripped.length < 3) continue // safety: don't produce stubs
+      return stripped + (replace ?? '')
     }
   }
   return word
 }
 
-function stem(word: string): string {
-  // Try Swedish first (most letters covered by ASCII + åäö), fall back to
-  // Italian. English plurals are intentionally left alone — the only
-  // aggressive rule that'd be safe is "-ies" → "-y" but that fires too
-  // often on Swedish words.
-  if (/[åäö]/.test(word)) return stemSwedish(word)
+// Words ending in -ss / -us / -is / -os / -as are typically singular,
+// not -s plurals. Used by stemEnglish to skip wrong stripping.
+const ENGLISH_S_GUARD = /(?:ss|us|is|os|as)$/
+
+function stemEnglish(word: string): string {
+  for (const { suffix, min, replace } of ENGLISH_PLURAL_SUFFIXES) {
+    if (word.length < min || !word.endsWith(suffix)) continue
+    // Generic -s guard: skip when the word already ends in a sibilant or
+    // a Latin-suffixed singular form (analysis/news/bus).
+    if (suffix === 's' && ENGLISH_S_GUARD.test(word)) continue
+    const stripped = word.slice(0, -suffix.length)
+    if (stripped.length < 3) continue
+    return stripped + (replace ?? '')
+  }
+  return word
+}
+
+/**
+ * Stem a single token. The optional `language` hint biases the order in
+ * which language-specific rules are tried — important because the
+ * suffix tables overlap (Swedish -er ≈ English -s for noun plurals).
+ * When `language` is omitted we heuristically pick by character classes
+ * (åäö → Swedish; ò à ò ì ù → Italian; otherwise English).
+ */
+function stem(word: string, language?: 'en' | 'it' | 'sv' | string | null): string {
+  // Explicit hint wins. The brand.language is the most reliable signal.
+  if (language === 'sv') {
+    const r = stemSwedish(word)
+    return r !== word ? r : stemEnglish(word)
+  }
+  if (language === 'it') {
+    const r = stemItalian(word)
+    return r !== word ? r : stemEnglish(word)
+  }
+  if (language === 'en') {
+    const r = stemEnglish(word)
+    return r !== word ? r : word
+  }
+  // Heuristic fallback. Swedish letters are unambiguous; Italian-only
+  // accents next; otherwise English. Each branch falls through to the
+  // others when the language-specific rule doesn't fire — avoids
+  // missing "platforms" just because the previous word had an å.
+  if (/[åäö]/.test(word)) {
+    const r = stemSwedish(word)
+    return r !== word ? r : stemEnglish(word)
+  }
+  if (/[àèéìíòóùú]/.test(word)) {
+    const r = stemItalian(word)
+    return r !== word ? r : stemEnglish(word)
+  }
+  // ASCII-only: try Swedish first (handles "plattformar" etc.), then
+  // English, then Italian as a last resort.
   const sw = stemSwedish(word)
   if (sw !== word) return sw
+  const en = stemEnglish(word)
+  if (en !== word) return en
   return stemItalian(word)
 }
 
-function tokenize(text: string): string[] {
+function tokenize(text: string, language?: string | null): string[] {
   return text
     .toLowerCase()
     .replace(/[^a-zåäöüßéèêëàâáãíîìôòóúùçñ\s]/g, ' ')
@@ -486,13 +557,13 @@ function tokenize(text: string): string[] {
       (word) =>
         word.length >= 3 && word.length <= 30 && !PURE_NUMBER.test(word) && !STOP_WORDS.has(word),
     )
-    .map(stem)
+    .map((w) => stem(w, language))
     .filter((word) => !STOP_WORDS.has(word)) // re-filter: stem may produce a stopword
 }
 
-function countTokens(text: string): Map<string, number> {
+function countTokens(text: string, language?: string | null): Map<string, number> {
   const counts = new Map<string, number>()
-  for (const w of tokenize(text)) {
+  for (const w of tokenize(text, language)) {
     counts.set(w, (counts.get(w) || 0) + 1)
   }
   return counts
@@ -527,60 +598,288 @@ function extractBigrams(text: string): string[] {
   return pairs
 }
 
-// ─── Industry vocabulary classifier ────────────────────────────────────────
+// ─── Industry vocabulary classifier (multi-industry, multi-language) ──────
 //
-// Some terms are obviously domain-specific (skådespelare, audition, casting,
-// regissör) and should be Product cluster regardless of whether they hit
-// the generic productTerms list. Encoded here as a stem→cluster map so we
-// don't need a network call to classify; mirrors the industry presets in
-// prompt-generator.ts.
-const INDUSTRY_VOCABULARY = new Set<string>([
-  // Casting / talent (Swedish + English)
-  'skådespelare',
-  'skådespel',
-  'skådespelar',
-  'statist',
-  'audition',
-  'casting',
-  'roll',
-  'roller',
-  'rollen',
-  'regissör',
-  'producent',
-  'manus',
-  'film',
-  'tv',
-  'reklam',
-  'reklamfilm',
-  'fotograf',
-  'fotografering',
-  'modell',
-  'modellbyrå',
-  'talang',
-  'talanger',
-  'agentur',
-  'agency',
-  'profil',
-  'portfolio',
-  'showreel',
-  'bookning',
-  'bokning',
-  'audition',
-  'castningsdirektör',
-  // Italian casting
-  'attore',
-  'attrice',
-  'comparsa',
-  'figurante',
-  'provini',
-  'regista',
-])
+// Per-industry sets of domain-specific terms. Aligned with the presets in
+// src/lib/services/prompt-generator.ts so the keyword classifier and the
+// prompt generator agree on the vocabulary of each vertical.
+//
+// Adding a new industry: create a new key (matched against brand.industry
+// case-insensitively below) and dump the en/it/sv vocabulary into it.
+// Stems land in the same set so users searching with either form work.
+const INDUSTRY_VOCABULARIES: Record<string, Set<string>> = {
+  casting: new Set([
+    // English
+    'casting',
+    'audition',
+    'actor',
+    'actress',
+    'extra',
+    'background',
+    'talent',
+    'agent',
+    'agency',
+    'role',
+    'rol',
+    'director',
+    'producer',
+    'production',
+    'film',
+    'tv',
+    'commercial',
+    'photoshoot',
+    'photographer',
+    'model',
+    'profile',
+    'portfolio',
+    'showreel',
+    'booking',
+    'screenplay',
+    'script',
+    // Swedish
+    'skådespelare',
+    'skådespel',
+    'skådespelar',
+    'statist',
+    'roll',
+    'rolle',
+    'rollen',
+    'regissör',
+    'producent',
+    'manus',
+    'reklam',
+    'reklamfilm',
+    'fotograf',
+    'fotografering',
+    'modell',
+    'modellbyrå',
+    'talang',
+    'agentur',
+    'profil',
+    'bokning',
+    'castningsdirektör',
+    // Italian
+    'attore',
+    'attrice',
+    'comparsa',
+    'figurante',
+    'provini',
+    'regista',
+    'produttore',
+    'sceneggiatura',
+    'sceneggiatore',
+    'fotografo',
+    'modello',
+    'modella',
+    'agenzia',
+  ]),
+  saas: new Set([
+    // English
+    'subscription',
+    'integration',
+    'api',
+    'feature',
+    'pricing',
+    'plan',
+    'tier',
+    'enterprise',
+    'workspace',
+    'dashboard',
+    'analytics',
+    'workflow',
+    'automation',
+    'webhook',
+    'sso',
+    'rbac',
+    'tenant',
+    'multi-tenant',
+    'saas',
+    'cloud',
+    'self-hosted',
+    'onboarding',
+    'churn',
+    'mrr',
+    'arr',
+    'seat',
+    // Italian
+    'abbonamento',
+    'integrazione',
+    'funzionalità',
+    'prezzo',
+    'piano',
+    'pannello',
+    'flusso',
+    'automazione',
+    // Swedish
+    'prenumeration',
+    'integration',
+    'funktion',
+    'pris',
+    'plan',
+    'panel',
+    'analytik',
+    'arbetsflöde',
+    'automatisering',
+  ]),
+  ecommerce: new Set([
+    // English
+    'product',
+    'cart',
+    'checkout',
+    'shipping',
+    'inventory',
+    'sku',
+    'catalog',
+    'collection',
+    'category',
+    'discount',
+    'coupon',
+    'shipping',
+    'fulfillment',
+    'warehouse',
+    'storefront',
+    'wishlist',
+    'review',
+    'rating',
+    'return',
+    'refund',
+    'order',
+    'shopify',
+    'woocommerce',
+    // Italian
+    'prodotto',
+    'carrello',
+    'spedizione',
+    'inventario',
+    'catalogo',
+    'categoria',
+    'sconto',
+    'coupon',
+    'ordine',
+    'recensione',
+    'rimborso',
+    // Swedish
+    'produkt',
+    'kundvagn',
+    'frakt',
+    'lager',
+    'katalog',
+    'kategori',
+    'rabatt',
+    'kupong',
+    'beställning',
+    'recension',
+    'återbetalning',
+  ]),
+  local: new Set([
+    // English (local services / brick-and-mortar)
+    'booking',
+    'appointment',
+    'reservation',
+    'opening',
+    'hours',
+    'walk-in',
+    'consultation',
+    'clinic',
+    'salon',
+    'studio',
+    'shop',
+    'store',
+    'location',
+    'address',
+    'parking',
+    'directions',
+    // Italian
+    'prenotazione',
+    'appuntamento',
+    'orari',
+    'apertura',
+    'consulenza',
+    'studio',
+    'negozio',
+    'indirizzo',
+    'parcheggio',
+    // Swedish
+    'bokning',
+    'tidsbokning',
+    'öppettider',
+    'konsultation',
+    'mottagning',
+    'salong',
+    'verkstad',
+    'butik',
+    'parkering',
+  ]),
+}
+
+// Map brand.industry free-text → the vocabulary key. Multiple keywords
+// per vertical so we handle the variations users actually type in
+// brand setup ("casting platform", "Talent Acquisition", "casting &
+// talent", etc.).
+const INDUSTRY_KEYWORDS: Array<{
+  vertical: keyof typeof INDUSTRY_VOCABULARIES
+  patterns: RegExp[]
+}> = [
+  {
+    vertical: 'casting',
+    patterns: [
+      /\bcasting\b/i,
+      /\btalent\b/i,
+      /\bactor\b/i,
+      /\baudition\b/i,
+      /\bfilm\b/i,
+      /\bmedia\b/i,
+    ],
+  },
+  {
+    vertical: 'saas',
+    patterns: [
+      /\bsaas\b/i,
+      /\bsoftware\b/i,
+      /\b(b2b|enterprise|martech)\b/i,
+      /\bcloud\b/i,
+      /\bplatform\b/i,
+      /\bapi\b/i,
+    ],
+  },
+  {
+    vertical: 'ecommerce',
+    patterns: [
+      /\be-?commerce\b/i,
+      /\bretail\b/i,
+      /\bshop\b/i,
+      /\bstore\b/i,
+      /\bshopify\b/i,
+      /\bwoocommerce\b/i,
+    ],
+  },
+  {
+    vertical: 'local',
+    patterns: [
+      /\blocal\b/i,
+      /\bsalon\b/i,
+      /\bclinic\b/i,
+      /\brestaurant\b/i,
+      /\bservice\b/i,
+      /\bappointment\b/i,
+    ],
+  },
+]
+
+function verticalFor(
+  industry: string | null | undefined,
+): keyof typeof INDUSTRY_VOCABULARIES | null {
+  if (!industry) return null
+  for (const entry of INDUSTRY_KEYWORDS) {
+    if (entry.patterns.some((p) => p.test(industry))) return entry.vertical
+  }
+  return null
+}
 
 // ─── Geo detection ─────────────────────────────────────────────────────────
 //
-// Major Swedish + Italian cities. Geo signals are interesting for
-// local-market brands (acasting.se = Sweden) because they answer the
-// "where does this brand operate?" question — Market Context cluster.
+// Major Swedish + Italian + English-speaking cities. Geo signals answer
+// "where does this brand operate?" so they go to Market Context.
 const GEO_TOKENS = new Set<string>([
   // Swedish cities / regions
   'stockholm',
@@ -613,11 +912,101 @@ const GEO_TOKENS = new Set<string>([
   'genova',
   'verona',
   'italia',
+  'lombardia',
+  'lazio',
+  'sicilia',
+  'toscana',
+  'piemonte',
+  'veneto',
+  'campania',
+  // UK / Ireland
+  'london',
+  'manchester',
+  'birmingham',
+  'leeds',
+  'liverpool',
+  'bristol',
+  'edinburgh',
+  'glasgow',
+  'cardiff',
+  'dublin',
+  'belfast',
+  // USA major
+  'new york',
+  'nyc',
+  'los angeles',
+  'chicago',
+  'houston',
+  'phoenix',
+  'philadelphia',
+  'san antonio',
+  'san diego',
+  'dallas',
+  'austin',
+  'seattle',
+  'boston',
+  'miami',
+  'atlanta',
+  'denver',
+  'portland',
+  'detroit',
+  // France
+  'paris',
+  'marseille',
+  'lyon',
+  'toulouse',
+  'nice',
+  'nantes',
+  'bordeaux',
+  'lille',
+  'france',
+  // Germany / Spain (top cities — common in Euro brand monitoring)
+  'berlin',
+  'hamburg',
+  'münchen',
+  'munich',
+  'frankfurt',
+  'köln',
+  'cologne',
+  'stuttgart',
+  'düsseldorf',
+  'deutschland',
+  'germany',
+  'madrid',
+  'barcelona',
+  'valencia',
+  'sevilla',
+  'zaragoza',
+  'málaga',
+  'españa',
+  'spain',
 ])
 
-export function suggestedClusterFor(stemmed: string): 'product' | 'market' | null {
-  if (INDUSTRY_VOCABULARY.has(stemmed)) return 'product'
+/**
+ * Suggest a cluster (product or market) for a stemmed token based on the
+ * brand's industry. Falls back to language-agnostic geo detection.
+ * Returns null for tokens that don't match anything — they get the
+ * default classification later.
+ */
+export function suggestedClusterFor(
+  stemmed: string,
+  industry?: string | null,
+): 'product' | 'market' | null {
+  // 1. Geo always wins for the cluster (Market Context) regardless of
+  //    industry — "stockholm" is a location signal in any vertical.
   if (GEO_TOKENS.has(stemmed)) return 'market'
+
+  // 2. Industry vocabulary: pick the right set based on brand.industry.
+  //    If no industry is configured, try the casting vocab first (most
+  //    of our test data is casting) then fall through.
+  const vertical = verticalFor(industry) ?? 'casting'
+  if (INDUSTRY_VOCABULARIES[vertical]?.has(stemmed)) return 'product'
+
+  // 3. Industry-blind fallback: if the token is in ANY industry vocab,
+  //    classify as product. Handles brands with unusual industry strings.
+  for (const vocab of Object.values(INDUSTRY_VOCABULARIES)) {
+    if (vocab.has(stemmed)) return 'product'
+  }
   return null
 }
 
@@ -629,6 +1018,17 @@ export async function trackKeywords(brandId: string): Promise<void> {
   }
 
   try {
+    // Pull the brand's language hint so the stemmer can pick the right
+    // suffix table per token. With this, "platforms" stems to "platform"
+    // for English brands and "plattformar" stems to "plattform" for
+    // Swedish brands — without it the heuristic fallback in stem() works
+    // OK but trips on edge cases where both rule sets apply.
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const brandRow = (
+      await (db as any).from('brands').select('language, industry').eq('id', brandId).single()
+    ).data as { language: string | null; industry: string | null } | null
+    const language = brandRow?.language ?? null
+
     const { data: results, error: fetchError } = await db
       .from('monitoring_results')
       .select('id, brand_id, engine, response_text, brand_mentioned, created_at')
@@ -650,7 +1050,7 @@ export async function trackKeywords(brandId: string): Promise<void> {
     // pass the cohesion threshold below.
     const tokenizedResults = results.map((r) => {
       const text = r.response_text || ''
-      const tokens = countTokens(text)
+      const tokens = countTokens(text, language)
       const bigrams = new Set<string>()
       for (const bg of extractBigrams(text)) bigrams.add(bg)
       return { result: r, tokens, bigrams }
@@ -669,8 +1069,8 @@ export async function trackKeywords(brandId: string): Promise<void> {
       if (count < BIGRAM_MIN_COOCCURRENCES) continue
       const [a, b] = bg.split(' ')
       if (!a || !b) continue
-      const aDocs = tokenizedResults.filter((tr) => tr.tokens.has(stem(a))).length
-      const bDocs = tokenizedResults.filter((tr) => tr.tokens.has(stem(b))).length
+      const aDocs = tokenizedResults.filter((tr) => tr.tokens.has(stem(a, language))).length
+      const bDocs = tokenizedResults.filter((tr) => tr.tokens.has(stem(b, language))).length
       const rarer = Math.min(aDocs, bDocs) || 1
       if (count / rarer >= BIGRAM_COHESION_THRESHOLD) promotedBigrams.add(bg)
     }

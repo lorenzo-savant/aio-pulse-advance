@@ -1,4 +1,22 @@
-import { isIP } from 'net'
+// Pure-JS IP literal classifier. Previously this used `isIP` from Node's
+// `net` module, but that's a static Node-only import that the Edge Runtime
+// can't tolerate at build time (next build fails the Edge App Routes that
+// transitively import safe-fetch, e.g. /api/crawlability/bots).
+//
+// Returns 4 for IPv4, 6 for IPv6, 0 for everything else. Matches the
+// contract of `net.isIP()` for the cases this module needs.
+function isIP(s: string): 0 | 4 | 6 {
+  if (!s || typeof s !== 'string') return 0
+  // IPv4 — 4 dot-separated decimal octets, each 0–255.
+  if (/^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(s)) return 4
+  // IPv6 — accept any colon-containing form. We don't need to fully
+  // validate IPv6 syntax here because the downstream isPrivateIPv6 check
+  // is the part that actually gates security. A loose match here just
+  // tells assertHostnameAllowed / assertResolvedIPsAllowed "treat this as
+  // an IPv6 literal".
+  if (s.includes(':') && /^[0-9a-fA-F:.]+$/.test(s)) return 6
+  return 0
+}
 
 const BLOCKED_PROTOCOLS = ['file:', 'gopher:', 'ftp:', 'ssh:', 'telnet:', 'ldap:']
 

@@ -179,6 +179,11 @@ const NAV_SECTIONS: NavSection[] = [
     descriptionKey: 'sidebar.sections.optimize.description',
     items: [
       {
+        href: '/dashboard/advisor',
+        icon: Sparkles,
+        labelKey: 'sidebar.items.strategy_advisor',
+      },
+      {
         href: '/dashboard/optimizer',
         icon: FileSearch,
         labelKey: 'sidebar.items.content_optimizer',

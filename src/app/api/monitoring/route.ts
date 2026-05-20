@@ -6,11 +6,7 @@ import { z } from 'zod'
 import type { Json } from '@/types/database'
 import { logger } from '@/lib/logger'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import {
-  runMonitoringCheck,
-  calculateHealthScore,
-  calculateAVIFromResults,
-} from '@/lib/services/monitoring'
+import { runMonitoringCheck, calculateAVIFromResults } from '@/lib/services/monitoring'
 import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/services/alerts'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 import { trackKeywords } from '@/lib/services/keyword-tracker'
@@ -180,7 +176,11 @@ export async function POST(req: NextRequest) {
     // evaluated. Only bypass when an explicit dev flag is set.
     if (process.env.ALLOW_CREDIT_BYPASS !== 'true') {
       return NextResponse.json(
-        { success: false, message: 'Credit verification unavailable', error: 'CREDIT_CHECK_FAILED' },
+        {
+          success: false,
+          message: 'Credit verification unavailable',
+          error: 'CREDIT_CHECK_FAILED',
+        },
         { status: 503 },
       )
     }

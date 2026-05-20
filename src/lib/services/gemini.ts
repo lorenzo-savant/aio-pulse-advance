@@ -414,43 +414,7 @@ export async function analyzeCompetitor(url: string): Promise<CompetitorResult> 
   }
 }
 
-// ─── Engine Health Check ──────────────────────────────────────────────────────
-
-const ENGINE_SIGNALS: Record<string, string[]> = {
-  chatgpt: [
-    'Use scannable lists and comparison tables — ChatGPT has attention heads specialized for list detection',
-    'Front-load key facts in the first 100 words for efficient extraction',
-    'Include quantified benefits with specific numbers per fact (high semantic density)',
-    'Offer multiple options or alternatives with pros/cons for each',
-    'Use "top", "best", "recommended" triggers that align with OpenAI RLHF preferences',
-    'Add FAQ sections with question-answer pairs that match conversation training data',
-  ],
-  gemini: [
-    'Include explicit authority signals: author bios, credentials, "last updated" dates',
-    'Use structured data markup (JSON-LD Schema.org) — Gemini has high attention to citations and sources',
-    'Cite multiple authoritative sources inline — temporal attention heads favor named sources',
-    'Update content regularly with visible changelog — Gemini has the highest recency bias',
-    'Align with E-E-A-T signals (experience, expertise, authoritativeness, trustworthiness)',
-    'Include geographic and temporal signals for location-based queries',
-  ],
-  perplexity: [
-    'Achieve source diversity — appear on multiple authoritative domains, not just your site',
-    'Add inline citations with direct source links for every factual claim',
-    'Include time-stamped current data — Perplexity demonstrates "source diversity" bias',
-    'Use direct, declarative sentence structures for efficient extraction',
-    'Include numerical data and comparative metrics with sources',
-    'For deep research mode: ensure Wikipedia and academic source presence',
-  ],
-  claude: [
-    'Build reasoning chains with causal language ("because", "therefore", "evidence shows")',
-    'Acknowledge nuance, counterarguments, and edge cases — Claude has a "safety bias"',
-    'Include evidence-backed claims with explicit reasoning chain',
-    'Structure content as claim → evidence → implication for Claude attention patterns',
-    'Use academic and authoritative sources — Claude favors scholarly references',
-    'Include "why this matters" context at the start for explanation preference',
-  ],
-}
-
-export function getEngineSignals(engineId: string): string[] {
-  return ENGINE_SIGNALS[engineId.toLowerCase()] ?? []
-}
+// Engine-signal data moved to ../engine-signals.ts so it can be imported from
+// client components without pulling server-only deps. Import from there:
+//   import { getEngineSignals, ENGINE_SIGNALS } from '@/lib/engine-signals'
+export { getEngineSignals, ENGINE_SIGNALS } from '../engine-signals'

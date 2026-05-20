@@ -27,25 +27,35 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const query = (supabase as any)
-      .from('scraper_configs')
-      .select('*')
+    // Previously this route queried `scraper_configs` (the configuration
+    // table) and synthesised `mentions` via Math.random — both wrong. The
+    // real data lives in `monitoring_results` (each row = one scraper run
+    // against an engine), so we read from there and surface its actual
+    // columns. No mocks.
+    const { data, error } = await supabase
+      .from('monitoring_results')
+      .select('prompt_text, response_text, mention_count, cited_urls, created_at')
       .eq('brand_id', brandId)
-      .order('scraped_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(20)
-
-    const { data, error } = await query
 
     if (error || !data) {
       return NextResponse.json({ results: [] })
     }
 
-    const results = (data || []).map((row: any) => ({
-      keyword: row.keyword || '',
-      mentions: Math.floor(Math.random() * 10) + 1,
-      aiOverviewCited: row.answer_text?.toLowerCase().includes('ai overview') || false,
-      sources: row.sources || [],
-      scrapedAt: row.scraped_at || new Date().toISOString(),
+    const results = data.map((row) => ({
+      keyword: row.prompt_text || '',
+      mentions: row.mention_count ?? 0,
+      // True if the engine response explicitly cites Google's AI Overview
+      // as a source. Substring-match on the response text is a heuristic;
+      // we'd upgrade this to a structured signal once the monitoring writer
+      // tags AIO citations explicitly.
+      aiOverviewCited:
+        typeof row.response_text === 'string'
+          ? row.response_text.toLowerCase().includes('ai overview')
+          : false,
+      sources: Array.isArray(row.cited_urls) ? (row.cited_urls as string[]) : [],
+      scrapedAt: row.created_at || new Date().toISOString(),
     }))
 
     return NextResponse.json({ results })

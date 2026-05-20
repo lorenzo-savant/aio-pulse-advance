@@ -5,11 +5,7 @@ import type { Json } from '@/types/database'
 import { createServerClient } from '@/lib/supabase'
 import { verifyCronAuth } from '@/lib/cron-auth'
 import { logger } from '@/lib/logger'
-import {
-  runMonitoringCheck,
-  calculateHealthScore,
-  calculateAVIFromResults,
-} from '@/lib/services/monitoring'
+import { runMonitoringCheck, calculateAVIFromResults } from '@/lib/services/monitoring'
 import type { Brand, Prompt, MonitoringResult, MonitoringEngine, WorkflowStatus } from '@/types'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 

@@ -94,6 +94,30 @@ export interface AdvisorContext {
    * live monitoring signals.
    */
   siteAudit: SiteAuditSummary | null
+  /**
+   * Per-prompt performance over the last 30 days. The Strategist uses these
+   * to recommend WHICH prompts to rewrite (the worst-performers are obvious
+   * candidates) vs scale (top-performers point to topics worth expanding).
+   */
+  promptInsights: {
+    topPerforming: Array<{ text: string; mentionRate: number; runs: number }>
+    worstPerforming: Array<{ text: string; mentionRate: number; runs: number }>
+    sampleActive: string[]
+  }
+  /**
+   * Competitors the AI engines actually mentioned in monitoring responses
+   * over the last 30 days, regardless of what's configured on brand.competitors.
+   * The strongest signal for "who should I add to my benchmark set?" — the
+   * LLMs are already talking about them.
+   */
+  topMentionedCompetitors: Array<{ name: string; count: number }>
+  /**
+   * If the brand name matches a known-ambiguous pattern (e.g. Acasting can
+   * be confused with Acast the podcast platform), this string warns the
+   * Strategist so it can call out the disambiguation as a strategic action.
+   * Null for non-ambiguous brand names.
+   */
+  brandDisambiguation: string | null
 }
 
 export interface AdvisorResult {
@@ -202,14 +226,58 @@ export async function buildAdvisorContext(brandId: string): Promise<AdvisorConte
   since7.setDate(since7.getDate() - 7)
   const sinceIso = since7.toISOString()
 
-  const [monitoring, prompts, aeo, siteAudit] = await Promise.all([
-    summarizeMonitoring(db, brandId, sinceIso),
-    summarizePrompts(db, brandId),
-    summarizeAeo(db, brandId),
-    loadLatestSiteAuditSummary(brandId),
-  ])
+  // 30-day window for the "what's working / who's getting cited" signals —
+  // wider than the 7-day monitoring count because we want enough samples per
+  // prompt to compute a meaningful mention rate.
+  const since30 = new Date()
+  since30.setDate(since30.getDate() - 30)
+  const since30Iso = since30.toISOString()
 
-  return { brand, health, weekDelta, monitoring, prompts, aeo, siteAudit }
+  const [monitoring, prompts, aeo, siteAudit, promptInsights, topMentionedCompetitors] =
+    await Promise.all([
+      summarizeMonitoring(db, brandId, sinceIso),
+      summarizePrompts(db, brandId),
+      summarizeAeo(db, brandId),
+      loadLatestSiteAuditSummary(brandId),
+      summarizePromptInsights(db, brandId, since30Iso),
+      summarizeCompetitorMentions(db, brandId, since30Iso),
+    ])
+
+  return {
+    brand,
+    health,
+    weekDelta,
+    monitoring,
+    prompts,
+    aeo,
+    siteAudit,
+    promptInsights,
+    topMentionedCompetitors,
+    brandDisambiguation: disambiguationFor(brand.name),
+  }
+}
+
+// ─── Brand disambiguation hints ─────────────────────────────────────────────
+//
+// Mirrors the smaller table in brand-enrichment.ts (kept separate here so the
+// advisor doesn't import LLM-prompt-shaping logic). Add an entry whenever a
+// brand name collides with a well-known platform that pollutes monitoring
+// results.
+const ADVISOR_DISAMBIGUATION: Array<{ match: RegExp; warning: string }> = [
+  {
+    match: /\bacasting\b/i,
+    warning:
+      'Brand name "Acasting" is frequently confused with "Acast" (Swedish podcast hosting platform). ' +
+      'feeds.acast.com and acast.com surface as citations even though they are a different company. ' +
+      'Recommend setting brand.aliases / brand.description copy that disambiguates explicitly.',
+  },
+]
+
+function disambiguationFor(brandName: string): string | null {
+  for (const hint of ADVISOR_DISAMBIGUATION) {
+    if (hint.match.test(brandName)) return hint.warning
+  }
+  return null
 }
 
 // ─── Strategist (LLM) ────────────────────────────────────────────────────────
@@ -274,10 +342,21 @@ function buildSystemPrompt(): string {
     '1. Output a single JSON object. No prose, no markdown fences, no commentary. JSON only.',
     '2. Return at most 3 recommendations. Each must pass: would a senior product manager act on this on Monday morning?',
     '3. Ground every recommendation in a specific CONTEXT fact. Quote the fact verbatim or paraphrase it in `sources`. If you cannot point to a fact, do not include the recommendation.',
-    '4. `actions` must be concrete next steps (e.g. "Seed 5 Swedish prompts for topic X into the prompts table"), not platitudes.',
+    '4. `actions` must be concrete next steps with REAL names and topics from the CONTEXT — never placeholders.',
+    '   - FORBIDDEN in actions: literal "X", "Topic X", "some keywords", "various", "specific topics", "etc", "[brand]", "[competitor]".',
+    '   - If you cannot name a concrete topic, keyword, competitor, or prompt text from CONTEXT, drop the action.',
+    "   - Good: \"Rewrite the prompt 'Vad är acasting.se?' (0/4 engines mention brand) as 'Bästa castingplattformen i Sverige för skådespelare'\".",
+    '   - Bad: "Seed new prompts for topic X" — exactly the placeholder pattern this rule exists to stop.',
     '5. `impact` and `effort` are your honest estimates. Prefer high-impact / low-effort.',
-    '6. Set `confidence` to 0.2 or lower if CONTEXT is sparse (no health metrics, no monitoring data, no prompts). Set 0.6+ only if you have at least one solid week-over-week delta or a clear engine signal.',
-    '7. If the CONTEXT is genuinely insufficient to advise, say so in `summary`, return one diagnostic recommendation ("collect more data"), and set confidence < 0.2.',
+    '6. Confidence calibration — match data richness, not just presence of every field:',
+    '   - 0.0–0.2: no health row AND <5 monitoring runs AND <3 active prompts.',
+    '   - 0.3–0.5: data exists but EITHER weekDelta missing OR competitors=[] (no benchmark) OR <20 monitoring runs.',
+    '   - 0.6–0.8: ≥30 monitoring runs in last 7 days AND health row present AND (weekDelta OR ≥3 competitors).',
+    '   - 0.8+: ≥30 runs AND weekDelta present AND ≥3 competitors AND promptInsights has data.',
+    '   Do NOT downgrade to <0.3 just because aeo or siteAudit are null — those are optional surfaces.',
+    '7. If the CONTEXT is genuinely insufficient to advise, say so in `summary`, return one diagnostic recommendation, and set confidence < 0.2.',
+    '8. SETUP-GAP overrides: if CONTEXT.brand.competitors is EMPTY and topMentionedCompetitors has any entries, your FIRST recommendation MUST be "Add competitors to brand config" naming the top 3-5 from topMentionedCompetitors verbatim. Without competitors no benchmark is possible — this is a higher-priority gap than any monitoring signal.',
+    '9. DISAMBIGUATION: if CONTEXT.brandDisambiguation is non-null, treat the warning text as a strategic finding — recommend updating brand.aliases / brand.description copy to encode the disambiguation explicitly.',
     '',
     'Schema:',
     '{ "summary": string, "recommendations": [ { "title": string, "rationale": string, "impact": "high"|"medium"|"low", "effort": "high"|"medium"|"low", "actions": string[], "sources": string[] } ], "confidence": number }',
@@ -548,5 +627,122 @@ async function summarizeAeo(
     return { total: data.length, gap, covered, lastRunAt: data[0]?.created_at ?? null }
   } catch {
     return null
+  }
+}
+
+// Per-prompt mention rate over the last N days. Lets the Strategist say
+// "rewrite prompt X (0% mention)" instead of "rewrite some prompts" — the
+// most common failure mode of the old context-less output.
+async function summarizePromptInsights(
+  db: NonNullable<ReturnType<typeof createServerClient>>,
+  brandId: string,
+  sinceIso: string,
+): Promise<AdvisorContext['promptInsights']> {
+  const dbAny = db as any
+  try {
+    const { data } = (await dbAny
+      .from('monitoring_results')
+      .select('prompt_text, brand_mentioned')
+      .eq('brand_id', brandId)
+      .gte('created_at', sinceIso)
+      .limit(2000)) as {
+      data: Array<{ prompt_text: string | null; brand_mentioned: boolean | null }> | null
+    }
+
+    type Acc = { runs: number; mentions: number }
+    const byPrompt = new Map<string, Acc>()
+    for (const row of data || []) {
+      const text = (row.prompt_text || '').trim()
+      if (!text) continue
+      const acc = byPrompt.get(text) ?? { runs: 0, mentions: 0 }
+      acc.runs++
+      if (row.brand_mentioned) acc.mentions++
+      byPrompt.set(text, acc)
+    }
+
+    // Require at least 2 runs per prompt to compute a stable rate — single
+    // outlier runs would noise the ranking.
+    const ranked = [...byPrompt.entries()]
+      .filter(([, acc]) => acc.runs >= 2)
+      .map(([text, acc]) => ({
+        text: text.length > 200 ? text.slice(0, 197) + '...' : text,
+        mentionRate: Math.round((acc.mentions / acc.runs) * 100) / 100,
+        runs: acc.runs,
+      }))
+
+    const topPerforming = [...ranked]
+      .sort((a, b) => b.mentionRate - a.mentionRate || b.runs - a.runs)
+      .slice(0, 3)
+    const worstPerforming = [...ranked]
+      .sort((a, b) => a.mentionRate - b.mentionRate || b.runs - a.runs)
+      .slice(0, 3)
+
+    // Sample of active prompt texts so the strategist KNOWS what topics
+    // are already covered — without this it can't propose "expand topic X
+    // that isn't already monitored".
+    const { data: activeSample } = (await dbAny
+      .from('prompts')
+      .select('text')
+      .eq('brand_id', brandId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(10)) as { data: Array<{ text: string | null }> | null }
+
+    const sampleActive = (activeSample || [])
+      .map((r) => (r.text || '').trim())
+      .filter((t): t is string => t.length > 0)
+      .map((t) => (t.length > 200 ? t.slice(0, 197) + '...' : t))
+
+    return { topPerforming, worstPerforming, sampleActive }
+  } catch (e) {
+    logger.warn('advisor: prompt insights summary failed', { err: String(e) })
+    return { topPerforming: [], worstPerforming: [], sampleActive: [] }
+  }
+}
+
+// Aggregates monitoring_results.competitor_mentions (stored as Json) into a
+// frequency table. This is the SINGLE most useful signal for brands with
+// no competitors configured: the AI engines have already volunteered the
+// names — we just need to surface them.
+async function summarizeCompetitorMentions(
+  db: NonNullable<ReturnType<typeof createServerClient>>,
+  brandId: string,
+  sinceIso: string,
+): Promise<AdvisorContext['topMentionedCompetitors']> {
+  const dbAny = db as any
+  try {
+    const { data } = (await dbAny
+      .from('monitoring_results')
+      .select('competitor_mentions')
+      .eq('brand_id', brandId)
+      .gte('created_at', sinceIso)
+      .limit(2000)) as {
+      data: Array<{ competitor_mentions: unknown }> | null
+    }
+
+    const counts = new Map<string, number>()
+    for (const row of data || []) {
+      // competitor_mentions shape:
+      // [{ name: string, position?: number, count?: number }]
+      // We trust `count` if present, otherwise treat as a single mention.
+      const arr = Array.isArray(row.competitor_mentions) ? row.competitor_mentions : []
+      for (const m of arr) {
+        if (typeof m !== 'object' || m === null) continue
+        const obj = m as { name?: unknown; count?: unknown }
+        if (typeof obj.name !== 'string') continue
+        const name = obj.name.trim()
+        if (!name) continue
+        const inc = typeof obj.count === 'number' && obj.count > 0 ? obj.count : 1
+        counts.set(name, (counts.get(name) ?? 0) + inc)
+      }
+    }
+
+    return [...counts.entries()]
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([name, count]) => ({ name, count }))
+  } catch (e) {
+    logger.warn('advisor: competitor mentions summary failed', { err: String(e) })
+    return []
   }
 }

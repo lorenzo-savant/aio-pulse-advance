@@ -24,10 +24,15 @@ const DISAMBIGUATION_HINTS: Array<{ match: RegExp; warning: string }> = [
     // appearing as a "citation source" for Acasting-targeted prompts.
     match: /\bacasting\b/i,
     warning:
-      'IMPORTANT DISAMBIGUATION: This brand is "Acasting" — NOT to be confused with ' +
-      '"Acast" (the Swedish podcast hosting platform at acast.com / feeds.acast.com). ' +
-      'These are entirely different companies. Do not cite acast.com, feeds.acast.com, ' +
-      'or other Acast podcast platform URLs when answering about this brand.',
+      'CRITICAL DISAMBIGUATION — TWO DIFFERENT COMPANIES:\n' +
+      '  • "Acasting" (acasting.se) — the brand we are monitoring. ' +
+      'A casting / talent platform connecting actors, extras, models with productions.\n' +
+      '  • "Acast" (acast.com, feeds.acast.com) — a Swedish PODCAST HOSTING platform. ' +
+      'Completely different company, completely different industry.\n' +
+      'The names share letters; they are NOT the same company, not parent/child, not affiliated. ' +
+      'When asked about "Acasting", do not describe Acast. Do not cite acast.com or ' +
+      'feeds.acast.com. Do not say "Acasting is a podcast platform". ' +
+      'If you are unsure which company is being asked about, default to Acasting (acasting.se).',
   },
 ]
 

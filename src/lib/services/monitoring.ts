@@ -83,6 +83,15 @@ AI RESPONSE TO ANALYZE:
 ${responseText.slice(0, 3000)}
 """
 
+EXACT-MATCH RULES — read carefully, these prevent the most common analysis error:
+- A "brand mention" requires the EXACT brand name "${brand.name}" or one of its listed aliases to appear as a WHOLE WORD (case-insensitive but otherwise verbatim) in the response. Domain-only matches (e.g. "${brand.domain || brand.name.toLowerCase() + '.com'}") also count.
+- Brand names that are SIMILAR but DIFFERENT are NOT mentions. They are distinct companies that happen to share letters. Examples:
+    • "${brand.name}" mentioned in response that says "Acasting" → COUNT IT (exact match).
+    • "${brand.name}" if the response only mentions "Acast", "cast", or "casting" → DO NOT count it. Acast (podcast platform) is a completely different company from Acasting (casting platform). Treat the look-alike as a competitor_mention if relevant, never as a brand mention.
+    • Same principle for any other near-collision: only the exact tokenized name (or a listed alias) counts.
+- Substring containment (e.g. "Acasting".includes("Acast")) is a JavaScript trap, not a semantic match. Apply the whole-word rule, not character containment.
+- mention_count must count only EXACT occurrences. Each occurrence of "${brand.name}" as a whole word = 1. Synonyms / look-alikes / parent-categories = 0.
+
 Respond ONLY with a valid JSON object (no markdown, no extra text):
 {
   "brand_mentioned": <boolean>,

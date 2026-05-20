@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'crypto'
+import { checkRateLimit, type RateLimitResult } from '@/lib/ratelimit'
 
 export function hashApiKey(key: string): string {
   return createHash('sha256').update(key).digest('hex')
@@ -12,30 +13,16 @@ export function verifyWebhook(payload: string, signature: string, secret: string
   return timingSafeEqual(signatureBuffer, expectedBuffer)
 }
 
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 60
-const WINDOW_MS = 60_000
+// Public v1 API rate-limit: 60 req/min per API-key user.
+//
+// Previously this used an in-process Map<>, which is incorrect on serverless
+// (Vercel) — each cold-start container resets the counter, so an attacker can
+// burst-cycle containers and bypass the limit entirely. We now delegate to
+// the shared Upstash-backed checkRateLimit (src/lib/ratelimit.ts) which is
+// the same surface the global middleware uses.
+export const PUBLIC_API_RATE_LIMIT = 60
+export const PUBLIC_API_RATE_WINDOW_MS = 60_000
 
-export function rateLimitCheck(key: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitStore.get(key)
-  if (!entry || entry.resetAt < now) {
-    rateLimitStore.set(key, { count: 1, resetAt: now + WINDOW_MS })
-    return true
-  }
-  if (entry.count >= RATE_LIMIT) return false
-  entry.count++
-  return true
-}
-
-export function getRateLimitRemaining(key: string): number {
-  const entry = rateLimitStore.get(key)
-  if (!entry || entry.resetAt < Date.now()) return RATE_LIMIT
-  return Math.max(0, RATE_LIMIT - entry.count)
-}
-
-export function getRateLimitResetAt(key: string): number {
-  const entry = rateLimitStore.get(key)
-  if (!entry) return Date.now() + WINDOW_MS
-  return entry.resetAt
+export function publicApiRateLimit(identifier: string): Promise<RateLimitResult> {
+  return checkRateLimit(identifier, PUBLIC_API_RATE_LIMIT, PUBLIC_API_RATE_WINDOW_MS)
 }

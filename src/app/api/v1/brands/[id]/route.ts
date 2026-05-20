@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { hashApiKey, rateLimitCheck, getRateLimitResetAt } from '@/lib/services/public-api'
+import { hashApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
 
 const BRAND_COLS =
@@ -29,8 +29,8 @@ function errorResponse(message: string, status = 500) {
   return NextResponse.json({ success: false, error: message }, { status })
 }
 
-function rateLimitResponse(key: string) {
-  const retryAfter = Math.ceil((getRateLimitResetAt(key) - Date.now()) / 1000)
+function rateLimitResponse(resetAt: number) {
+  const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000))
   return NextResponse.json(
     { success: false, error: 'Rate limit exceeded' },
     { status: 429, headers: { 'Retry-After': String(retryAfter), 'X-RateLimit-Remaining': '0' } },
@@ -48,7 +48,8 @@ export async function GET(req: NextRequest, { params }: Params) {
   const userId = await verifyApiKey(apiKey)
   if (!userId) return errorResponse('Invalid API key', 401)
 
-  if (!rateLimitCheck(userId)) return rateLimitResponse(userId)
+  const rl = await publicApiRateLimit(userId)
+  if (!rl.success) return rateLimitResponse(rl.resetAt)
 
   const { id } = await params
   const db = createServerClient()
@@ -72,7 +73,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const userId = await verifyApiKey(apiKey)
   if (!userId) return errorResponse('Invalid API key', 401)
 
-  if (!rateLimitCheck(userId)) return rateLimitResponse(userId)
+  const rl = await publicApiRateLimit(userId)
+  if (!rl.success) return rateLimitResponse(rl.resetAt)
 
   const { id } = await params
 
@@ -109,7 +111,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const userId = await verifyApiKey(apiKey)
   if (!userId) return errorResponse('Invalid API key', 401)
 
-  if (!rateLimitCheck(userId)) return rateLimitResponse(userId)
+  const rl = await publicApiRateLimit(userId)
+  if (!rl.success) return rateLimitResponse(rl.resetAt)
 
   const { id } = await params
   const db = createServerClient()

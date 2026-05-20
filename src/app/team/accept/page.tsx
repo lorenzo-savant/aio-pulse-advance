@@ -63,6 +63,15 @@ function AcceptContent() {
 
         const data = await res.json()
 
+        // Whether the call succeeded or failed, the token has now been
+        // consumed (or attempted). Strip it from the URL via history
+        // replaceState so it doesn't survive in browser history, doesn't
+        // leak via Referer to external resources, and isn't sync'd across
+        // devices via browser sync.
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', '/team/accept')
+        }
+
         if (data.success) {
           setStatus('success')
           setMessage(data.message)

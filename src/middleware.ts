@@ -53,6 +53,16 @@ function applyCspHeaders(response: NextResponse, nonce: string): NextResponse {
   return response
 }
 
+/**
+ * Paths where the URL itself carries a secret (invitation tokens, magic links,
+ * etc.) — we lock the Referrer-Policy down so the secret never leaks via the
+ * Referer header when the user clicks a third-party link on the landed page.
+ */
+const TOKEN_BEARING_PATHS = ['/team/accept', '/auth/confirm', '/auth/reset-password']
+function isTokenBearingPath(pathname: string): boolean {
+  return TOKEN_BEARING_PATHS.some((p) => pathname.startsWith(p))
+}
+
 const protectedRoutes = ['/dashboard']
 const authRoutes = ['/auth/login', '/auth/register']
 const publicApiRoutes: string[] = []
@@ -70,6 +80,10 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request: { headers: requestHeaders },
   })
+
+  if (isTokenBearingPath(pathname)) {
+    supabaseResponse.headers.set('Referrer-Policy', 'no-referrer')
+  }
 
   if (pathname.startsWith('/api/')) {
     const identifier = getClientIp(request.headers)

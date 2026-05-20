@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  hashApiKey,
-  verifyWebhook,
-  rateLimitCheck,
-  getRateLimitRemaining,
-  getRateLimitResetAt,
-} from '@/lib/services/public-api'
+import { describe, it, expect } from 'vitest'
+import { hashApiKey, verifyWebhook } from '@/lib/services/public-api'
+
+// Rate-limit behavior is no longer tested here — public-api.ts now delegates
+// to lib/ratelimit.ts (Upstash-backed). The in-memory implementation was
+// incorrect on serverless (per-container counters defeat the limit) and was
+// removed in the v2.2.0 hardening pass. The Upstash path is exercised via
+// the ratelimit module's own tests.
 
 describe('public-api service', () => {
   describe('hashApiKey', () => {
@@ -76,121 +76,6 @@ describe('public-api service', () => {
 
       const isValid = verifyWebhook(payload, sig, wrongSecret)
       expect(isValid).toBe(false)
-    })
-  })
-
-  describe('rateLimitCheck', () => {
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it('should allow requests under limit', () => {
-      const key = 'test-key'
-
-      for (let i = 0; i < 60; i++) {
-        expect(rateLimitCheck(key)).toBe(true)
-      }
-    })
-
-    it('should block requests over limit', () => {
-      const key = 'test-key-limit'
-
-      for (let i = 0; i < 60; i++) {
-        rateLimitCheck(key)
-      }
-
-      expect(rateLimitCheck(key)).toBe(false)
-    })
-
-    it('should reset after window expires', () => {
-      const key = 'test-key-reset'
-
-      for (let i = 0; i < 60; i++) {
-        rateLimitCheck(key)
-      }
-
-      expect(rateLimitCheck(key)).toBe(false)
-
-      vi.advanceTimersByTime(60001)
-
-      expect(rateLimitCheck(key)).toBe(true)
-    })
-
-    it('should track different keys separately', () => {
-      const key1 = 'key-one'
-      const key2 = 'key-two'
-
-      for (let i = 0; i < 60; i++) {
-        rateLimitCheck(key1)
-      }
-
-      expect(rateLimitCheck(key1)).toBe(false)
-      expect(rateLimitCheck(key2)).toBe(true)
-    })
-  })
-
-  describe('getRateLimitRemaining', () => {
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it('should return full limit for new key', () => {
-      const key = 'new-key'
-      expect(getRateLimitRemaining(key)).toBe(60)
-    })
-
-    it('should return correct remaining count', () => {
-      const key = 'key-remaining'
-      rateLimitCheck(key)
-      rateLimitCheck(key)
-
-      expect(getRateLimitRemaining(key)).toBe(58)
-    })
-
-    it('should return 0 when limit exceeded', () => {
-      const key = 'key-exceeded'
-
-      for (let i = 0; i < 60; i++) {
-        rateLimitCheck(key)
-      }
-
-      expect(getRateLimitRemaining(key)).toBe(0)
-    })
-  })
-
-  describe('getRateLimitResetAt', () => {
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it('should return future timestamp for new key', () => {
-      const key = 'new-key-reset'
-      const now = Date.now()
-      const resetAt = getRateLimitResetAt(key)
-
-      expect(resetAt).toBeGreaterThan(now)
-      expect(resetAt).toBeLessThanOrEqual(now + 60000)
-    })
-
-    it('should return same resetAt for same key', () => {
-      const key = 'key-same'
-      rateLimitCheck(key)
-      const resetAt1 = getRateLimitResetAt(key)
-      const resetAt2 = getRateLimitResetAt(key)
-
-      expect(resetAt1).toBe(resetAt2)
     })
   })
 })

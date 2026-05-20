@@ -487,26 +487,28 @@ export async function trackKeywords(brandId: string): Promise<void> {
     // Remove stale keywords for this brand before inserting fresh set
     await db.from('keyword_tracking').delete().eq('brand_id', brandId)
 
-    for (const [keyword, data] of Object.entries(keywordData)) {
-      const { error: upsertError } = await db.from('keyword_tracking').upsert(
-        {
-          brand_id: brandId,
-          keyword,
-          mention_count: data.mention_count,
-          correlation_score: data.correlation_score,
-          engines: data.engines,
-          first_seen: data.first_seen,
-          last_seen: data.last_seen,
-        },
-        {
-          onConflict: 'brand_id,keyword',
-        },
-      )
+    // Batch upsert — one round trip instead of N. The delete above already
+    // cleared stale rows for this brand, so the onConflict is purely a
+    // safety net for races between concurrent tracker runs.
+    const rows = Object.entries(keywordData).map(([keyword, data]) => ({
+      brand_id: brandId,
+      keyword,
+      mention_count: data.mention_count,
+      correlation_score: data.correlation_score,
+      engines: data.engines,
+      first_seen: data.first_seen,
+      last_seen: data.last_seen,
+    }))
+
+    if (rows.length > 0) {
+      const { error: upsertError } = await db
+        .from('keyword_tracking')
+        .upsert(rows, { onConflict: 'brand_id,keyword' })
 
       if (upsertError) {
-        logger.error('Keyword upsert error', {
+        logger.error('Keyword batch upsert error', {
           service: 'keyword-tracker',
-          keyword,
+          rowCount: rows.length,
           error: upsertError,
         })
       }

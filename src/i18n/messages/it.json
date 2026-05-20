@@ -175,6 +175,7 @@
       "prompt_generator": "Generatore di Prompt",
       "billing": "Fatturazione",
       "credits": "Crediti",
+      "api_costs": "Costi API",
       "settings": "Impostazioni",
       "documentation": "Documentazione"
     },

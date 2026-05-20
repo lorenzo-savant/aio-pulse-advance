@@ -216,6 +216,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/dashboard/billing', icon: CreditCard, labelKey: 'sidebar.items.billing' },
       { href: '/dashboard/credits', icon: Coins, labelKey: 'sidebar.items.credits' },
+      { href: '/dashboard/api-costs', icon: BarChart3, labelKey: 'sidebar.items.api_costs' },
       { href: '/dashboard/settings', icon: Settings, labelKey: 'sidebar.items.settings' },
       { href: '/dashboard/docs', icon: BookOpen, labelKey: 'sidebar.items.documentation' },
     ],

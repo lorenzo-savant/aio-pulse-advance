@@ -175,6 +175,7 @@
       "prompt_generator": "Prompt Generator",
       "billing": "Billing",
       "credits": "Credits",
+      "api_costs": "API Costs",
       "settings": "Settings",
       "documentation": "Documentation"
     },

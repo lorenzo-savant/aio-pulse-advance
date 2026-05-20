@@ -1,7 +1,7 @@
 // PATH: src/app/dashboard/advisor/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Sparkles,
   Send,
@@ -130,6 +130,21 @@ export default function AdvisorPage() {
   const [showContext, setShowContext] = useState(false)
   const [creatingPrompts, setCreatingPrompts] = useState<Set<string>>(new Set())
   const [createdPrompts, setCreatedPrompts] = useState<Set<string>>(new Set())
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+
+  const loadHistory = useCallback(async (brandId: string) => {
+    setHistoryLoading(true)
+    try {
+      const res = await fetch(`/api/advisor?brand_id=${brandId}&limit=10`)
+      const json = await res.json()
+      if (json.success) setHistory(json.data)
+    } catch {
+      /* silent */
+    } finally {
+      setHistoryLoading(false)
+    }
+  }, [])
 
   const createPrompt = async (p: NewPrompt) => {
     if (!selectedBrand || createdPrompts.has(p.text)) return
@@ -165,12 +180,15 @@ export default function AdvisorPage() {
         const json = await res.json()
         const list = json.data || json || []
         setBrands(list)
-        if (list.length > 0) setSelectedBrand(list[0])
+        if (list.length > 0) {
+          setSelectedBrand(list[0])
+          loadHistory(list[0].id)
+        }
       } catch {
         setError('Failed to load brands')
       }
     })()
-  }, [])
+  }, [loadHistory])
 
   const ask = async () => {
     if (!selectedBrand) return
@@ -191,6 +209,7 @@ export default function AdvisorPage() {
         return
       }
       setResult(json.data)
+      loadHistory(selectedBrand.id)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to call advisor')
     } finally {
@@ -221,7 +240,10 @@ export default function AdvisorPage() {
             value={selectedBrand?.id || ''}
             onChange={(e) => {
               const b = brands.find((x) => x.id === e.target.value)
-              if (b) setSelectedBrand(b)
+              if (b) {
+                setSelectedBrand(b)
+                loadHistory(b.id)
+              }
             }}
           >
             {brands.map((b) => (
@@ -415,6 +437,39 @@ export default function AdvisorPage() {
               </div>
             </Card>
           )}
+
+          {/* History panel — previous recommendations, helps track what was advised */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-bold text-foreground">Previous Recommendations</h2>
+            </div>
+            {historyLoading ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading history…</p>
+            ) : history.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No previous recommendations yet. Run the advisor to get started.
+              </p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {history.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="bg-secondary/20 flex items-start gap-3 rounded-lg border border-border px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-sm text-foreground">{entry.summary}</p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{new Date(entry.created_at).toLocaleDateString()}</span>
+                        {entry.question && <span>· Q: {entry.question}</span>}
+                        <span>· {Math.round(entry.confidence * 100)}% confidence</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
 
           {/* Context panel — collapsed by default, transparency for debugging */}
           <Card className="p-6">

@@ -175,6 +175,7 @@
       "prompt_generator": "Promptgenerator",
       "billing": "Fakturering",
       "credits": "Krediter",
+      "api_costs": "API-kostnader",
       "settings": "Inställningar",
       "documentation": "Dokumentation"
     },

@@ -130,8 +130,8 @@ export async function buildAdvisorContext(brandId: string): Promise<AdvisorConte
   }
 
   // brand_health_scores rows accessed via the service-role server client;
-  // cast at the boundary (same pattern as the other brand_health_scores routes
-  // and serpapi.ts) — the generated Database type isn't worth chasing here.
+  // cast at the boundary (same pattern as the other brand_health_scores
+  // routes) — the generated Database type isn't worth chasing here.
   type HealthLike = {
     date: string | null
     avi_score: number | null
@@ -459,8 +459,7 @@ function parseEngineBreakdown(raw: unknown): Record<string, number> {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // These helpers reach into tables that aren't in the generated Database
 // type (workflow_executions count head queries, aeo_snippets, etc.) — cast
-// the client at the boundary, same as serpapi.ts and the other advisor
-// queries above.
+// the client at the boundary, same as the other advisor queries above.
 
 async function summarizeMonitoring(
   db: NonNullable<ReturnType<typeof createServerClient>>,

@@ -54,10 +54,18 @@ interface Run {
   created_at: string
 }
 
-interface Quota {
+interface BraveQuota {
   limit: number
   used: number
   remaining: number
+}
+
+interface DataforseoQuota {
+  count: number
+  costCents: number
+  capCents: number
+  remainingCents: number
+  utilization: number
 }
 
 type GapFilter = 'all' | 'covered' | 'gap' | 'unknown'
@@ -68,7 +76,8 @@ export default function AEOSnippetsPage() {
   const [snippets, setSnippets] = useState<Snippet[]>([])
   const [runs, setRuns] = useState<Run[]>([])
   const [counts, setCounts] = useState({ total: 0, gap: 0, covered: 0, unknown: 0 })
-  const [quota, setQuota] = useState<Quota | null>(null)
+  const [braveQuota, setBraveQuota] = useState<BraveQuota | null>(null)
+  const [dataforseoQuota, setDataforseoQuota] = useState<DataforseoQuota | null>(null)
   const [filter, setFilter] = useState<GapFilter>('all')
   const [keywordFilter, setKeywordFilter] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -109,7 +118,8 @@ export default function AEOSnippetsPage() {
       setSnippets(json.data.snippets || [])
       setRuns(json.data.runs || [])
       setCounts(json.data.counts || { total: 0, gap: 0, covered: 0, unknown: 0 })
-      setQuota(json.data.serpApiQuota || null)
+      setBraveQuota(json.data.braveQuota || null)
+      setDataforseoQuota(json.data.dataforseoQuota || null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
@@ -270,14 +280,28 @@ export default function AEOSnippetsPage() {
             )}
           </Button>
         </div>
-        {quota && quota.limit > 0 && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            SerpAPI quota:{' '}
-            <span className="font-bold text-foreground">
-              {quota.used}/{quota.limit}
-            </span>{' '}
-            ({quota.remaining} remaining this month)
-          </p>
+        {(braveQuota || dataforseoQuota) && (
+          <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+            {dataforseoQuota && dataforseoQuota.capCents > 0 && (
+              <p>
+                DataForSEO spend:{' '}
+                <span className="font-bold text-foreground">
+                  ${(dataforseoQuota.costCents / 100).toFixed(2)}/$
+                  {(dataforseoQuota.capCents / 100).toFixed(2)}
+                </span>{' '}
+                ({dataforseoQuota.count} PAA queries this month)
+              </p>
+            )}
+            {braveQuota && braveQuota.limit > 0 && (
+              <p>
+                Brave quota:{' '}
+                <span className="font-bold text-foreground">
+                  {braveQuota.used}/{braveQuota.limit}
+                </span>{' '}
+                ({braveQuota.remaining} remaining this month)
+              </p>
+            )}
+          </div>
         )}
       </Card>
 

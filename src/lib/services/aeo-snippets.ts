@@ -8,12 +8,12 @@ import type { Json } from '@/types/database'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // aeo_* tables are in DB but not in the generated types yet; cast at boundary.
-import {
-  fetchPAAQuestions,
-  checkDomainRanksForQuestion,
-  isSerpApiAvailable,
-  type PAAQuestion,
-} from './serpapi'
+// v2 API strategy split (memory/project_api_strategy.md):
+//   - PAA questions  → DataForSEO (narrow scope: real Google PAA box)
+//   - Gap detection  → Brave Search (free 2k/mo primary index)
+// See dataforseo-paa.ts + brave-search.ts for the underlying providers.
+import { fetchPAAQuestions, isDataforseoPaaAvailable, type PAAQuestion } from './dataforseo-paa'
+import { checkDomainRanksForQuestion } from './brave-search'
 import { analyzeResponseForBrand } from './ai-router'
 import { calculateProviderCost } from './cost-calculator'
 
@@ -88,7 +88,8 @@ export async function runAEOGeneration(input: AEOSnippetInput): Promise<AEOSnipp
   // aeo_runs, aeo_snippets tables not yet in Database type for this service
   const db = createServerClient() as any
   if (!db) throw new Error('Database not configured')
-  if (!isSerpApiAvailable()) throw new Error('SERPAPI_KEYS not configured')
+  if (!isDataforseoPaaAvailable())
+    throw new Error('DATAFORSEO_LOGIN / DATAFORSEO_KEY not configured')
 
   const { data: brand } = await db
     .from('brands')

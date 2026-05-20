@@ -6,7 +6,11 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { runAEOGeneration } from '@/lib/services/aeo-snippets'
-import { getSerpApiQuota } from '@/lib/services/serpapi'
+// v2 API strategy: SerpApi removed. PAA is now DataForSEO (narrow scope) and
+// gap-detection is Brave Search. We surface both quotas so the operator
+// dashboard / UI can show capacity for each surface independently.
+import { getDataforseoQuota } from '@/lib/services/dataforseo-quota'
+import { getBraveQuota } from '@/lib/services/brave-search'
 import { logger } from '@/lib/logger'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -82,7 +86,7 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  const quota = await getSerpApiQuota()
+  const [dataforseoQuota, braveQuota] = await Promise.all([getDataforseoQuota(), getBraveQuota()])
 
   const counts = { total: 0, gap: 0, covered: 0, unknown: 0 }
   // @ts-expect-error - snippets from aeo_snippets table not in Database type
@@ -99,7 +103,8 @@ export async function GET(req: NextRequest) {
       snippets: snippets || [],
       runs: runs || [],
       counts,
-      serpApiQuota: quota,
+      dataforseoQuota,
+      braveQuota,
     },
     timestamp: Date.now(),
   })

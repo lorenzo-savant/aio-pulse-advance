@@ -8,6 +8,7 @@ import { isPerplexityAvailable, callPerplexityWithCitations } from './perplexity
 import { isAnthropicAvailable, callAnthropic } from './anthropic'
 import { logger } from '@/lib/logger'
 import { enrichPromptWithBrandContext } from '@/lib/brand-enrichment'
+import { safeFetch, SsrfError } from '@/lib/utils/safe-fetch'
 import type { PromptLang } from '@/lib/prompt-library'
 
 const LANGUAGE_LABEL: Record<PromptLang, string> = {
@@ -82,10 +83,78 @@ async function callGeminiWithSearch(
   const candidate = data.candidates?.[0]
   const text = candidate?.content?.parts?.[0]?.text || ''
   const chunks = candidate?.groundingMetadata?.groundingChunks || []
-  const citations = chunks
+  const rawUris = chunks
     .map((c) => c.web?.uri)
     .filter((u): u is string => typeof u === 'string' && u.length > 0)
+  // Vertex AI Grounding wraps every source URL in a redirect of the form
+  // https://vertexaisearch.cloud.google.com/grounding-api-redirect/... — that's
+  // an internal Google routing URL, not a citation source. Without resolution
+  // it pollutes Citation Sources dashboards (one report showed 32% of all
+  // citations were this single redirect host). resolveVertexRedirects follows
+  // each one to its final destination so the dashboard sees real sources.
+  const citations = await resolveVertexRedirects(rawUris)
   return { text, citations }
+}
+
+// ─── Vertex Grounding redirect resolver ─────────────────────────────────────
+//
+// Vertex AI returns grounding URIs like
+//   https://vertexaisearch.cloud.google.com/grounding-api-redirect/<token>
+// where <token> encodes the real destination. The only way to recover the
+// destination is to issue an HTTP GET (HEAD is not supported by this endpoint
+// — it returns 405) with redirect: 'manual' and read the Location header.
+//
+// Cache: an in-memory Map keyed by the redirect URL avoids paying the HTTP
+// cost again within the same process. The token is opaque so the same source
+// URL will produce a stable redirect URL across calls.
+
+const VERTEX_REDIRECT_HOST = 'vertexaisearch.cloud.google.com'
+const RESOLVE_TIMEOUT_MS = 5000
+const vertexResolveCache = new Map<string, string>()
+
+async function resolveOneVertexRedirect(redirectUrl: string): Promise<string | null> {
+  const cached = vertexResolveCache.get(redirectUrl)
+  if (cached) return cached
+  try {
+    const res = await safeFetch(redirectUrl, {
+      method: 'GET',
+      timeout: RESOLVE_TIMEOUT_MS,
+      redirect: 'manual',
+    })
+    // safeFetch follows redirects internally; we want the FINAL URL it landed
+    // on (or, if blocked manually, the Location header of the first hop).
+    const finalUrl = res.url || res.headers.get('location') || ''
+    if (finalUrl && !finalUrl.includes(VERTEX_REDIRECT_HOST)) {
+      vertexResolveCache.set(redirectUrl, finalUrl)
+      return finalUrl
+    }
+    return null
+  } catch (err) {
+    // SSRF / timeout / network — soft-fail. Don't poison the citation list
+    // with the unresolved URL, just drop it.
+    if (!(err instanceof SsrfError)) {
+      logger.warn('Vertex redirect resolution failed', {
+        service: 'ai-router',
+        redirectUrl: redirectUrl.slice(0, 100),
+        err: err instanceof Error ? err.message : String(err),
+      })
+    }
+    return null
+  }
+}
+
+async function resolveVertexRedirects(uris: string[]): Promise<string[]> {
+  // Pass through non-Vertex URLs unchanged; resolve Vertex redirects in
+  // parallel for latency. Resolved-to-null is dropped so the dashboard
+  // doesn't see the redirect host at all.
+  const resolved = await Promise.all(
+    uris.map(async (u) => {
+      if (!u.includes(VERTEX_REDIRECT_HOST)) return u
+      const final = await resolveOneVertexRedirect(u)
+      return final
+    }),
+  )
+  return resolved.filter((u): u is string => typeof u === 'string' && u.length > 0)
 }
 
 // ─── simulateEngineResponse ────────────────────────────────────────────────────

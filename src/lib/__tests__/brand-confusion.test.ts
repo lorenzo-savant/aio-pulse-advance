@@ -54,10 +54,16 @@ describe('Brand context disambiguation (Acasting vs Acast)', () => {
     expect(context).toContain('SaaS')
   })
 
-  it('buildBrandContext does not mention podcast (Acast platform)', () => {
+  it('buildBrandContext disambiguates Acasting from Acast (podcast platform)', () => {
+    // Previously this test asserted the context never mentioned "podcast" —
+    // but Citation Sources data later showed feeds.acast.com leaking into
+    // Acasting-targeted prompts because the LLM was conflating the names.
+    // The fix is the OPPOSITE: deliberately mention Acast + podcast in a
+    // "NOT to be confused with" line so the LLM learns to keep them apart.
     const context = buildBrandContext(MOCK_ACASTING_BRAND)
     expect(context).toContain('Acasting')
-    expect(context).not.toMatch(/podcast/i)
+    expect(context).toMatch(/NOT to be confused with.*Acast/i)
+    expect(context).toMatch(/feeds\.acast\.com/i)
   })
 
   it('enrichPromptWithBrandContext prepends context to query', () => {

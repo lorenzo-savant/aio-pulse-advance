@@ -2,6 +2,7 @@
 import { createServerClient } from '@/lib/supabase'
 import crypto from 'crypto'
 import { logger } from '@/lib/logger'
+import { safeFetch, SsrfError } from '@/lib/utils/safe-fetch'
 
 const MAX_ATTEMPTS = 3
 const RETRY_DELAYS_MS = [0, 30_000, 120_000] // immediate, 30s, 2min
@@ -14,7 +15,7 @@ function getWebhookSecret(): string {
   if (!WEBHOOK_SECRET) {
     throw new Error(
       'WEBHOOK_SIGNING_SECRET is not set. Generate one with ' +
-        '`openssl rand -hex 32` (or `node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"`) ' +
+        "`openssl rand -hex 32` (or `node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"`) " +
         'and add it to your environment before delivering webhooks.',
     )
   }
@@ -78,7 +79,13 @@ export async function deliverWebhook(
     }
 
     try {
-      const res = await fetch(url, {
+      // SSRF guard: user-supplied webhook URL is delivered through safeFetch,
+      // which blocks private-IP / loopback / cloud-metadata / non-HTTP(S)
+      // targets and re-validates resolved IPs on every redirect hop. Without
+      // this, a tenant could point a webhook at e.g. AWS IMDS
+      // (http://169.254.169.254/...) and read the response body back from
+      // webhook_delivery_logs.response_body.
+      const res = await safeFetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +95,7 @@ export async function deliverWebhook(
           'X-AIO-Pulse-Timestamp': String(payload.timestamp),
         },
         body,
-        signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
+        timeout: WEBHOOK_TIMEOUT_MS,
       })
 
       const responseBody = await res.text().catch(() => '')
@@ -118,22 +125,38 @@ export async function deliverWebhook(
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
 
+      // SSRF rejection is a *permanent* configuration error — the destination
+      // URL will never become a valid public host. Mark failed immediately,
+      // skip the 3-attempt retry chain that would just keep re-checking the
+      // same blocked target.
+      const isSsrf = err instanceof SsrfError
+      const finalAttempt = isSsrf || attempt + 1 >= MAX_ATTEMPTS
+
       if (db && logId) {
-        const nextRetry =
-          attempt + 1 < MAX_ATTEMPTS
-            ? new Date(Date.now() + (RETRY_DELAYS_MS[attempt + 1] || 0)).toISOString()
-            : null
+        const nextRetry = finalAttempt
+          ? null
+          : new Date(Date.now() + (RETRY_DELAYS_MS[attempt + 1] || 0)).toISOString()
 
         await db
           .from('webhook_delivery_logs')
           .update({
-            status: attempt + 1 >= MAX_ATTEMPTS ? 'failed' : 'retrying',
+            status: finalAttempt ? 'failed' : 'retrying',
             attempts: attempt + 1,
             last_attempt_at: new Date().toISOString(),
             next_retry_at: nextRetry,
-            error: errorMsg,
+            error: isSsrf ? `SSRF blocked: ${errorMsg}` : errorMsg,
           })
           .eq('id', logId)
+      }
+
+      if (isSsrf) {
+        logger.warn('Webhook delivery refused: SSRF protection blocked the URL', {
+          service: 'webhook-delivery',
+          url,
+          code: (err as SsrfError).code,
+          alertRuleId,
+        })
+        return { success: false, logId }
       }
 
       if (attempt + 1 >= MAX_ATTEMPTS) {

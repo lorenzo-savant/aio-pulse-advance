@@ -19,10 +19,16 @@ function LoginForm() {
 
   const isDev = process.env.NODE_ENV === 'development'
 
-  const defaultEmail = isDev
-    ? process.env.NEXT_PUBLIC_DEMO_EMAIL || 'demo@aio-pulse.com'
-    : emailParam || ''
-  const defaultPassword = isDev ? process.env.NEXT_PUBLIC_DEMO_PASSWORD || 'Demo1234!' : ''
+  // Dev-only auto-fill: reads credentials from .env.local at build time, NEVER
+  // falls back to a hardcoded string (which would be visible in the bundled JS
+  // and flagged as a secret by scanners like GitGuardian). If you want the
+  // auto-fill, set NEXT_PUBLIC_DEMO_EMAIL + NEXT_PUBLIC_DEMO_PASSWORD in
+  // .env.local; if you don't, the form just stays empty.
+  const devDemoEmail = isDev ? process.env.NEXT_PUBLIC_DEMO_EMAIL || '' : ''
+  const devDemoPassword = isDev ? process.env.NEXT_PUBLIC_DEMO_PASSWORD || '' : ''
+
+  const defaultEmail = devDemoEmail || emailParam || ''
+  const defaultPassword = devDemoPassword
 
   const [email, setEmail] = useState(defaultEmail)
   const [password, setPassword] = useState(defaultPassword)
@@ -41,8 +47,15 @@ function LoginForm() {
     setError(null)
     try {
       if (supabase) {
-        const demoEmail = process.env.NEXT_PUBLIC_DEMO_EMAIL || 'demo@aio-pulse.com'
-        const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD || 'Demo1234!'
+        const demoEmail = process.env.NEXT_PUBLIC_DEMO_EMAIL
+        const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD
+        if (!demoEmail || !demoPassword) {
+          setError(
+            'Dev bypass not configured. Set NEXT_PUBLIC_DEMO_EMAIL and NEXT_PUBLIC_DEMO_PASSWORD in .env.local (dev only).',
+          )
+          setLoading(false)
+          return
+        }
 
         // Try sign up first (creates account if it doesn't exist)
         const { error: signUpError } = await supabase.auth.signUp({

@@ -90,6 +90,11 @@ const NAV_SECTIONS: NavSection[] = [
         labelKey: 'sidebar.items.prompts',
         badge: (s) => ({ text: String(s.prompts), kind: 'count' }),
       },
+      {
+        href: '/dashboard/tools/prompt-generator',
+        icon: Wand2,
+        labelKey: 'sidebar.items.prompt_generator',
+      },
     ],
   },
   {
@@ -211,18 +216,6 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     step: 5,
-    labelKey: 'sidebar.sections.tools.label',
-    descriptionKey: 'sidebar.sections.tools.description',
-    items: [
-      {
-        href: '/dashboard/tools/prompt-generator',
-        icon: Wand2,
-        labelKey: 'sidebar.items.prompt_generator',
-      },
-    ],
-  },
-  {
-    step: 6,
     labelKey: 'sidebar.sections.account.label',
     // Account section ordered by frequency of need + operational adjacency:
     // Billing + Credits are the commercial layer, API Costs is the

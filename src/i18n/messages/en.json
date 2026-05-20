@@ -125,7 +125,7 @@
     "sections": {
       "setup": {
         "label": "1 · Setup",
-        "description": "Define the brand + the questions to monitor. The output of this step (brands + prompts) is the input of step 2."
+        "description": "Define the brand and the prompts to monitor — use the Prompt Generator to expand seed keywords into ready-to-use monitoring queries. Output (brands + prompts) feeds step 2."
       },
       "monitor": {
         "label": "2 · Monitor",
@@ -139,12 +139,8 @@
         "label": "4 · Optimize",
         "description": "Turn insights into action: Strategy Advisor synthesises a ranked plan; recommendations + audit + optimizer drill down."
       },
-      "tools": {
-        "label": "Tools",
-        "description": "Helpers used across the flow — Prompt Generator expands seed keywords into monitoring prompts."
-      },
       "account": {
-        "label": "Account",
+        "label": "5 · Account",
         "description": "Plan, credits, API cost ledger, settings."
       }
     },

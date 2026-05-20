@@ -125,7 +125,7 @@
     "sections": {
       "setup": {
         "label": "1 · Configurazione",
-        "description": "Definisci il brand e le domande da monitorare. L'output (brand + prompt) è l'input dello step 2."
+        "description": "Definisci il brand e i prompt da monitorare — usa il Generatore di Prompt per espandere le keyword seed in query di monitoraggio pronte all'uso. L'output (brand + prompt) è l'input dello step 2."
       },
       "monitor": {
         "label": "2 · Monitoraggio",
@@ -139,12 +139,8 @@
         "label": "4 · Ottimizza",
         "description": "Trasforma le analisi in azione: lo Strategy Advisor sintetizza un piano; raccomandazioni, audit e optimizer entrano nel dettaglio."
       },
-      "tools": {
-        "label": "Strumenti",
-        "description": "Helper trasversali — il Prompt Generator espande keyword seed in prompt di monitoraggio pronti."
-      },
       "account": {
-        "label": "Account",
+        "label": "5 · Account",
         "description": "Piano, crediti, costi API, impostazioni."
       }
     },

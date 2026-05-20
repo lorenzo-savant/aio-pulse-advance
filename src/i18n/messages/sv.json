@@ -125,7 +125,7 @@
     "sections": {
       "setup": {
         "label": "1 · Konfiguration",
-        "description": "Definiera varumärket och frågorna att övervaka. Resultatet (brands + prompts) är indata för steg 2."
+        "description": "Definiera varumärket och prompterna att övervaka — använd Promptgeneratorn för att expandera seed-nyckelord till färdiga övervakningsfrågor. Resultatet (brands + prompts) är indata för steg 2."
       },
       "monitor": {
         "label": "2 · Övervakning",
@@ -139,12 +139,8 @@
         "label": "4 · Optimera",
         "description": "Förvandla insikter till handling: Strategy Advisor syntetiserar en rankad plan; rekommendationer, audit och optimizer går på djupet."
       },
-      "tools": {
-        "label": "Verktyg",
-        "description": "Hjälpverktyg som används över hela flödet — Prompt Generator expanderar seed-nyckelord till färdiga övervakningsprompter."
-      },
       "account": {
-        "label": "Konto",
+        "label": "5 · Konto",
         "description": "Plan, krediter, API-kostnader, inställningar."
       }
     },

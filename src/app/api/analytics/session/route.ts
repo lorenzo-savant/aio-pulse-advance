@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionAnalytics } from '@/lib/analytics/session-analytics'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { requireUser } from '@/lib/api-auth'
+import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
@@ -17,12 +19,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Auth gate: session analytics is per-brand tenant data — require login
+    // AND brand access. Previously only rate-limited, leaking analytics by IP.
+    const auth = await requireUser(request)
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
+
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brand_id')
     const sessionId = searchParams.get('session_id') || undefined
 
     if (!brandId) {
       return NextResponse.json({ success: false, message: 'brand_id is required' }, { status: 400 })
+    }
+
+    if (!(await verifyBrandAccess(brandId, userId))) {
+      return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
     }
 
     const analytics = await getSessionAnalytics(brandId, sessionId)

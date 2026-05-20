@@ -114,7 +114,7 @@ function SiteAuditLine({
     return (
       <a
         href={href}
-        className="mt-5 flex items-center gap-2 border-t border-border pt-4 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        className="mt-8 flex w-full items-center gap-2 border-t border-border pt-6 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <Globe className="h-3.5 w-3.5" />
         <span>
@@ -276,9 +276,13 @@ export default function GeoScorePage() {
         <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Score gauge */}
-            <Card className="flex flex-col items-center justify-center p-8 text-center">
-              <p className="mb-4 text-sm font-medium text-muted-foreground">GEO Score</p>
-              <div className="relative flex h-44 w-44 items-center justify-center">
+            <Card className="flex flex-col items-center justify-center p-10 text-center">
+              <p className="mb-8 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                GEO Score
+              </p>
+              {/* Slightly bigger frame so the grade badge sits outside the
+                  gauge arc with breathing room (was h-44/w-44). */}
+              <div className="relative flex h-52 w-52 items-center justify-center">
                 <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
                   {/* Background ring: same colour as the score arc at low opacity
                       so the gauge reads as one coherent shape, not two stripes. */}
@@ -305,42 +309,48 @@ export default function GeoScorePage() {
                 </svg>
                 {/* Score number — leading-none keeps it visually centered. */}
                 <span
-                  className="text-5xl font-black leading-none"
+                  className="text-6xl font-black leading-none"
                   style={{ color: scoreAccent(data.score) }}
                 >
                   {data.score.toFixed(0)}
                 </span>
-                {/* Grade badge — anchored to the gauge so it reads as part of
-                    the score, not a stray element. The ring-card outline punches
-                    it forward from the gauge stroke. */}
+                {/* Grade badge — pulled fully OUTSIDE the gauge arc so it
+                    reads as a separate annotation, not as something sitting
+                    on top of the score number. Larger ring-card halo keeps
+                    visual separation from the arc stroke. */}
                 <span
-                  className="absolute -bottom-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full text-base font-black text-white shadow-md ring-4 ring-card"
+                  className="absolute -bottom-2 -right-2 flex h-12 w-12 items-center justify-center rounded-full text-lg font-black text-white shadow-lg ring-[6px] ring-card"
                   style={{ backgroundColor: GRADE_COLOR[data.grade] }}
                 >
                   {data.grade}
                 </span>
               </div>
-              <div
-                className={cn(
-                  'mt-6 flex items-center gap-2 text-sm font-semibold',
-                  trend === 'up'
-                    ? 'text-emerald-400'
-                    : trend === 'down'
-                      ? 'text-red-400'
-                      : 'text-muted-foreground',
+              {/* Delta + previous-score block. mt-10 (40px) gives the gauge
+                  room to breathe; the two lines are intentionally bunched
+                  via gap-1 so they read as one trend statement. */}
+              <div className="mt-10 flex flex-col items-center gap-1.5">
+                <div
+                  className={cn(
+                    'flex items-center gap-2 text-sm font-semibold',
+                    trend === 'up'
+                      ? 'text-emerald-400'
+                      : trend === 'down'
+                        ? 'text-red-400'
+                        : 'text-muted-foreground',
+                  )}
+                >
+                  <TrendIcon className="h-4 w-4" />
+                  <span>
+                    {data.delta > 0 ? '+' : ''}
+                    {data.delta.toFixed(1)} vs {periodLabel(period)}
+                  </span>
+                </div>
+                {data.previousScore > 0 && Math.abs(data.delta) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    was {data.previousScore.toFixed(1)}
+                  </p>
                 )}
-              >
-                <TrendIcon className="h-4 w-4" />
-                <span>
-                  {data.delta > 0 ? '+' : ''}
-                  {data.delta.toFixed(1)} vs {periodLabel(period)}
-                </span>
               </div>
-              {data.previousScore > 0 && Math.abs(data.delta) > 0 && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  was {data.previousScore.toFixed(1)}
-                </p>
-              )}
 
               {/* Inline link to the static site audit — connects this live
                   visibility score to the static readiness audit that already

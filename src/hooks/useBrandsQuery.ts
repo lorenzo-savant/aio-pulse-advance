@@ -62,26 +62,3 @@ export function useDeleteBrandMutation() {
     },
   })
 }
-
-export function useCreateBrandMutation() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async (brand: Partial<Brand>): Promise<Brand> => {
-      const res = await fetch('/api/brands', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(brand),
-      })
-      const json = await res.json()
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || `Create failed: ${res.status}`)
-      }
-      return json.data as Brand
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: KEY })
-    },
-  })
-}
-
-export const brandsQueryKey = KEY

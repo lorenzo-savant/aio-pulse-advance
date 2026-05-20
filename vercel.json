@@ -32,6 +32,18 @@
     {
       "path": "/api/cron/geo-analysis",
       "schedule": "0 5 * * 1"
+    },
+    {
+      "path": "/api/cron/gsc-sync",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/brightdata-sync",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/keyword-refresh",
+      "schedule": "0 6 * * 1"
     }
   ],
   "headers": [

@@ -12,6 +12,19 @@ import { createServerClient } from '@/lib/supabase'
 import { gradeFor, type GeoGrade } from '@/lib/services/geo-score'
 import { logger } from '@/lib/logger'
 
+async function checkLlmsTxt(domain: string): Promise<boolean> {
+  try {
+    const url = domain.startsWith('http') ? `${domain}/llms.txt` : `https://${domain}/llms.txt`
+    const res = await fetch(url, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5_000),
+    })
+    return res.status === 200
+  } catch {
+    return false
+  }
+}
+
 export interface SiteAuditSummary {
   /** 0–100, the audit's overall score. */
   score: number
@@ -23,6 +36,11 @@ export interface SiteAuditSummary {
   expiresAt: string
   /** Up to 3 short labels for failing checks, ordered as the engine reports them. */
   topIssues: string[]
+  /**
+   * Whether the domain has an llms.txt file accessible at /llms.txt.
+   * null when the audit engine didn't check.
+   */
+  hasLlmsTxt: boolean | null
 }
 
 interface AuditRow {
@@ -58,6 +76,10 @@ export async function loadLatestSiteAuditSummary(
     const row = data?.[0]
     if (!row) return null
 
+    const [hasLlmsTxt] = await Promise.all([
+      checkLlmsTxt(new URL(row.url).hostname).catch(() => null),
+    ])
+
     return {
       score: Math.round(row.overall_score ?? 0),
       grade: gradeFor(row.overall_score ?? 0),
@@ -65,6 +87,7 @@ export async function loadLatestSiteAuditSummary(
       cachedAt: row.cached_at,
       expiresAt: row.expires_at,
       topIssues: extractTopIssues(row.results, 3),
+      hasLlmsTxt,
     }
   } catch (e) {
     logger.warn('site-audit-summary: query failed', {

@@ -11,20 +11,22 @@ import { verifyBrandAccess } from '@/lib/authorize'
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
-// Custom validator that accepts both full URLs and domain names
+// Custom validator that accepts URLs with or without protocol,
+// www-prefixed domains, and bare domains like example.com
 const urlOrDomain = z.string().refine(
   (val) => {
-    // If it already has protocol, validate as URL
-    if (val.startsWith('http://') || val.startsWith('https://')) {
-      try {
-        new URL(val)
-        return true
-      } catch {
-        return false
-      }
+    const trimmed = val.trim()
+    if (!trimmed) return false
+    try {
+      const url = new URL(
+        trimmed.startsWith('http://') || trimmed.startsWith('https://')
+          ? trimmed
+          : `https://${trimmed}`,
+      )
+      return url.protocol === 'http:' || url.protocol === 'https:'
+    } catch {
+      return false
     }
-    // Otherwise, check if it looks like a valid domain
-    return /^[a-zA-Z0-9][a-zA-Z0-9-]*(\.[a-zA-Z]{2,})+$/.test(val)
   },
   { message: 'Must be a valid URL (https://example.com) or domain (example.com)' },
 )

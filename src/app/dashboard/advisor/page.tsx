@@ -17,6 +17,7 @@ import {
   Plus,
   Check,
   Layers,
+  History,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -78,7 +79,7 @@ interface AdvisorContext {
   monitoring: { last7Days: number; perEngineLast7Days: Record<string, number> }
   prompts: { active: number; byLanguage: Record<string, number> }
   aeo: { total: number; gap: number; covered: number } | null
-  siteAudit: { score: number; grade: string; url: string } | null
+  siteAudit: { score: number; grade: string; url: string; hasLlmsTxt: boolean | null } | null
 }
 
 interface AdvisorResponse {
@@ -86,6 +87,14 @@ interface AdvisorResponse {
   strategy: Strategy
   provider: string
   model: string
+}
+
+interface HistoryEntry {
+  id: string
+  summary: string
+  confidence: number
+  created_at: string
+  question: string | null
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

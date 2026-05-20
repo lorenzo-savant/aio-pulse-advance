@@ -30,6 +30,8 @@ import {
   getIndustryPreset,
   type Locale,
 } from './prompt-generator'
+import { checkBrandPresence, type BrandPresence } from './brand-presence'
+import { formatGeoKnowledgeForPrompt } from '@/lib/geo/geo-knowledge'
 import { logger } from '@/lib/logger'
 
 // ─── Public types ────────────────────────────────────────────────────────────
@@ -150,6 +152,16 @@ export interface AdvisorContext {
       scoreReasons: string[]
     }>
   } | null
+  /**
+   * Whether the brand has a presence on the two platforms that
+   * disproportionately drive AI citations:
+   *   - Wikipedia: ~47.9% of ChatGPT top citations
+   *   - Reddit:    ~46.7% of Perplexity citations
+   * Absence on either is a high-ROI gap the Strategist can recommend
+   * filling. Both checks are best-effort (Wikipedia REST API + Brave
+   * site-search) and soft-fail.
+   */
+  externalPresence: BrandPresence | null
 }
 
 export interface AdvisorResult {
@@ -509,16 +521,29 @@ export async function buildAdvisorContext(brandId: string): Promise<AdvisorConte
       summarizeCompetitorMentions(db, brandId, since30Iso),
     ])
 
-  const promptGenerator = await buildPromptGeneratorContext(
-    db,
-    brand.id,
-    brand.industry,
-    brand.language,
-    brand.name,
-    aeo,
-    brand.competitors,
-    topMentionedCompetitors,
-  )
+  const [promptGenerator, externalPresence] = await Promise.all([
+    buildPromptGeneratorContext(
+      db,
+      brand.id,
+      brand.industry,
+      brand.language,
+      brand.name,
+      aeo,
+      brand.competitors,
+      topMentionedCompetitors,
+    ),
+    // Wikipedia (free REST API) + Reddit (via Brave site:reddit.com) presence
+    // check. Both are network calls but they run in parallel with the prompt
+    // generator's potential LLM call so we don't add to total latency.
+    // Soft-fail: if either errors we still produce a context, just with
+    // externalPresence: null.
+    checkBrandPresence(brand.name, brand.aliases, brand.language).catch((err) => {
+      logger.warn('advisor: external presence check failed', {
+        err: err instanceof Error ? err.message : String(err),
+      })
+      return null
+    }),
+  ])
 
   return {
     brand,
@@ -532,6 +557,7 @@ export async function buildAdvisorContext(brandId: string): Promise<AdvisorConte
     topMentionedCompetitors,
     brandDisambiguation: disambiguationFor(brand.name),
     promptGenerator,
+    externalPresence,
   }
 }
 
@@ -603,18 +629,99 @@ export async function runStrategist(
 export async function getAdvisorRecommendation(
   brandId: string,
   question?: string,
+  userId?: string,
 ): Promise<AdvisorResult> {
   const context = await buildAdvisorContext(brandId)
   const { strategy, provider, model } = await runStrategist(context, { question })
+
+  // Persist to recommendation_history asynchronously (non-blocking)
+  if (userId) {
+    persistAdvisorResult(brandId, userId, strategy, question).catch((e) =>
+      logger.warn('advisor: failed to persist result', { err: String(e) }),
+    )
+  }
+
   return { context, strategy, provider, model }
+}
+
+async function persistAdvisorResult(
+  brandId: string,
+  userId: string,
+  strategy: StrategyOutput,
+  question?: string,
+): Promise<void> {
+  try {
+    const db = createServerClient()
+    if (!db) return
+    const dbAny = db as any
+    await dbAny.from('recommendation_history').insert({
+      brand_id: brandId,
+      user_id: userId,
+      recommendations: strategy.recommendations,
+      summary: strategy.summary,
+      based_on_count: strategy.newPrompts?.length ?? 0,
+      metadata: {
+        confidence: strategy.confidence,
+        newPrompts: strategy.newPrompts,
+        question: question ?? null,
+      },
+    })
+  } catch (e) {
+    logger.warn('advisor: persist failed (non-critical)', { err: String(e) })
+  }
+}
+
+export async function getAdvisorHistory(
+  brandId: string,
+  limit = 5,
+): Promise<
+  Array<{
+    id: string
+    summary: string
+    confidence: number
+    created_at: string
+    question: string | null
+  }>
+> {
+  const db = createServerClient()
+  if (!db) return []
+  try {
+    const dbAny = db as any
+    const { data } = (await dbAny
+      .from('recommendation_history')
+      .select('id, summary, metadata, created_at')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+      .limit(limit)) as {
+      data: Array<{
+        id: string
+        summary: string
+        metadata: { confidence?: number; question?: string | null } | null
+        created_at: string
+      }> | null
+    }
+    return (data ?? []).map((r) => ({
+      id: r.id,
+      summary: r.summary,
+      confidence: r.metadata?.confidence ?? 0,
+      created_at: r.created_at,
+      question: r.metadata?.question ?? null,
+    }))
+  } catch {
+    return []
+  }
 }
 
 // ─── Internals ───────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(): string {
+  const geoKnowledge = formatGeoKnowledgeForPrompt()
   return [
     'You are an AI Visibility strategist for AIO Pulse, a SaaS that monitors how brands are surfaced by AI answer engines (ChatGPT, Gemini, Perplexity, Claude).',
     'You advise a colleague on what to do next for ONE specific brand, using ONLY the facts in the CONTEXT block.',
+    '',
+    'GEO RESEARCH REFERENCE (use to calibrate engine-specific recommendations):',
+    geoKnowledge,
     '',
     'RULES — these are absolute:',
     '1. Output a single JSON object. No prose, no markdown fences, no commentary. JSON only.',
@@ -636,10 +743,21 @@ function buildSystemPrompt(): string {
     '8. SETUP-GAP overrides: if CONTEXT.brand.competitors is EMPTY and topMentionedCompetitors has any entries, your FIRST recommendation MUST be "Add competitors to brand config" naming the top 3-5 from topMentionedCompetitors verbatim. Without competitors no benchmark is possible — this is a higher-priority gap than any monitoring signal.',
     '9. DISAMBIGUATION: if CONTEXT.brandDisambiguation is non-null, treat the warning text as a strategic finding — recommend updating brand.aliases / brand.description copy to encode the disambiguation explicitly.',
     '10. PROMPT GENERATOR: if CONTEXT.promptGenerator is non-null, you MAY recommend creating new monitoring prompts from its suggestedNewPrompts list. Name concrete query texts from the list. This is especially valuable when the brand has few active prompts (<5), active prompts cluster in only 1-2 intent buckets, or the brand language matches locale-specific patterns in the suggested list.',
-    '11. NEW PROMPTS OUTPUT: in addition to recommendations, you may populate the optional `newPrompts` array with up to 8 entries. Each entry must include a concrete `text` (the full query string), the `intentBucket` (e.g. B1-B5), and the `priority`.',
+    '11. LLMS.TXT: if CONTEXT.siteAudit.hasLlmsTxt is true, note it as a positive signal. If false and the brand lacks one, you MAY recommend implementing llms.txt — use the GEO RESEARCH REFERENCE for adoption context (Claude confirmed support, ~0.3% adoption, early-mover advantage).',
+    '12. ENGINE-SPECIFIC CALIBRATION: use the GEO RESEARCH REFERENCE per-engine profiles to tailor recommendations. For example:',
+    '    - If Perplexity is underperforming, recommend Reddit presence (46.7% of Perplexity citations).',
+    '    - If ChatGPT is underperforming, recommend Wikipedia optimization (47.9% of ChatGPT citations) and content freshness (<3 months old = 3× citation probability).',
+    '    - If the brand has strong Claude coverage but weak Gemini, note the different citation patterns and suggest multimodal optimization.',
+    '13. NEW PROMPTS OUTPUT: in addition to recommendations, you may populate the optional `newPrompts` array with up to 8 entries. Each entry must include a concrete `text` (the full query string), the `intentBucket` (e.g. B1-B5), and the `priority`.',
     '    - Populate newPrompts ONLY from CONTEXT.promptGenerator.suggestedNewPrompts — never invent prompts the brand is not already monitoring or that are not in the suggested list.',
     '    - Prefer prompts with score >= 3 and reasons related to AEO gaps or emerging competitors.',
     '    - The frontend will render these as \"Create prompt\" buttons — the user can activate them with one click.',
+    '14. EXTERNAL PRESENCE: use CONTEXT.externalPresence as ground-truth, not assumption.',
+    '    - If externalPresence.wikipedia.found === false, "create a Wikipedia article" is one of the highest-ROI actions you can recommend — quote the 47.9% ChatGPT citation share from GEO RESEARCH REFERENCE as the rationale. Treat it as impact:high effort:medium.',
+    '    - If externalPresence.wikipedia.found === true, do NOT suggest creating one. Use the existing article URL (externalPresence.wikipedia.url) when relevant.',
+    '    - If externalPresence.reddit.found === false AND the brand is consumer-facing or in an industry with active subreddits, recommend authentic Reddit engagement (not promotion). Quote the 46.7% Perplexity citation share. impact:medium effort:medium.',
+    '    - If externalPresence.reddit.found === true with matchCount, acknowledge it (e.g. "you appear in N Reddit threads") and skip the "build Reddit presence" recommendation.',
+    '    - If externalPresence is null (check failed) do NOT speculate — skip both recommendations.',
     '',
     'Schema:',
     '{ "summary": string, "recommendations": [ { "title": string, "rationale": string, "impact": "high"|"medium"|"low", "effort": "high"|"medium"|"low", "actions": string[], "sources": string[] } ], "newPrompts"?: [ { "text": string, "intentBucket": string, "priority": "high"|"medium"|"low" } ], "confidence": number }',

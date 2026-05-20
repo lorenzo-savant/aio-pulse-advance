@@ -46,7 +46,7 @@ class QueryOrchestrator {
    */
   async orchestrateQuery(
     promptText: string,
-    engines: MonitoringEngine[] = ['chatgpt', 'gemini', 'perplexity'],
+    engines: MonitoringEngine[] = ['chatgpt', 'gemini', 'perplexity', 'claude'],
     options?: {
       cacheKey?: string
       useCache?: boolean

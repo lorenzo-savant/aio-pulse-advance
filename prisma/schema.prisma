@@ -80,7 +80,7 @@ model Prompt {
   language     String    @default("en")
   market       String    @default("global")
   category     String?
-  engines      String[]  @default(["chatgpt", "gemini", "perplexity"])
+  engines      String[]  @default(["chatgpt", "gemini", "perplexity", "claude"])
   isActive     Boolean   @default(true) @map("is_active")
   runFrequency String    @default("daily") @map("run_frequency")
   lastRunAt    DateTime? @map("last_run_at")

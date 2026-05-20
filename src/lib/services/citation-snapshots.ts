@@ -75,7 +75,7 @@ export async function calculateCitationSnapshots(
   const competitors: string[] = brand?.competitors || []
 
   // ── Group results by engine × category × language ─────────────────────────
-  const engines = ['chatgpt', 'gemini', 'perplexity'] as const
+  const engines = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
   const rows = results as unknown as MonitoringResultRow[]
 
   const categories = [...new Set(rows.map((r) => r.prompt?.category).filter(Boolean)), 'all']
@@ -116,11 +116,17 @@ export async function calculateCitationSnapshots(
 
         const competitorRates: CompetitorRate = {}
         for (const comp of competitors) {
-          const compLower = comp.toLowerCase()
+          // Word-boundary match instead of substring includes(). Substring
+          // matching caused real false positives: "Acast" matched "Acasting"
+          // because the string IS contained — but they are two different
+          // companies (Acasting = casting platform, Acast = podcast hosting).
+          // The regex escape + \b ensures "Acast" only matches the whole
+          // word "Acast", not "Acasting" / "Acasta" / etc.
+          const compRegex = new RegExp(`\\b${comp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
           const compMentioned = filtered.filter((r) => {
             const mentions = r.competitor_mentions
             if (!mentions || !Array.isArray(mentions)) return false
-            return mentions.some((m) => m.name.toLowerCase().includes(compLower))
+            return mentions.some((m) => compRegex.test(m.name))
           }).length
           competitorRates[comp] =
             totalPrompts > 0 ? Math.round((compMentioned / totalPrompts) * 100) : 0

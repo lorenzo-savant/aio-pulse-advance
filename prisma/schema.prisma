@@ -25,6 +25,10 @@ model Brand {
   industry       String?
   color          String    @default("#6366f1")
   logoUrl        String?   @map("logo_url")
+  // Primary market language — backed by `brands.language` (added in migration
+  // 20260413000100_add_brand_language.sql) with a CHECK constraint for the
+  // supported codes. Drives localized prompt generation + AEO Snippets locale.
+  language       String    @default("en")
   isActive       Boolean   @default(true) @map("is_active")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")

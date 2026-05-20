@@ -1,3 +1,52 @@
+# AIO Pulse — Update Changelog v2.2.0
+
+**Date:** May 20, 2026
+**Status:** SERP provider split (Brave primary + DataForSEO narrow scope), SerpApi removal, SERP response cache, cross-provider spending monitor
+**Breaking Changes:** SerpApi env vars (`SERPAPI_KEYS`, `SERPAPI_MONTHLY_LIMIT`) are no-ops; `/api/aeo-snippets` response field `serpApiQuota` is replaced by `braveQuota` + `dataforseoQuota`
+**Data Loss Risk:** None — two additive migrations (`serp_query_cache`, `dataforseo_usage`); `serpapi_usage` table retained for audit (drop migration deferred to v2.3.0)
+
+---
+
+## 🎯 Summary
+
+API strategy v2 finalized: **Brave Search is the primary SERP provider** (2k/mo free, AI engine citation tracking), **DataForSEO is narrow-scope** (Google AI Overview, Knowledge Graph, PAA, keyword volume only — the four surfaces nothing else can supply). SerpApi removed entirely. A new TTL-based `serp_query_cache` deduplicates queries across paths and across processes (~40-60% hit rate target), and a cross-provider spending monitor exposes a single "is API spend healthy?" signal for the operator dashboard.
+
+---
+
+## ✨ New Features
+
+### 1. SERP query cache — `serp_query_cache` table + `withSerpCache()`
+- TTL per endpoint (organic 4h, summarizer 24h, PAA 24h, AI Overview 6h, KG 7d, keyword volume 30d) so the SERP surfaces that change rarely don't get re-billed.
+- In-memory promise coalescing: concurrent calls with the same key share a single upstream request inside one process.
+- `hit_count` tracking + `cleanup_expired_serp_cache()` RPC for operator-driven purges.
+- 5 unit tests covering coalescing, key normalization, error recovery, force-refresh escape hatch.
+
+### 2. Cross-provider spending monitor — `getSpendingSnapshot()`
+- Single shape merging `brave_api_usage` + `dataforseo_usage` into `{ grade, utilization, totalCostCents, providers, advice }`.
+- Grade thresholds: 80% utilization → warning, 95% → critical (the worst-offending provider drives the grade — a single capped provider is enough to break a workflow).
+
+### 3. DataForSEO quota helper — `dataforseo_usage` table + `withDataforseoQuota()`
+- Mirrors the brave-api-usage pattern (atomic upsert RPC, RLS-on).
+- Adds **cost in cents** alongside the call counter — DFS bills pay-as-you-go and we want $-denominated alerting.
+- Default $20/mo cap, override via `DATAFORSEO_MONTHLY_CAP_CENTS`.
+- 7 unit tests.
+
+### 4. PAA migration: SerpApi → DataForSEO
+- `src/lib/services/dataforseo-paa.ts` is a drop-in shape replacement for the removed `serpapi.ts:fetchPAAQuestions`. `aeo-snippets.ts` switched over with no signature change.
+- Cost: ~$0.0008/query (rounded up to 2 cents for the cap calc) — the call is cached for 24h so duplicate PAA fetches share a single bill.
+
+### 5. SERP tracker split — Brave for rank, DFS for AI Overview
+- `serp-tracker.ts` `dailyTrack()` runs both providers in parallel: Brave organic rank → "AI engine citation tracking" (free), DataForSEO AI Overview detection → narrow scope (paid). Single persisted row shape; downstream consumers unchanged.
+
+---
+
+## 🧹 Removed
+
+- `src/lib/services/serpapi.ts` and `src/lib/__tests__/serpapi-limits.test.ts` — fully replaced.
+- `getSerpApiQuota()` removed from `GET /api/aeo-snippets` — UI now surfaces `braveQuota` + `dataforseoQuota` separately.
+
+---
+
 # AIO Pulse — Update Changelog v2.1.0
 
 **Date:** May 20, 2026

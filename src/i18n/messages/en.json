@@ -124,28 +124,28 @@
     "title": "AIO Pulse",
     "sections": {
       "setup": {
-        "label": "Setup",
-        "description": "Configure what you monitor"
+        "label": "1 · Setup",
+        "description": "Define the brand + the questions to monitor. The output of this step (brands + prompts) is the input of step 2."
       },
       "monitor": {
-        "label": "Monitor",
-        "description": "Run AI visibility checks"
+        "label": "2 · Monitor",
+        "description": "Run the prompts against ChatGPT / Gemini / Perplexity / Claude. Produces monitoring_results rows that feed every insight in step 3."
       },
       "insights": {
-        "label": "Insights",
-        "description": "Analyze monitoring results"
+        "label": "3 · Insights",
+        "description": "Read the data: GEO Score, citations, sentiment, keywords, competitors. These views read the rows step 2 generated."
       },
       "optimize": {
-        "label": "Optimize",
-        "description": "Improve content for AI search"
+        "label": "4 · Optimize",
+        "description": "Turn insights into action: Strategy Advisor synthesises a ranked plan; recommendations + audit + optimizer drill down."
       },
       "tools": {
         "label": "Tools",
-        "description": "Utility tools for GEO workflows"
+        "description": "Helpers used across the flow — Prompt Generator expands seed keywords into monitoring prompts."
       },
       "account": {
         "label": "Account",
-        "description": "Manage your account"
+        "description": "Plan, credits, API cost ledger, settings."
       }
     },
     "items": {

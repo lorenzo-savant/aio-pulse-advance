@@ -124,28 +124,28 @@
     "title": "AIO Pulse",
     "sections": {
       "setup": {
-        "label": "Configurazione",
-        "description": "Configura cosa monitorare"
+        "label": "1 · Configurazione",
+        "description": "Definisci il brand e le domande da monitorare. L'output (brand + prompt) è l'input dello step 2."
       },
       "monitor": {
-        "label": "Monitoraggio",
-        "description": "Esegui controlli di visibilità AI"
+        "label": "2 · Monitoraggio",
+        "description": "Esegui i prompt su ChatGPT / Gemini / Perplexity / Claude. Genera righe monitoring_results che alimentano tutto lo step 3."
       },
       "insights": {
-        "label": "Analisi",
-        "description": "Analizza i risultati del monitoraggio"
+        "label": "3 · Analisi",
+        "description": "Leggi i dati: GEO Score, citazioni, sentiment, keyword, competitor. Sono viste sui dati generati dallo step 2."
       },
       "optimize": {
-        "label": "Ottimizza",
-        "description": "Migliora i contenuti per la ricerca AI"
+        "label": "4 · Ottimizza",
+        "description": "Trasforma le analisi in azione: lo Strategy Advisor sintetizza un piano; raccomandazioni, audit e optimizer entrano nel dettaglio."
       },
       "tools": {
         "label": "Strumenti",
-        "description": "Strumenti per flussi di lavoro GEO"
+        "description": "Helper trasversali — il Prompt Generator espande keyword seed in prompt di monitoraggio pronti."
       },
       "account": {
         "label": "Account",
-        "description": "Gestisci il tuo account"
+        "description": "Piano, crediti, costi API, impostazioni."
       }
     },
     "items": {

@@ -124,28 +124,28 @@
     "title": "AIO Pulse",
     "sections": {
       "setup": {
-        "label": "Konfiguration",
-        "description": "Konfigurera vad du övervakar"
+        "label": "1 · Konfiguration",
+        "description": "Definiera varumärket och frågorna att övervaka. Resultatet (brands + prompts) är indata för steg 2."
       },
       "monitor": {
-        "label": "Övervakning",
-        "description": "Kör AI-synlighetskontroller"
+        "label": "2 · Övervakning",
+        "description": "Kör prompterna mot ChatGPT / Gemini / Perplexity / Claude. Producerar monitoring_results-rader som föder alla insikter i steg 3."
       },
       "insights": {
-        "label": "Insikter",
-        "description": "Analysera övervakningsresultat"
+        "label": "3 · Insikter",
+        "description": "Läs datat: GEO-poäng, citationer, sentiment, nyckelord, konkurrenter. Vyer ovanpå raderna som steg 2 genererade."
       },
       "optimize": {
-        "label": "Optimera",
-        "description": "Förbättra innehåll för AI-sökning"
+        "label": "4 · Optimera",
+        "description": "Förvandla insikter till handling: Strategy Advisor syntetiserar en rankad plan; rekommendationer, audit och optimizer går på djupet."
       },
       "tools": {
         "label": "Verktyg",
-        "description": "Verktyg för GEO-arbetsflöden"
+        "description": "Hjälpverktyg som används över hela flödet — Prompt Generator expanderar seed-nyckelord till färdiga övervakningsprompter."
       },
       "account": {
         "label": "Konto",
-        "description": "Hantera ditt konto"
+        "description": "Plan, krediter, API-kostnader, inställningar."
       }
     },
     "items": {

@@ -34,6 +34,7 @@ import {
   Sparkle,
   Link2,
   Target,
+  TrendingUp,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
@@ -121,15 +122,22 @@ const NAV_SECTIONS: NavSection[] = [
     step: 3,
     labelKey: 'sidebar.sections.insights.label',
     descriptionKey: 'sidebar.sections.insights.description',
+    // Ordered by data-flow priority: top-level KPIs first, then where the
+    // AI engines find/cite you, then drilled-down analyses, then archives.
+    // Each item generates a measurable signal the next ones build on.
     items: [
+      // ── Top-level overview ────────────────────────────────────────────
       { href: '/dashboard', icon: LayoutDashboard, labelKey: 'sidebar.items.dashboard' },
-      // 2026-05-12 — /dashboard/analytics rimossa dal sidebar fino a completamento UI
-      // (vedi Area D — Critical Audit). La route resta accessibile via URL per dev.
       {
-        href: '/dashboard/sentiment',
-        icon: Smile,
-        labelKey: 'sidebar.items.sentiment',
-        lockedUntil: (s) => !s.hasData,
+        href: '/dashboard/geo-score',
+        icon: Target,
+        labelKey: 'sidebar.items.geo_score',
+      },
+      // ── Where AI finds you (the foundation of every other insight) ─────
+      {
+        href: '/dashboard/citation-sources',
+        icon: Link2,
+        labelKey: 'sidebar.items.citation_sources',
       },
       {
         href: '/dashboard/citations',
@@ -137,11 +145,14 @@ const NAV_SECTIONS: NavSection[] = [
         labelKey: 'sidebar.items.citations',
         lockedUntil: (s) => !s.hasData,
       },
+      // ── Quality / character of the citations ──────────────────────────
       {
-        href: '/dashboard/citation-sources',
-        icon: Link2,
-        labelKey: 'sidebar.items.citation_sources',
+        href: '/dashboard/sentiment',
+        icon: Smile,
+        labelKey: 'sidebar.items.sentiment',
+        lockedUntil: (s) => !s.hasData,
       },
+      // ── Actionable Q&A / content ──────────────────────────────────────
       {
         href: '/dashboard/aeo-snippets',
         icon: Sparkles,
@@ -153,11 +164,8 @@ const NAV_SECTIONS: NavSection[] = [
         labelKey: 'sidebar.items.keywords',
         lockedUntil: (s) => !s.hasData,
       },
-      {
-        href: '/dashboard/geo-score',
-        icon: Target,
-        labelKey: 'sidebar.items.geo_score',
-      },
+      // ── Comparative + historical ──────────────────────────────────────
+      { href: '/dashboard/competitor', icon: GitCompare, labelKey: 'sidebar.items.competitor' },
       {
         href: '/dashboard/snapshots',
         icon: Camera,
@@ -170,7 +178,6 @@ const NAV_SECTIONS: NavSection[] = [
         labelKey: 'sidebar.items.reports',
         lockedUntil: (s) => !s.hasData,
       },
-      { href: '/dashboard/competitor', icon: GitCompare, labelKey: 'sidebar.items.competitor' },
       { href: '/dashboard/history', icon: Clock, labelKey: 'sidebar.items.scan_history' },
     ],
   },
@@ -178,6 +185,10 @@ const NAV_SECTIONS: NavSection[] = [
     step: 4,
     labelKey: 'sidebar.sections.optimize.label',
     descriptionKey: 'sidebar.sections.optimize.description',
+    // Strategy Advisor first because it synthesizes everything from Step 3
+    // into a ranked action list. Recommendations is the persistent surface
+    // for those actions. Content Audit feeds the Advisor; Content
+    // Optimizer is the drill-down editing tool. Engine Info is reference.
     items: [
       {
         href: '/dashboard/advisor',
@@ -185,15 +196,15 @@ const NAV_SECTIONS: NavSection[] = [
         labelKey: 'sidebar.items.strategy_advisor',
       },
       {
-        href: '/dashboard/optimizer',
-        icon: FileSearch,
-        labelKey: 'sidebar.items.content_optimizer',
-      },
-      { href: '/dashboard/audit', icon: ClipboardCheck, labelKey: 'sidebar.items.content_audit' },
-      {
         href: '/dashboard/recommendations',
         icon: Lightbulb,
         labelKey: 'sidebar.items.recommendations',
+      },
+      { href: '/dashboard/audit', icon: ClipboardCheck, labelKey: 'sidebar.items.content_audit' },
+      {
+        href: '/dashboard/optimizer',
+        icon: FileSearch,
+        labelKey: 'sidebar.items.content_optimizer',
       },
       { href: '/dashboard/monitor', icon: Globe, labelKey: 'sidebar.items.engine_info' },
     ],
@@ -213,10 +224,14 @@ const NAV_SECTIONS: NavSection[] = [
   {
     step: 6,
     labelKey: 'sidebar.sections.account.label',
+    // Account section ordered by frequency of need + operational adjacency:
+    // Billing + Credits are the commercial layer, API Costs is the
+    // operational view of where the credits actually go. Settings and
+    // Documentation are infrequent reference items.
     items: [
       { href: '/dashboard/billing', icon: CreditCard, labelKey: 'sidebar.items.billing' },
       { href: '/dashboard/credits', icon: Coins, labelKey: 'sidebar.items.credits' },
-      { href: '/dashboard/api-costs', icon: BarChart3, labelKey: 'sidebar.items.api_costs' },
+      { href: '/dashboard/api-costs', icon: TrendingUp, labelKey: 'sidebar.items.api_costs' },
       { href: '/dashboard/settings', icon: Settings, labelKey: 'sidebar.items.settings' },
       { href: '/dashboard/docs', icon: BookOpen, labelKey: 'sidebar.items.documentation' },
     ],

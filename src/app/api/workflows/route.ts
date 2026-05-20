@@ -137,22 +137,35 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brand_id')
     const limit = parseInt(searchParams.get('limit') || '50', 10) || 50
 
-    if (!brandId) {
-      return NextResponse.json(
-        { success: false, message: 'brand_id is required', data: [] },
-        { status: 400 },
-      )
-    }
-    if (!(await verifyBrandAccess(brandId, userId))) {
-      return NextResponse.json({ success: false, message: 'Forbidden', data: [] }, { status: 403 })
-    }
-
-    const query = supabase
+    // brand_id is OPTIONAL. The previous behavior (400 if missing) broke the
+    // /dashboard/workflows landing experience: the page mounts with no brand
+    // selected, fires GET with no brand_id, gets 400, shows zero workflows.
+    // If a brand is given, enforce access on it. If omitted, fall back to
+    // workflows the caller is entitled to see — either workflows scoped to
+    // brands they have access to, or workflows directly owned by the user
+    // (e.g. brand_setup before a brand exists, data exports, etc.).
+    let query = supabase
       .from('workflow_executions')
       .select('*')
-      .eq('brand_id', brandId)
       .order('started_at', { ascending: false })
       .limit(limit)
+
+    if (brandId) {
+      if (!(await verifyBrandAccess(brandId, userId))) {
+        return NextResponse.json(
+          { success: false, message: 'Forbidden', data: [] },
+          { status: 403 },
+        )
+      }
+      query = query.eq('brand_id', brandId)
+    } else {
+      // No brand specified — restrict to the rows the user owns directly
+      // OR to brands they have access to. Workspace-level multi-tenancy
+      // makes the second part complex; for now, scope strictly to
+      // user_id = userId. Workflows for shared brands still show up when
+      // the caller picks that brand in the dropdown.
+      query = query.eq('user_id', userId)
+    }
 
     const { data, error } = await query
 

@@ -48,9 +48,11 @@ export default function WorkflowsPage() {
   const [selectedBrand, setSelectedBrand] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       if (selectedBrand) params.set('brand_id', selectedBrand)
@@ -64,10 +66,17 @@ export default function WorkflowsPage() {
       const wJson = await workflowsRes.json()
       const bJson = await brandsRes.json()
 
+      if (!workflowsRes.ok || !wJson.success) {
+        // Surface the API error to the user instead of leaving them on an
+        // empty list with no clue. Previously this just silently set
+        // workflows=[] and the page looked broken.
+        setError(wJson.message || `Failed to load workflows (HTTP ${workflowsRes.status})`)
+      }
+
       setWorkflows(wJson.data || [])
       setBrands(bJson.data || [])
     } catch (err) {
-      console.error('Failed to load workflows:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load workflows')
     } finally {
       setLoading(false)
     }
@@ -78,20 +87,32 @@ export default function WorkflowsPage() {
   }, [loadData])
 
   const rerunWorkflow = async (id: string) => {
+    setError(null)
     try {
       const res = await fetch(`/api/workflows?id=${id}&action=rerun`, { method: 'POST' })
-      if (res.ok) loadData()
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(json.message || `Rerun failed (HTTP ${res.status})`)
+        return
+      }
+      loadData()
     } catch (err) {
-      console.error('Failed to rerun workflow:', err)
+      setError(err instanceof Error ? err.message : 'Rerun failed')
     }
   }
 
   const cancelWorkflow = async (id: string) => {
+    setError(null)
     try {
       const res = await fetch(`/api/workflows?id=${id}&action=cancel`, { method: 'POST' })
-      if (res.ok) loadData()
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(json.message || `Cancel failed (HTTP ${res.status})`)
+        return
+      }
+      loadData()
     } catch (err) {
-      console.error('Failed to cancel workflow:', err)
+      setError(err instanceof Error ? err.message : 'Cancel failed')
     }
   }
 
@@ -137,6 +158,23 @@ export default function WorkflowsPage() {
             </select>
           </div>
         </div>
+
+        {/* Error banner */}
+        {error && (
+          <Card className="border-error/30 bg-error/5 flex items-start gap-2 p-4 text-sm text-error">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium">{error}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="text-error/70 text-xs hover:text-error"
+            >
+              Dismiss
+            </button>
+          </Card>
+        )}
 
         {/* Stats */}
         <StaggerGrid className="grid grid-cols-2 gap-5 sm:grid-cols-4">

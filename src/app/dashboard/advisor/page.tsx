@@ -14,6 +14,9 @@ import {
   Lightbulb,
   ListChecks,
   Quote,
+  Plus,
+  Check,
+  Layers,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -38,16 +41,29 @@ interface Recommendation {
   sources: string[]
 }
 
+interface NewPrompt {
+  text: string
+  intentBucket: string
+  priority: 'high' | 'medium' | 'low'
+}
+
 interface Strategy {
   summary: string
   recommendations: Recommendation[]
+  newPrompts?: NewPrompt[]
   confidence: number
 }
 
 // The advisor returns the full context it reasoned over. We don't validate
 // every field client-side — just render the parts we want to surface.
 interface AdvisorContext {
-  brand: { id: string; name: string; domain: string | null; industry: string | null }
+  brand: {
+    id: string
+    name: string
+    domain: string | null
+    language: string | null
+    industry: string | null
+  }
   health: {
     date: string | null
     aviScore: number
@@ -103,6 +119,35 @@ export default function AdvisorPage() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<AdvisorResponse | null>(null)
   const [showContext, setShowContext] = useState(false)
+  const [creatingPrompts, setCreatingPrompts] = useState<Set<string>>(new Set())
+  const [createdPrompts, setCreatedPrompts] = useState<Set<string>>(new Set())
+
+  const createPrompt = async (p: NewPrompt) => {
+    if (!selectedBrand || createdPrompts.has(p.text)) return
+    setCreatingPrompts((s) => new Set(s).add(p.text))
+    try {
+      const res = await fetch('/api/prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand_id: selectedBrand.id,
+          text: p.text,
+          language: result?.context?.brand?.language || 'en',
+        }),
+      })
+      if (res.ok) {
+        setCreatedPrompts((s) => new Set(s).add(p.text))
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setCreatingPrompts((s) => {
+        const next = new Set(s)
+        next.delete(p.text)
+        return next
+      })
+    }
+  }
 
   useEffect(() => {
     ;(async () => {
@@ -302,6 +347,65 @@ export default function AdvisorPage() {
               </Card>
             ))}
           </div>
+
+          {/* Suggested New Prompts — actionable, one-click create */}
+          {result.strategy.newPrompts && result.strategy.newPrompts.length > 0 && (
+            <Card className="p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <Layers className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">Suggested New Prompts</h2>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  Based on {result.context.brand.industry || 'industry'} patterns
+                </span>
+              </div>
+              <div className="space-y-3">
+                {result.strategy.newPrompts.map((p, idx) => {
+                  const isCreating = creatingPrompts.has(p.text)
+                  const isCreated = createdPrompts.has(p.text)
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-secondary/30 flex items-start gap-3 rounded-lg border border-border px-4 py-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">{p.text}</p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <Badge
+                            variant={
+                              p.priority === 'high'
+                                ? 'success'
+                                : p.priority === 'medium'
+                                  ? 'warning'
+                                  : 'default'
+                            }
+                          >
+                            {p.priority}
+                          </Badge>
+                          <Badge variant="brand">{p.intentBucket}</Badge>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={isCreated ? 'ghost' : 'primary'}
+                        disabled={isCreating || isCreated}
+                        onClick={() => createPrompt(p)}
+                        className="shrink-0"
+                      >
+                        {isCreating ? (
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                        ) : isCreated ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <Plus className="h-3.5 w-3.5" />
+                        )}
+                        {isCreating ? 'Creating…' : isCreated ? 'Created' : 'Create'}
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          )}
 
           {/* Context panel — collapsed by default, transparency for debugging */}
           <Card className="p-6">

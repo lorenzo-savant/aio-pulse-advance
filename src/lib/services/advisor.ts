@@ -24,6 +24,12 @@
 import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { loadLatestSiteAuditSummary, type SiteAuditSummary } from './site-audit-summary'
+import {
+  INDUSTRY_PRESETS,
+  expandKeywords,
+  getIndustryPreset,
+  type Locale,
+} from './prompt-generator'
 import { logger } from '@/lib/logger'
 
 // ─── Public types ────────────────────────────────────────────────────────────
@@ -37,9 +43,16 @@ const StrategyRecommendationSchema = z.object({
   sources: z.array(z.string().min(3)).min(1).max(6),
 })
 
+const NewPromptSchema = z.object({
+  text: z.string().min(3).max(500),
+  intentBucket: z.string().min(1).max(10),
+  priority: z.enum(['high', 'medium', 'low']),
+})
+
 export const StrategyOutputSchema = z.object({
   summary: z.string().min(10).max(600),
   recommendations: z.array(StrategyRecommendationSchema).min(1).max(3),
+  newPrompts: z.array(NewPromptSchema).min(0).max(8).optional(),
   confidence: z.number().min(0).max(1),
 })
 
@@ -118,6 +131,25 @@ export interface AdvisorContext {
    * Null for non-ambiguous brand names.
    */
   brandDisambiguation: string | null
+  /**
+   * Prompt Generator integration: when the brand's industry matches an
+   * industry preset, this field contains suggested new prompts (queries
+   * the brand is NOT already monitoring) generated from the preset's
+   * localized templates and intent patterns. The Strategist can recommend
+   * creating these as new active prompts.
+   * Null when no industry preset matches the brand's industry.
+   */
+  promptGenerator: {
+    industryMatch: string
+    industryLabel: string
+    suggestedNewPrompts: Array<{
+      query: string
+      intentBucket: string
+      priority: 'high' | 'medium' | 'low'
+      score: number
+      scoreReasons: string[]
+    }>
+  } | null
 }
 
 export interface AdvisorResult {
@@ -125,6 +157,240 @@ export interface AdvisorResult {
   strategy: StrategyOutput
   provider: string
   model: string
+}
+
+// ─── Prompt Generator integration ─────────────────────────────────────────────
+
+function matchIndustryToPreset(
+  industry: string | null,
+): (typeof INDUSTRY_PRESETS)[number] | undefined {
+  if (!industry) return undefined
+  const norm = industry.toLowerCase().replace(/[\s-]+/g, '')
+
+  for (const preset of INDUSTRY_PRESETS) {
+    if (preset.id.replace(/[\s-]+/g, '') === norm) return preset
+    for (const name of Object.values(preset.name)) {
+      if (name.toLowerCase().replace(/[\s-]+/g, '') === norm) return preset
+    }
+  }
+
+  for (const preset of INDUSTRY_PRESETS) {
+    if (norm.includes(preset.id.replace(/[\s-]+/g, ''))) return preset
+    for (const name of Object.values(preset.name)) {
+      if (
+        name
+          .toLowerCase()
+          .replace(/[\s-]+/g, '')
+          .includes(norm)
+      )
+        return preset
+    }
+  }
+
+  return undefined
+}
+
+/**
+ * Fallback keyword-based industry classification when exact matching fails.
+ * Scans seedKeywords (all locales) and preset names for partial matches.
+ */
+function keywordClassifyIndustry(industry: string): (typeof INDUSTRY_PRESETS)[number] | undefined {
+  const norm = industry.toLowerCase()
+  const candidates: Array<{ preset: (typeof INDUSTRY_PRESETS)[number]; score: number }> = []
+
+  for (const preset of INDUSTRY_PRESETS) {
+    let score = 0
+    for (const lang of ['en', 'it', 'sv'] as Locale[]) {
+      const seeds = preset.seedKeywords[lang]
+      for (const seed of seeds) {
+        if (norm.includes(seed.toLowerCase())) score += 2
+        if (seed.toLowerCase().includes(norm)) score += 3
+      }
+      const categories = preset.categories[lang]
+      for (const cat of categories) {
+        if (norm.includes(cat.toLowerCase())) score += 1
+      }
+    }
+    if (score > 0) candidates.push({ preset, score })
+  }
+
+  candidates.sort((a, b) => b.score - a.score)
+  return candidates[0]?.preset
+}
+
+/**
+ * LLM-based industry classification — called only when fuzzy and keyword
+ * matching both fail. Uses the same provider chain (Groq → Gemini → OpenAI)
+ * but with a minimal prompt and low max_tokens.
+ */
+async function llmClassifyIndustry(
+  industry: string,
+  brandName: string,
+): Promise<(typeof INDUSTRY_PRESETS)[number] | undefined> {
+  const presetList = INDUSTRY_PRESETS.map(
+    (p) => `${p.id}: ${p.name.en} / ${p.name.it} / ${p.name.sv} — ${p.description.en}`,
+  ).join('\n')
+
+  const systemPrompt = [
+    'You classify a brand into one of the following industry presets.',
+    'Respond with a single JSON object: { "presetId": string | null }.',
+    'Return null if no preset matches.',
+    '',
+    'Available presets:',
+    presetList,
+  ].join('\n')
+
+  const userPrompt = [
+    `Brand name: "${brandName}"`,
+    `Industry description: "${industry}"`,
+    '',
+    'Which preset fits best? Return JSON only.',
+  ].join('\n')
+
+  try {
+    const { text } = await callLLM(
+      systemPrompt,
+      userPrompt,
+      { provider: undefined, model: undefined },
+      5_000,
+    )
+    const parsed = JSON.parse(extractJson(text)) as { presetId?: string | null }
+    if (parsed.presetId) {
+      return getIndustryPreset(parsed.presetId)
+    }
+  } catch {
+    logger.warn('advisor: LLM industry classification failed, falling back to null')
+  }
+  return undefined
+}
+
+/**
+ * Score a suggested prompt using three signals:
+ * 1. AEO gap ratio for its intent bucket
+ * 2. Competitor coverage (does it mention competitors the brand isn't tracking?)
+ * 3. Priority weight (high → more valuable)
+ */
+function scoreSuggestion(
+  suggestion: { query: string; intentBucket: string; priority: 'high' | 'medium' | 'low' },
+  aeoGapRatio: number | null,
+  unconfiguredCompetitors: Set<string>,
+): { score: number; reasons: string[] } {
+  const reasons: string[] = []
+  let score = 0
+
+  const priorityWeight =
+    suggestion.priority === 'high' ? 1.0 : suggestion.priority === 'medium' ? 0.6 : 0.3
+  score += priorityWeight * 3
+  if (suggestion.priority === 'high') reasons.push('high priority')
+
+  if (aeoGapRatio !== null) {
+    const aeoBoost = Math.min(aeoGapRatio * 4, 3)
+    score += aeoBoost
+    if (aeoGapRatio > 0.5) {
+      reasons.push(`AEO gap ${Math.round(aeoGapRatio * 100)}% — covering this bucket reduces gap`)
+    }
+  }
+
+  const lowerQuery = suggestion.query.toLowerCase()
+  let competitorMatch = false
+  for (const comp of unconfiguredCompetitors) {
+    if (lowerQuery.includes(comp.toLowerCase())) {
+      competitorMatch = true
+      score += 2
+      break
+    }
+  }
+  if (competitorMatch) {
+    reasons.push('mentions emerging competitor not yet tracked')
+  }
+
+  return {
+    score: Math.round(score * 10) / 10,
+    reasons: reasons.slice(0, 3),
+  }
+}
+
+async function buildPromptGeneratorContext(
+  db: NonNullable<ReturnType<typeof createServerClient>>,
+  brandId: string,
+  industry: string | null,
+  language: string | null,
+  brandName: string,
+  aeo: AdvisorContext['aeo'],
+  configuredCompetitors: string[],
+  topMentionedCompetitors: Array<{ name: string; count: number }>,
+): Promise<AdvisorContext['promptGenerator']> {
+  if (!industry || !brandName) return null
+
+  let preset = matchIndustryToPreset(industry)
+
+  if (!preset) {
+    preset = keywordClassifyIndustry(industry)
+  }
+
+  if (!preset) {
+    preset = await llmClassifyIndustry(industry, brandName)
+  }
+
+  if (!preset) return null
+
+  const locale: Locale = language === 'it' || language === 'sv' ? language : 'en'
+  const queries = expandKeywords(brandName, preset.id, locale)
+
+  // Build the active-prompts exclusion set from a DEDICATED query against
+  // the prompts table — not from promptInsights.sampleActive which is
+  // capped at 10 rows. For brands with >10 active prompts (e.g. acasting
+  // has 29) the truncated sample would let already-configured queries
+  // re-appear in the "new prompts" list, defeating the deduplication.
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  let activeSet = new Set<string>()
+  try {
+    const { data: rows } = (await (db as any)
+      .from('prompts')
+      .select('text')
+      .eq('brand_id', brandId)
+      .eq('is_active', true)
+      .limit(1000)) as { data: Array<{ text: string | null }> | null }
+    activeSet = new Set(
+      (rows ?? []).map((r) => (r.text || '').toLowerCase().trim()).filter((t) => t.length > 0),
+    )
+  } catch (e) {
+    logger.warn('advisor: failed to load active prompts for dedup', { err: String(e) })
+    // Fall through with empty set — degraded behavior is "may suggest
+    // already-monitored queries", strictly worse than ideal but not broken.
+  }
+
+  const configuredSet = new Set(configuredCompetitors.map((c) => c.toLowerCase()))
+  const unconfiguredCompetitors = new Set(
+    topMentionedCompetitors
+      .filter((m) => !configuredSet.has(m.name.toLowerCase()))
+      .map((m) => m.name),
+  )
+
+  const aeoGapRatio = aeo && aeo.total > 0 ? aeo.gap / aeo.total : null
+
+  const suggested = queries
+    .filter((q) => !activeSet.has(q.query.toLowerCase().trim()))
+    .map((q) => {
+      const { score, reasons } = scoreSuggestion(q, aeoGapRatio, unconfiguredCompetitors)
+      return {
+        query: q.query,
+        intentBucket: q.intentBucket,
+        priority: q.priority,
+        score,
+        scoreReasons: reasons,
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+
+  if (suggested.length === 0) return null
+
+  return {
+    industryMatch: preset.id,
+    industryLabel: preset.name[locale],
+    suggestedNewPrompts: suggested,
+  }
 }
 
 // ─── Context builder ─────────────────────────────────────────────────────────
@@ -243,6 +509,17 @@ export async function buildAdvisorContext(brandId: string): Promise<AdvisorConte
       summarizeCompetitorMentions(db, brandId, since30Iso),
     ])
 
+  const promptGenerator = await buildPromptGeneratorContext(
+    db,
+    brand.id,
+    brand.industry,
+    brand.language,
+    brand.name,
+    aeo,
+    brand.competitors,
+    topMentionedCompetitors,
+  )
+
   return {
     brand,
     health,
@@ -254,6 +531,7 @@ export async function buildAdvisorContext(brandId: string): Promise<AdvisorConte
     promptInsights,
     topMentionedCompetitors,
     brandDisambiguation: disambiguationFor(brand.name),
+    promptGenerator,
   }
 }
 
@@ -357,9 +635,14 @@ function buildSystemPrompt(): string {
     '7. If the CONTEXT is genuinely insufficient to advise, say so in `summary`, return one diagnostic recommendation, and set confidence < 0.2.',
     '8. SETUP-GAP overrides: if CONTEXT.brand.competitors is EMPTY and topMentionedCompetitors has any entries, your FIRST recommendation MUST be "Add competitors to brand config" naming the top 3-5 from topMentionedCompetitors verbatim. Without competitors no benchmark is possible — this is a higher-priority gap than any monitoring signal.',
     '9. DISAMBIGUATION: if CONTEXT.brandDisambiguation is non-null, treat the warning text as a strategic finding — recommend updating brand.aliases / brand.description copy to encode the disambiguation explicitly.',
+    '10. PROMPT GENERATOR: if CONTEXT.promptGenerator is non-null, you MAY recommend creating new monitoring prompts from its suggestedNewPrompts list. Name concrete query texts from the list. This is especially valuable when the brand has few active prompts (<5), active prompts cluster in only 1-2 intent buckets, or the brand language matches locale-specific patterns in the suggested list.',
+    '11. NEW PROMPTS OUTPUT: in addition to recommendations, you may populate the optional `newPrompts` array with up to 8 entries. Each entry must include a concrete `text` (the full query string), the `intentBucket` (e.g. B1-B5), and the `priority`.',
+    '    - Populate newPrompts ONLY from CONTEXT.promptGenerator.suggestedNewPrompts — never invent prompts the brand is not already monitoring or that are not in the suggested list.',
+    '    - Prefer prompts with score >= 3 and reasons related to AEO gaps or emerging competitors.',
+    '    - The frontend will render these as \"Create prompt\" buttons — the user can activate them with one click.',
     '',
     'Schema:',
-    '{ "summary": string, "recommendations": [ { "title": string, "rationale": string, "impact": "high"|"medium"|"low", "effort": "high"|"medium"|"low", "actions": string[], "sources": string[] } ], "confidence": number }',
+    '{ "summary": string, "recommendations": [ { "title": string, "rationale": string, "impact": "high"|"medium"|"low", "effort": "high"|"medium"|"low", "actions": string[], "sources": string[] } ], "newPrompts"?: [ { "text": string, "intentBucket": string, "priority": "high"|"medium"|"low" } ], "confidence": number }',
   ].join('\n')
 }
 
@@ -386,6 +669,7 @@ async function callLLM(
   systemPrompt: string,
   userPrompt: string,
   options: StrategistOptions,
+  timeoutMs = 30_000,
 ): Promise<LLMCallResult> {
   const explicit = options.provider
   const haveGroq = !!process.env['GROQ_API_KEY']
@@ -393,13 +677,13 @@ async function callLLM(
   const haveOpenAI = !!process.env['OPENAI_API_KEY']
 
   if (explicit === 'groq' || (!explicit && haveGroq)) {
-    return callGroq(systemPrompt, userPrompt, options.model ?? 'llama-3.3-70b-versatile')
+    return callGroq(systemPrompt, userPrompt, options.model ?? 'llama-3.3-70b-versatile', timeoutMs)
   }
   if (explicit === 'gemini' || (!explicit && haveGemini)) {
-    return callGemini(systemPrompt, userPrompt, options.model ?? 'gemini-2.5-flash')
+    return callGemini(systemPrompt, userPrompt, options.model ?? 'gemini-2.5-flash', timeoutMs)
   }
   if (explicit === 'openai' || (!explicit && haveOpenAI)) {
-    return callOpenAIChat(systemPrompt, userPrompt, options.model ?? 'gpt-4o-mini')
+    return callOpenAIChat(systemPrompt, userPrompt, options.model ?? 'gpt-4o-mini', timeoutMs)
   }
   throw new Error(
     'No LLM provider configured. Set GROQ_API_KEY (recommended), GEMINI_API_KEY, or OPENAI_API_KEY.',
@@ -410,6 +694,7 @@ async function callGroq(
   systemPrompt: string,
   userPrompt: string,
   model: string,
+  timeoutMs = 30_000,
 ): Promise<LLMCallResult> {
   const apiKey = process.env['GROQ_API_KEY']!
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -428,7 +713,7 @@ async function callGroq(
         { role: 'user', content: userPrompt },
       ],
     }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(timeoutMs),
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
@@ -444,6 +729,7 @@ async function callGemini(
   systemPrompt: string,
   userPrompt: string,
   model: string,
+  timeoutMs = 30_000,
 ): Promise<LLMCallResult> {
   const apiKey = process.env['GEMINI_API_KEY']!
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
@@ -459,7 +745,7 @@ async function callGemini(
         responseMimeType: 'application/json',
       },
     }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(timeoutMs),
   })
   if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`)
   const data = (await res.json()) as {
@@ -474,6 +760,7 @@ async function callOpenAIChat(
   systemPrompt: string,
   userPrompt: string,
   model: string,
+  timeoutMs = 30_000,
 ): Promise<LLMCallResult> {
   const apiKey = process.env['OPENAI_API_KEY']!
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -492,7 +779,7 @@ async function callOpenAIChat(
         { role: 'user', content: userPrompt },
       ],
     }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(timeoutMs),
   })
   if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`)
   const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> }

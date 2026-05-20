@@ -101,6 +101,72 @@ describe('StrategyOutputSchema', () => {
       }).success,
     ).toBe(false)
   })
+
+  it('accepts valid output with newPrompts', () => {
+    const withNew = {
+      summary: 'AVI dropped 12 points week-over-week on Perplexity.',
+      recommendations: [
+        {
+          title: 'Add Swedish long-tail prompts',
+          rationale: 'Swedish prompts are sparse and citation rate dropped.',
+          impact: 'high',
+          effort: 'low',
+          actions: ['Create 3 Swedish B2 prompts'],
+          sources: ['citationRate -18% on perplexity'],
+        },
+      ],
+      newPrompts: [
+        { text: 'Acasting eller Roller.nu vilket är bäst', intentBucket: 'B1', priority: 'high' },
+        { text: 'bästa castingplattformen i Sverige', intentBucket: 'B2', priority: 'high' },
+      ],
+      confidence: 0.7,
+    }
+    expect(StrategyOutputSchema.safeParse(withNew).success).toBe(true)
+  })
+
+  it('rejects newPrompts with empty text', () => {
+    expect(
+      StrategyOutputSchema.safeParse({
+        summary: 'AVI dropped 12 points week-over-week on Perplexity.',
+        recommendations: [
+          {
+            title: 'Add Swedish long-tail prompts',
+            rationale: 'Swedish prompts are sparse and citation rate dropped.',
+            impact: 'high',
+            effort: 'low',
+            actions: ['Create 3 Swedish B2 prompts'],
+            sources: ['citationRate -18% on perplexity'],
+          },
+        ],
+        newPrompts: [{ text: '', intentBucket: 'B1', priority: 'high' }],
+        confidence: 0.7,
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects more than 8 newPrompts', () => {
+    expect(
+      StrategyOutputSchema.safeParse({
+        summary: 'AVI dropped 12 points week-over-week on Perplexity.',
+        recommendations: [
+          {
+            title: 'Add Swedish long-tail prompts',
+            rationale: 'Swedish prompts are sparse and citation rate dropped.',
+            impact: 'high',
+            effort: 'low',
+            actions: ['Create 3 Swedish B2 prompts'],
+            sources: ['citationRate -18% on perplexity'],
+          },
+        ],
+        newPrompts: Array.from({ length: 9 }, (_, i) => ({
+          text: `Prompt number ${i + 1} for testing purposes only`,
+          intentBucket: 'B1' as const,
+          priority: 'high' as const,
+        })),
+        confidence: 0.7,
+      }).success,
+    ).toBe(false)
+  })
 })
 
 describe('extractJson', () => {

@@ -17,9 +17,39 @@ const LANGUAGE_LABEL: Record<PromptLang, string> = {
   sv: 'Swedish (Svenska)',
 }
 
-async function callGeminiFallback(prompt: string): Promise<string> {
+interface CallGeminiOptions {
+  /**
+   * Set `true` for JSON / structured-output tasks. Disables Gemini 2.5
+   * Flash's built-in "thinking" feature and asks for application/json
+   * output. Without this, thinking tokens consume the maxOutputTokens
+   * budget and the JSON response gets truncated mid-token (real bug
+   * observed in monitoring runs: response cut off at ~200 chars / ~50
+   * tokens, leaving an unparseable string like `"senti...`).
+   */
+  jsonMode?: boolean
+}
+
+async function callGeminiFallback(
+  prompt: string,
+  options: CallGeminiOptions = {},
+): Promise<string> {
   const apiKey = process.env['GEMINI_API_KEY']
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
+
+  // 8192 tokens is the safety net even with thinking disabled — analysis
+  // JSON is small (~500 tokens) but giving headroom avoids surprises on
+  // larger competitor lists / hallucination flag arrays.
+  const generationConfig: Record<string, unknown> = {
+    temperature: 0.2,
+    maxOutputTokens: 8192,
+  }
+  if (options.jsonMode) {
+    generationConfig.responseMimeType = 'application/json'
+    // Per Gemini 2.5 docs: thinkingBudget=0 disables the thinking phase
+    // entirely. Critical for JSON tasks where every token of the budget
+    // must go to the actual output.
+    generationConfig.thinkingConfig = { thinkingBudget: 0 }
+  }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
   const res = await fetch(url, {
@@ -27,7 +57,7 @@ async function callGeminiFallback(prompt: string): Promise<string> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
+      generationConfig,
     }),
     signal: AbortSignal.timeout(30_000),
   })
@@ -270,7 +300,10 @@ export async function analyzeResponseForBrand(
 
   if (isGeminiAvailable()) {
     try {
-      const text = await callGeminiFallback(analysisPrompt)
+      // jsonMode disables Gemini 2.5 Flash thinking (the silent budget
+      // consumer that was truncating analysis JSON) AND asks for
+      // application/json output.
+      const text = await callGeminiFallback(analysisPrompt, { jsonMode: true })
       return { text, provider: 'gemini:flash-2.5' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)

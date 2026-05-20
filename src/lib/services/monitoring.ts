@@ -144,10 +144,16 @@ export async function runMonitoringCheck(
     // Zod validates and applies defaults — no field silently undefined
     analysis = analysisOutputSchema.parse(rawParsed)
   } catch (e) {
+    // Include raw length so we can immediately tell whether the model
+    // returned a truncated response (the historical Gemini 2.5 Flash
+    // thinking-budget bug) vs a malformed-but-complete answer. Limit
+    // the preview to 500 chars in the error string.
+    const errMsg = e instanceof Error ? e.message : String(e)
     throw new Error(
-      `Impossibile parsare/validare la risposta di analisi da ${analysisProvider}. ` +
-        `Errore: ${e instanceof Error ? e.message : String(e)}. ` +
-        `Raw: ${analysisRaw.slice(0, 200)}`,
+      `Failed to parse/validate analysis response from ${analysisProvider}. ` +
+        `Error: ${errMsg}. ` +
+        `Raw length: ${analysisRaw.length} chars. ` +
+        `Raw: ${analysisRaw.slice(0, 500)}`,
     )
   }
 

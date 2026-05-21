@@ -101,6 +101,26 @@ function scoreAccent(score: number): string {
   return '#ef4444'
 }
 
+// Qualitative band for a 0–100 pillar/score, with a matching colour. Used by
+// the colour-coded Score-by-Category table so each number reads as a verdict,
+// not just a digit.
+function scoreRating(score: number): { label: string; color: string } {
+  if (score >= 70) return { label: 'Excellent', color: '#10b981' }
+  if (score >= 55) return { label: 'Good', color: '#f59e0b' }
+  if (score >= 40) return { label: 'Fair', color: '#f97316' }
+  return { label: 'Weak', color: '#ef4444' }
+}
+
+// What each GEO pillar actually measures (mirrors geo-score.ts inputs), so the
+// table explains the score rather than just displaying it.
+const PILLAR_DESC: Record<string, string> = {
+  citation: 'How often AI engines cite your domain as a source — the strongest GEO signal.',
+  presence: 'How often your brand is mentioned at all in AI answers.',
+  authority: 'How often the brand is actively recommended, not merely named.',
+  position: 'Where your brand appears in the answer (earlier = more visible).',
+  trust: 'Sentiment toward the brand combined with factual accuracy (low hallucination).',
+}
+
 function periodLabel(p: string): string {
   if (p === '7d') return '7d ago'
   if (p === '60d') return '60d ago'
@@ -409,6 +429,116 @@ export default function GeoScorePage() {
               </div>
             </Card>
           </div>
+
+          {/* GEO Score by Category — colour-coded clarity table */}
+          <Card className="p-6">
+            <h2 className="mb-1 text-lg font-bold text-foreground">GEO Score by Category</h2>
+            <p className="mb-5 text-sm text-muted-foreground">
+              What each category measures, your score, and what that score means. Colours:
+              <span className="ml-1 font-semibold text-emerald-500">Excellent</span> ·
+              <span className="ml-1 font-semibold text-amber-500">Good</span> ·
+              <span className="ml-1 font-semibold text-orange-500">Fair</span> ·
+              <span className="ml-1 font-semibold text-red-500">Weak</span>.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      Category
+                    </th>
+                    <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      What it measures
+                    </th>
+                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      Score
+                    </th>
+                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      Rating
+                    </th>
+                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      Weight
+                    </th>
+                    <th className="px-3 py-2 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      Contribution
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.pillars.map((p) => {
+                    const rating = scoreRating(p.score)
+                    return (
+                      <tr key={p.key} className="border-border/50 border-b">
+                        <td className="px-3 py-3 font-semibold text-foreground">{p.label}</td>
+                        <td className="px-3 py-3 text-xs text-muted-foreground">
+                          {PILLAR_DESC[p.key] ?? ''}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span
+                            className="inline-block min-w-[3rem] rounded-md px-2 py-1 text-sm font-black"
+                            style={{ color: rating.color, backgroundColor: `${rating.color}1a` }}
+                          >
+                            {p.score.toFixed(0)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span
+                            className="rounded-full px-2.5 py-0.5 text-xs font-bold"
+                            style={{ color: rating.color, backgroundColor: `${rating.color}1a` }}
+                          >
+                            {rating.label}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center text-muted-foreground">
+                          {Math.round(p.weight * 100)}%
+                        </td>
+                        <td className="px-3 py-3 text-right font-semibold text-foreground">
+                          +{p.contribution.toFixed(1)} pts
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {/* Total row */}
+                  <tr className="border-t-2 border-border">
+                    <td className="px-3 py-3 font-black text-foreground" colSpan={2}>
+                      Total GEO Score
+                    </td>
+                    <td className="px-3 py-3 text-center">
+                      <span
+                        className="inline-block min-w-[3rem] rounded-md px-2 py-1 text-base font-black"
+                        style={{
+                          color: scoreAccent(data.score),
+                          backgroundColor: `${scoreAccent(data.score)}1a`,
+                        }}
+                      >
+                        {data.score.toFixed(0)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-center">
+                      <span
+                        className="rounded-full px-2.5 py-0.5 text-xs font-black text-white"
+                        style={{ backgroundColor: GRADE_COLOR[data.grade] }}
+                      >
+                        Grade {data.grade}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-center text-muted-foreground">100%</td>
+                    <td className="px-3 py-3 text-right font-black text-foreground">
+                      {data.score.toFixed(1)} pts
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Grade scale: <span className="font-semibold text-emerald-500">A ≥ 85</span> ·
+              <span className="ml-1 font-semibold text-green-500">B ≥ 70</span> ·
+              <span className="ml-1 font-semibold text-amber-500">C ≥ 55</span> ·
+              <span className="ml-1 font-semibold text-orange-500">D ≥ 40</span> ·
+              <span className="ml-1 font-semibold text-red-500">F &lt; 40</span>. Each category
+              score (0–100) is multiplied by its weight; the weighted points sum to your total.
+            </p>
+          </Card>
 
           {/* Recommendations */}
           {data.recommendations.length > 0 && (

@@ -18,12 +18,9 @@ import {
   analyzeResponseForBrand as routerAnalyze,
 } from './ai-router'
 import { cleanCitations, groundCitationsViaBrave } from './citation-grounding'
+import { lexicalSentiment, sentimentAgreement } from './sentiment-lexicon'
+import type { LexiconLabel, ConflictLevel } from './sentiment-lexicon'
 import { logger } from '@/lib/logger'
-
-// Engines whose API returns REAL web citations (Gemini grounding, Perplexity
-// Sonar). The others (ChatGPT, Claude) answer from model memory, so any URL in
-// their text is unreliable — those get Brave-grounded citations instead.
-const NATIVE_CITATION_ENGINES: MonitoringEngine[] = ['gemini', 'perplexity']
 
 function parseJson<T>(raw: string): T {
   const cleaned = raw
@@ -97,6 +94,10 @@ EXACT-MATCH RULES — read carefully, these prevent the most common analysis err
     • Same principle for any other near-collision: only the exact tokenized name (or a listed alias) counts.
 - Substring containment (e.g. "Acasting".includes("Acast")) is a JavaScript trap, not a semantic match. Apply the whole-word rule, not character containment.
 - mention_count must count only EXACT occurrences. Each occurrence of "${brand.name}" as a whole word = 1. Synonyms / look-alikes / parent-categories = 0.
+
+SENTIMENT RULE — judge sentiment TOWARD "${brand.name}", not the text's overall mood:
+- Favorable to the brand (praised / recommended / ranked best) → positive; warned-against / "scam" / "worst" → negative; factual or absent → neutral with score 0.
+- sentiment_score anchors: +1.0 strong praise, +0.4 mild, 0.0 neutral, -0.4 mild criticism, -1.0 strong criticism. Weigh MIXED coverage by balance, not by the last sentence.
 
 Respond ONLY with a valid JSON object (no markdown, no extra text):
 {
@@ -173,21 +174,14 @@ export async function runMonitoringCheck(
   }
 
   // ── Citations ────────────────────────────────────────────────────────────
-  // Gemini/Perplexity return real web citations → clean (de-junk + dedup) the
-  // engine + in-text URLs, and only Brave-ground if they came back empty.
-  // ChatGPT/Claude answer from memory, so their in-text URLs are unreliable —
-  // ground against real Brave sources instead (cached: ~1 hit per unique
-  // prompt). Brave grounding soft-fails to [] so a run never breaks on quota.
-  let citedUrls: string[]
-  if (NATIVE_CITATION_ENGINES.includes(engine)) {
-    citedUrls = cleanCitations([...engineCitations, ...analysis.cited_urls])
-    if (citedUrls.length === 0) {
-      citedUrls = (await groundCitationsViaBrave(prompt.text, language)).citations
-    }
-  } else {
-    const grounded = await groundCitationsViaBrave(prompt.text, language)
-    citedUrls =
-      grounded.citations.length > 0 ? grounded.citations : cleanCitations(analysis.cited_urls)
+  // With web search enabled, every engine returns real web citations → clean
+  // (de-junk + dedup) the engine + in-text URLs. Only when nothing real came
+  // back (web search disabled/failed, or a model-memory fallback) do we
+  // Brave-ground the prompt (cached: ~1 hit per unique prompt). Brave grounding
+  // soft-fails to [] so a run never breaks on quota.
+  let citedUrls = cleanCitations([...engineCitations, ...analysis.cited_urls])
+  if (citedUrls.length === 0) {
+    citedUrls = (await groundCitationsViaBrave(prompt.text, language)).citations
   }
 
   return {
@@ -219,15 +213,30 @@ export interface SentimentResult {
   confidence: number
   reasoning: string
   aspects: Array<{ aspect: string; sentiment: SentimentLabel; explanation: string }>
+  /** Deterministic lexicon cross-check (see sentiment-lexicon.ts). Present
+   *  when a reading was available; lets the UI flag low-agreement verdicts. */
+  lexicalCheck?: {
+    label: LexiconLabel
+    score: number
+    hits: number
+    conflict: ConflictLevel
+  }
 }
 
 export async function analyzeSentiment(text: string, brandName: string): Promise<SentimentResult> {
-  const prompt = `Analyze the sentiment of this text toward the brand "${brandName}".
+  const prompt = `You are a brand-sentiment analyst. Judge the sentiment expressed TOWARD the brand "${brandName}" — not the overall mood of the text. If the brand is described favorably while a competitor is criticized, that is POSITIVE for "${brandName}".
 
 TEXT:
 """
 ${text.slice(0, 4000)}
 """
+
+SCORING RUBRIC (score is a float -1.0 … 1.0):
+- +1.0 strongly positive (praised, recommended, "best") · +0.4 mildly positive
+-  0.0 neutral / factual mention with no evaluation · brand absent → neutral, score 0
+- -0.4 mildly negative · -1.0 strongly negative (warned against, "scam", "worst")
+- MIXED: weigh the balance and explain it; do not just pick the last sentence.
+- confidence reflects how clearly the text evaluates the brand (0 = ambiguous/absent, 100 = explicit).
 
 Respond ONLY with valid JSON (no markdown):
 {
@@ -237,7 +246,7 @@ Respond ONLY with valid JSON (no markdown):
   "reasoning": "<one paragraph explanation>",
   "aspects": [
     {
-      "aspect": "<what aspect of the brand>",
+      "aspect": "<aspect of the brand: pricing, support, quality, reliability, …>",
       "sentiment": <"positive" | "negative" | "neutral">,
       "explanation": "<brief reason>"
     }
@@ -246,7 +255,19 @@ Respond ONLY with valid JSON (no markdown):
 
   const { text: raw, provider } = await routerAnalyze(prompt)
   logger.info('Sentiment analysis completed', { service: 'monitoring', provider })
-  return parseJson<SentimentResult>(raw)
+  const result = parseJson<SentimentResult>(raw)
+
+  // Deterministic cross-check: a free second opinion over the LLM. On a strong
+  // polar conflict, cap confidence so the UI doesn't present a shaky verdict as
+  // certain. The LLM label is never overridden — the lexicon is too coarse for
+  // that — only its certainty is tempered.
+  const lex = lexicalSentiment(text)
+  const { conflict } = sentimentAgreement(result.sentiment as LexiconLabel, lex)
+  result.lexicalCheck = { label: lex.label, score: lex.score, hits: lex.hits, conflict }
+  if (conflict === 'strong' && typeof result.confidence === 'number') {
+    result.confidence = Math.min(result.confidence, 40)
+  }
+  return result
 }
 
 // ─── detectHallucinations ─────────────────────────────────────────────────────

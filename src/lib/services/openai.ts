@@ -20,10 +20,20 @@ interface ResponsesApiOutput {
 
 export async function callOpenAIWithWebSearch(
   prompt: string,
-  options?: { model?: string },
+  options?: { model?: string; country?: string },
 ): Promise<{ text: string; citations: string[] }> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY not configured')
+
+  // Localize the web search to the brand's market so results match what a real
+  // user in that country/locale would see (sv → SE, it → IT, …).
+  const webSearchTool: Record<string, unknown> = {
+    type: 'web_search_preview',
+    search_context_size: 'medium',
+  }
+  if (options?.country) {
+    webSearchTool.user_location = { type: 'approximate', country: options.country }
+  }
 
   const res = await safeFetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -34,7 +44,7 @@ export async function callOpenAIWithWebSearch(
     body: JSON.stringify({
       model: options?.model || 'gpt-4o-mini',
       input: prompt,
-      tools: [{ type: 'web_search_preview' }],
+      tools: [webSearchTool],
     }),
     signal: AbortSignal.timeout(45_000),
   })

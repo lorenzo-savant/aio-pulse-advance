@@ -3,9 +3,9 @@
 // Core providers: ChatGPT (OpenAI), Gemini (Google), Perplexity, Claude (Anthropic).
 
 import type { Brand, MonitoringEngine } from '@/types'
-import { isOpenAIAvailable, callOpenAI } from './openai'
+import { isOpenAIAvailable, callOpenAI, callOpenAIWithWebSearch } from './openai'
 import { isPerplexityAvailable, callPerplexityWithCitations } from './perplexity'
-import { isAnthropicAvailable, callAnthropic } from './anthropic'
+import { isAnthropicAvailable, callAnthropic, callAnthropicWithWebSearch } from './anthropic'
 import { logger } from '@/lib/logger'
 import { enrichPromptWithBrandContext } from '@/lib/brand-enrichment'
 import { safeFetch, SsrfError } from '@/lib/utils/safe-fetch'
@@ -15,6 +15,23 @@ const LANGUAGE_LABEL: Record<PromptLang, string> = {
   en: 'English',
   it: 'Italian (Italiano)',
   sv: 'Swedish (Svenska)',
+}
+
+// Localizes each engine's web search to the brand's market so results match
+// what a real user in that locale would see.
+const LOCALE_COUNTRY: Record<PromptLang, string> = {
+  en: 'US',
+  it: 'IT',
+  sv: 'SE',
+}
+
+// Web search makes ChatGPT/Claude answer from the LIVE web (real data + real
+// citations) instead of model memory. It costs more per call, so it can be
+// disabled with ENGINE_WEB_SEARCH=false (then those engines fall back to
+// model-memory answers + Brave-grounded citations).
+function isEngineWebSearchEnabled(): boolean {
+  const v = process.env['ENGINE_WEB_SEARCH']
+  return v !== 'false' && v !== '0'
 }
 
 interface CallGeminiOptions {
@@ -219,6 +236,25 @@ export async function simulateEngineResponse(
   const errors: string[] = []
 
   if (engine === 'chatgpt' && isOpenAIAvailable()) {
+    // Live web search first (real data + citations); plain chat as fallback.
+    if (isEngineWebSearchEnabled()) {
+      try {
+        const { text, citations } = await callOpenAIWithWebSearch(fullPrompt, {
+          country: LOCALE_COUNTRY[language],
+        })
+        if (text) {
+          return { text, provider: 'openai:gpt-4o-mini+web', citations, retrieval: 'live' }
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        errors.push(`OpenAI (web): ${msg}`)
+        logger.warn('OpenAI web search failed, falling back to plain', {
+          service: 'ai-router',
+          engine,
+          error: msg,
+        })
+      }
+    }
     try {
       const text = await callOpenAI(fullPrompt)
       return { text, provider: 'openai:gpt-4o-mini', retrieval: 'model-memory' }
@@ -263,6 +299,25 @@ export async function simulateEngineResponse(
   }
 
   if (engine === 'claude' && isAnthropicAvailable()) {
+    // Live web search first (real data + citations); plain message as fallback.
+    if (isEngineWebSearchEnabled()) {
+      try {
+        const { text, citations } = await callAnthropicWithWebSearch(fullPrompt, {
+          country: LOCALE_COUNTRY[language],
+        })
+        if (text) {
+          return { text, provider: 'anthropic:claude-sonnet+web', citations, retrieval: 'live' }
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        errors.push(`Anthropic (web): ${msg}`)
+        logger.warn('Anthropic web search failed, falling back to plain', {
+          service: 'ai-router',
+          engine,
+          error: msg,
+        })
+      }
+    }
     try {
       const text = await callAnthropic(fullPrompt)
       return { text, provider: 'anthropic:claude-sonnet', retrieval: 'model-memory' }

@@ -31,6 +31,7 @@ interface SerpProvider {
 
 interface AiProvider {
   provider: string
+  configured: boolean
   calls: number
   inputTokens: number
   outputTokens: number
@@ -203,8 +204,8 @@ export default function ApiCostsPage() {
                 {dollars(data.ai.totalCostCents)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {data.ai.providers.length} provider
-                {data.ai.providers.length === 1 ? '' : 's'} active
+                {data.ai.providers.filter((p) => p.configured).length} of {data.ai.providers.length}{' '}
+                keys configured
               </p>
             </Card>
           </div>
@@ -288,13 +289,16 @@ export default function ApiCostsPage() {
               <Bot className="h-4 w-4 text-brand" />
               <h2 className="text-lg font-bold text-foreground">AI Provider Usage</h2>
             </div>
-            {data.ai.providers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No AI usage logged this month yet. Costs are recorded by{' '}
+            {data.ai.totalCostCents === 0 && (
+              <p className="mb-4 text-sm text-muted-foreground">
+                No AI spend logged this month yet — providers below show their configured status.
+                Costs are recorded in{' '}
                 <code className="rounded bg-secondary px-1">ai_cost_logs</code> when monitoring runs
-                or advisor calls hit a provider. Run a monitoring check or click Ask on the Strategy
-                Advisor and refresh this page to see the breakdown.
+                or advisor calls hit a provider.
               </p>
+            )}
+            {data.ai.providers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No AI providers known.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -339,6 +343,16 @@ export default function ApiCostsPage() {
                             ) : (
                               <span className="font-semibold text-foreground">{meta.label}</span>
                             )}
+                            <span
+                              className={cn(
+                                'ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                                p.configured
+                                  ? 'bg-emerald-500/10 text-emerald-400'
+                                  : 'bg-muted text-muted-foreground',
+                              )}
+                            >
+                              {p.configured ? 'configured' : 'not configured'}
+                            </span>
                           </td>
                           <td className="py-3 pr-4 text-right text-foreground">
                             {formatNumber(p.calls)}

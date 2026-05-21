@@ -43,11 +43,40 @@ export interface SerpProviderSnapshot {
 
 export interface AiProviderSnapshot {
   provider: string
+  /** True when the matching API key is present in the environment. */
+  configured: boolean
   calls: number
   inputTokens: number
   outputTokens: number
   totalTokens: number
   costCents: number
+}
+
+// Canonical LLM providers we always surface on the cost dashboard, mapped to
+// the env var that enables them. Listed even at $0 so operators can see which
+// keys are configured (mirrors the SERP section's behavior).
+const KNOWN_AI_PROVIDERS: Array<{ key: string; envVar: string }> = [
+  { key: 'openai', envVar: 'OPENAI_API_KEY' },
+  { key: 'gemini', envVar: 'GEMINI_API_KEY' },
+  { key: 'anthropic', envVar: 'ANTHROPIC_API_KEY' },
+  { key: 'perplexity', envVar: 'PERPLEXITY_API_KEY' },
+  { key: 'groq', envVar: 'GROQ_API_KEY' },
+]
+
+// ai_cost_logs may record providers under aliases; fold them onto the
+// canonical key so usage lands on the right row.
+const PROVIDER_ALIASES: Record<string, string> = {
+  chatgpt: 'openai',
+  gpt: 'openai',
+  'gpt-4o-mini': 'openai',
+  claude: 'anthropic',
+  google: 'gemini',
+  'gemini-2.5-flash': 'gemini',
+}
+
+function canonicalProvider(raw: string): string {
+  const key = raw.toLowerCase().trim()
+  return PROVIDER_ALIASES[key] ?? key
 }
 
 export interface CreditsSnapshot {
@@ -186,59 +215,78 @@ async function loadSerpSnapshot(): Promise<{
   return { providers, totalCostCents }
 }
 
+function emptyProvider(key: string): AiProviderSnapshot {
+  return {
+    provider: key,
+    configured: !!process.env[KNOWN_AI_PROVIDERS.find((p) => p.key === key)?.envVar ?? ''],
+    calls: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
+    costCents: 0,
+  }
+}
+
 async function loadAiSnapshot(userId: string): Promise<{
   providers: AiProviderSnapshot[]
   totalCostCents: number
 }> {
-  const db = createServerClient() as any
-  if (!db) return { providers: [], totalCostCents: 0 }
-
-  // Aggregate by provider for the current month.
-  const monthStart = new Date()
-  monthStart.setUTCDate(1)
-  monthStart.setUTCHours(0, 0, 0, 0)
-
-  try {
-    const { data: rows } = await db
-      .from('ai_cost_logs')
-      .select('provider, input_tokens, output_tokens, total_tokens, cost_usd')
-      .eq('user_id', userId)
-      .gte('created_at', monthStart.toISOString())
-      .limit(50000)
-
-    const byProvider = new Map<string, AiProviderSnapshot>()
-    for (const r of (rows ?? []) as Array<{
-      provider: string | null
-      input_tokens: number | null
-      output_tokens: number | null
-      total_tokens: number | null
-      cost_usd: number | null
-    }>) {
-      const key = (r.provider || 'unknown').toLowerCase()
-      const acc = byProvider.get(key) ?? {
-        provider: key,
-        calls: 0,
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        costCents: 0,
-      }
-      acc.calls += 1
-      acc.inputTokens += r.input_tokens ?? 0
-      acc.outputTokens += r.output_tokens ?? 0
-      acc.totalTokens += r.total_tokens ?? 0
-      // ai_cost_logs.cost_usd is float USD; convert to integer cents.
-      acc.costCents += Math.round((r.cost_usd ?? 0) * 100)
-      byProvider.set(key, acc)
-    }
-
-    const providers = [...byProvider.values()].sort((a, b) => b.costCents - a.costCents)
-    const totalCostCents = providers.reduce((a, p) => a + p.costCents, 0)
-    return { providers, totalCostCents }
-  } catch (err) {
-    logger.warn('api-cost-overview: ai_cost_logs read failed', { err: String(err) })
-    return { providers: [], totalCostCents: 0 }
+  // Seed with every known provider so the dashboard always lists Gemini,
+  // OpenAI, Claude, Perplexity and Groq with their configured status — even
+  // before any usage is logged. Usage from ai_cost_logs is overlaid below.
+  const byProvider = new Map<string, AiProviderSnapshot>()
+  for (const { key, envVar } of KNOWN_AI_PROVIDERS) {
+    byProvider.set(key, { ...emptyProvider(key), configured: !!process.env[envVar] })
   }
+
+  const db = createServerClient() as any
+
+  if (db) {
+    // Aggregate by provider for the current month.
+    const monthStart = new Date()
+    monthStart.setUTCDate(1)
+    monthStart.setUTCHours(0, 0, 0, 0)
+
+    try {
+      const { data: rows } = await db
+        .from('ai_cost_logs')
+        .select('provider, input_tokens, output_tokens, total_tokens, cost_usd')
+        .eq('user_id', userId)
+        .gte('created_at', monthStart.toISOString())
+        .limit(50000)
+
+      for (const r of (rows ?? []) as Array<{
+        provider: string | null
+        input_tokens: number | null
+        output_tokens: number | null
+        total_tokens: number | null
+        cost_usd: number | null
+      }>) {
+        const key = canonicalProvider(r.provider || 'unknown')
+        const acc = byProvider.get(key) ?? emptyProvider(key)
+        acc.calls += 1
+        acc.inputTokens += r.input_tokens ?? 0
+        acc.outputTokens += r.output_tokens ?? 0
+        acc.totalTokens += r.total_tokens ?? 0
+        // ai_cost_logs.cost_usd is float USD; convert to integer cents.
+        acc.costCents += Math.round((r.cost_usd ?? 0) * 100)
+        byProvider.set(key, acc)
+      }
+    } catch (err) {
+      logger.warn('api-cost-overview: ai_cost_logs read failed', { err: String(err) })
+    }
+  }
+
+  // Sort: spend desc, then configured-before-unconfigured, then name — so the
+  // active/paid providers float to the top and known-but-idle keys still show.
+  const providers = [...byProvider.values()].sort(
+    (a, b) =>
+      b.costCents - a.costCents ||
+      Number(b.configured) - Number(a.configured) ||
+      a.provider.localeCompare(b.provider),
+  )
+  const totalCostCents = providers.reduce((a, p) => a + p.costCents, 0)
+  return { providers, totalCostCents }
 }
 
 async function loadCreditsSnapshot(userId: string): Promise<CreditsSnapshot> {

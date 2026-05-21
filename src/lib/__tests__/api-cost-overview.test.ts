@@ -72,9 +72,14 @@ describe('getApiCostOverview', () => {
     delete process.env['DATAFORSEO_MONTHLY_CAP_CENTS']
   })
 
-  it('falls back to empty arrays for AI and zero credits when DB unavailable', async () => {
+  it('always lists the known AI providers (zero cost) and zero credits when DB unavailable', async () => {
     const overview = await getApiCostOverview('test-user-id')
-    expect(overview.ai.providers).toEqual([])
+    // Even without a DB, the 5 canonical providers are surfaced with their
+    // configured status so operators see which keys are set.
+    const keys = overview.ai.providers.map((p) => p.provider).sort()
+    expect(keys).toEqual(['anthropic', 'gemini', 'groq', 'openai', 'perplexity'])
+    expect(overview.ai.providers.every((p) => p.costCents === 0)).toBe(true)
+    expect(overview.ai.providers.every((p) => typeof p.configured === 'boolean')).toBe(true)
     expect(overview.ai.totalCostCents).toBe(0)
     expect(overview.credits).toEqual({
       purchased: 0,

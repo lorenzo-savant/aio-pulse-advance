@@ -35,7 +35,10 @@ import { exportToJson } from '@/lib/export'
 import { cn } from '@/lib/utils'
 import type { CompetitorResult } from '@/lib/services/gemini'
 import type { ShareOfVoice } from '@/lib/services/share-of-voice'
+import type { MarketPosition } from '@/lib/services/market-position'
 import { useChartTheme } from '@/hooks/useChartTheme'
+
+type SovData = ShareOfVoice & { marketPosition?: MarketPosition }
 
 interface Snapshot {
   id: string
@@ -85,7 +88,7 @@ function HistoricalSection() {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
   const [loading, setLoading] = useState(true)
   const [days, setDays] = useState(30)
-  const [sov, setSov] = useState<ShareOfVoice | null>(null)
+  const [sov, setSov] = useState<SovData | null>(null)
 
   useEffect(() => {
     async function loadBrands() {
@@ -133,7 +136,7 @@ function HistoricalSection() {
     fetch(`/api/share-of-voice?brand_id=${selectedBrand.id}&days=${days}`)
       .then((r) => r.json())
       .then((j) => {
-        if (!cancelled) setSov(j.success ? (j.data as ShareOfVoice) : null)
+        if (!cancelled) setSov(j.success ? (j.data as SovData) : null)
       })
       .catch(() => {
         if (!cancelled) setSov(null)
@@ -254,6 +257,46 @@ function HistoricalSection() {
           </div>
         </div>
       </div>
+
+      {/* ── Market Position: qualitative role + perception (from SOV+sentiment) ── */}
+      {sov?.marketPosition && sov.totalResponses > 0 && (
+        <Card className="p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-bold text-foreground">Market Position</h3>
+            <span
+              className={cn(
+                'rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                sov.marketPosition.confidence === 'high'
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : sov.marketPosition.confidence === 'medium'
+                    ? 'bg-amber-500/10 text-amber-400'
+                    : 'bg-input text-muted-foreground',
+              )}
+            >
+              {sov.marketPosition.confidence} confidence
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {(
+              [
+                { label: 'Category role', value: sov.marketPosition.categoryRole },
+                { label: 'Perception', value: sov.marketPosition.innovationPerception },
+              ] as const
+            ).map((b) => (
+              <div key={b.label} className="bg-input/50 rounded-xl border border-input px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  {b.label}
+                </p>
+                <p className="mt-0.5 text-lg font-black capitalize text-primary">{b.value}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            {sov.marketPosition.reasoning}
+          </p>
+        </Card>
+      )}
 
       {/* ── Share of Voice: mention share, brand vs competitors ──────────── */}
       {sov && sov.entities.length > 0 && sov.totalResponses > 0 && (

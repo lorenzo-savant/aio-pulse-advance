@@ -5,6 +5,7 @@ import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 import { computeShareOfVoice, type SovInputRow } from '@/lib/services/share-of-voice'
+import { classifyMarketPosition } from '@/lib/services/market-position'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +41,9 @@ export async function GET(req: NextRequest) {
       db as unknown as ReturnType<typeof createServerClient> & { from: (t: string) => any }
     )
       .from('monitoring_results')
-      .select('brand_mentioned, mention_count, mention_position, competitor_mentions, created_at')
+      .select(
+        'brand_mentioned, mention_count, mention_position, competitor_mentions, sentiment_score, created_at',
+      )
       .eq('brand_id', brandId)
       .gte('created_at', since.toISOString())
       .order('created_at', { ascending: true })
@@ -51,9 +54,48 @@ export async function GET(req: NextRequest) {
       return err('Failed to load share-of-voice data')
     }
 
-    const sov = computeShareOfVoice((data ?? []) as SovInputRow[], brand.name, { bucket })
+    const rows = (data ?? []) as Array<SovInputRow & { sentiment_score: number | null }>
+    const sov = computeShareOfVoice(rows as SovInputRow[], brand.name, { bucket })
 
-    return NextResponse.json({ success: true, data: sov, timestamp: Date.now() })
+    // ── Market Position (HubSpot-style role + perception) from REAL signals ──
+    const brandEntity = sov.entities.find((e) => e.isBrand)
+    const share = brandEntity?.share ?? 0
+    const rank = 1 + sov.entities.filter((e) => e.share > share).length
+
+    // SOV momentum: brand's share in the recent half vs the older half.
+    const brandSeries = sov.timeline.map((t) => t.shares[brand.name] ?? 0)
+    let momentum = 0
+    if (brandSeries.length >= 2) {
+      const mid = Math.floor(brandSeries.length / 2)
+      const avg = (a: number[]) => (a.length ? a.reduce((s, n) => s + n, 0) / a.length : 0)
+      momentum = avg(brandSeries.slice(mid)) - avg(brandSeries.slice(0, mid))
+    }
+
+    // Average sentiment toward the brand (only responses that mention it).
+    let sSum = 0
+    let sCount = 0
+    for (const r of rows) {
+      if (r.brand_mentioned && typeof r.sentiment_score === 'number') {
+        sSum += r.sentiment_score
+        sCount++
+      }
+    }
+    const avgSentiment = sCount > 0 ? sSum / sCount : 0
+
+    const marketPosition = classifyMarketPosition({
+      share,
+      rank,
+      entityCount: sov.entities.length,
+      momentum: Math.round(momentum * 10) / 10,
+      avgSentiment: Math.round(avgSentiment * 100) / 100,
+      totalResponses: sov.totalResponses,
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: { ...sov, marketPosition },
+      timestamp: Date.now(),
+    })
   } catch (e) {
     logger.error('/api/share-of-voice error', { err: String(e) })
     return err('Failed to compute share of voice')

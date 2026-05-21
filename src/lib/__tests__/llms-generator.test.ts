@@ -28,47 +28,60 @@ const baseInput: LlmsInput = {
   ],
 }
 
-describe('generateLlmsTxt', () => {
+describe('generateLlmsTxt (spec-compliant per llmstxt.org)', () => {
   it('starts with the brand H1 heading', () => {
     const out = generateLlmsTxt(baseInput)
     expect(out.startsWith('# Acme Corp')).toBe(true)
   })
 
-  it('includes blockquote description', () => {
+  it('includes blockquote summary', () => {
     const out = generateLlmsTxt(baseInput)
     expect(out).toContain('> B2B SaaS platform for workflow automation')
   })
 
-  it('includes Products & Services section when products present', () => {
-    const out = generateLlmsTxt(baseInput)
-    expect(out).toContain('## Products & Services')
-    expect(out).toContain('- Acme Flow: Visual workflow builder')
-    expect(out).toContain('- Acme Connect: 500+ integrations')
+  it('synthesizes a blockquote from industry when no description', () => {
+    const out = generateLlmsTxt({ brandName: 'Bare', domain: 'bare.io', industry: 'Retail' })
+    expect(out).toContain('> Bare — Retail.')
   })
 
-  it('includes Key Facts section with all fields', () => {
+  it('renders a curated Key Pages link list with the homepage first', () => {
     const out = generateLlmsTxt(baseInput)
-    expect(out).toContain('## Key Facts')
-    expect(out).toContain('- Founded: 2015')
-    expect(out).toContain('- Headquarters: Stockholm, Sweden')
-    expect(out).toContain('- Specialties: automation, integration, SaaS')
-    expect(out).toContain('- Employees: 150-200')
+    expect(out).toContain('## Key Pages')
+    expect(out).toContain('- [Homepage](https://acme.com): Main website')
+    expect(out).toContain('- [Pricing](https://acme.com/pricing): Plans and pricing')
+    expect(out).toContain('- [Docs](https://acme.com/docs): API documentation')
   })
 
-  it('includes Important Links with homepage', () => {
+  it('is link-centric: no content sections (those belong in llms-full.txt)', () => {
     const out = generateLlmsTxt(baseInput)
-    expect(out).toContain('## Important Links')
-    expect(out).toContain('[Homepage](https://acme.com): Main website')
-    expect(out).toContain('[Pricing](https://acme.com/pricing): Plans and pricing')
+    expect(out).not.toContain('## Products')
+    expect(out).not.toContain('## Key Facts')
+    expect(out).not.toContain('## About')
   })
 
-  it('omits sections for missing optional fields', () => {
+  it('puts overflow links (>5) into an Optional section', () => {
+    const manyPages: LlmsInput = {
+      brandName: 'Acme Corp',
+      domain: 'acme.com',
+      importantPages: Array.from({ length: 7 }, (_, i) => ({
+        title: `Page ${i + 1}`,
+        url: `https://acme.com/p${i + 1}`,
+        description: '',
+      })),
+    }
+    const out = generateLlmsTxt(manyPages)
+    expect(out).toContain('## Optional')
+    // Homepage + 5 primary live under Key Pages; the 6th & 7th go to Optional.
+    expect(out).toContain('- [Page 6](https://acme.com/p6)')
+  })
+
+  it('always has at least a Key Pages section with the homepage', () => {
     const minimal: LlmsInput = { brandName: 'Bare', domain: 'bare.io' }
     const out = generateLlmsTxt(minimal)
     expect(out).toContain('# Bare')
-    expect(out).not.toContain('## Products')
-    expect(out).not.toContain('## Key Facts')
-    expect(out).not.toContain('## Important Links')
+    expect(out).toContain('## Key Pages')
+    expect(out).toContain('- [Homepage](https://bare.io): Main website')
+    expect(out).not.toContain('## Optional')
   })
 
   it('ends with trailing newline', () => {

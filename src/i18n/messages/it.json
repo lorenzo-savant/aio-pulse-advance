@@ -1271,6 +1271,12 @@
     "generating": "Generazione in corso...",
     "clear": "Cancella",
     "results_title": "Prompt Generati",
-    "no_results": "Nessun prompt generato. Prova con un altro settore o brand."
+    "no_results": "Nessun prompt generato. Prova con un altro settore o brand.",
+    "use_ai": "Potenzia con l'AI",
+    "use_ai_hint": "Aggiunge 5-10 prompt extra generati dall'AI Groq oltre a quelli da template",
+    "ai_results_title": "Prompt Generati dall'AI",
+    "ai_powered_by": "Generato da",
+    "ai_unavailable": "Potenziamento AI non disponibile",
+    "ai_rationale": "Perché questo prompt"
   }
 }

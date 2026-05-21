@@ -1271,6 +1271,12 @@
     "generating": "Skapar...",
     "clear": "Rensa",
     "results_title": "Genererade Promptar",
-    "no_results": "Inga promptar genererades. Prova en annan bransch eller ett annat varumärke."
+    "no_results": "Inga promptar genererades. Prova en annan bransch eller ett annat varumärke.",
+    "use_ai": "Förstärk med AI",
+    "use_ai_hint": "Lägg till 5-10 extra promptar genererade av Groq AI utöver mallbaserade",
+    "ai_results_title": "AI-genererade Promptar",
+    "ai_powered_by": "Drivs av",
+    "ai_unavailable": "AI-förstärkning ej tillgänglig",
+    "ai_rationale": "Varför denna prompt"
   }
 }

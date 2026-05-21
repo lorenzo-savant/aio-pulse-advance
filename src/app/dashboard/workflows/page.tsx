@@ -41,6 +41,39 @@ const WORKFLOW_TYPE_LABELS: Record<string, string> = {
   health_score_calc: 'Health Score',
 }
 
+// One-line explanation of what each job type actually does, surfaced in the
+// expanded row so the list isn't just opaque labels.
+const WORKFLOW_TYPE_DESC: Record<string, string> = {
+  monitoring_run:
+    'Queried one of your prompts across the selected AI engines, scored the responses, and updated the brand metrics.',
+  brand_setup: 'Created and initialised a brand and its starter prompts.',
+  alert_evaluation: 'Evaluated alert rules against the latest monitoring data.',
+  data_export: 'Built an export of your monitoring data.',
+  health_score_calc: 'Recomputed the brand health / AVI score from monitoring results.',
+}
+
+// Compact run duration, e.g. "3.2s" or "1m 04s".
+function formatDuration(start?: string, end?: string): string | null {
+  if (!start || !end) return null
+  const ms = new Date(end).getTime() - new Date(start).getTime()
+  if (!Number.isFinite(ms) || ms < 0) return null
+  if (ms < 1000) return `${ms}ms`
+  const s = ms / 1000
+  if (s < 60) return `${s.toFixed(1)}s`
+  const m = Math.floor(s / 60)
+  return `${m}m ${String(Math.round(s % 60)).padStart(2, '0')}s`
+}
+
+// Read the engines list the monitoring run targeted from its metadata.
+function metaEngines(meta: Record<string, unknown> | undefined): string[] {
+  const e = meta?.['engines']
+  return Array.isArray(e) ? e.filter((x): x is string => typeof x === 'string') : []
+}
+function metaPromptText(meta: Record<string, unknown> | undefined): string | null {
+  const p = meta?.['promptText']
+  return typeof p === 'string' && p.trim() ? p.trim() : null
+}
+
 export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<WorkflowExecution[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
@@ -140,7 +173,8 @@ export default function WorkflowsPage() {
             <p className="text-sm font-medium text-muted-foreground">Pages / Workflows</p>
             <h1 className="mt-1 text-[34px] font-bold tracking-tight text-foreground">Workflows</h1>
             <p className="mt-1 text-muted-foreground">
-              Track and manage background job executions.
+              Every background job the platform runs — what ran, when, whether it succeeded, and the
+              steps it went through.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -175,6 +209,24 @@ export default function WorkflowsPage() {
             </button>
           </Card>
         )}
+
+        {/* What this page is for */}
+        <Card className="bg-secondary/40 flex items-start gap-3 p-4 text-sm text-muted-foreground">
+          <Activity className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">What you get from this page</p>
+            <p>
+              A complete audit trail of automated work. The most common job is a{' '}
+              <span className="font-medium text-foreground">Monitoring Run</span>: it sends one of
+              your prompts to the AI engines, scores the responses (citation, presence, sentiment)
+              and updates your metrics. Use it to confirm checks actually ran, see which prompt and
+              engines were used, how long each took, and to{' '}
+              <span className="font-medium">Re-run</span> or{' '}
+              <span className="font-medium">Cancel</span> a job. Expand any row for its steps and
+              details.
+            </p>
+          </div>
+        </Card>
 
         {/* Stats */}
         <StaggerGrid className="grid grid-cols-2 gap-5 sm:grid-cols-4">
@@ -263,19 +315,40 @@ export default function WorkflowsPage() {
                 const StatusIcon = statusConfig.icon
                 const isExpanded = expandedId === workflow.id
 
+                const brandName = brands.find((b) => b.id === workflow.brandId)?.name
+                const duration = formatDuration(workflow.startedAt, workflow.completedAt)
+                const promptText = metaPromptText(workflow.metadata)
+                const engines = metaEngines(workflow.metadata)
+
                 return (
                   <div key={workflow.id} className="transition-colors hover:bg-secondary">
                     <div
                       className="flex cursor-pointer items-center gap-4 p-4"
                       onClick={() => setExpandedId(isExpanded ? null : workflow.id)}
                     >
-                      <StatusIcon className={cn('h-5 w-5 shrink-0', statusConfig.color)} />
+                      <StatusIcon
+                        className={cn(
+                          'h-5 w-5 shrink-0',
+                          statusConfig.color,
+                          workflow.status === 'running' && 'animate-spin',
+                        )}
+                      />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium text-foreground">
                           {WORKFLOW_TYPE_LABELS[workflow.type] || workflow.type}
+                          {brandName && (
+                            <span className="text-muted-foreground"> · {brandName}</span>
+                          )}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        {promptText && (
+                          <p className="truncate text-sm text-muted-foreground">
+                            &ldquo;{promptText}&rdquo;
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
                           {formatRelativeTime(workflow.startedAt)}
+                          {duration && <span> · took {duration}</span>}
+                          {engines.length > 0 && <span> · {engines.length} engines</span>}
                         </p>
                       </div>
                       <Badge
@@ -329,6 +402,59 @@ export default function WorkflowsPage() {
                             <p className="text-xs text-error">{workflow.error}</p>
                           </div>
                         )}
+
+                        {/* What this job did + its run details */}
+                        <p className="text-foreground/80 mb-3 text-sm">
+                          {WORKFLOW_TYPE_DESC[workflow.type] || 'Background job execution.'}
+                        </p>
+                        <div className="mb-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                          {brandName && (
+                            <div>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                                Brand
+                              </p>
+                              <p className="text-foreground">{brandName}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                              Started
+                            </p>
+                            <p className="text-foreground">
+                              {new Date(workflow.startedAt).toLocaleString()}
+                            </p>
+                          </div>
+                          {duration && (
+                            <div>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                                Duration
+                              </p>
+                              <p className="text-foreground">{duration}</p>
+                            </div>
+                          )}
+                          {promptText && (
+                            <div className="col-span-2 sm:col-span-3">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                                Prompt
+                              </p>
+                              <p className="text-foreground">{promptText}</p>
+                            </div>
+                          )}
+                          {engines.length > 0 && (
+                            <div className="col-span-2 sm:col-span-3">
+                              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                                Engines
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {engines.map((e) => (
+                                  <Badge key={e} variant="default" size="sm">
+                                    {e}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
                         <div className="space-y-2">
                           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">

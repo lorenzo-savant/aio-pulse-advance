@@ -851,8 +851,13 @@ function getActiveCompetitors(
   // When the brand supplies its OWN competitors, use them — the preset's
   // competitor list is a generic placeholder (e.g. Salesforce/HubSpot for
   // saas-b2b) and produces misleading "<brand> vs <wrong competitor>" prompts.
-  if (override && override.length > 0) {
-    return [...new Set(override.map((c) => c.trim()).filter(Boolean))]
+  // Clean first: a stray comma can yield [""] which must NOT win over the
+  // preset (it would drop comparison prompts entirely).
+  const cleanedOverride = override
+    ? [...new Set(override.map((c) => c.trim()).filter(Boolean))]
+    : []
+  if (cleanedOverride.length > 0) {
+    return cleanedOverride
   }
   const base = [...preset.competitors]
   if (locale !== 'en' && preset.localCompetitors?.[locale]) {

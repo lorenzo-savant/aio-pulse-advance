@@ -34,6 +34,7 @@ import { Badge } from '@/components/ui/index'
 import { exportToJson } from '@/lib/export'
 import { cn } from '@/lib/utils'
 import type { CompetitorResult } from '@/lib/services/gemini'
+import type { ShareOfVoice } from '@/lib/services/share-of-voice'
 import { useChartTheme } from '@/hooks/useChartTheme'
 
 interface Snapshot {
@@ -84,6 +85,7 @@ function HistoricalSection() {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
   const [loading, setLoading] = useState(true)
   const [days, setDays] = useState(30)
+  const [sov, setSov] = useState<ShareOfVoice | null>(null)
 
   useEffect(() => {
     async function loadBrands() {
@@ -122,6 +124,24 @@ function HistoricalSection() {
   useEffect(() => {
     fetchSnapshots()
   }, [fetchSnapshots])
+
+  // Share of Voice comes straight from monitoring_results (mention share),
+  // independent of citation snapshots — so it shows even before snapshots exist.
+  useEffect(() => {
+    if (!selectedBrand) return
+    let cancelled = false
+    fetch(`/api/share-of-voice?brand_id=${selectedBrand.id}&days=${days}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!cancelled) setSov(j.success ? (j.data as ShareOfVoice) : null)
+      })
+      .catch(() => {
+        if (!cancelled) setSov(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedBrand, days])
 
   const allCompetitors = Array.from(
     new Set(snapshots.flatMap((s) => Object.keys(s.competitor_rates))),
@@ -234,6 +254,90 @@ function HistoricalSection() {
           </div>
         </div>
       </div>
+
+      {/* ── Share of Voice: mention share, brand vs competitors ──────────── */}
+      {sov && sov.entities.length > 0 && sov.totalResponses > 0 && (
+        <Card className="p-6">
+          <div className="mb-1 flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-bold text-foreground">Share of Voice</h3>
+          </div>
+          <p className="mb-5 text-sm text-muted-foreground">
+            Of every brand &amp; competitor mention across AI answers ({sov.totalResponses}{' '}
+            responses, last {days} days), who owns the conversation.
+          </p>
+
+          <div className="space-y-2.5">
+            {sov.entities.slice(0, 8).map((e, idx) => {
+              const color = e.isBrand
+                ? '#6366f1'
+                : (COMPETITOR_COLORS[idx % COMPETITOR_COLORS.length] ?? '#6b7280')
+              return (
+                <div key={e.name} className="flex items-center gap-3">
+                  <span className="w-32 shrink-0 truncate text-sm font-semibold text-foreground">
+                    {e.name}
+                    {e.isBrand && <span className="ml-1 text-[10px] text-primary">(you)</span>}
+                  </span>
+                  <div className="relative h-5 flex-1 overflow-hidden rounded-md bg-input">
+                    <div
+                      className="h-full rounded-md transition-all"
+                      style={{ width: `${e.share}%`, background: color }}
+                    />
+                  </div>
+                  <span className="w-12 shrink-0 text-right text-sm font-black text-foreground">
+                    {e.share}%
+                  </span>
+                  <span className="hidden w-28 shrink-0 text-right text-xs text-muted-foreground sm:inline">
+                    {e.mentionRate}% of answers
+                    {e.avgPosition != null && ` · pos ${e.avgPosition}`}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          {sov.timeline.length >= 2 && (
+            <div className="mt-6">
+              <h4 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">
+                Share of Voice over time
+              </h4>
+              <ResponsiveContainer height={260} width="100%">
+                <LineChart
+                  data={sov.timeline.map((t) => ({
+                    date: new Date(t.date).toLocaleDateString('sv-SE', {
+                      day: 'numeric',
+                      month: 'short',
+                    }),
+                    ...t.shares,
+                  }))}
+                >
+                  <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[0, 100]} unit="%" />
+                  <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)}%`]} />
+                  <Legend />
+                  {sov.series.map((name, idx) => (
+                    <Line
+                      key={name}
+                      dataKey={name}
+                      name={name}
+                      type="monotone"
+                      stroke={
+                        idx === 0
+                          ? '#6366f1'
+                          : (COMPETITOR_COLORS[idx % COMPETITOR_COLORS.length] ?? '#6b7280')
+                      }
+                      strokeWidth={idx === 0 ? 3 : 1.5}
+                      strokeDasharray={idx === 0 ? undefined : '4 4'}
+                      dot={false}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Card>
+      )}
 
       {!loading && snapshots.length === 0 && (
         <Card className="flex flex-col items-center justify-center p-12 text-center">

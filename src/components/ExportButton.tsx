@@ -74,6 +74,7 @@ export function ExportButton({ brandId, brandName }: ExportButtonProps) {
     return new Date().toISOString().split('T')[0]
   })
 
+  const [includeBrandOverview, setIncludeBrandOverview] = useState(true)
   const [includeSnapshots, setIncludeSnapshots] = useState(true)
   const [includeHallucinations, setIncludeHallucinations] = useState(true)
   const [includePromptTests, setIncludePromptTests] = useState(true)
@@ -131,7 +132,8 @@ export function ExportButton({ brandId, brandName }: ExportButtonProps) {
       return
     }
 
-    const types: Array<'snapshot' | 'hallucination' | 'prompt-test'> = []
+    const types: Array<'snapshot' | 'hallucination' | 'prompt-test' | 'brand-overview'> = []
+    if (includeBrandOverview) types.push('brand-overview')
     if (includeSnapshots) types.push('snapshot')
     if (includeHallucinations) types.push('hallucination')
     if (includePromptTests) types.push('prompt-test')
@@ -246,6 +248,20 @@ export function ExportButton({ brandId, brandName }: ExportButtonProps) {
                   Include
                 </label>
                 <div className="space-y-2">
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={includeBrandOverview}
+                      onChange={(e) => setIncludeBrandOverview(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-foreground">
+                      Brand Overview{' '}
+                      <span className="text-xs text-muted-foreground">
+                        (identity, competitors, KPIs)
+                      </span>
+                    </span>
+                  </label>
                   <label className="flex items-center gap-3">
                     <input
                       type="checkbox"

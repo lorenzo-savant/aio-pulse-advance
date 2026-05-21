@@ -13,7 +13,31 @@ export interface ObsidianExportRequest {
   brandName: string
   dateFrom: string
   dateTo: string
-  types: Array<'snapshot' | 'hallucination' | 'prompt-test'>
+  types: Array<'snapshot' | 'hallucination' | 'prompt-test' | 'brand-overview'>
+}
+
+interface BrandOverviewInput {
+  brandName: string
+  domain: string | null
+  industry: string | null
+  description: string | null
+  language: string | null
+  competitors: string[]
+  aliases: string[]
+  dateFrom: string
+  dateTo: string
+  /** Latest health snapshot in range, if any. */
+  kpis: {
+    aviScore: number | null
+    citationRate: number | null
+    mentionRate: number | null
+    sentimentScore: number | null
+    visibilityScore: number | null
+    date: string | null
+  } | null
+  monitoringRuns: number
+  activePrompts: number
+  engineBreakdown: Record<string, { citations: number; rate: number }>
 }
 
 interface SnapshotInput {
@@ -148,6 +172,96 @@ export function generateSnapshotNote(input: SnapshotInput): ExportedNote {
   return { filename, path, content }
 }
 
+// A single comprehensive "Brand Overview" — identity + collected KPIs +
+// coverage — to give a complete picture alongside the per-event notes
+// (similar to the on-screen brand report).
+export function generateBrandOverviewNote(input: BrandOverviewInput): ExportedNote {
+  const filename = `Brand-Overview-${input.dateTo}.md`
+  const path = `01-Clients/${input.brandName}/`
+
+  const tags = ['brand-overview', input.brandName.toLowerCase().replace(/\s+/g, '-')]
+
+  const yaml = [
+    '---',
+    'type: brand-overview',
+    `client: ${escapeYaml(input.brandName)}`,
+    `domain: ${escapeYaml(input.domain ?? '')}`,
+    `industry: ${escapeYaml(input.industry ?? '')}`,
+    `language: ${escapeYaml(input.language ?? '')}`,
+    `period: ${input.dateFrom} → ${input.dateTo}`,
+    `tags: [${tags.map((t) => escapeYaml(t)).join(', ')}]`,
+    `avi_score: ${input.kpis?.aviScore ?? ''}`,
+    `citation_rate: ${input.kpis?.citationRate ?? ''}`,
+    `mention_rate: ${input.kpis?.mentionRate ?? ''}`,
+    `monitoring_runs: ${input.monitoringRuns}`,
+    `active_prompts: ${input.activePrompts}`,
+    '---',
+  ].join('\n')
+
+  const identity = [
+    `# ${input.brandName} — Brand Overview`,
+    '',
+    input.description ? `> ${input.description}` : '',
+    '',
+    '## Identity',
+    '',
+    '| Field | Value |',
+    '|-------|-------|',
+    `| Name | ${input.brandName} |`,
+    `| Domain | ${input.domain ?? '—'} |`,
+    `| Industry | ${input.industry ?? '—'} |`,
+    `| Primary language | ${input.language ?? '—'} |`,
+    `| Aliases | ${input.aliases.length ? input.aliases.join(', ') : '—'} |`,
+    `| Competitors | ${input.competitors.length ? input.competitors.join(', ') : '—'} |`,
+    '',
+  ]
+    .filter((l) => l !== '')
+    .join('\n')
+
+  const kpis = input.kpis
+    ? [
+        '',
+        `## KPIs (as of ${input.kpis.date ?? input.dateTo})`,
+        '',
+        '| Metric | Value |',
+        '|--------|-------|',
+        `| AVI Score | ${input.kpis.aviScore ?? 'N/A'} |`,
+        `| Citation Rate | ${input.kpis.citationRate ?? 'N/A'}% |`,
+        `| Mention Rate | ${input.kpis.mentionRate ?? 'N/A'}% |`,
+        `| Sentiment Avg | ${input.kpis.sentimentScore ?? 'N/A'} |`,
+        `| Visibility Score | ${input.kpis.visibilityScore ?? 'N/A'} |`,
+        '',
+      ].join('\n')
+    : '\n## KPIs\n\nNo health snapshot in this period yet.\n'
+
+  const engines = Object.keys(input.engineBreakdown).length
+    ? [
+        '',
+        '## Engine Breakdown',
+        '',
+        '| Engine | Citations | Rate |',
+        '|--------|-----------|------|',
+        ...Object.entries(input.engineBreakdown).map(
+          ([e, d]) => `| ${e} | ${d.citations} | ${d.rate}% |`,
+        ),
+        '',
+      ].join('\n')
+    : ''
+
+  const coverage = [
+    '',
+    '## Coverage',
+    '',
+    `- Monitoring runs in period: ${input.monitoringRuns}`,
+    `- Active prompts: ${input.activePrompts}`,
+    `- Period: ${input.dateFrom} → ${input.dateTo}`,
+    '',
+  ].join('\n')
+
+  const content = `${yaml}\n${identity}\n${kpis}${engines}${coverage}`
+  return { filename, path, content }
+}
+
 export function generateHallucinationNote(input: HallucinationInput): ExportedNote {
   const filename = `HAL-${input.date}-${String(input.seq).padStart(3, '0')}.md`
   const path = `01-Clients/${input.brandName}/Hallucinations/`
@@ -279,6 +393,90 @@ export async function generateObsidianExport(
 
   const fromDateISO = `${dateFrom}T00:00:00.000Z`
   const toDateISO = `${dateTo}T23:59:59.999Z`
+
+  if (types.includes('brand-overview')) {
+    const dbAny = db as any
+    // Identity from the brand record.
+    const { data: brandRow } = await dbAny
+      .from('brands')
+      .select('name, domain, industry, description, language, competitors, aliases')
+      .eq('id', brandId)
+      .single()
+
+    // Latest health snapshot in range (KPIs + engine breakdown).
+    const { data: health } = await dbAny
+      .from('brand_health_scores')
+      .select('*')
+      .eq('brand_id', brandId)
+      .gte('date', dateFrom)
+      .lte('date', dateTo)
+      .order('date', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    // Coverage counts.
+    const { count: runCount } = await dbAny
+      .from('monitoring_results')
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .gte('created_at', fromDateISO)
+      .lte('created_at', toDateISO)
+    const { count: promptCount } = await dbAny
+      .from('prompts')
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .eq('is_active', true)
+
+    const engineBreakdown: Record<string, { citations: number; rate: number }> = {}
+    const breakdown = (health?.engine_breakdown ?? null) as Record<
+      string,
+      { citations?: number; rate?: number }
+    > | null
+    if (breakdown) {
+      for (const [engine, d] of Object.entries(breakdown)) {
+        engineBreakdown[engine] = { citations: d.citations ?? 0, rate: d.rate ?? 0 }
+      }
+    }
+
+    const citationRate =
+      health && health.mention_count > 0
+        ? Math.round((health.citation_count / health.mention_count) * 10000) / 100
+        : null
+    const totalPrompts = health
+      ? health.citation_count + (health.mention_count - health.citation_count)
+      : 0
+    const mentionRate =
+      health && totalPrompts > 0
+        ? Math.round((health.mention_count / totalPrompts) * 10000) / 100
+        : null
+
+    notes.push(
+      generateBrandOverviewNote({
+        brandName: brandRow?.name ?? brandName,
+        domain: brandRow?.domain ?? null,
+        industry: brandRow?.industry ?? null,
+        description: brandRow?.description ?? null,
+        language: brandRow?.language ?? null,
+        competitors: Array.isArray(brandRow?.competitors) ? brandRow.competitors : [],
+        aliases: Array.isArray(brandRow?.aliases) ? brandRow.aliases : [],
+        dateFrom,
+        dateTo,
+        kpis: health
+          ? {
+              aviScore: health.health_score ?? null,
+              citationRate,
+              mentionRate,
+              sentimentScore: health.sentiment_score ?? null,
+              visibilityScore: health.visibility_score ?? null,
+              date: health.date ?? null,
+            }
+          : null,
+        monitoringRuns: runCount ?? 0,
+        activePrompts: promptCount ?? 0,
+        engineBreakdown,
+      }),
+    )
+  }
 
   if (types.includes('snapshot')) {
     const { data: healthScores } = await db

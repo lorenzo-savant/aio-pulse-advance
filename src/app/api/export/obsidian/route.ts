@@ -11,7 +11,7 @@ const obsidianExportSchema = z.object({
   brandId: z.string().uuid(),
   dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD format'),
   dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD format'),
-  types: z.array(z.enum(['snapshot', 'hallucination', 'prompt-test'])).min(1),
+  types: z.array(z.enum(['snapshot', 'hallucination', 'prompt-test', 'brand-overview'])).min(1),
 })
 
 export async function POST(req: NextRequest) {

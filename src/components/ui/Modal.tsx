@@ -32,9 +32,12 @@ export function Modal({ open, onOpenChange, children, className }: ModalProps) {
             >
               <X className="h-4 w-4" />
             </button>
-            {/* Scrollable content — caps the modal at the viewport so footers
-                / action buttons are always reachable on short screens. */}
-            <div className="overflow-y-auto p-6">{children}</div>
+            {/* Scrollable content — `flex-1 min-h-0` is what actually bounds
+                this region inside the flex-col panel (capped at max-h-[90vh]),
+                so long forms scroll and the footer / Save button stay
+                reachable. Without min-h-0 the flex item refuses to shrink and
+                the content (and footer) overflow off-screen. */}
+            <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
           </div>
         </div>
       )}

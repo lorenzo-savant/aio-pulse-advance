@@ -29,6 +29,7 @@ import {
   Globe,
   Sparkles,
   RefreshCw,
+  Plus,
 } from 'lucide-react'
 import { Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -58,6 +59,27 @@ const ENGINE_COLORS: Record<string, string> = {
   perplexity: '#a855f7',
   claude: '#f97316',
 }
+
+// Mirrors the brand-creation wizard so the Brand Detail editor asks the same
+// questions. Industries are aligned to the prompt-generator presets.
+const INDUSTRIES = [
+  'Casting & Talent',
+  'SaaS B2B',
+  'E-commerce',
+  'Local Business',
+  'Real Estate',
+  'Healthcare',
+  'Education',
+  'Hospitality & Tourism',
+  'Automotive',
+  'Construction',
+  'Other',
+]
+const LANGUAGES = [
+  { id: 'en', label: '🇬🇧 English' },
+  { id: 'it', label: '🇮🇹 Italiano' },
+  { id: 'sv', label: '🇸🇪 Svenska' },
+]
 
 interface Snapshot {
   scan_date: string
@@ -202,6 +224,23 @@ export default function BrandDetailPage() {
   const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('viewer')
   const [inviting, setInviting] = useState(false)
 
+  // Brand-info editor — same questions as the Start Here / new-brand wizard,
+  // so missing or changed details can be completed after registration.
+  const [editBrandOpen, setEditBrandOpen] = useState(false)
+  const [savingBrand, setSavingBrand] = useState(false)
+  const [brandForm, setBrandForm] = useState({
+    name: '',
+    description: '',
+    domain: '',
+    industry: '',
+    language: 'en',
+    color: '#6366f1',
+    aliasInput: '',
+    aliases: [] as string[],
+    competitorInput: '',
+    competitors: [] as string[],
+  })
+
   useEffect(() => {
     async function load() {
       try {
@@ -250,7 +289,7 @@ export default function BrandDetailPage() {
     load()
   }, [brandId])
 
-  // Initialize edit form when brand loads
+  // Initialize edit forms when brand loads
   useEffect(() => {
     if (brand) {
       setEditForm({
@@ -258,8 +297,69 @@ export default function BrandDetailPage() {
         report_primary_color: brand.report_primary_color || '#6366f1',
         report_logo_url: brand.report_logo_url || '',
       })
+      setBrandForm({
+        name: brand.name || '',
+        description: brand.description || '',
+        domain: brand.domain || '',
+        industry: brand.industry || '',
+        language: (brand.language as string) || 'en',
+        color: brand.color || '#6366f1',
+        aliasInput: '',
+        aliases: Array.isArray(brand.aliases) ? (brand.aliases as string[]) : [],
+        competitorInput: '',
+        competitors: Array.isArray(brand.competitors) ? (brand.competitors as string[]) : [],
+      })
     }
   }, [brand])
+
+  const handleSaveBrand = async () => {
+    if (!brandForm.name.trim()) {
+      toast.error('Brand name is required')
+      return
+    }
+    setSavingBrand(true)
+    try {
+      const res = await fetch(`/api/brands/${brandId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: brandForm.name.trim(),
+          description: brandForm.description.trim() || null,
+          domain: brandForm.domain.trim() || null,
+          industry: brandForm.industry.trim() || null,
+          language: brandForm.language,
+          color: brandForm.color,
+          aliases: brandForm.aliases,
+          competitors: brandForm.competitors,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        toast.error(json.message || 'Could not save brand')
+        return
+      }
+      setBrand(json.data)
+      setEditBrandOpen(false)
+      toast.success('Brand updated')
+    } catch {
+      toast.error('Network error saving brand')
+    } finally {
+      setSavingBrand(false)
+    }
+  }
+
+  const addBrandAlias = () => {
+    const v = brandForm.aliasInput.trim()
+    if (v && !brandForm.aliases.includes(v)) {
+      setBrandForm((f) => ({ ...f, aliases: [...f.aliases, v], aliasInput: '' }))
+    }
+  }
+  const addBrandCompetitor = () => {
+    const v = brandForm.competitorInput.trim()
+    if (v && !brandForm.competitors.includes(v)) {
+      setBrandForm((f) => ({ ...f, competitors: [...f.competitors, v], competitorInput: '' }))
+    }
+  }
 
   const handleGenerateLlms = async () => {
     setLlmsLoading(true)
@@ -579,16 +679,7 @@ export default function BrandDetailPage() {
             <FileText className="mr-2 h-4 w-4" />
             Generate llms.txt
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setIsEditing(true)
-              document
-                .getElementById('report-branding')
-                ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }}
-          >
+          <Button variant="outline" size="sm" onClick={() => setEditBrandOpen(true)}>
             <Edit3 className="mr-2 h-4 w-4" />
             Edit
           </Button>
@@ -1191,6 +1282,192 @@ export default function BrandDetailPage() {
         <ModalFooter>
           <Button variant="outline" onClick={() => setLlmsModalOpen(false)}>
             Close
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Brand info editor — same questions as Start Here, to complete or fix
+          details after registration. */}
+      <Modal open={editBrandOpen} onOpenChange={setEditBrandOpen} className="max-w-2xl">
+        <ModalHeader>
+          <ModalTitle>Edit Brand</ModalTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Complete or update {brand?.name}&rsquo;s details. Domain, industry and competitors drive
+            tailored prompt generation.
+          </p>
+        </ModalHeader>
+        <ModalBody>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Brand Name *
+              </label>
+              <input
+                className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                value={brandForm.name}
+                onChange={(e) => setBrandForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Description
+              </label>
+              <textarea
+                rows={3}
+                className="w-full resize-none rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                placeholder="Brief description of the brand…"
+                value={brandForm.description}
+                onChange={(e) => setBrandForm((f) => ({ ...f, description: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Domain
+                </label>
+                <input
+                  className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  placeholder="brand.com"
+                  value={brandForm.domain}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, domain: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Industry
+                </label>
+                <select
+                  className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  value={brandForm.industry}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, industry: e.target.value }))}
+                >
+                  <option value="">Select…</option>
+                  {INDUSTRIES.map((i) => (
+                    <option key={i} value={i}>
+                      {i}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Primary Language
+                </label>
+                <select
+                  className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  value={brandForm.language}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, language: e.target.value }))}
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Brand Color
+                </label>
+                <input
+                  type="color"
+                  className="h-10 w-full cursor-pointer rounded-xl border border-border bg-secondary"
+                  value={brandForm.color}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, color: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Competitors */}
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Competitors
+              </label>
+              <div className="mb-2 flex gap-2">
+                <input
+                  className="flex-1 rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  placeholder="Competitor name…"
+                  value={brandForm.competitorInput}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, competitorInput: e.target.value }))}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addBrandCompetitor())}
+                />
+                <Button size="sm" variant="outline" onClick={addBrandCompetitor}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {brandForm.competitors.map((c) => (
+                  <span
+                    key={c}
+                    className="inline-flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-xs text-foreground"
+                  >
+                    {c}
+                    <button
+                      onClick={() =>
+                        setBrandForm((f) => ({
+                          ...f,
+                          competitors: f.competitors.filter((x) => x !== c),
+                        }))
+                      }
+                      className="text-muted-foreground hover:text-red-400"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Aliases */}
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Aliases
+              </label>
+              <div className="mb-2 flex gap-2">
+                <input
+                  className="flex-1 rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  placeholder="Alternative name / spelling…"
+                  value={brandForm.aliasInput}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, aliasInput: e.target.value }))}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addBrandAlias())}
+                />
+                <Button size="sm" variant="outline" onClick={addBrandAlias}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {brandForm.aliases.map((a) => (
+                  <span
+                    key={a}
+                    className="inline-flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-xs text-foreground"
+                  >
+                    {a}
+                    <button
+                      onClick={() =>
+                        setBrandForm((f) => ({
+                          ...f,
+                          aliases: f.aliases.filter((x) => x !== a),
+                        }))
+                      }
+                      className="text-muted-foreground hover:text-red-400"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setEditBrandOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveBrand} disabled={savingBrand}>
+            <Save className="mr-2 h-4 w-4" />
+            {savingBrand ? 'Saving…' : 'Save'}
           </Button>
         </ModalFooter>
       </Modal>

@@ -6,6 +6,7 @@ import type {
   Brand,
   Prompt,
   SentimentLabel,
+  SentimentAspect,
   MentionType,
   CompetitorMention,
   HallucinationFlag,
@@ -62,6 +63,49 @@ const analysisOutputSchema = z.object({
     )
     .optional()
     .default([]),
+  // Aspect-based sentiment over a FIXED taxonomy (keeps cross-run aggregation
+  // meaningful). preprocess() drops any out-of-taxonomy entry the model emits
+  // BEFORE strict validation, so one stray aspect never fails the whole parse.
+  sentiment_aspects: z
+    .preprocess(
+      (val) => {
+        if (!Array.isArray(val)) return []
+        const ASPECTS = new Set([
+          'pricing',
+          'quality',
+          'support',
+          'reliability',
+          'usability',
+          'features',
+          'reputation',
+          'value',
+        ])
+        const SENTS = new Set(['positive', 'negative', 'neutral'])
+        return val.filter(
+          (v): v is { aspect: string; sentiment: string } =>
+            !!v &&
+            typeof v === 'object' &&
+            ASPECTS.has((v as { aspect?: unknown }).aspect as string) &&
+            SENTS.has((v as { sentiment?: unknown }).sentiment as string),
+        )
+      },
+      z.array(
+        z.object({
+          aspect: z.enum([
+            'pricing',
+            'quality',
+            'support',
+            'reliability',
+            'usability',
+            'features',
+            'reputation',
+            'value',
+          ]),
+          sentiment: z.enum(['positive', 'negative', 'neutral']),
+        }),
+      ),
+    )
+    .default([]),
 })
 
 type AnalysisOutput = z.infer<typeof analysisOutputSchema>
@@ -98,6 +142,7 @@ EXACT-MATCH RULES — read carefully, these prevent the most common analysis err
 SENTIMENT RULE — judge sentiment TOWARD "${brand.name}", not the text's overall mood:
 - Favorable to the brand (praised / recommended / ranked best) → positive; warned-against / "scam" / "worst" → negative; factual or absent → neutral with score 0.
 - sentiment_score anchors: +1.0 strong praise, +0.4 mild, 0.0 neutral, -0.4 mild criticism, -1.0 strong criticism. Weigh MIXED coverage by balance, not by the last sentence.
+- sentiment_aspects: include an entry ONLY for facets of "${brand.name}" the response actually evaluates (skip facets it doesn't touch; empty array if none). Use ONLY the listed aspect keys.
 
 Respond ONLY with a valid JSON object (no markdown, no extra text):
 {
@@ -109,6 +154,9 @@ Respond ONLY with a valid JSON object (no markdown, no extra text):
   "sentiment": <"positive" | "negative" | "neutral">,
   "sentiment_score": <float -1.0 to 1.0>,
   "sentiment_reasoning": "<one sentence explanation>",
+  "sentiment_aspects": [
+    {"aspect": <one of: "pricing"|"quality"|"support"|"reliability"|"usability"|"features"|"reputation"|"value">, "sentiment": <"positive"|"negative"|"neutral">}
+  ],
   "cited_urls": ["<url>"],
   "competitor_mentions": [
     {"name": "<n>", "position": <integer>, "count": <integer>}
@@ -198,6 +246,7 @@ export async function runMonitoringCheck(
     visibility_score: Math.min(100, Math.max(0, analysis.visibility_score)),
     sentiment: analysis.sentiment as SentimentLabel,
     sentiment_score: Math.min(1, Math.max(-1, analysis.sentiment_score)),
+    sentiment_aspects: analysis.sentiment_aspects as SentimentAspect[],
     cited_urls: citedUrls,
     competitor_mentions: analysis.competitor_mentions as CompetitorMention[],
     has_hallucination: analysis.has_hallucination,

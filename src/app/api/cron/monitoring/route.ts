@@ -7,7 +7,15 @@ import { createServerClient } from '@/lib/supabase'
 import { verifyCronAuth } from '@/lib/cron-auth'
 import { logger } from '@/lib/logger'
 import { runMonitoringCheck, calculateAVIFromResults } from '@/lib/services/monitoring'
-import type { Brand, Prompt, MonitoringResult, MonitoringEngine, WorkflowStatus } from '@/types'
+import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/services/alerts'
+import type {
+  Brand,
+  Prompt,
+  MonitoringResult,
+  MonitoringEngine,
+  WorkflowStatus,
+  AlertRule,
+} from '@/types'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 
 interface WorkflowStep {
@@ -205,6 +213,23 @@ export async function POST(req: NextRequest) {
       const engineResults: MonitoringResult[] = []
       let hasErrors = false
 
+      // Change-detection inputs: previous results per engine + active alert
+      // rules. Scheduled runs must fire alerts (sentiment_drop, mention_lost,
+      // …) just like manual runs do.
+      const { data: previousResults } = await supabase
+        .from('monitoring_results')
+        .select('*')
+        .eq('prompt_id', prompt.id)
+        .in('engine', engines)
+        .order('created_at', { ascending: false })
+        .limit(engines.length)
+
+      const { data: alertRules } = await supabase
+        .from('alert_rules')
+        .select('*')
+        .eq('brand_id', brand.id)
+        .eq('is_active', true)
+
       for (const engine of engines) {
         try {
           await new Promise((r) => setTimeout(r, 2000))
@@ -215,6 +240,7 @@ export async function POST(req: NextRequest) {
             ...resultData,
             competitor_mentions: resultData.competitor_mentions as unknown as Json,
             hallucination_flags: resultData.hallucination_flags as unknown as Json,
+            sentiment_aspects: resultData.sentiment_aspects as unknown as Json,
             response_text:
               resultData.response_text.length > 5000
                 ? resultData.response_text.slice(0, 5000) + '…'
@@ -235,6 +261,59 @@ export async function POST(req: NextRequest) {
 
           engineResults.push(saved as unknown as MonitoringResult)
           results.push({ promptId: prompt.id, engine, success: true })
+
+          // ── Evaluate alert rules for this result ─────────────────────────
+          if (alertRules && alertRules.length > 0) {
+            const previousResult = (previousResults as unknown as MonitoringResult[])?.find(
+              (r) => r.engine === engine,
+            )
+            for (const rule of alertRules as AlertRule[]) {
+              if (
+                !shouldTriggerAlert(rule, {
+                  result: saved as unknown as MonitoringResult,
+                  previousResult,
+                  brand,
+                })
+              ) {
+                continue
+              }
+              const event = buildAlertEvent(rule, saved as unknown as MonitoringResult, brand)
+              const { brand: _b, alert_rule: _ar, data: eventData, ...eventRest } = event
+              const { data: savedEvent } = await supabase
+                .from('alert_events')
+                .insert({
+                  ...eventRest,
+                  data: eventData as unknown as Json,
+                  user_id: prompt.user_id,
+                })
+                .select()
+                .single()
+              if (savedEvent) {
+                let channelsSent: string[] = []
+                try {
+                  channelsSent = await dispatchAlert(
+                    savedEvent as Parameters<typeof dispatchAlert>[0],
+                    rule,
+                    brand,
+                  )
+                } catch (dispatchErr) {
+                  logger.error('dispatchAlert failed', {
+                    source: 'cron',
+                    ruleId: rule.id,
+                    error: String(dispatchErr),
+                  })
+                }
+                await supabase
+                  .from('alert_events')
+                  .update({ channels_sent: channelsSent })
+                  .eq('id', savedEvent.id)
+                await supabase
+                  .from('alert_rules')
+                  .update({ last_fired_at: new Date().toISOString() })
+                  .eq('id', rule.id)
+              }
+            }
+          }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
           logger.error('Engine failed for prompt', {

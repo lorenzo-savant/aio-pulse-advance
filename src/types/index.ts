@@ -255,6 +255,7 @@ export interface MonitoringResult {
   visibility_score: number
   sentiment: SentimentLabel | null
   sentiment_score: number | null
+  sentiment_aspects: SentimentAspect[]
   cited_urls: string[]
   competitor_mentions: CompetitorMention[]
   has_hallucination: boolean
@@ -262,6 +263,24 @@ export interface MonitoringResult {
   created_at: string
   prompt?: Prompt
   brand?: Brand
+}
+
+// Fixed aspect taxonomy for aspect-based sentiment (ABSA). A closed set keeps
+// the cross-run aggregation in /api/sentiment meaningful (no "price" vs
+// "pricing" vs "cost" fragmentation).
+export type SentimentAspectName =
+  | 'pricing'
+  | 'quality'
+  | 'support'
+  | 'reliability'
+  | 'usability'
+  | 'features'
+  | 'reputation'
+  | 'value'
+
+export interface SentimentAspect {
+  aspect: SentimentAspectName
+  sentiment: SentimentLabel
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────────────────

@@ -16,6 +16,8 @@ import {
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -30,12 +32,23 @@ import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand } from '@/types'
 
+interface AspectBreakdown {
+  aspect: string
+  positive: number
+  negative: number
+  neutral: number
+  total: number
+  net: number
+}
+
 interface SentimentStats {
   sentimentCounts: { positive: number; negative: number; neutral: number }
   avgSentimentScore: number
   hallucinationCount: number
   hallucinationRate: number
   byEngine: Record<string, { avg: number; count: number }>
+  timeline?: Array<{ date: string; avgScore: number; count: number }>
+  aspectBreakdown?: AspectBreakdown[]
   totalResults: number
   mentionedResults: number
 }
@@ -628,6 +641,73 @@ export default function SentimentPage() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+            </Card>
+          )}
+
+          {stats.timeline && stats.timeline.length >= 2 && (
+            <Card className="border-border bg-secondary p-6">
+              <h2 className="mb-6 text-lg font-bold text-foreground">{t('trend_title')}</h2>
+              <ResponsiveContainer height={220} width="100%">
+                <LineChart data={stats.timeline}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: TICK_COLOR }} />
+                  <YAxis domain={[-1, 1]} tick={{ fontSize: 11, fill: TICK_COLOR }} />
+                  <Tooltip
+                    {...TOOLTIP_STYLE()}
+                    formatter={(v: number) => [
+                      v > 0 ? `+${v.toFixed(2)}` : v.toFixed(2),
+                      t('score'),
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="avgScore"
+                    name={t('average_sentiment')}
+                    stroke="#6366f1"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {stats.aspectBreakdown && stats.aspectBreakdown.length > 0 && (
+            <Card className="border-border bg-secondary p-6">
+              <h2 className="text-lg font-bold text-foreground">{t('aspect_title')}</h2>
+              <p className="mb-5 text-sm text-muted-foreground">{t('aspect_hint')}</p>
+              <div className="space-y-3">
+                {stats.aspectBreakdown.map((a) => {
+                  const pct = (n: number) => (a.total > 0 ? (n / a.total) * 100 : 0)
+                  return (
+                    <div key={a.aspect} className="flex items-center gap-3">
+                      <span className="w-24 shrink-0 text-sm font-semibold capitalize text-foreground">
+                        {t(`aspects.${a.aspect}`)}
+                      </span>
+                      <div className="flex h-3 flex-1 overflow-hidden rounded-full bg-input">
+                        <div style={{ width: `${pct(a.positive)}%` }} className="bg-emerald-500" />
+                        <div style={{ width: `${pct(a.neutral)}%` }} className="bg-gray-500" />
+                        <div style={{ width: `${pct(a.negative)}%` }} className="bg-rose-500" />
+                      </div>
+                      <span
+                        className={cn(
+                          'w-12 shrink-0 text-right text-sm font-bold',
+                          a.net > 0.15
+                            ? 'text-emerald-500'
+                            : a.net < -0.15
+                              ? 'text-rose-500'
+                              : 'text-muted-foreground',
+                        )}
+                      >
+                        {a.net > 0 ? `+${a.net.toFixed(2)}` : a.net.toFixed(2)}
+                      </span>
+                      <span className="w-10 shrink-0 text-right text-xs text-muted-foreground">
+                        ×{a.total}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </Card>
           )}
 

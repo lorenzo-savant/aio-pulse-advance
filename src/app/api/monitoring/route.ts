@@ -259,6 +259,7 @@ export async function POST(req: NextRequest) {
           ...resultData,
           competitor_mentions: resultData.competitor_mentions as unknown as Json,
           hallucination_flags: resultData.hallucination_flags as unknown as Json,
+          sentiment_aspects: resultData.sentiment_aspects as unknown as Json,
           response_text:
             resultData.response_text.length > 5000
               ? resultData.response_text.slice(0, 5000) + '…'

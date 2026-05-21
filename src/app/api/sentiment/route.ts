@@ -161,6 +161,75 @@ export async function GET(req: NextRequest) {
     e.avg = e.count > 0 ? e.avg / e.count : 0
   }
 
+  // ── Trend: average sentiment score per day (ascending) ────────────────────
+  const dayMap = new Map<string, { sum: number; count: number }>()
+  for (const r of mentioned) {
+    const day = String(r.created_at).slice(0, 10)
+    if (!day) continue
+    const e = dayMap.get(day) ?? { sum: 0, count: 0 }
+    e.sum += r.sentiment_score ?? 0
+    e.count++
+    dayMap.set(day, e)
+  }
+  const timeline = [...dayMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, { sum, count }]) => ({
+      date,
+      avgScore: count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
+      count,
+    }))
+
+  // ── Aspect-based sentiment breakdown ("what drives sentiment") ────────────
+  // Defensive: the sentiment_aspects column may not exist yet (migration not
+  // applied). A failed query is swallowed so the endpoint keeps working.
+  let aspectBreakdown: Array<{
+    aspect: string
+    positive: number
+    negative: number
+    neutral: number
+    total: number
+    net: number
+  }> = []
+  try {
+    const { data: aspectRows, error: aspectErr } = await db
+      .from('monitoring_results')
+      .select('sentiment_aspects')
+      .eq('brand_id', brandId)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(500)
+
+    if (!aspectErr && Array.isArray(aspectRows)) {
+      const tally = new Map<string, { positive: number; negative: number; neutral: number }>()
+      for (const row of aspectRows as Array<{ sentiment_aspects?: unknown }>) {
+        const aspects = Array.isArray(row.sentiment_aspects) ? row.sentiment_aspects : []
+        for (const a of aspects) {
+          if (!a || typeof a !== 'object') continue
+          const name = (a as { aspect?: unknown }).aspect
+          const s = (a as { sentiment?: unknown }).sentiment
+          if (typeof name !== 'string') continue
+          if (s !== 'positive' && s !== 'negative' && s !== 'neutral') continue
+          const e = tally.get(name) ?? { positive: 0, negative: 0, neutral: 0 }
+          e[s]++
+          tally.set(name, e)
+        }
+      }
+      aspectBreakdown = [...tally.entries()]
+        .map(([aspect, c]) => {
+          const total = c.positive + c.negative + c.neutral
+          return {
+            aspect,
+            ...c,
+            total,
+            net: total > 0 ? Math.round(((c.positive - c.negative) / total) * 100) / 100 : 0,
+          }
+        })
+        .sort((a, b) => b.total - a.total)
+    }
+  } catch {
+    // sentiment_aspects column not present yet — skip the breakdown.
+  }
+
   return NextResponse.json({
     success: true,
     data: {
@@ -169,6 +238,8 @@ export async function GET(req: NextRequest) {
       hallucinationCount,
       hallucinationRate,
       byEngine,
+      timeline,
+      aspectBreakdown,
       totalResults: results.length,
       mentionedResults: mentioned.length,
     },

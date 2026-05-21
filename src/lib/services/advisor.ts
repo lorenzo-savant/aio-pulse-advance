@@ -11,8 +11,9 @@
 //       it's a context builder.
 //
 //   runStrategist(context, question) ── single LLM call with strict JSON
-//       output validated by zod. Groq first (free, fast) if GROQ_API_KEY
-//       is set, otherwise Gemini, otherwise OpenAI. No frameworks.
+//       output validated by zod. Gemini 2.5 Flash FIRST (stronger reasoning,
+//       very low cost) for this strategic task, falling back to Groq → OpenAI
+//       on error/rate limit. No frameworks.
 //
 //   getAdvisorRecommendation(brandId, question?) ── composes the two and
 //       returns a structured StrategyOutput + the raw context the model saw.
@@ -810,22 +811,51 @@ async function callLLM(
   timeoutMs = 30_000,
 ): Promise<LLMCallResult> {
   const explicit = options.provider
-  const haveGroq = !!process.env['GROQ_API_KEY']
-  const haveGemini = !!process.env['GEMINI_API_KEY']
-  const haveOpenAI = !!process.env['OPENAI_API_KEY']
+  const have = {
+    gemini: !!process.env['GEMINI_API_KEY'],
+    groq: !!process.env['GROQ_API_KEY'],
+    openai: !!process.env['OPENAI_API_KEY'],
+  }
+  const runners: Record<'gemini' | 'groq' | 'openai', () => Promise<LLMCallResult>> = {
+    gemini: () =>
+      callGemini(systemPrompt, userPrompt, options.model ?? 'gemini-2.5-flash', timeoutMs),
+    groq: () =>
+      callGroq(systemPrompt, userPrompt, options.model ?? 'llama-3.3-70b-versatile', timeoutMs),
+    openai: () =>
+      callOpenAIChat(systemPrompt, userPrompt, options.model ?? 'gpt-4o-mini', timeoutMs),
+  }
 
-  if (explicit === 'groq' || (!explicit && haveGroq)) {
-    return callGroq(systemPrompt, userPrompt, options.model ?? 'llama-3.3-70b-versatile', timeoutMs)
+  // Strategic reasoning prefers Gemini 2.5 Flash (stronger reasoning at very low
+  // cost) over the free Llama models; it falls back to Groq → OpenAI on
+  // error/rate limit so a single provider's limit never breaks the advisor.
+  // An explicit provider (tests) is tried first but still falls back.
+  const DEFAULT_ORDER = ['gemini', 'groq', 'openai'] as const
+  const order = explicit
+    ? [explicit, ...DEFAULT_ORDER.filter((p) => p !== explicit)]
+    : [...DEFAULT_ORDER]
+  const configured = order.filter((p) => have[p])
+
+  if (configured.length === 0) {
+    throw new Error(
+      'No LLM provider configured. Set GEMINI_API_KEY (recommended for advisor), GROQ_API_KEY, or OPENAI_API_KEY.',
+    )
   }
-  if (explicit === 'gemini' || (!explicit && haveGemini)) {
-    return callGemini(systemPrompt, userPrompt, options.model ?? 'gemini-2.5-flash', timeoutMs)
+
+  const errors: string[] = []
+  for (let i = 0; i < configured.length; i++) {
+    const p = configured[i]!
+    try {
+      return await runners[p]()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      errors.push(`${p}: ${msg}`)
+      logger.warn(
+        `Advisor callLLM: ${p} failed${i === configured.length - 1 ? '' : ', falling back'}`,
+        { service: 'advisor', provider: p, error: msg },
+      )
+    }
   }
-  if (explicit === 'openai' || (!explicit && haveOpenAI)) {
-    return callOpenAIChat(systemPrompt, userPrompt, options.model ?? 'gpt-4o-mini', timeoutMs)
-  }
-  throw new Error(
-    'No LLM provider configured. Set GROQ_API_KEY (recommended), GEMINI_API_KEY, or OPENAI_API_KEY.',
-  )
+  throw new Error('Advisor: all LLM providers failed:\n' + errors.join('\n'))
 }
 
 async function callGroq(

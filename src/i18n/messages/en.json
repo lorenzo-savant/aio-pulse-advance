@@ -230,8 +230,10 @@
       "name_placeholder": "e.g. Ekonomirådgivarna",
       "domain_label": "Website Domain",
       "domain_placeholder": "e.g. ekonomiradgivarna.se",
+      "domain_helper": "Used to read your site and ground prompts in your real brand (avoids confusion with look-alikes).",
       "industry_label": "Industry",
       "industry_placeholder": "Select industry...",
+      "industry_helper": "Selects the prompt templates and category we generate from.",
       "language_label": "Primary Market Language",
       "language_required": "Required",
       "language_placeholder": "Select language...",
@@ -243,7 +245,7 @@
       "aliases_helper": "Comma-separated",
       "competitors_label": "Competitors",
       "competitors_placeholder": "e.g. Fortnox, Visma",
-      "competitors_helper": "Comma-separated",
+      "competitors_helper": "Comma-separated. Powers comparison (\"vs\") prompts and positioning.",
       "color_label": "Brand Color"
     },
     "prompts_form": {

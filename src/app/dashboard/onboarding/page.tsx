@@ -43,20 +43,20 @@ interface PromptForm {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+// Aligned with the prompt-generator presets (INDUSTRY_PRESETS[].name.en) so the
+// chosen industry maps to the right prompt templates + competitor set instead
+// of falling back to a generic preset.
 const INDUSTRIES = [
-  'Accounting & Finance',
-  'Beauty & Wellness',
-  'Construction',
-  'Consulting',
+  'Casting & Talent',
+  'SaaS B2B',
   'E-commerce',
-  'Education',
-  'Healthcare',
-  'Legal',
-  'Marketing & Advertising',
+  'Local Business',
   'Real Estate',
-  'Restaurant & Food',
-  'SaaS / Technology',
-  'Travel & Hospitality',
+  'Healthcare',
+  'Education',
+  'Hospitality & Tourism',
+  'Automotive',
+  'Construction',
   'Other',
 ]
 
@@ -229,7 +229,17 @@ export default function OnboardingPage() {
   // ─── Step navigation ─────────────────────────────────────────────────────
 
   const canProceed = () => {
-    if (step === 1) return brand.name.trim().length > 0 && brand.language.trim().length > 0
+    if (step === 1)
+      // Name + language + domain + industry + competitors are the fundamentals:
+      // domain drives site scraping/grounding, industry selects the prompt
+      // preset, competitors power comparison ("vs") prompts + positioning.
+      return (
+        brand.name.trim().length > 0 &&
+        brand.language.trim().length > 0 &&
+        brand.domain.trim().length > 0 &&
+        brand.industry.trim().length > 0 &&
+        brand.competitors.trim().length > 0
+      )
     if (step === 2) return prompts.length > 0
     return true
   }
@@ -486,7 +496,7 @@ export default function OnboardingPage() {
             {/* Domain */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                {t('onboarding.brand_form.domain_label')}
+                {t('onboarding.brand_form.domain_label')} <span className="text-red-400">*</span>
               </label>
               <input
                 className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -494,12 +504,15 @@ export default function OnboardingPage() {
                 value={brand.domain}
                 onChange={(e) => setBrand({ ...brand, domain: e.target.value })}
               />
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {t('onboarding.brand_form.domain_helper')}
+              </p>
             </div>
 
             {/* Industry */}
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                {t('onboarding.brand_form.industry_label')}
+                {t('onboarding.brand_form.industry_label')} <span className="text-red-400">*</span>
               </label>
               <select
                 className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
@@ -513,6 +526,9 @@ export default function OnboardingPage() {
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {t('onboarding.brand_form.industry_helper')}
+              </p>
             </div>
 
             {/* Language */}
@@ -569,7 +585,8 @@ export default function OnboardingPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  {t('onboarding.brand_form.competitors_label')}
+                  {t('onboarding.brand_form.competitors_label')}{' '}
+                  <span className="text-red-400">*</span>
                 </label>
                 <input
                   className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"

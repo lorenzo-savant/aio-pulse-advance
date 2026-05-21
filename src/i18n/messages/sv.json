@@ -230,8 +230,10 @@
       "name_placeholder": "t.ex. Ekonomirådgivarna",
       "domain_label": "Webbplatsdomän",
       "domain_placeholder": "t.ex. ekonomiradgivarna.se",
+      "domain_helper": "Används för att läsa din webbplats och förankra prompter i ditt riktiga varumärke (undviker förväxling med liknande namn).",
       "industry_label": "Bransch",
       "industry_placeholder": "Välj bransch...",
+      "industry_helper": "Väljer promptmallarna och kategorin vi genererar från.",
       "language_label": "Primärt Marknadsspråk",
       "language_required": "Obligatoriskt",
       "language_placeholder": "Välj språk...",
@@ -243,7 +245,7 @@
       "aliases_helper": "Kommaseparerat",
       "competitors_label": "Konkurrenter",
       "competitors_placeholder": "t.ex. Fortnox, Visma",
-      "competitors_helper": "Kommaseparerat",
+      "competitors_helper": "Kommaseparerat. Driver jämförelseprompter (\"vs\") och positionering.",
       "color_label": "Varumärkesfärg"
     },
     "prompts_form": {

@@ -230,8 +230,10 @@
       "name_placeholder": "es. StudioLegale Milano",
       "domain_label": "Dominio Sito Web",
       "domain_placeholder": "es. studiodomus.it",
+      "domain_helper": "Usato per leggere il tuo sito e ancorare i prompt al brand reale (evita confusione con marchi simili).",
       "industry_label": "Settore",
       "industry_placeholder": "Seleziona settore...",
+      "industry_helper": "Seleziona i template di prompt e la categoria da cui generiamo.",
       "language_label": "Lingua Mercato Principale",
       "language_required": "Obbligatorio",
       "language_placeholder": "Seleziona lingua...",
@@ -243,7 +245,7 @@
       "aliases_helper": "Separati da virgola",
       "competitors_label": "Concorrenti",
       "competitors_placeholder": "es. Studio Rosa, Avvocati Online",
-      "competitors_helper": "Separati da virgola",
+      "competitors_helper": "Separati da virgola. Alimentano i prompt di confronto (\"vs\") e il posizionamento.",
       "color_label": "Colore Brand"
     },
     "prompts_form": {

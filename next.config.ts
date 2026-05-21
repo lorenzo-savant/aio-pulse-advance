@@ -44,6 +44,15 @@ const nextConfig: NextConfig = {
    * ═══════════════════════════════════════════════════════════════════════════
    */
   async headers() {
+    // In development, Turbopack reuses chunk filenames (no content hash), so
+    // any cacheable Cache-Control — especially `immutable` on /_next/static —
+    // makes the browser serve STALE JS chunks indefinitely (the recurring
+    // "module factory not available / old code" problem). So in dev we force
+    // no-store everywhere and skip the immutable static rule. Production keeps
+    // the long-lived caching, which is safe because prod chunks are
+    // content-hashed.
+    const isDev = process.env.NODE_ENV !== 'production'
+
     return [
       {
         source: '/(.*)',
@@ -72,7 +81,9 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Cache-Control',
-            value: 'public, max-age=3600, stale-while-revalidate=86400',
+            value: isDev
+              ? 'no-store, must-revalidate'
+              : 'public, max-age=3600, stale-while-revalidate=86400',
           },
         ],
       },
@@ -85,15 +96,21 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      {
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
+      // Long-lived immutable caching for hashed static assets — production
+      // only. Omitted in dev to avoid pinning stale Turbopack chunks.
+      ...(isDev
+        ? []
+        : [
+            {
+              source: '/_next/static/(.*)',
+              headers: [
+                {
+                  key: 'Cache-Control',
+                  value: 'public, max-age=31536000, immutable',
+                },
+              ],
+            },
+          ]),
     ]
   },
 

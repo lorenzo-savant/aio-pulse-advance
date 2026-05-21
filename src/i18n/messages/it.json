@@ -123,6 +123,9 @@
   "sidebar": {
     "title": "AIO Pulse",
     "sections": {
+      "overview": {
+        "label": "Panoramica"
+      },
       "setup": {
         "label": "1 · Configurazione",
         "description": "Definisci il brand e i prompt da monitorare — usa il Generatore di Prompt per espandere le keyword seed in query di monitoraggio pronte all'uso. L'output (brand + prompt) è l'input dello step 2."

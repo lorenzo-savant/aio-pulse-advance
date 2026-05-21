@@ -59,13 +59,20 @@ interface NavItem {
 }
 
 interface NavSection {
-  step: number
+  /** Step number badge. Omitted for the standalone Overview header. */
+  step?: number
   labelKey: string
   descriptionKey?: string
   items: NavItem[]
 }
 
 const NAV_SECTIONS: NavSection[] = [
+  {
+    // Standalone overview — it summarizes every step, so it sits above the
+    // numbered flow rather than inside "3 · Insights".
+    labelKey: 'sidebar.sections.overview.label',
+    items: [{ href: '/dashboard', icon: LayoutDashboard, labelKey: 'sidebar.items.dashboard' }],
+  },
   {
     step: 1,
     labelKey: 'sidebar.sections.setup.label',
@@ -127,8 +134,8 @@ const NAV_SECTIONS: NavSection[] = [
     // AI engines find/cite you, then drilled-down analyses, then archives.
     // Each item generates a measurable signal the next ones build on.
     items: [
-      // ── Top-level overview ────────────────────────────────────────────
-      { href: '/dashboard', icon: LayoutDashboard, labelKey: 'sidebar.items.dashboard' },
+      // GEO Score first — the composite headline now that the overview lives
+      // up top as its own entry.
       {
         href: '/dashboard/geo-score',
         icon: Target,
@@ -297,9 +304,11 @@ function NavSection({
   return (
     <div className="mb-5">
       <div className="mb-2.5 flex items-center gap-2 px-4">
-        <span className="bg-primary/15 flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black text-primary">
-          {section.step}
-        </span>
+        {section.step !== undefined && (
+          <span className="bg-primary/15 flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black text-primary">
+            {section.step}
+          </span>
+        )}
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           {t(section.labelKey)}
         </p>

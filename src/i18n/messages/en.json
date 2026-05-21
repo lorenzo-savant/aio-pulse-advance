@@ -123,6 +123,9 @@
   "sidebar": {
     "title": "AIO Pulse",
     "sections": {
+      "overview": {
+        "label": "Overview"
+      },
       "setup": {
         "label": "1 · Setup",
         "description": "Define the brand and the prompts to monitor — use the Prompt Generator to expand seed keywords into ready-to-use monitoring queries. Output (brands + prompts) feeds step 2."

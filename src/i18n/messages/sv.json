@@ -123,6 +123,9 @@
   "sidebar": {
     "title": "AIO Pulse",
     "sections": {
+      "overview": {
+        "label": "Översikt"
+      },
       "setup": {
         "label": "1 · Konfiguration",
         "description": "Definiera varumärket och prompterna att övervaka — använd Promptgeneratorn för att expandera seed-nyckelord till färdiga övervakningsfrågor. Resultatet (brands + prompts) är indata för steg 2."

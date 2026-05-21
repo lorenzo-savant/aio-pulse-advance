@@ -10,10 +10,11 @@
 // and the kind of long-tail questions users actually type that don't fit
 // a templatable pattern.
 //
-// Why Groq specifically: llama-3.3-70b-versatile is fast (≤ 2 sec for
-// our JSON-output size), the free tier is generous, and structured-JSON
-// mode is well-supported. Falls back to Gemini → OpenAI when GROQ_API_KEY
-// is not set, mirroring the chain in advisor.ts.
+// Why Groq first: llama-3.3-70b-versatile is fast (≤ 2 sec for our JSON-output
+// size), the free tier is generous, and structured-JSON mode is well-supported.
+// callLLM is a RESILIENT free-first chain — Groq → Cerebras → Mistral → Gemini
+// → OpenAI — that falls back on error/429, so one provider's free-tier limit
+// degrades gracefully instead of breaking the call.
 
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
@@ -161,25 +162,121 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<LLM
   return { text, provider: 'openai', model: 'gpt-4o-mini' }
 }
 
+// Cerebras — OpenAI-compatible, free tier, very fast Llama inference. Sits
+// right after Groq as a second free Llama provider.
+async function callCerebras(systemPrompt: string, userPrompt: string): Promise<LLMCall> {
+  const apiKey = process.env['CEREBRAS_API_KEY']
+  if (!apiKey) throw new Error('CEREBRAS_API_KEY not set')
+  const res = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b',
+      response_format: { type: 'json_object' },
+      temperature: 0.4,
+      max_tokens: 2000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Cerebras HTTP ${res.status}: ${body.slice(0, 200)}`)
+  }
+  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> }
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error('Empty response from Cerebras')
+  return { text, provider: 'cerebras', model: 'llama-3.3-70b' }
+}
+
+// Mistral — OpenAI-compatible, free tier. JSON mode supported.
+async function callMistral(systemPrompt: string, userPrompt: string): Promise<LLMCall> {
+  const apiKey = process.env['MISTRAL_API_KEY']
+  if (!apiKey) throw new Error('MISTRAL_API_KEY not set')
+  const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'mistral-small-latest',
+      response_format: { type: 'json_object' },
+      temperature: 0.4,
+      max_tokens: 2000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Mistral HTTP ${res.status}: ${body.slice(0, 200)}`)
+  }
+  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> }
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error('Empty response from Mistral')
+  return { text, provider: 'mistral', model: 'mistral-small-latest' }
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
 /**
- * Generic JSON-mode LLM call with the shared provider chain
- * (Groq → Gemini → OpenAI). Exported so other services (e.g. llms.txt
- * enrichment) can reuse the exact same fallback behavior instead of
- * duplicating the provider plumbing. Returns the raw text — the caller
- * is responsible for parsing/validating the JSON.
+ * Generic JSON-mode LLM call with a RESILIENT free-first provider chain:
+ *   Groq → Cerebras → Mistral → Gemini → OpenAI
+ * Each CONFIGURED provider (by API key) is tried in order; on error or rate
+ * limit (429) it falls back to the next — with a short backoff on 429 — so a
+ * single provider hitting its free-tier limit degrades gracefully instead of
+ * breaking the call. Exported so other services (advisor, llms.txt enrichment)
+ * reuse the exact same behavior. Returns raw text; caller parses/validates.
  */
 export async function callLLM(systemPrompt: string, userPrompt: string): Promise<LLMCall> {
-  if (process.env['GROQ_API_KEY']) {
-    return callGroq(systemPrompt, userPrompt)
+  const chain: Array<{ name: string; run: () => Promise<LLMCall> }> = []
+  if (process.env['GROQ_API_KEY'])
+    chain.push({ name: 'groq', run: () => callGroq(systemPrompt, userPrompt) })
+  if (process.env['CEREBRAS_API_KEY'])
+    chain.push({ name: 'cerebras', run: () => callCerebras(systemPrompt, userPrompt) })
+  if (process.env['MISTRAL_API_KEY'])
+    chain.push({ name: 'mistral', run: () => callMistral(systemPrompt, userPrompt) })
+  if (process.env['GEMINI_API_KEY'])
+    chain.push({ name: 'gemini', run: () => callGemini(systemPrompt, userPrompt) })
+  if (process.env['OPENAI_API_KEY'])
+    chain.push({ name: 'openai', run: () => callOpenAI(systemPrompt, userPrompt) })
+
+  if (chain.length === 0) {
+    throw new Error(
+      'No LLM provider configured. Set GROQ_API_KEY (recommended), CEREBRAS_API_KEY, MISTRAL_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY.',
+    )
   }
-  if (process.env['GEMINI_API_KEY']) {
-    return callGemini(systemPrompt, userPrompt)
-  }
-  if (process.env['OPENAI_API_KEY']) {
-    return callOpenAI(systemPrompt, userPrompt)
+
+  const errors: string[] = []
+  for (let i = 0; i < chain.length; i++) {
+    const p = chain[i]!
+    try {
+      return await p.run()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      errors.push(`${p.name}: ${msg}`)
+      const isLast = i === chain.length - 1
+      logger.warn(`callLLM: provider ${p.name} failed${isLast ? '' : ', falling back'}`, {
+        service: 'prompt-generator-ai',
+        provider: p.name,
+        error: msg,
+      })
+      // Rate-limited: brief pause before trying the next provider.
+      if (/\b429\b/.test(msg) && !isLast) await sleep(400)
+    }
   }
   throw new Error(
-    'No LLM provider configured. Set GROQ_API_KEY (recommended), GEMINI_API_KEY, or OPENAI_API_KEY.',
+    'All LLM providers failed:\n' + errors.map((e, idx) => `  ${idx + 1}. ${e}`).join('\n'),
   )
 }
 

@@ -91,9 +91,10 @@ describe('calculateGeoScore', () => {
       hallucinationRate: 0,
     })
     expect(r.recommendations.length).toBeGreaterThan(0)
-    // The citation pillar's recommendation should come before position's.
-    const citationRec = r.recommendations[0]
-    expect(citationRec).toMatch(/cite your domain/i)
+    // The citation pillar (higher upside) should come before position's.
+    expect(r.recommendations[0]!.pillar).toBe('citation')
+    expect(r.recommendations[0]!.upliftPts).toBeGreaterThan(0)
+    expect(r.recommendations[0]!.actions.length).toBeGreaterThan(0)
   })
 
   it('normalizes negative sentiment and hallucinations into the trust pillar', () => {

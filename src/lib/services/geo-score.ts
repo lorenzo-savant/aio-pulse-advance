@@ -42,13 +42,31 @@ export interface GeoPillar {
   contribution: number
 }
 
+export interface GeoRecommendation {
+  pillar: GeoPillar['key']
+  /** Pillar label, e.g. "Citation Rate". */
+  label: string
+  /** Pillar weight in the composite (0–1). */
+  weight: number
+  /** Current normalized pillar score, 0–100. */
+  currentScore: number
+  /** Points recoverable if this pillar reached 100 (gap × weight). The
+   *  prioritization signal: bigger = more score upside. */
+  upliftPts: number
+  /** Why this pillar matters for GEO — the motivation for acting. */
+  why: string
+  /** Concrete, ordered actions to lift the pillar. */
+  actions: string[]
+}
+
 export interface GeoScoreResult {
   /** Final composite, 0–100, one decimal. */
   score: number
   grade: GeoGrade
   pillars: GeoPillar[]
-  /** Prioritized, actionable guidance for the weakest pillars. */
-  recommendations: string[]
+  /** Prioritized, motivated guidance for the weakest pillars (highest score
+   *  upside first). */
+  recommendations: GeoRecommendation[]
 }
 
 // Pillar weights — must sum to 1.0.
@@ -100,17 +118,48 @@ export function gradeFor(score: number): GeoGrade {
   return 'F'
 }
 
-const RECOMMENDATIONS: Record<GeoPillar['key'], string> = {
+// Per-pillar motivation ("why act") + concrete actions ("how"). The why
+// explains the GEO mechanism so the recommendation isn't a black box; the
+// actions are ordered by leverage.
+const REC_WHY: Record<GeoPillar['key'], string> = {
   citation:
-    'AI engines rarely cite your domain. Publish authoritative, fact-dense pages and a clean llms.txt so models have a citable source.',
+    'Citations are the strongest GEO signal and the highest-weighted pillar (30%): when an engine links your domain as a source you gain both visibility AND trust, so gains here move the score the most.',
   presence:
-    'Your brand is mentioned in few answers. Broaden topical coverage and ensure your brand name and aliases appear in canonical content.',
+    'Presence is the foundation — if the model never names you, no other pillar can help. It is the second-heaviest pillar (25%).',
   authority:
-    'AI seldom recommends you when asked for options. Build comparison/“best of” content and earn third-party mentions that models trust.',
+    'Being mentioned is good; being recommended is what converts. Models recommend brands that have social proof and clear comparison context.',
   position:
-    'When mentioned, your brand appears late in answers. Lead key pages with concise, direct answers so models surface you first.',
+    'Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.',
   trust:
-    'Negative sentiment or hallucinations are dragging the score. Correct outdated facts and strengthen structured data so models describe you accurately.',
+    'Negative sentiment or hallucinations make models describe you inaccurately or steer users away — that caps the upside of every other pillar.',
+}
+
+const REC_ACTIONS: Record<GeoPillar['key'], string[]> = {
+  citation: [
+    'Publish fact-dense, well-structured pages models can quote (clear claims, data, dates).',
+    'Add a clean llms.txt + schema.org markup so engines have a citable, machine-readable source.',
+    'Earn citations on high-authority third-party sites the engines already trust.',
+  ],
+  presence: [
+    'Broaden topical coverage around your category and the problems you solve.',
+    'Make sure your brand name + aliases appear in canonical, crawlable content.',
+    'Build a Wikipedia presence — roughly 48% of ChatGPT citations come from Wikipedia.',
+  ],
+  authority: [
+    'Create comparison and “best of” pages that position you against named alternatives.',
+    'Earn reviews and third-party mentions that models read as endorsements.',
+    'Engage authentically on Reddit — roughly 47% of Perplexity citations come from Reddit.',
+  ],
+  position: [
+    'Lead key pages with a concise, direct answer (answer-first format).',
+    'Use clear headings and Q&A blocks the model can lift verbatim.',
+    'Keep the most important facts in the first 100 words of the page.',
+  ],
+  trust: [
+    'Correct outdated or wrong facts on your site and in third-party sources.',
+    'Strengthen structured data (Organization, Product) so models describe you precisely.',
+    'Publish an authoritative About page with verifiable, dated claims.',
+  ],
 }
 
 /**
@@ -149,14 +198,20 @@ export function calculateGeoScore(input: GeoScoreInput): GeoScoreResult {
   const raw = pillars.reduce((sum, p) => sum + pillarScores[p.key] * p.weight, 0)
   const score = round1(clamp(raw, 0, 100))
 
-  // Prioritize recommendations by weighted shortfall: a weak, heavily-weighted
-  // pillar matters more than a weak, lightly-weighted one.
-  const recommendations = pillars
+  // Prioritize by recoverable points (gap × weight): the pillar with the most
+  // score upside comes first, so the user works on what moves the needle most.
+  const recommendations: GeoRecommendation[] = pillars
     .filter((p) => p.score < HEALTHY_THRESHOLD)
-    .sort(
-      (a, b) => (HEALTHY_THRESHOLD - b.score) * b.weight - (HEALTHY_THRESHOLD - a.score) * a.weight,
-    )
-    .map((p) => RECOMMENDATIONS[p.key])
+    .map((p) => ({
+      pillar: p.key,
+      label: p.label,
+      weight: p.weight,
+      currentScore: p.score,
+      upliftPts: round1((100 - p.score) * p.weight),
+      why: REC_WHY[p.key],
+      actions: REC_ACTIONS[p.key],
+    }))
+    .sort((a, b) => b.upliftPts - a.upliftPts)
 
   return { score, grade: gradeFor(score), pillars, recommendations }
 }

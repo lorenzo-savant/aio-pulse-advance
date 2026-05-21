@@ -43,6 +43,16 @@ interface Pillar {
   contribution: number
 }
 
+interface GeoRecommendation {
+  pillar: string
+  label: string
+  weight: number
+  currentScore: number
+  upliftPts: number
+  why: string
+  actions: string[]
+}
+
 interface SiteAudit {
   score: number
   grade: 'A' | 'B' | 'C' | 'D' | 'F'
@@ -58,7 +68,7 @@ interface GeoData {
   delta: number
   previousScore: number
   pillars: Pillar[]
-  recommendations: string[]
+  recommendations: GeoRecommendation[]
   history: { date: string; score: number }[]
   engineBreakdown: { engine: string; visibility: number }[]
   date: string | null
@@ -402,23 +412,44 @@ export default function GeoScorePage() {
           {/* Recommendations */}
           {data.recommendations.length > 0 && (
             <Card className="p-6">
-              <div className="mb-4 flex items-center gap-2">
+              <div className="mb-1 flex items-center gap-2">
                 <Lightbulb className="h-5 w-5 text-amber-400" />
                 <h2 className="text-lg font-bold text-foreground">How to improve your GEO Score</h2>
               </div>
-              <ul className="space-y-3">
+              <p className="mb-4 text-sm text-muted-foreground">
+                Ordered by impact — the number on each card is the points you&rsquo;d recover if
+                that pillar reached 100 (its gap × its weight). Start at the top.
+              </p>
+              <div className="space-y-3">
                 {data.recommendations.map((rec, i) => (
-                  <li
-                    key={i}
-                    className="bg-secondary/40 flex gap-3 rounded-lg border border-border px-4 py-3 text-sm text-foreground"
+                  <div
+                    key={rec.pillar}
+                    className="bg-secondary/40 rounded-xl border border-border p-4"
                   >
-                    <span className="bg-primary/15 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-primary">
-                      {i + 1}
-                    </span>
-                    {rec}
-                  </li>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="bg-primary/15 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-primary">
+                        {i + 1}
+                      </span>
+                      <span className="font-semibold text-foreground">{rec.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        now {rec.currentScore} · weight {Math.round(rec.weight * 100)}%
+                      </span>
+                      <span className="ml-auto rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-400">
+                        +{rec.upliftPts} pts potential
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">{rec.why}</p>
+                    <ul className="mt-3 space-y-1.5">
+                      {rec.actions.map((a, j) => (
+                        <li key={j} className="flex gap-2 text-sm leading-relaxed text-foreground">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                          <span>{a}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </Card>
           )}
 

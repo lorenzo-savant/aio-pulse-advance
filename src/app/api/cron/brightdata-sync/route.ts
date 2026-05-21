@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { scrapeAllBrands } from '@/lib/services/brightdata-sync'
 import { verifyCronAuth } from '@/lib/cron-auth'
 import { logger } from '@/lib/logger'

@@ -258,7 +258,7 @@ export function PromptGeneratorPanel({
     const pending = drafts.filter((d) => !created.has(d.key))
     for (const d of pending) {
       // Sequential to keep the prompts list ordering stable + avoid hammering.
-      // eslint-disable-next-line no-await-in-loop
+
       await createOne(d)
     }
     toast.success(`Created ${pending.length} prompt${pending.length === 1 ? '' : 's'}`)

@@ -10,7 +10,7 @@
 // 3. Apply middleware in your Prisma client
 //
 
-import { Prisma } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 
 const softDeleteModels = ['Brand', 'Prompt', 'AlertRule', 'AnalysisResult']
 

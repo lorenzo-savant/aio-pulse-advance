@@ -13,7 +13,6 @@ import { getDataforseoQuota } from '@/lib/services/dataforseo-quota'
 import { getBraveQuota } from '@/lib/services/brave-search'
 import { logger } from '@/lib/logger'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // aeo_* tables not yet in generated types; cast db at boundary.
 
 function err(msg: string, status = 500) {

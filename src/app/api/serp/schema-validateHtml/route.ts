@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { validateHtml } from '@/lib/services/schema-validator'
 import { requireUser, rateLimitGate } from '@/lib/api-auth'
 

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { generatePrompts } from '@/lib/services/prompt-generator'
 import type { Locale } from '@/lib/services/prompt-generator'

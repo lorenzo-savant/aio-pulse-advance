@@ -1,6 +1,7 @@
 // PATH: src/app/api/archive/query/[id]/route.ts
 // GET /api/archive/query/[id]
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'

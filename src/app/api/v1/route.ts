@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { API_VERSION, getApiVersion, getDeprecationWarning, API_VERSIONS } from '@/lib/api-version'
 
 export const runtime = 'edge'

@@ -234,37 +234,9 @@ function SidebarContent({
   onClose?: () => void
   onItemClick?: () => void
 }) {
-  const pathname = usePathname()
-  const supabase = createSupabaseBrowserClient()
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = (await supabase?.auth.getUser()) ?? { data: { user: null } }
-      setUser(user)
-      setLoading(false)
-    }
-    getUser()
-  }, [])
-
-  const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === '/dashboard'
-    const prefix = href.endsWith('/') ? href : href + '/'
-    return pathname.startsWith(prefix) || pathname === href
-  }
-
-  const handleLogout = async () => {
-    await supabase?.auth.signOut()
-    useRouter().push('/auth/login')
-    useRouter().refresh()
-  }
-
-  const userEmail = user?.email || 'Dev User'
-  const userInitial = user?.email?.charAt(0).toUpperCase() || 'D'
-
+  // This component only renders the brand header. Auth/logout/nav-active state
+  // lives in the main Sidebar component below — the previous copy here was dead
+  // code and included an invalid useRouter() call inside a callback.
   return (
     <div className="flex h-16 items-center justify-between px-5">
       <Link className="flex items-center gap-2.5" href="/dashboard">

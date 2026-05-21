@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { generateLlmstxt } from '@/lib/audit/generators'
 import { requireUser, rateLimitGate, isValidHttpUrl } from '@/lib/api-auth'
 import { SsrfError } from '@/lib/utils/safe-fetch'

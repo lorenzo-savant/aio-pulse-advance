@@ -1,5 +1,6 @@
 // PATH: src/app/api/cron/monitoring/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import type { Json } from '@/types/database'
 import { createServerClient } from '@/lib/supabase'

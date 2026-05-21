@@ -1,5 +1,6 @@
 // PATH: src/app/api/cron/weekly-review/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { generateWeeklyReview } from '@/lib/services/weekly-review'
 import { verifyCronAuth } from '@/lib/cron-auth'

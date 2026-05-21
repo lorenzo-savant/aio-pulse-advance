@@ -70,7 +70,7 @@ function matchUserAgent(botName: string, ruleUa: string): boolean {
 }
 
 function patternToRegex(pattern: string): RegExp {
-  let regex = pattern
+  const regex = pattern
     .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
     .replace(/\*/g, '.*')
     .replace(/\?/g, '.')

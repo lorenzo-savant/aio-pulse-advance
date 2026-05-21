@@ -1,6 +1,7 @@
 // PATH: src/app/api/archive/compare/route.ts
 // POST /api/archive/compare - Compare two periods
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'

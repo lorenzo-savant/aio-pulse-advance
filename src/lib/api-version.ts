@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 export const API_VERSION = 'v1'
 export const API_VERSION_HEADER = 'X-API-Version'

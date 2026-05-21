@@ -37,7 +37,7 @@ export async function getLifetimeAnalytics(brandId: string): Promise<LifetimeAna
 
     let totalBrandMentions = 0
     let totalCitations = 0
-    let domainCitations = 0
+    const domainCitations = 0
     let topProvider: string | null = null
     let topProviderCount = 0
     const providerDistribution: Record<string, number> = {}

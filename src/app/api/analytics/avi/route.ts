@@ -1,5 +1,6 @@
 // PATH: src/app/api/analytics/avi/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId } from '@/lib/supabase'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 

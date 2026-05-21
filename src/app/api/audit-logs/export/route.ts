@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 import { listAuditLogs } from '@/lib/services/audit-log'
@@ -63,8 +64,7 @@ export async function GET(request: NextRequest) {
           .map((h) => {
             const value = log[h]
             if (value === null || value === undefined) return ''
-            const raw =
-              typeof value === 'object' ? JSON.stringify(value) : String(value)
+            const raw = typeof value === 'object' ? JSON.stringify(value) : String(value)
             // CSV formula-injection guard (Excel/Sheets).
             const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw
             return `"${safe.replace(/"/g, '""')}"`

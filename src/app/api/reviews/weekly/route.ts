@@ -1,5 +1,6 @@
 // PATH: src/app/api/reviews/weekly/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { AuthError, createServerClient, getCurrentUserId } from '@/lib/supabase'
 
 export async function GET(req: NextRequest) {

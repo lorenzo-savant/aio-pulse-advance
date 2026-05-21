@@ -445,7 +445,7 @@ export async function buildAdvisorContext(brandId: string): Promise<AdvisorConte
     hallucination_rate: number | null
     engine_breakdown: unknown
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const dbAny = db as any
 
   const { data: latestHealth } = (await dbAny

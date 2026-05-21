@@ -488,7 +488,6 @@ export async function generateObsidianExport(
       .order('date', { ascending: false })
 
     if (healthScores && healthScores.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const latest = healthScores[0]!
       const engineBreakdown: Record<string, { citations: number; rate: number }> = {}
       const breakdown = latest.engine_breakdown as Record<

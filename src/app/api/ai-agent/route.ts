@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getAgent, getAllAgents } from '@/lib/agents/agent-registry'
 import { createConversation, addMessage, getConversationHistory } from '@/lib/agents/agent-memory'
 import type { AgentContext } from '@/lib/agents/base-agent'

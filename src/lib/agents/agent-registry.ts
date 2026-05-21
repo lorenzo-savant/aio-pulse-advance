@@ -1,4 +1,4 @@
-import { BaseAgent } from './base-agent'
+import type { BaseAgent } from './base-agent'
 import {
   BrandMonitorAgent,
   CompetitorAnalystAgent,

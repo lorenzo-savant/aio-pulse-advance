@@ -1,6 +1,7 @@
 // PATH: src/app/api/archive/timeline/route.ts
 // GET /api/archive/timeline?brand_id=xxx&from=xxx&to=xxx&type=xxx&limit=20&offset=0
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'

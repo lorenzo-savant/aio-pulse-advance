@@ -53,7 +53,7 @@ describe('i18n messages', () => {
     it('all locales have the same top-level namespaces', () => {
       const enKeys = Object.keys(enMessages as Messages)
       for (const locale of LOCALES) {
-        const localeKeys = Object.keys(messagesByLocale[locale]!!)
+        const localeKeys = Object.keys(messagesByLocale[locale]!)
         expect(localeKeys.sort()).toEqual(enKeys.sort())
       }
     })
@@ -61,7 +61,7 @@ describe('i18n messages', () => {
     it('all locales have the same keys in onboarding namespace', () => {
       const enKeys = getAllKeys(getNamespace(messagesByLocale['en']!, 'onboarding'))
       for (const locale of LOCALES) {
-        const localeKeys = getAllKeys(getNamespace(messagesByLocale[locale]!!, 'onboarding'))
+        const localeKeys = getAllKeys(getNamespace(messagesByLocale[locale]!, 'onboarding'))
         expect(localeKeys.sort()).toEqual(enKeys.sort())
       }
     })
@@ -69,7 +69,7 @@ describe('i18n messages', () => {
     it('all locales have the same keys in brands namespace', () => {
       const enKeys = getAllKeys(getNamespace(messagesByLocale['en']!, 'brands'))
       for (const locale of LOCALES) {
-        const localeKeys = getAllKeys(getNamespace(messagesByLocale[locale]!!, 'brands'))
+        const localeKeys = getAllKeys(getNamespace(messagesByLocale[locale]!, 'brands'))
         expect(localeKeys.sort()).toEqual(enKeys.sort())
       }
     })
@@ -77,7 +77,7 @@ describe('i18n messages', () => {
     it('all locales have the same keys in prompts namespace', () => {
       const enKeys = getAllKeys(getNamespace(messagesByLocale['en']!, 'prompts'))
       for (const locale of LOCALES) {
-        const localeKeys = getAllKeys(getNamespace(messagesByLocale[locale]!!, 'prompts'))
+        const localeKeys = getAllKeys(getNamespace(messagesByLocale[locale]!, 'prompts'))
         expect(localeKeys.sort()).toEqual(enKeys.sort())
       }
     })
@@ -85,7 +85,7 @@ describe('i18n messages', () => {
     it('all locales have the same keys in sidebar namespace', () => {
       const enKeys = getAllKeys(getNamespace(messagesByLocale['en']!, 'sidebar'))
       for (const locale of LOCALES) {
-        const localeKeys = getAllKeys(getNamespace(messagesByLocale[locale]!!, 'sidebar'))
+        const localeKeys = getAllKeys(getNamespace(messagesByLocale[locale]!, 'sidebar'))
         expect(localeKeys.sort()).toEqual(enKeys.sort())
       }
     })

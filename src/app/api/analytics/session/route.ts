@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getSessionAnalytics } from '@/lib/analytics/session-analytics'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { requireUser } from '@/lib/api-auth'

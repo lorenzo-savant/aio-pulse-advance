@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { generateFixBrief, formatFixBriefAsMarkdown } from '@/lib/audit/fix-brief'
 import { auditSite, auditArticle } from '@/lib/audit/site-audit'
 import { requireUser, rateLimitGate, isValidHttpUrl } from '@/lib/api-auth'

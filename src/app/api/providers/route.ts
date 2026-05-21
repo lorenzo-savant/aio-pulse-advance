@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { isOpenAIAvailable, callOpenAI } from '@/lib/services/openai'
 import { isPerplexityAvailable, callPerplexity } from '@/lib/services/perplexity'
 import { isAnthropicAvailable, callAnthropic } from '@/lib/services/anthropic'

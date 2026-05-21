@@ -36,7 +36,7 @@ const DISAMBIGUATION_HINTS: Array<{ match: RegExp; warning: string }> = [
   },
 ]
 
-function disambiguationFor(brandName: string): string | null {
+export function disambiguationFor(brandName: string): string | null {
   const lower = brandName.toLowerCase()
   for (const hint of DISAMBIGUATION_HINTS) {
     if (hint.match.test(lower)) return hint.warning

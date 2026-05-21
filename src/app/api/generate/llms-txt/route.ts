@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
 
   const { data: brand, error: brandError } = await db
     .from('brands')
-    .select('id, name, domain, description, industry, competitors, aliases')
+    .select('id, name, domain, description, industry, competitors, aliases, language')
     .eq('id', brandId)
     .eq('user_id', userId)
     .single()
@@ -163,6 +163,9 @@ export async function POST(req: NextRequest) {
   }
 
   const domain = brand.domain || `${brand.name.toLowerCase().replace(/\s+/g, '')}.com`
+  // `market` may not exist as a column yet (added by a later migration); read
+  // it tolerantly so generation stays market-aware once it lands.
+  const brandMarket = (brand as { market?: string | null }).market ?? null
 
   // Optional auto-enrichment. Runs the four data sources, then merges so that
   // any field the caller supplied MANUALLY wins over the enriched value.
@@ -177,6 +180,9 @@ export async function POST(req: NextRequest) {
           domain,
           description: brand.description,
           industry: brand.industry,
+          market: brandMarket,
+          language: brand.language,
+          aliases: brand.aliases,
           competitors: brand.competitors,
         },
         brandId,

@@ -24,6 +24,47 @@ import { logger } from '@/lib/logger'
 import { safeFetchText } from '@/lib/utils/safe-fetch'
 import { callLLM } from './prompt-generator-ai'
 import type { LlmsInput } from './llms-generator'
+import { disambiguationFor } from '@/lib/brand-enrichment'
+import { GEO } from '@/lib/geo-config'
+import { searchBrandRanking, isBraveSearchAvailable } from './brave-search'
+
+// Reference market for a brand: explicit field wins, else derived from the
+// brand language, else the workspace-wide configured market. Keeps generation
+// market-aware (e.g. "Sweden", not a US-default assumption).
+function deriveMarket(explicit: string | null | undefined, language?: string | null): string {
+  if (explicit && explicit.trim()) return explicit.trim()
+  if (language === 'sv') return 'Sweden'
+  if (language === 'it') return 'Italy'
+  return GEO.marketName
+}
+
+// Brave grounding: search the brand name and report what the web actually
+// says — used to confirm the brand's category/market and to flag look-alike
+// confusion (when the brand's own domain doesn't dominate its own name).
+async function braveGroundBrand(
+  brandName: string,
+  domain: string,
+  language?: string,
+): Promise<{ summary: string; lookAlikeRisk: boolean } | null> {
+  if (!isBraveSearchAvailable() || !domain) return null
+  try {
+    const res = await searchBrandRanking(brandName, domain, language)
+    const top = res.organicResults.slice(0, 4)
+    if (top.length === 0) return null
+    const lines = top.map((r) => `  #${r.rank} ${r.title} — ${r.url}`)
+    const ranks =
+      res.position > 0
+        ? `The brand's own site (${domain}) ranks at #${res.position}.`
+        : `The brand's own site (${domain}) does NOT appear in the top results — possible name collision with another company.`
+    return {
+      summary: `Top results for "${brandName}":\n${lines.join('\n')}\n${ranks}`,
+      lookAlikeRisk: res.position === 0,
+    }
+  } catch (err) {
+    logger.warn('llms-enrichment: brave grounding failed', { err: String(err) })
+    return null
+  }
+}
 
 type Db = ReturnType<typeof createServerClient>
 
@@ -344,8 +385,15 @@ interface SynthesisInput {
   brandName: string
   domain: string
   industry?: string
+  market?: string
+  language?: string
+  aliases?: string[]
   competitors?: string[]
   existingDescription?: string
+  /** Disambiguation warning (specific hint or generic no-confusion line). */
+  disambiguation?: string | null
+  /** Short Brave-grounding summary of what the web says about this brand. */
+  braveGrounding?: string | null
   scrapedTitle?: string | null
   scrapedDescription?: string | null
   scrapedText?: string | null
@@ -355,35 +403,52 @@ interface SynthesisOutput {
   description: string
   products: Array<{ name: string; description: string }>
   faqs: Array<{ question: string; answer: string }>
+  /** True when the model judges the scraped content is NOT about this brand. */
+  mismatch: boolean
 }
 
 function buildSynthesisSystemPrompt(): string {
   return [
-    'You are a brand analyst writing the content of an llms.txt file — a curated Markdown brief that helps AI assistants (ChatGPT, Gemini, Perplexity, Claude) understand a company.',
-    'You will be given a brand name, its industry, and raw text scraped from several of its web pages.',
+    'You are a brand analyst writing the content of an llms.txt file — a curated Markdown brief that helps AI assistants (ChatGPT, Gemini, Perplexity, Claude) understand ONE specific company.',
+    'You will be given the canonical IDENTITY of that company (name + exact domain + market + language) and raw text scraped from that domain.',
     'Produce a single JSON object. JSON only, no prose, no markdown fences.',
-    'Schema: { "description": string, "products": [ { "name": string, "description": string } ], "faqs": [ { "question": string, "answer": string } ] }',
-    'Rules:',
-    '1. "description" is 1-3 factual sentences describing what the company does and who it serves. No marketing fluff, no superlatives you cannot support from the input.',
-    '2. "products" lists 0-6 concrete products/services. Each description is one sentence. If the input does not clearly reveal products, return an empty array — do NOT invent.',
-    '3. "faqs": if the scraped text contains an FAQ / "Vanliga frågor" / "Domande frequenti" / Q&A section, extract up to 10 question→answer pairs VERBATIM in meaning from the text. Only include a pair when BOTH the question AND a real answer are present in the input. If a question has no visible answer in the text, omit it. Never invent answers. Return an empty array if there is no FAQ content.',
+    'Schema: { "description": string, "products": [ { "name": string, "description": string } ], "faqs": [ { "question": string, "answer": string } ], "mismatch": boolean }',
+    'GROUNDING RULES — these override everything else:',
+    'A. Describe ONLY the company at the given DOMAIN, using the scraped content from that domain as ground truth. The DOMAIN is the authority on who this brand is.',
+    'B. NEVER confuse this brand with a similarly-named company, a foreign trademark, or a better-known look-alike. If a DISAMBIGUATION note is provided, obey it strictly.',
+    'C. If the scraped content clearly appears to be about a DIFFERENT company than the named brand/domain (or is empty/irrelevant), set "mismatch": true, put a one-line explanation in "description", and return EMPTY products and faqs. Do NOT describe a different company to fill the gap.',
+    'D. Respect the MARKET and LANGUAGE: this brand serves the stated market; do not assume a US/global context if the market is e.g. Sweden.',
+    'Content rules:',
+    '1. "description": 1-3 factual sentences on what the company does and who it serves, grounded in the scraped content. No fluff, no unsupported superlatives.',
+    '2. "products": 0-6 concrete products/services, one sentence each. If the content does not clearly reveal products, return []. Do NOT invent.',
+    '3. "faqs": if the scraped text has an FAQ / "Vanliga frågor" / "Domande frequenti" / Q&A section, extract up to 10 question→answer pairs (verbatim meaning). Include a pair ONLY when both question AND a real answer are present. Never invent answers. Else [].',
     '4. Never fabricate facts (prices, founding dates, locations) not present in the input.',
-    '5. Write in the same language as the scraped text when it is clearly non-English; otherwise English.',
+    '5. Write in the brand LANGUAGE when it is non-English; otherwise match the scraped text.',
   ].join('\n')
 }
 
 function buildSynthesisUserPrompt(input: SynthesisInput): string {
   return [
+    '=== CANONICAL IDENTITY (authoritative) ===',
     `BRAND: ${input.brandName}`,
     `DOMAIN: ${input.domain}`,
     input.industry ? `INDUSTRY: ${input.industry}` : '',
+    input.market ? `REFERENCE MARKET: ${input.market}` : '',
+    input.language ? `LANGUAGE: ${input.language}` : '',
+    input.aliases && input.aliases.length > 0 ? `ALSO KNOWN AS: ${input.aliases.join(', ')}` : '',
     input.competitors && input.competitors.length > 0
       ? `COMPETITORS: ${input.competitors.join(', ')}`
       : '',
+    input.disambiguation ? `\nDISAMBIGUATION:\n${input.disambiguation}` : '',
+    input.braveGrounding
+      ? `\nWEB GROUNDING (Brave search for the brand):\n${input.braveGrounding}`
+      : '',
+    '',
+    '=== SCRAPED CONTENT (from the DOMAIN above — ground truth) ===',
     input.existingDescription ? `EXISTING DESCRIPTION: ${input.existingDescription}` : '',
-    input.scrapedTitle ? `HOMEPAGE TITLE: ${input.scrapedTitle}` : '',
-    input.scrapedDescription ? `HOMEPAGE META DESCRIPTION: ${input.scrapedDescription}` : '',
-    input.scrapedText ? `HOMEPAGE TEXT (truncated):\n${input.scrapedText}` : '',
+    input.scrapedTitle ? `PAGE TITLE: ${input.scrapedTitle}` : '',
+    input.scrapedDescription ? `META DESCRIPTION: ${input.scrapedDescription}` : '',
+    input.scrapedText ? `PAGE TEXT (truncated):\n${input.scrapedText}` : '',
     '',
     'Return the JSON object now.',
   ]
@@ -404,7 +469,9 @@ async function synthesize(
       description?: unknown
       products?: unknown
       faqs?: unknown
+      mismatch?: unknown
     }
+    const mismatch = parsed.mismatch === true
     const description = typeof parsed.description === 'string' ? parsed.description.trim() : ''
     const products = Array.isArray(parsed.products)
       ? parsed.products
@@ -432,10 +499,19 @@ async function synthesize(
           .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
           .slice(0, 10)
       : []
+    // Brand mismatch: the scraped content isn't about this brand. Surface the
+    // explanation but do NOT let a wrong description/products/faqs through.
+    if (mismatch) {
+      return {
+        output: { description, products: [], faqs: [], mismatch: true },
+        provider: llm.provider,
+        note: description || 'scraped content did not match the brand',
+      }
+    }
     if (!description && products.length === 0 && faqs.length === 0) {
       return { output: null, provider: llm.provider, note: 'AI returned no usable content' }
     }
-    return { output: { description, products, faqs }, provider: llm.provider }
+    return { output: { description, products, faqs, mismatch: false }, provider: llm.provider }
   } catch (err) {
     const note = err instanceof Error ? err.message : String(err)
     logger.warn('llms-enrichment: AI synthesis failed', { note })
@@ -450,6 +526,9 @@ interface BrandLike {
   domain: string
   description?: string | null
   industry?: string | null
+  market?: string | null
+  language?: string | null
+  aliases?: string[] | null
   competitors?: string[] | null
 }
 
@@ -467,11 +546,18 @@ export async function enrichLlmsInput(
     ai: { ok: false, provider: null, products: 0 },
   }
 
-  // Run independent retrievals in parallel.
-  const [scrape, faqs, specialties] = await Promise.all([
+  const market = deriveMarket(brand.market, brand.language)
+
+  // Run independent retrievals in parallel — including a Brave grounding pass
+  // (only when AI synthesis is on, since that's the only consumer) to confirm
+  // the brand's identity/category and flag look-alike confusion.
+  const [scrape, faqs, specialties, grounding] = await Promise.all([
     opts.scrapeSite ? scrapeSite(brand.domain) : Promise.resolve(null),
     opts.aeoFaqs ? getAeoFaqs(db, brandId) : Promise.resolve([]),
     opts.keywordSpecialties ? getKeywordSpecialties(db, brandId) : Promise.resolve([]),
+    opts.aiSynthesis
+      ? braveGroundBrand(brand.name, brand.domain, brand.language ?? undefined)
+      : Promise.resolve(null),
   ])
 
   if (scrape) {
@@ -507,17 +593,42 @@ export async function enrichLlmsInput(
   // AI synthesis runs last so it can use the scraped raw text (homepage + key
   // pages) — including extracting FAQ Q&A the site didn't expose as schema.
   if (opts.aiSynthesis) {
+    // Disambiguation: specific hint (e.g. Acasting/Acast) if known, else a
+    // generic canonical-identity line that pins the brand to its own domain.
+    const specificHint = disambiguationFor(brand.name)
+    const genericHint = `"${brand.name}" is the company at ${brand.domain}${
+      brand.industry ? ` (${brand.industry})` : ''
+    } serving the ${market} market. Describe ONLY this company from its own site. Do not confuse it with similarly-named brands or foreign trademarks.`
+    const lookAlikeNote = grounding?.lookAlikeRisk
+      ? ` NOTE: a web search for "${brand.name}" did not surface ${brand.domain} at the top — be extra careful not to describe a different, better-known company.`
+      : ''
+    const disambiguation = `${specificHint ?? genericHint}${lookAlikeNote}`
+
     const { output, provider, note } = await synthesize({
       brandName: brand.name,
       domain: brand.domain,
       industry: brand.industry ?? undefined,
+      market,
+      language: brand.language ?? undefined,
+      aliases: brand.aliases ?? undefined,
       competitors: brand.competitors ?? undefined,
       existingDescription: brand.description ?? undefined,
+      disambiguation,
+      braveGrounding: grounding?.summary ?? null,
       scrapedTitle: scrape?.title ?? null,
       scrapedDescription: scrape?.description ?? null,
       scrapedText: scrape?.rawText ?? null,
     })
-    if (output) {
+    if (output?.mismatch) {
+      // The scraped content wasn't about this brand — don't pollute the file
+      // with a wrong description. Flag it so the operator can fix the domain.
+      sources.ai = {
+        ok: false,
+        provider,
+        products: 0,
+        note: `brand mismatch — ${note ?? 'scraped content did not match the brand'}`,
+      }
+    } else if (output) {
       // AI description wins over the meta-tag one (richer, brand-aware).
       if (output.description) patch.description = output.description
       if (output.products.length > 0) patch.products = output.products

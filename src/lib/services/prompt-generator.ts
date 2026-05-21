@@ -777,6 +777,283 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
       sv: ['byggfirma', 'renovering', 'bygg', 'hemförbättring', 'hantverkare'],
     },
   },
+  {
+    id: 'marketing-advertising',
+    name: {
+      en: 'Marketing & Advertising',
+      it: 'Marketing e Pubblicità',
+      sv: 'Marknadsföring & Reklam',
+    },
+    description: {
+      en: 'Advertising, media, PR, and digital marketing agencies. Monitor visibility across agency-selection and campaign queries.',
+      it: 'Agenzie pubblicitarie, media, PR e marketing digitale. Monitora la visibilità nelle ricerche di selezione agenzia e campagne.',
+      sv: 'Reklam-, medie-, PR- och digitalmarknadsföringsbyråer. Övervaka synlighet i sökningar om byråval och kampanjer.',
+    },
+    competitors: ['Ogilvy', 'Publicis', 'WPP', 'Dentsu', 'Accenture Song', 'Havas'],
+    localCompetitors: {
+      sv: [
+        'Forsman & Bodenfors',
+        'Åkestam Holst',
+        'NORD DDB',
+        'Garbergs',
+        'Prime Weber Shandwick',
+        'Hjärta',
+        'King',
+      ],
+      it: ['Armando Testa', 'Publicis Italia', 'Leo Burnett Italia', 'TBWA Italia', 'DUDE'],
+    },
+    localizedTemplates: {
+      sv: [
+        '{brand} {location} omdöme',
+        '{brand} eller {competitor} vilken byrå är bäst',
+        'bästa {category} i {location}',
+        '{brand} kundcase referenser',
+        'anlita {category} {location}',
+        '{brand} pris offert',
+        '{brand} {competitor} jämförelse',
+        'bästa reklambyrån {location}',
+        '{brand} för {role}',
+      ],
+      it: [
+        '{brand} {location} recensioni',
+        '{brand} o {competitor} quale agenzia scegliere',
+        'miglior {category} {location}',
+        '{brand} portfolio clienti',
+        '{brand} prezzi preventivo',
+        '{brand} per {role}',
+      ],
+    },
+    categories: {
+      en: ['advertising agency', 'media agency', 'marketing agency', 'digital agency'],
+      it: ['agenzia pubblicitaria', 'agenzia media', 'agenzia di marketing', 'agenzia digitale'],
+      sv: ['reklambyrå', 'mediebyrå', 'marknadsföringsbyrå', 'digital byrå'],
+    },
+    roles: {
+      en: ['marketing manager', 'brand manager', 'CMO', 'business owner'],
+      it: ['responsabile marketing', 'brand manager', 'CMO', 'imprenditore'],
+      sv: ['marknadschef', 'varumärkesansvarig', 'CMO', 'företagare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review {year}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} {location}', priority: 'medium' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B2', template: '{brand} alternative agency', priority: 'high' },
+      { bucket: 'B3', template: 'how to choose a {category}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} pricing fees', priority: 'high' },
+      { bucket: 'B4', template: '{brand} for {role}', priority: 'high' },
+      { bucket: 'B4', template: '{brand} case studies results', priority: 'high' },
+      { bucket: 'B5', template: 'is {brand} a good agency', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['marketing agency', 'advertising', 'branding', 'campaign'],
+      it: ['agenzia di marketing', 'pubblicità', 'branding', 'campagna'],
+      sv: ['reklambyrå', 'marknadsföring', 'varumärke', 'kampanj'],
+    },
+  },
+  {
+    id: 'professional-services',
+    name: {
+      en: 'Professional Services',
+      it: 'Servizi Professionali',
+      sv: 'Konsult & Tjänster',
+    },
+    description: {
+      en: 'Consultancies, law, accounting, recruitment, and B2B service firms. Monitor visibility across provider-selection queries.',
+      it: 'Società di consulenza, studi legali, contabilità, recruiting e servizi B2B. Monitora la visibilità nelle ricerche di selezione fornitori.',
+      sv: 'Konsultbolag, jurist-, redovisnings-, rekryterings- och B2B-tjänsteföretag. Övervaka synlighet i sökningar om leverantörsval.',
+    },
+    competitors: ['McKinsey', 'Deloitte', 'PwC', 'KPMG', 'EY', 'Accenture'],
+    localCompetitors: {
+      sv: ['Knowit', 'HiQ', 'Sweco', 'Cinode', 'Centigo', 'Implement', 'Academic Work'],
+      it: ['Bip', 'Reply', 'P4I', 'Spencer Stuart Italia', 'Studio Legale BonelliErede'],
+    },
+    localizedTemplates: {
+      sv: [
+        '{brand} {location} omdöme',
+        '{brand} eller {competitor} vilken är bäst',
+        'bästa {category} i {location}',
+        '{brand} pris arvode',
+        'anlita {category} {location}',
+        '{brand} {competitor} jämförelse',
+        '{brand} kundrecensioner',
+        '{brand} för {role}',
+      ],
+      it: [
+        '{brand} {location} recensioni',
+        '{brand} o {competitor} quale scegliere',
+        'miglior {category} {location}',
+        '{brand} costi tariffe',
+        '{brand} per {role}',
+      ],
+    },
+    categories: {
+      en: ['consultancy', 'law firm', 'accounting firm', 'recruitment agency'],
+      it: [
+        'società di consulenza',
+        'studio legale',
+        'studio commercialista',
+        'agenzia di recruiting',
+      ],
+      sv: ['konsultbyrå', 'advokatbyrå', 'redovisningsbyrå', 'rekryteringsföretag'],
+    },
+    roles: {
+      en: ['business owner', 'HR manager', 'CFO', 'startup founder'],
+      it: ['imprenditore', 'responsabile HR', 'CFO', 'fondatore startup'],
+      sv: ['företagare', 'HR-chef', 'CFO', 'startupgrundare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review {location}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B2', template: '{brand} alternative', priority: 'high' },
+      { bucket: 'B3', template: 'how to choose a {category}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} pricing fees', priority: 'high' },
+      { bucket: 'B4', template: '{brand} for {role}', priority: 'high' },
+      { bucket: 'B5', template: 'is {brand} reliable', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['consultancy', 'professional services', 'B2B services', 'advisory'],
+      it: ['consulenza', 'servizi professionali', 'servizi B2B', 'advisory'],
+      sv: ['konsult', 'professionella tjänster', 'B2B-tjänster', 'rådgivning'],
+    },
+  },
+  {
+    id: 'beauty-wellness',
+    name: {
+      en: 'Beauty & Wellness',
+      it: 'Bellezza e Benessere',
+      sv: 'Skönhet & Välmående',
+    },
+    description: {
+      en: 'Salons, spas, cosmetics, and wellness brands. Monitor visibility across treatment and product discovery queries.',
+      it: 'Saloni, spa, cosmetici e brand wellness. Monitora la visibilità nelle ricerche di trattamenti e prodotti.',
+      sv: 'Salonger, spa, kosmetik och hälsovarumärken. Övervaka synlighet i sökningar om behandlingar och produkter.',
+    },
+    competitors: ['Sephora', "L'Oréal", 'The Body Shop', 'Rituals', 'Lyko'],
+    localCompetitors: {
+      sv: ['Lyko', 'Kicks', 'Eleven', 'Bangerhead', 'Skincity', 'Cocopanda'],
+      it: ['Sephora Italia', 'Douglas', 'Pinalli', 'Tigotà', 'Beautystar'],
+    },
+    localizedTemplates: {
+      sv: [
+        '{brand} {location} omdöme',
+        'bästa {category} i {location}',
+        '{brand} {competitor} jämför',
+        '{brand} priser behandling',
+        'boka {category} {location}',
+        '{brand} produkter recension',
+        'är {brand} bra {location}',
+        '{brand} {location} betyg',
+      ],
+      it: [
+        '{brand} {location} recensioni',
+        'miglior {category} {location}',
+        '{brand} prezzi trattamenti',
+        'prenotare {category} {location}',
+        '{brand} prodotti recensione',
+      ],
+    },
+    categories: {
+      en: ['hair salon', 'beauty salon', 'spa', 'cosmetics brand'],
+      it: ['parrucchiere', 'centro estetico', 'spa', 'brand di cosmetici'],
+      sv: ['frisör', 'skönhetssalong', 'spa', 'kosmetikvarumärke'],
+    },
+    roles: {
+      en: ['customer', 'bride', 'skincare enthusiast', 'regular client'],
+      it: ['cliente', 'sposa', 'appassionato skincare', 'cliente abituale'],
+      sv: ['kund', 'brud', 'hudvårdsentusiast', 'stamkund'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} reviews {location}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'how to book {brand} appointment', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} prices {location}', priority: 'high' },
+      { bucket: 'B4', template: '{brand} products review', priority: 'medium' },
+      { bucket: 'B5', template: 'is {brand} {location} good', priority: 'low' },
+    ],
+    seedKeywords: {
+      en: ['salon', 'spa', 'beauty', 'skincare'],
+      it: ['salone', 'spa', 'bellezza', 'skincare'],
+      sv: ['salong', 'spa', 'skönhet', 'hudvård'],
+    },
+  },
+  {
+    id: 'finance-insurance',
+    name: {
+      en: 'Finance & Insurance',
+      it: 'Finanza e Assicurazioni',
+      sv: 'Finans & Försäkring',
+    },
+    description: {
+      en: 'Banks, insurers, fintech, and financial advisors. Monitor visibility across product-comparison and provider-trust queries.',
+      it: 'Banche, assicurazioni, fintech e consulenti finanziari. Monitora la visibilità nelle ricerche di confronto prodotti e fiducia.',
+      sv: 'Banker, försäkringsbolag, fintech och finansrådgivare. Övervaka synlighet i sökningar om produktjämförelser och förtroende.',
+    },
+    competitors: ['Klarna', 'Revolut', 'PayPal', 'N26', 'Wise'],
+    localCompetitors: {
+      sv: [
+        'Swedbank',
+        'SEB',
+        'Handelsbanken',
+        'Nordea',
+        'Avanza',
+        'Nordnet',
+        'Folksam',
+        'Länsförsäkringar',
+      ],
+      it: ['Intesa Sanpaolo', 'UniCredit', 'Fineco', 'Generali', 'Poste Italiane'],
+    },
+    localizedTemplates: {
+      sv: [
+        '{brand} {location} omdöme',
+        '{brand} eller {competitor} vilken är bäst',
+        'bästa {category} i {location}',
+        '{brand} avgifter ränta',
+        '{brand} {competitor} jämför',
+        'är {brand} säkert',
+        '{brand} kundrecensioner',
+        'bästa {category} {location}',
+      ],
+      it: [
+        '{brand} {location} recensioni',
+        '{brand} o {competitor} quale scegliere',
+        'miglior {category} {location}',
+        '{brand} costi commissioni',
+        'è sicuro {brand}',
+      ],
+    },
+    categories: {
+      en: ['bank', 'insurance company', 'fintech app', 'financial advisor'],
+      it: ['banca', 'compagnia assicurativa', 'app fintech', 'consulente finanziario'],
+      sv: ['bank', 'försäkringsbolag', 'fintech-app', 'finansrådgivare'],
+    },
+    roles: {
+      en: ['saver', 'first-time investor', 'small business owner', 'homebuyer'],
+      it: [
+        'risparmiatore',
+        'investitore alle prime armi',
+        'piccolo imprenditore',
+        'acquirente casa',
+      ],
+      sv: ['sparare', 'förstagångsinvesterare', 'småföretagare', 'bostadsköpare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review {location}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'how to choose a {category}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} fees rates', priority: 'high' },
+      { bucket: 'B4', template: '{brand} for {role}', priority: 'high' },
+      { bucket: 'B5', template: 'is {brand} safe regulated', priority: 'high' },
+    ],
+    seedKeywords: {
+      en: ['bank', 'insurance', 'fintech', 'savings'],
+      it: ['banca', 'assicurazione', 'fintech', 'risparmio'],
+      sv: ['bank', 'försäkring', 'fintech', 'sparande'],
+    },
+  },
 ]
 
 export interface ExpandedQuery {
@@ -940,8 +1217,9 @@ export function expandKeywords(
     year,
   }
 
+  const intentQueries: ExpandedQuery[] = []
   for (const pattern of preset.intentPatterns) {
-    queries.push(
+    intentQueries.push(
       ...expandPattern(
         pattern.template,
         variables,
@@ -954,14 +1232,21 @@ export function expandKeywords(
     )
   }
 
+  const localQueries: ExpandedQuery[] = []
   const localTemplates = preset.localizedTemplates?.[locale]
   if (localTemplates) {
     for (const lt of localTemplates) {
-      queries.push(...expandPattern(lt, variables, preset, locale, 'B1', 'medium', competitors))
+      localQueries.push(
+        ...expandPattern(lt, variables, preset, locale, 'B1', 'medium', competitors),
+      )
     }
   }
 
-  return queries
+  // For non-English locales the localized templates are natively phrased (e.g.
+  // "bästa reklambyrån Stockholm"), while intentPatterns are English scaffolding
+  // ("best {category} {location}"). Lead with the native ones so a capped/top
+  // slice favors prompts that actually read well in the brand's language.
+  return locale === 'en' ? [...intentQueries, ...localQueries] : [...localQueries, ...intentQueries]
 }
 
 export function generatePrompts(

@@ -1,7 +1,7 @@
 // PATH: src/app/dashboard/onboarding/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
@@ -47,22 +47,13 @@ interface PromptForm {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-// Aligned with the prompt-generator presets (INDUSTRY_PRESETS[].name.en) so the
-// chosen industry maps to the right prompt templates + competitor set instead
-// of falling back to a generic preset.
-const INDUSTRIES = [
-  'Casting & Talent',
-  'SaaS B2B',
-  'E-commerce',
-  'Local Business',
-  'Real Estate',
-  'Healthcare',
-  'Education',
-  'Hospitality & Tourism',
-  'Automotive',
-  'Construction',
-  'Other',
-]
+// Industries are loaded at runtime from /api/industries (the prompt-generator
+// presets) so the list is LOCALIZED and the selected value is a preset id —
+// no English label leaking into Swedish/Italian prompts.
+interface IndustryOption {
+  id: string
+  name: { en: string; it: string; sv: string }
+}
 
 const LANGUAGES = [
   { value: 'en', label: '🇬🇧 English' },
@@ -152,7 +143,7 @@ function generatePromptTemplates(
         : [mk(`Jämför ${brandName} med konkurrenter`, 'comparison')]
     return [
       mk(`Vad är ${brandName}?`, 'presence'),
-      mk(`Bästa ${ind}-företagen${inPlace}?`, 'citation'),
+      mk(`Bästa företagen inom ${ind}${inPlace}?`, 'citation'),
       ...vs,
       mk(`${brandName} omdömen och rykte`, 'sentiment'),
       mk(`Bästa alternativen till ${brandName}`, 'citation'),
@@ -214,6 +205,29 @@ export default function OnboardingPage() {
   // Created IDs
   const [brandId, setBrandId] = useState<string | null>(null)
 
+  // Localized industry presets for the dropdown.
+  const [industries, setIndustries] = useState<IndustryOption[]>([])
+  useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && Array.isArray(j.data)) setIndustries(j.data as IndustryOption[])
+      })
+      .catch(() => {})
+  }, [])
+
+  // The selected preset, and a short localized noun for the category prompt
+  // (primary term before any "&"/"och", e.g. "Marknadsföring & Reklam" →
+  // "marknadsföring"). Falls back to a generic word so prompts never show a
+  // raw preset id.
+  const selectedPreset = industries.find((i) => i.id === brand.industry)
+  const industryNoun = (() => {
+    const generic = { en: 'business', it: 'attività', sv: 'verksamhet' }[brand.language]
+    if (!selectedPreset) return generic
+    const name = selectedPreset.name[brand.language] ?? selectedPreset.name.en
+    return name.split(/\s+(?:&|och|e)\s+/i)[0]!.toLowerCase()
+  })()
+
   // ─── Step navigation ─────────────────────────────────────────────────────
 
   const canProceed = () => {
@@ -241,12 +255,7 @@ export default function OnboardingPage() {
         .map((s) => s.trim())
         .filter(Boolean)
       setPrompts(
-        generatePromptTemplates(
-          brand.name,
-          brand.industry || 'business',
-          brand.language || 'en',
-          competitorList,
-        ),
+        generatePromptTemplates(brand.name, industryNoun, brand.language || 'en', competitorList),
       )
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
@@ -272,7 +281,7 @@ export default function OnboardingPage() {
           name: brand.name,
           domain: brand.domain || undefined,
           description: brand.description || undefined,
-          industry: brand.industry || undefined,
+          industry: selectedPreset?.name.en || undefined,
           aliases: brand.aliases
             ? brand.aliases
                 .split(',')
@@ -518,9 +527,9 @@ export default function OnboardingPage() {
                 onChange={(e) => setBrand({ ...brand, industry: e.target.value })}
               >
                 <option value="">{t('onboarding.brand_form.industry_placeholder')}</option>
-                {INDUSTRIES.map((i) => (
-                  <option key={i} value={i}>
-                    {i}
+                {industries.map((ind) => (
+                  <option key={ind.id} value={ind.id}>
+                    {ind.name[brand.language] ?? ind.name.en}
                   </option>
                 ))}
               </select>

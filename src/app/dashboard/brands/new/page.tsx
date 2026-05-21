@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Plus,
   X,
-  Loader2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -41,22 +40,15 @@ const BRAND_COLORS = [
   '#84cc16',
 ]
 
-// Aligned with the prompt-generator presets so a brand's industry maps to the
-// right template/competitor set (a casting brand should get casting prompts,
-// not generic SaaS ones). Labels mirror INDUSTRY_PRESETS[].name.en.
-const INDUSTRIES = [
-  'Casting & Talent',
-  'SaaS B2B',
-  'E-commerce',
-  'Local Business',
-  'Real Estate',
-  'Healthcare',
-  'Education',
-  'Hospitality & Tourism',
-  'Automotive',
-  'Construction',
-  'Other',
-]
+// Industries are loaded at runtime from /api/industries (the prompt-generator
+// presets) so the dropdown stays in sync with the engine and shows LOCALIZED
+// names. The selected value is the preset id, which feeds straight into
+// /api/prompts/generate-from-industry — no English label leaking into Swedish
+// prompts, no "Other" placeholder.
+interface IndustryOption {
+  id: string
+  name: { en: string; it: string; sv: string }
+}
 
 const ENGINES = [
   { id: 'chatgpt', label: 'ChatGPT', color: '#10b981' },
@@ -89,22 +81,27 @@ interface Prompt {
   market: string
 }
 
-// Maps the wizard's free-text industries to the closest preset id understood
-// by /api/prompts/generate-from-industry. The AI augmentation leans mostly on
-// brand + competitors + locale, so an approximate preset is fine — it only
-// supplies secondary category/role hints the model can override.
-const INDUSTRY_TO_PRESET: Record<string, string> = {
-  'Casting & Talent': 'casting-talent',
-  'SaaS B2B': 'saas-b2b',
-  'E-commerce': 'ecommerce',
-  'Local Business': 'local-business',
-  'Real Estate': 'real-estate',
-  Healthcare: 'healthcare',
-  Education: 'education',
-  'Hospitality & Tourism': 'hospitality',
-  Automotive: 'automotive',
-  Construction: 'construction',
-  Other: 'saas-b2b',
+// Turns a wizard market id into the {location} word the preset templates expect
+// (e.g. "bästa mäklaren {location}" → "...Stockholm"). Unmapped/international
+// markets pass '' so the template falls back to the preset's seed location.
+const MARKET_TO_LOCATION: Record<string, string> = {
+  'SE-Stockholm': 'Stockholm',
+  'SE-Göteborg': 'Göteborg',
+  'SE-Malmö': 'Malmö',
+  SE: 'Sverige',
+  NO: 'Norge',
+  DK: 'Danmark',
+  IT: 'Italia',
+  International: '',
+}
+
+// Preset intent buckets → the prompt form's category enum.
+const BUCKET_TO_CATEGORY: Record<string, string> = {
+  B1: 'comparison', // Brand & Competitor
+  B2: 'awareness', // Category Creation
+  B3: 'features', // Problem / JTBD
+  B4: 'alternative', // Buyer Intent
+  B5: 'custom', // Compliance & Risk
 }
 
 export default function NewBrandWizard() {
@@ -133,6 +130,17 @@ export default function NewBrandWizard() {
   })
 
   const [prompts, setPrompts] = useState<Prompt[]>([])
+  const [industries, setIndustries] = useState<IndustryOption[]>([])
+
+  // Load the localized industry presets for the dropdown.
+  useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && Array.isArray(j.data)) setIndustries(j.data as IndustryOption[])
+      })
+      .catch(() => {})
+  }, [])
 
   const set = (key: string, val: unknown) => setForm((f) => ({ ...f, [key]: val }))
 
@@ -151,13 +159,10 @@ export default function NewBrandWizard() {
   }
 
   const generatePrompts = async () => {
-    console.log('[generatePrompts] Starting with form:', {
-      languages: form.languages,
-      markets: form.markets,
-      industry: form.industry,
-      name: form.name,
-    })
-
+    if (!form.industry) {
+      toast.error('Pick an industry first — it selects the prompt templates')
+      return
+    }
     if (form.languages.length === 0) {
       toast.error('Please select at least one language')
       return
@@ -169,119 +174,89 @@ export default function NewBrandWizard() {
 
     setGeneratingPrompts(true)
     try {
-      const industry = form.industry || 'business'
-      const brand = form.name || 'Brand'
-      const competitors = form.competitors.join(', ') || 'competitors'
-      const selectedLanguages = form.languages
-      const selectedMarkets = form.markets
+      const brand = form.name.trim() || 'Brand'
+      // Preset templates ship for en/it/sv; anything else falls back to English.
+      const toLocale = (l: string) => (['en', 'it', 'sv'].includes(l) ? l : 'en')
+      const locales = [...new Set(form.languages.map(toLocale))]
+      // Use the primary market as the {location} word and tag prompts with it —
+      // generating the full set per market would just duplicate near-identical
+      // prompts. Users can add market variants later.
+      const primaryMarket = form.markets[0] ?? 'International'
+      const location = MARKET_TO_LOCATION[primaryMarket] ?? ''
 
       const generated: Prompt[] = []
+      let aiAdded = 0
+      let aiErrorMsg: string | null = null
 
-      const categories = ['awareness', 'comparison', 'features', 'alternative']
-      const englishTemplates = [
-        `Best ${industry} companies`,
-        `${industry} review`,
-        `${industry} pricing`,
-        `${brand} vs competitors`,
-        `Top ${industry} recommendations`,
-      ]
-      const swedishTemplates = [
-        `Bästa ${industry} i Sverige`,
-        `${industry} recension`,
-        `Rekommenderad ${industry}`,
-        `${brand} vs konkurrenter`,
-        `Bästa ${industry} företag`,
-      ]
-      const italianTemplates = [
-        `Migliore ${industry} in Italia`,
-        `${industry} recensioni`,
-        `${industry} consigliato`,
-        `${brand} vs concorrenti`,
-        `Migliori aziende ${industry}`,
-      ]
+      // One call per locale through the preset engine — natively-localized,
+      // brand- and competitor-aware prompts (no English label leaking into
+      // Swedish text, no "Other" placeholder).
+      for (const locale of locales) {
+        const res = await fetch('/api/prompts/generate-from-industry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            brand,
+            brandDomain: form.domain || undefined,
+            industryId: form.industry,
+            locale,
+            location: location || undefined,
+            competitors: form.competitors,
+            withAi: useAi,
+          }),
+        })
+        const json = await res.json()
+        if (!res.ok || !json.success) {
+          toast.error(json.message || 'Prompt generation failed')
+          continue
+        }
 
-      const templatesByLang: Record<string, string[]> = {
-        en: englishTemplates,
-        sv: swedishTemplates,
-        it: italianTemplates,
-        de: englishTemplates.map((t) => t.replace(/Best /, 'Beste ').replace(/Top /, 'Top-')),
-        fr: englishTemplates.map((t) => t.replace(/Best /, 'Meilleur ').replace(/Top /, 'Top ')),
-        es: englishTemplates.map((t) => t.replace(/Best /, 'Mejor ').replace(/Top /, 'Top ')),
-        no: swedishTemplates,
-        da: swedishTemplates,
-      }
+        // Cap the template set so the starter list stays focused.
+        const templatePrompts = (
+          json.data as Array<{ userQuery: string; intentBucket: string }>
+        ).slice(0, 14)
+        for (const p of templatePrompts) {
+          generated.push({
+            text: p.userQuery,
+            category: BUCKET_TO_CATEGORY[p.intentBucket] || 'awareness',
+            language: locale,
+            market: primaryMarket,
+          })
+        }
 
-      for (const language of selectedLanguages) {
-        const templates = templatesByLang[language] || englishTemplates
-
-        for (const market of selectedMarkets) {
-          for (let i = 0; i < 5; i++) {
-            const template = templates[i % templates.length] ?? englishTemplates[0] ?? ''
+        if (useAi) {
+          if (json.ai?.error) aiErrorMsg = json.ai.error
+          for (const p of (json.ai?.prompts ?? []) as Array<{ text: string }>) {
             generated.push({
-              text: template
-                .replace('{industry}', industry)
-                .replace('{brand}', brand)
-                .replace('{competitors}', competitors),
-              category: categories[i % categories.length] || 'awareness',
-              language: language,
-              market: market,
+              text: p.text,
+              category: 'custom',
+              language: locale,
+              market: primaryMarket,
             })
+            aiAdded++
           }
         }
       }
 
-      console.log('[generatePrompts] Generated prompts:', generated.length)
+      // De-dup identical texts (a template can recur across locales).
+      const seen = new Set<string>()
+      const deduped = generated.filter((p) => {
+        const k = `${p.language}|${p.text}`
+        if (seen.has(k)) return false
+        seen.add(k)
+        return true
+      })
 
-      if (generated.length === 0) {
-        toast.error('No prompts generated. Please check your language and market selections.')
+      if (deduped.length === 0) {
+        toast.error('No prompts generated — check the industry and try again.')
         setGeneratingPrompts(false)
         return
       }
 
-      // Optional AI augmentation — appends Groq-generated prompts on top of the
-      // static templates. Soft-fails so the wizard still works if the AI call
-      // errors, the industry has no preset match, or no LLM key is configured.
-      if (useAi) {
-        const presetId = INDUSTRY_TO_PRESET[form.industry] ?? 'saas-b2b'
-        const aiLocale = ['en', 'it', 'sv'].includes(form.primaryLanguage)
-          ? form.primaryLanguage
-          : 'en'
-        const aiMarket = selectedMarkets[0] ?? 'International'
-        try {
-          const res = await fetch('/api/prompts/generate-from-industry', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              brand,
-              brandDomain: form.domain || undefined,
-              industryId: presetId,
-              locale: aiLocale,
-              competitors: form.competitors,
-              withAi: true,
-            }),
-          })
-          const json = await res.json()
-          const aiPrompts: Array<{ text: string }> = json?.ai?.prompts ?? []
-          if (json?.ai?.error) {
-            toast.error(`AI: ${json.ai.error}`)
-          } else if (aiPrompts.length > 0) {
-            for (const p of aiPrompts) {
-              generated.push({
-                text: p.text,
-                category: 'ai',
-                language: aiLocale,
-                market: aiMarket,
-              })
-            }
-            toast.success(`+${aiPrompts.length} AI prompts added`)
-          }
-        } catch (aiErr) {
-          console.error('[generatePrompts] AI augmentation failed:', aiErr)
-          toast.error('AI augmentation failed — using template prompts only')
-        }
-      }
+      if (aiErrorMsg) toast.error(`AI: ${aiErrorMsg}`)
+      else if (aiAdded > 0) toast.success(`+${aiAdded} AI prompts added`)
 
-      setPrompts(generated)
+      setPrompts(deduped)
       setStep(3)
     } catch (err) {
       console.error('[generatePrompts] Error:', err)
@@ -316,7 +291,7 @@ export default function NewBrandWizard() {
           name: form.name.trim(),
           description: form.description.trim() || undefined,
           domain: form.domain.trim().replace(/^https?:\/\//, '') || undefined,
-          industry: form.industry || undefined,
+          industry: industries.find((i) => i.id === form.industry)?.name.en || undefined,
           color: form.color,
           aliases: form.aliases,
           competitors: form.competitors,
@@ -497,11 +472,14 @@ export default function NewBrandWizard() {
                   onChange={(e) => set('industry', e.target.value)}
                 >
                   <option value="">Select...</option>
-                  {INDUSTRIES.map((i) => (
-                    <option key={i} value={i}>
-                      {i}
-                    </option>
-                  ))}
+                  {industries.map((ind) => {
+                    const lang = form.primaryLanguage as 'en' | 'it' | 'sv'
+                    return (
+                      <option key={ind.id} value={ind.id}>
+                        {ind.name[lang] ?? ind.name.en}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
               <div>
@@ -536,6 +514,7 @@ export default function NewBrandWizard() {
               {BRAND_COLORS.map((color) => (
                 <button
                   key={color}
+                  type="button"
                   className={cn(
                     'h-9 w-9 rounded-xl transition-all',
                     form.color === color &&
@@ -573,6 +552,7 @@ export default function NewBrandWizard() {
                 >
                   {a}
                   <button
+                    type="button"
                     onClick={() =>
                       setForm((f) => ({ ...f, aliases: f.aliases.filter((x) => x !== a) }))
                     }
@@ -613,6 +593,7 @@ export default function NewBrandWizard() {
                 >
                   {c}
                   <button
+                    type="button"
                     onClick={() =>
                       setForm((f) => ({ ...f, competitors: f.competitors.filter((x) => x !== c) }))
                     }
@@ -645,6 +626,7 @@ export default function NewBrandWizard() {
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.id}
+                  type="button"
                   onClick={() => {
                     if (form.languages.includes(lang.id)) {
                       set(
@@ -679,6 +661,7 @@ export default function NewBrandWizard() {
               {MARKETS.map((market) => (
                 <button
                   key={market.id}
+                  type="button"
                   onClick={() => {
                     if (form.markets.includes(market.id)) {
                       set(
@@ -852,6 +835,7 @@ export default function NewBrandWizard() {
               {['daily', 'weekly'].map((freq) => (
                 <button
                   key={freq}
+                  type="button"
                   onClick={() => set('frequency', freq)}
                   className={cn(
                     'flex-1 rounded-xl border py-3 text-sm font-medium transition-all',

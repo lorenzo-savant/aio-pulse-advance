@@ -1,25 +1,31 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/index'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import {
-  Play,
-  Pause,
-  RotateCcw,
   CheckCircle2,
   XCircle,
   Clock,
   Loader2,
-  ChevronRight,
   AlertTriangle,
   Activity,
+  Building2,
+  MessageSquare,
+  Radio,
+  Bell,
+  Target,
+  Link2,
+  Sparkles,
+  ArrowUpRight,
 } from 'lucide-react'
 import type { Brand, WorkflowExecution } from '@/types'
-import { PageTransition, StaggerGrid, StaggerItem, ExpandSection } from '@/components/ui/Motion'
+import { PageTransition } from '@/components/ui/Motion'
 import { AVIScoreCard } from '@/components/dashboard/AVIScoreCard'
+import { useOverviewStats } from '@/hooks/useOverviewStats'
 
 const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; label: string }> = {
   completed: { color: 'text-success', icon: CheckCircle2, label: 'Completed' },
@@ -30,11 +36,7 @@ const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; la
   cancelled: { color: 'text-muted-foreground', icon: XCircle, label: 'Cancelled' },
 }
 
-function getStatusConfig(status: string): {
-  color: string
-  icon: React.ElementType
-  label: string
-} {
+function getStatusConfig(status: string) {
   return STATUS_CONFIG[status] || STATUS_CONFIG.pending!
 }
 
@@ -46,33 +48,31 @@ const WORKFLOW_TYPE_LABELS: Record<string, string> = {
   health_score_calc: 'Health Score',
 }
 
-export default function WorkflowStatusPage() {
+export default function DashboardPage() {
   const t = useTranslations('dashboard')
+  const { stats } = useOverviewStats(60_000)
   const [workflows, setWorkflows] = useState<WorkflowExecution[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedBrand, setSelectedBrand] = useState('')
-  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
       if (selectedBrand) params.set('brand_id', selectedBrand)
-      params.set('limit', '50')
+      params.set('limit', '8')
 
       const [workflowsRes, brandsRes] = await Promise.all([
         fetch(`/api/workflows?${params}`),
         fetch('/api/brands'),
       ])
-
       const wJson = await workflowsRes.json()
       const bJson = await brandsRes.json()
-
       setWorkflows(wJson.data || [])
       setBrands(bJson.data || [])
     } catch (err) {
-      console.error('Failed to load workflows:', err)
+      console.error('Failed to load dashboard:', err)
     } finally {
       setLoading(false)
     }
@@ -82,42 +82,62 @@ export default function WorkflowStatusPage() {
     loadData()
   }, [loadData])
 
-  const rerunWorkflow = async (id: string) => {
-    try {
-      const res = await fetch(`/api/workflows?id=${id}&action=rerun`, { method: 'POST' })
-      if (res.ok) {
-        loadData()
-      }
-    } catch (err) {
-      console.error('Failed to rerun workflow:', err)
-    }
-  }
-
-  const cancelWorkflow = async (id: string) => {
-    try {
-      const res = await fetch(`/api/workflows?id=${id}&action=cancel`, { method: 'POST' })
-      if (res.ok) {
-        loadData()
-      }
-    } catch (err) {
-      console.error('Failed to cancel workflow:', err)
-    }
-  }
-
-  const runningCount = workflows.filter((w) => w.status === 'running').length
-  const failedCount = workflows.filter((w) => w.status === 'failed').length
   const completedCount = workflows.filter((w) => w.status === 'completed').length
+  const failedCount = workflows.filter((w) => w.status === 'failed').length
+  const runningCount = workflows.filter((w) => w.status === 'running').length
+  const lastRun = workflows[0]
 
-  const stats = [
-    { label: t('total'), value: workflows.length, icon: Activity, color: 'brand' },
-    { label: t('running'), value: runningCount, icon: Loader2, color: 'brand' },
-    { label: t('failed'), value: failedCount, icon: XCircle, color: 'error' },
-    { label: t('completed'), value: completedCount, icon: CheckCircle2, color: 'success' },
+  // At-a-glance KPIs — distinct from the per-job Workflows page. Each links to
+  // the section that owns the number.
+  const kpis = [
+    { label: 'Brands', value: stats.brands, icon: Building2, href: '/dashboard/brands' },
+    {
+      label: 'Active Prompts',
+      value: stats.prompts,
+      icon: MessageSquare,
+      href: '/dashboard/prompts',
+    },
+    {
+      label: 'Monitoring Runs',
+      value: stats.monitoringRuns,
+      icon: Radio,
+      href: '/dashboard/monitoring',
+    },
+    { label: 'Unread Alerts', value: stats.unreadAlerts, icon: Bell, href: '/dashboard/alerts' },
+  ]
+
+  // Quick jumps along the core flow.
+  const quickLinks = [
+    {
+      label: 'GEO Score',
+      desc: 'How well AI engines surface you',
+      icon: Target,
+      href: '/dashboard/geo-score',
+    },
+    {
+      label: 'Citation Sources',
+      desc: 'Where AI cites you',
+      icon: Link2,
+      href: '/dashboard/citation-sources',
+    },
+    {
+      label: 'Strategy Advisor',
+      desc: 'Prioritised next actions',
+      icon: Sparkles,
+      href: '/dashboard/advisor',
+    },
+    {
+      label: 'Prompts',
+      desc: 'Generate & manage prompts',
+      icon: MessageSquare,
+      href: '/dashboard/prompts',
+    },
   ]
 
   return (
     <PageTransition>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Pages / Dashboard</p>
@@ -125,163 +145,144 @@ export default function WorkflowStatusPage() {
               {t('page_subtitle')}
             </h1>
           </div>
-          <div className="flex items-center gap-4">
-            <select
-              className="rounded-xl border border-border bg-input px-4 py-2 text-sm text-foreground"
-              value={selectedBrand}
-              onChange={(e) => setSelectedBrand(e.target.value)}
-            >
-              <option value="">{t('all_brands')}</option>
-              {brands.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            className="rounded-xl border border-border bg-input px-4 py-2 text-sm text-foreground"
+            value={selectedBrand}
+            onChange={(e) => setSelectedBrand(e.target.value)}
+          >
+            <option value="">{t('all_brands')}</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* AVI Score Widget */}
+        {/* AVI Score — the hero metric */}
         <AVIScoreCard brandId={selectedBrand || undefined} />
 
-        {/* Stats */}
-        <StaggerGrid className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-          {stats.map(({ label, value, icon: Icon, color }) => (
-            <StaggerItem key={label}>
-              <div className="stat-card card-horizon">
-                <div
-                  className={cn(
-                    'stat-icon',
-                    color === 'brand' && 'bg-brand-gradient',
-                    color === 'error' && 'bg-gradient-to-br from-error to-red-600',
-                    color === 'success' && 'bg-gradient-to-br from-success to-emerald-600',
-                  )}
-                >
-                  <Icon className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                  <p className="text-[34px] font-bold leading-none tracking-tight text-foreground">
-                    {value}
-                  </p>
-                </div>
+        {/* KPI row */}
+        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+          {kpis.map(({ label, value, icon: Icon, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className="stat-card card-horizon group transition-transform hover:-translate-y-0.5"
+            >
+              <div className="stat-icon bg-brand-gradient">
+                <Icon className="h-6 w-6 text-white" />
               </div>
-            </StaggerItem>
+              <div className="min-w-0">
+                <p className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                  {label}
+                  <ArrowUpRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60" />
+                </p>
+                <p className="text-[34px] font-bold leading-none tracking-tight text-foreground">
+                  {value}
+                </p>
+              </div>
+            </Link>
           ))}
-        </StaggerGrid>
+        </div>
 
-        {/* Workflow List */}
-        <Card className="overflow-hidden">
-          <div className="divide-y divide-border">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Recent activity — compact summary, not the full Workflows page */}
+          <Card className="p-6">
+            <div className="mb-1 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-brand" />
+                <h2 className="text-lg font-bold text-foreground">Recent activity</h2>
+              </div>
+              <Link
+                href="/dashboard/workflows"
+                className="flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+              >
+                Manage in Workflows
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <p className="mb-4 text-xs text-muted-foreground">
+              {workflows.length} recent job{workflows.length === 1 ? '' : 's'} · {completedCount}{' '}
+              completed · {failedCount} failed · {runningCount} running
+              {lastRun && <> · last {formatRelativeTime(lastRun.startedAt)}</>}
+            </p>
+
             {loading ? (
-              <div className="flex items-center justify-center p-12">
-                <Loader2 className="h-8 w-8 animate-spin text-brand" />
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-brand" />
               </div>
             ) : workflows.length === 0 ? (
-              <div className="p-12 text-center text-muted-foreground">{t('no_workflows')}</div>
+              <p className="py-8 text-center text-sm text-muted-foreground">{t('no_workflows')}</p>
             ) : (
-              workflows.map((workflow) => {
-                const statusConfig = getStatusConfig(workflow.status)
-                const StatusIcon = statusConfig.icon
-                const isExpanded = expandedId === workflow.id
-
-                return (
-                  <div key={workflow.id} className="transition-colors hover:bg-secondary">
-                    <div
-                      className="flex cursor-pointer items-center gap-4 p-4"
-                      onClick={() => setExpandedId(isExpanded ? null : workflow.id)}
-                    >
-                      <StatusIcon className={cn('h-5 w-5 shrink-0', statusConfig.color)} />
+              <div className="divide-y divide-border">
+                {workflows.slice(0, 6).map((w) => {
+                  const sc = getStatusConfig(w.status)
+                  const Icon = sc.icon
+                  const brandName = brands.find((b) => b.id === w.brandId)?.name
+                  return (
+                    <div key={w.id} className="flex items-center gap-3 py-2.5">
+                      <Icon
+                        className={cn(
+                          'h-4 w-4 shrink-0',
+                          sc.color,
+                          w.status === 'running' && 'animate-spin',
+                        )}
+                      />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-foreground">
-                          {WORKFLOW_TYPE_LABELS[workflow.type] || workflow.type}
+                        <p className="truncate text-sm text-foreground">
+                          {WORKFLOW_TYPE_LABELS[w.type] || w.type}
+                          {brandName && (
+                            <span className="text-muted-foreground"> · {brandName}</span>
+                          )}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatRelativeTime(workflow.startedAt)}
+                        <p className="text-xs text-muted-foreground">
+                          {formatRelativeTime(w.startedAt)}
                         </p>
                       </div>
                       <Badge
                         variant={
-                          workflow.status === 'completed'
+                          w.status === 'completed'
                             ? 'success'
-                            : workflow.status === 'failed'
+                            : w.status === 'failed'
                               ? 'danger'
                               : 'default'
                         }
                       >
-                        {statusConfig.label}
+                        {sc.label}
                       </Badge>
-                      <ChevronRight
-                        className={cn(
-                          'h-5 w-5 text-muted-foreground transition-transform',
-                          isExpanded && 'rotate-90',
-                        )}
-                      />
                     </div>
-
-                    {/* Expanded Details */}
-                    <ExpandSection isOpen={isExpanded}>
-                      <div className="border-t border-border bg-secondary p-4">
-                        <div className="mb-4 flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              rerunWorkflow(workflow.id)
-                            }}
-                            className="hover:bg-brand-muted/80 flex items-center gap-1 rounded-lg bg-brand-muted px-3 py-1.5 text-xs font-medium text-brand"
-                          >
-                            <RotateCcw className="h-3 w-3" />
-                            {t('rerun')}
-                          </button>
-                          {workflow.status === 'running' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                cancelWorkflow(workflow.id)
-                              }}
-                              className="hover:bg-error-muted/80 flex items-center gap-1 rounded-lg bg-error-muted px-3 py-1.5 text-xs font-medium text-error"
-                            >
-                              <Pause className="h-3 w-3" />
-                              {t('cancel')}
-                            </button>
-                          )}
-                        </div>
-
-                        {workflow.error && (
-                          <div className="bg-error-muted/30 mb-4 rounded-lg border border-error-muted p-3">
-                            <p className="text-xs text-error">{workflow.error}</p>
-                          </div>
-                        )}
-
-                        {/* Steps */}
-                        <div className="space-y-2">
-                          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                            {t('steps')}
-                          </p>
-                          {workflow.steps.map((step, i) => {
-                            const stepStatus = getStatusConfig(step.status)
-                            const StepIcon = stepStatus.icon
-                            return (
-                              <div key={i} className="flex items-center gap-3 text-sm">
-                                <StepIcon className={cn('h-4 w-4', stepStatus.color)} />
-                                <span className="text-foreground/70">{step.name}</span>
-                                {step.error && (
-                                  <span className="max-w-xs truncate text-xs text-error">
-                                    {step.error}
-                                  </span>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </ExpandSection>
-                  </div>
-                )
-              })
+                  )
+                })}
+              </div>
             )}
-          </div>
-        </Card>
+          </Card>
+
+          {/* Quick jumps */}
+          <Card className="p-6">
+            <h2 className="mb-4 text-lg font-bold text-foreground">Jump to</h2>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {quickLinks.map(({ label, desc, icon: Icon, href }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="bg-secondary/40 group flex items-start gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-secondary"
+                >
+                  <div className="bg-primary/15 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                      {label}
+                      <ArrowUpRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60" />
+                    </p>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
     </PageTransition>
   )

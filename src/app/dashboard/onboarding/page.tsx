@@ -108,95 +108,74 @@ const STEPS = [
 
 // ─── Prompt Templates ────────────────────────────────────────────────────────
 
+// A deliberately SMALL, purpose-built starter set — not a flood of generic
+// prompts. Six prompts that, together, give the first read on the three
+// monitoring dimensions for THIS brand, using its real competitor + market:
+//   • PRESENCE  — does the AI know the brand at all?
+//   • CITATION  — is the brand named when the category/market is asked?
+//   • SENTIMENT — how is the brand spoken about (reviews, recommendation, vs)?
+const ALL_ENGINES: PromptForm['engines'] = ['chatgpt', 'gemini', 'perplexity', 'claude']
+
 function generatePromptTemplates(
   brandName: string,
   industry: string,
   language: BrandLanguage,
+  competitors: string[] = [],
 ): PromptForm[] {
-  const templatesByLang: Record<BrandLanguage, PromptForm[]> = {
-    sv: [
-      {
-        text: `Vilket är det bästa ${industry.toLowerCase()}-företaget?`,
-        language: 'sv',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `Kan du rekommendera ${brandName}?`,
-        language: 'sv',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `Vilka alternativ finns till ${brandName}?`,
-        language: 'sv',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `${brandName} omdömen och rykte`,
-        language: 'sv',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `Jämför ${brandName} med konkurrenter`,
-        language: 'sv',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-    ],
-    it: [
-      {
-        text: `Qual è la migliore azienda di ${industry.toLowerCase()}?`,
-        language: 'it',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `Puoi consigliare ${brandName}?`,
-        language: 'it',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `Quali alternative ci sono a ${brandName}?`,
-        language: 'it',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `${brandName} recensioni e reputazione`,
-        language: 'it',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `Confronta ${brandName} con i concorrenti`,
-        language: 'it',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-    ],
-    en: [
-      {
-        text: `What is the best ${industry.toLowerCase()} company?`,
-        language: 'en',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `Can you recommend ${brandName}?`,
-        language: 'en',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `What are alternatives to ${brandName}?`,
-        language: 'en',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `${brandName} reviews and reputation`,
-        language: 'en',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-      {
-        text: `Compare ${brandName} with competitors`,
-        language: 'en',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
-      },
-    ],
+  const ind = (industry || 'business').toLowerCase()
+  // Light market hint from the language so category/citation prompts are local.
+  const place = language === 'sv' ? 'Sverige' : language === 'it' ? 'Italia' : ''
+  const inPlace = { sv: ` i ${place}`, it: ` in ${place}`, en: '' }[language]
+
+  const mk = (text: string): PromptForm => ({ text, language, engines: ALL_ENGINES })
+  // Head-to-head comparison prompts against the real competitors — capped at
+  // the top 2 so the starter set stays focused. Falls back to a generic
+  // "vs competitors" prompt only when none were provided.
+  const topCompetitors = competitors
+    .map((c) => c.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+
+  if (language === 'sv') {
+    const vs =
+      topCompetitors.length > 0
+        ? topCompetitors.map((c) => mk(`${brandName} eller ${c} – vilket är bäst?`))
+        : [mk(`Jämför ${brandName} med konkurrenter`)]
+    return [
+      mk(`Vad är ${brandName}?`), // presence
+      mk(`Bästa ${ind}-företagen${inPlace}?`), // citation (category)
+      ...vs, // comparison vs competitors
+      mk(`${brandName} omdömen och rykte`), // sentiment
+      mk(`Bästa alternativen till ${brandName}`), // competitive presence
+      mk(`Kan du rekommendera ${brandName}${inPlace}?`), // presence + sentiment
+    ]
   }
-  return templatesByLang[language] || templatesByLang.en
+  if (language === 'it') {
+    const vs =
+      topCompetitors.length > 0
+        ? topCompetitors.map((c) => mk(`${brandName} o ${c}: qual è meglio?`))
+        : [mk(`Confronta ${brandName} con i concorrenti`)]
+    return [
+      mk(`Cos'è ${brandName}?`),
+      mk(`Migliori aziende di ${ind}${inPlace}?`),
+      ...vs,
+      mk(`${brandName} recensioni e reputazione`),
+      mk(`Migliori alternative a ${brandName}`),
+      mk(`Puoi consigliare ${brandName}${inPlace}?`),
+    ]
+  }
+  const vs =
+    topCompetitors.length > 0
+      ? topCompetitors.map((c) => mk(`${brandName} vs ${c} — which is better?`))
+      : [mk(`Compare ${brandName} with competitors`)]
+  return [
+    mk(`What is ${brandName}?`),
+    mk(`Best ${ind} companies${inPlace}?`),
+    ...vs,
+    mk(`${brandName} reviews and reputation`),
+    mk(`Best alternatives to ${brandName}`),
+    mk(`Can you recommend ${brandName}${inPlace}?`),
+  ]
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -246,9 +225,19 @@ export default function OnboardingPage() {
 
   const goNext = () => {
     if (step === 1 && prompts.length === 0) {
-      // Auto-generate prompts when leaving brand step
+      // Auto-generate the focused starter set, using the real competitors so
+      // the comparison prompts are head-to-head against actual rivals.
+      const competitorList = brand.competitors
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
       setPrompts(
-        generatePromptTemplates(brand.name, brand.industry || 'business', brand.language || 'en'),
+        generatePromptTemplates(
+          brand.name,
+          brand.industry || 'business',
+          brand.language || 'en',
+          competitorList,
+        ),
       )
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1))

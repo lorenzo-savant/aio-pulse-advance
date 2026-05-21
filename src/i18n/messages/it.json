@@ -254,6 +254,12 @@
       "add_custom_placeholder": "Aggiungi un prompt personalizzato...",
       "add_button": "Aggiungi"
     },
+    "dimensions": {
+      "presence": "Presenza",
+      "citation": "Citazione",
+      "comparison": "Comparazione",
+      "sentiment": "Sentiment"
+    },
     "launch_screen": {
       "title": "Pronto al lancio!",
       "subtitle": "Creeremo il tuo brand e {count} prompt di monitoraggio. Puoi sempre aggiungerne altri in seguito.",

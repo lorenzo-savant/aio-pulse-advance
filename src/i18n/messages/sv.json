@@ -254,6 +254,12 @@
       "add_custom_placeholder": "Lägg till en anpassad prompt...",
       "add_button": "Lägg till"
     },
+    "dimensions": {
+      "presence": "Närvaro",
+      "citation": "Citering",
+      "comparison": "Jämförelse",
+      "sentiment": "Sentiment"
+    },
     "launch_screen": {
       "title": "Redo att starta!",
       "subtitle": "Vi skapar ditt varumärke och {count} övervakningsprompts. Du kan alltid lägga till fler senare.",

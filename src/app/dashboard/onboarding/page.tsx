@@ -35,10 +35,14 @@ interface BrandForm {
   language: BrandLanguage
 }
 
+type PromptDimension = 'presence' | 'citation' | 'comparison' | 'sentiment'
+
 interface PromptForm {
   text: string
   language: string
   engines: string[]
+  /** Which monitoring dimension this starter prompt probes (for the UI). */
+  dimension?: PromptDimension
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -127,7 +131,12 @@ function generatePromptTemplates(
   const place = language === 'sv' ? 'Sverige' : language === 'it' ? 'Italia' : ''
   const inPlace = { sv: ` i ${place}`, it: ` in ${place}`, en: '' }[language]
 
-  const mk = (text: string): PromptForm => ({ text, language, engines: ALL_ENGINES })
+  const mk = (text: string, dimension: PromptDimension): PromptForm => ({
+    text,
+    language,
+    engines: ALL_ENGINES,
+    dimension,
+  })
   // Head-to-head comparison prompts against the real competitors — capped at
   // the top 2 so the starter set stays focused. Falls back to a generic
   // "vs competitors" prompt only when none were provided.
@@ -139,42 +148,42 @@ function generatePromptTemplates(
   if (language === 'sv') {
     const vs =
       topCompetitors.length > 0
-        ? topCompetitors.map((c) => mk(`${brandName} eller ${c} – vilket är bäst?`))
-        : [mk(`Jämför ${brandName} med konkurrenter`)]
+        ? topCompetitors.map((c) => mk(`${brandName} eller ${c} – vilket är bäst?`, 'comparison'))
+        : [mk(`Jämför ${brandName} med konkurrenter`, 'comparison')]
     return [
-      mk(`Vad är ${brandName}?`), // presence
-      mk(`Bästa ${ind}-företagen${inPlace}?`), // citation (category)
-      ...vs, // comparison vs competitors
-      mk(`${brandName} omdömen och rykte`), // sentiment
-      mk(`Bästa alternativen till ${brandName}`), // competitive presence
-      mk(`Kan du rekommendera ${brandName}${inPlace}?`), // presence + sentiment
+      mk(`Vad är ${brandName}?`, 'presence'),
+      mk(`Bästa ${ind}-företagen${inPlace}?`, 'citation'),
+      ...vs,
+      mk(`${brandName} omdömen och rykte`, 'sentiment'),
+      mk(`Bästa alternativen till ${brandName}`, 'citation'),
+      mk(`Kan du rekommendera ${brandName}${inPlace}?`, 'sentiment'),
     ]
   }
   if (language === 'it') {
     const vs =
       topCompetitors.length > 0
-        ? topCompetitors.map((c) => mk(`${brandName} o ${c}: qual è meglio?`))
-        : [mk(`Confronta ${brandName} con i concorrenti`)]
+        ? topCompetitors.map((c) => mk(`${brandName} o ${c}: qual è meglio?`, 'comparison'))
+        : [mk(`Confronta ${brandName} con i concorrenti`, 'comparison')]
     return [
-      mk(`Cos'è ${brandName}?`),
-      mk(`Migliori aziende di ${ind}${inPlace}?`),
+      mk(`Cos'è ${brandName}?`, 'presence'),
+      mk(`Migliori aziende di ${ind}${inPlace}?`, 'citation'),
       ...vs,
-      mk(`${brandName} recensioni e reputazione`),
-      mk(`Migliori alternative a ${brandName}`),
-      mk(`Puoi consigliare ${brandName}${inPlace}?`),
+      mk(`${brandName} recensioni e reputazione`, 'sentiment'),
+      mk(`Migliori alternative a ${brandName}`, 'citation'),
+      mk(`Puoi consigliare ${brandName}${inPlace}?`, 'sentiment'),
     ]
   }
   const vs =
     topCompetitors.length > 0
-      ? topCompetitors.map((c) => mk(`${brandName} vs ${c} — which is better?`))
-      : [mk(`Compare ${brandName} with competitors`)]
+      ? topCompetitors.map((c) => mk(`${brandName} vs ${c} — which is better?`, 'comparison'))
+      : [mk(`Compare ${brandName} with competitors`, 'comparison')]
   return [
-    mk(`What is ${brandName}?`),
-    mk(`Best ${ind} companies${inPlace}?`),
+    mk(`What is ${brandName}?`, 'presence'),
+    mk(`Best ${ind} companies${inPlace}?`, 'citation'),
     ...vs,
-    mk(`${brandName} reviews and reputation`),
-    mk(`Best alternatives to ${brandName}`),
-    mk(`Can you recommend ${brandName}${inPlace}?`),
+    mk(`${brandName} reviews and reputation`, 'sentiment'),
+    mk(`Best alternatives to ${brandName}`, 'citation'),
+    mk(`Can you recommend ${brandName}${inPlace}?`, 'sentiment'),
   ]
 }
 
@@ -631,6 +640,11 @@ export default function OnboardingPage() {
                 <div className="flex-1">
                   <p className="text-sm text-foreground">{p.text}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
+                    {p.dimension && (
+                      <Badge variant="brand" size="sm">
+                        {t(`onboarding.dimensions.${p.dimension}`)}
+                      </Badge>
+                    )}
                     {p.engines.map((e) => (
                       <Badge key={e} variant="default" size="sm">
                         {e}

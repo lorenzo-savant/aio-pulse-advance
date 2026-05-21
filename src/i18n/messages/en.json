@@ -254,6 +254,12 @@
       "add_custom_placeholder": "Add a custom prompt...",
       "add_button": "Add"
     },
+    "dimensions": {
+      "presence": "Presence",
+      "citation": "Citation",
+      "comparison": "Comparison",
+      "sentiment": "Sentiment"
+    },
     "launch_screen": {
       "title": "Ready to launch!",
       "subtitle": "We'll create your brand and {count} monitoring prompts. You can always add more later.",

@@ -317,23 +317,24 @@ export default function GeoScorePage() {
                     className="transition-all duration-700"
                   />
                 </svg>
-                {/* Score number — leading-none keeps it visually centered. */}
-                <span
-                  className="text-6xl font-black leading-none"
-                  style={{ color: scoreAccent(data.score) }}
-                >
-                  {data.score.toFixed(0)}
-                </span>
-                {/* Grade badge — pulled fully OUTSIDE the gauge arc so it
-                    reads as a separate annotation, not as something sitting
-                    on top of the score number. Larger ring-card halo keeps
-                    visual separation from the arc stroke. */}
-                <span
-                  className="absolute -bottom-2 -right-2 flex h-12 w-12 items-center justify-center rounded-full text-lg font-black text-white shadow-lg ring-[6px] ring-card"
-                  style={{ backgroundColor: GRADE_COLOR[data.grade] }}
-                >
-                  {data.grade}
-                </span>
+                {/* Score number + grade, stacked and centered INSIDE the ring.
+                    The grade used to float as an absolute corner badge that
+                    overlapped the arc; centering it under the number removes
+                    the overlap and reads cleaner. */}
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  <span
+                    className="text-6xl font-black leading-none"
+                    style={{ color: scoreAccent(data.score) }}
+                  >
+                    {data.score.toFixed(0)}
+                  </span>
+                  <span
+                    className="rounded-full px-3 py-0.5 text-sm font-black leading-none text-white"
+                    style={{ backgroundColor: GRADE_COLOR[data.grade] }}
+                  >
+                    {data.grade}
+                  </span>
+                </div>
               </div>
               {/* Delta + previous-score block. mt-10 (40px) gives the gauge
                   room to breathe; the two lines are intentionally bunched

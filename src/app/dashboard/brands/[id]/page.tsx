@@ -233,6 +233,7 @@ export default function BrandDetailPage() {
     description: '',
     domain: '',
     industry: '',
+    market: '',
     language: 'en',
     color: '#6366f1',
     aliasInput: '',
@@ -302,6 +303,7 @@ export default function BrandDetailPage() {
         description: brand.description || '',
         domain: brand.domain || '',
         industry: brand.industry || '',
+        market: (brand as { market?: string | null }).market || '',
         language: (brand.language as string) || 'en',
         color: brand.color || '#6366f1',
         aliasInput: '',
@@ -331,6 +333,9 @@ export default function BrandDetailPage() {
           color: brandForm.color,
           aliases: brandForm.aliases,
           competitors: brandForm.competitors,
+          // Only sent when set, so brand edits keep working even before the
+          // brands.market migration is applied.
+          ...(brandForm.market.trim() ? { market: brandForm.market.trim() } : {}),
         }),
       })
       const json = await res.json()
@@ -1366,6 +1371,20 @@ export default function BrandDetailPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Reference Market
+                </label>
+                <input
+                  className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  placeholder="e.g. Sweden, Italy B2B"
+                  value={brandForm.market}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, market: e.target.value }))}
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Who the brand sells to. Defaults from language if left empty.
+                </p>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">

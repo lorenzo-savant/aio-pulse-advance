@@ -23,6 +23,10 @@ model Brand {
   domains        String[]  @default([])
   competitors    String[]  @default([])
   industry       String?
+  // Reference market the brand targets (free text, e.g. "Sweden"). Optional;
+  // generation derives one from `language` when null. Migration:
+  // 20260521000000_add_brand_market.sql.
+  market         String?
   color          String    @default("#6366f1")
   logoUrl        String?   @map("logo_url")
   // Primary market language — backed by `brands.language` (added in migration

@@ -94,6 +94,9 @@ export interface Brand {
   domains: string[]
   competitors: string[]
   industry?: string | null
+  /** Reference market the brand targets, e.g. "Sweden", "Italy B2B". Optional;
+   *  generation derives one from `language` when this is empty. */
+  market?: string | null
   color: string
   logo_url?: string | null
   is_active: boolean
@@ -114,6 +117,7 @@ export interface BrandCreateInput {
   domains?: string[]
   competitors?: string[]
   industry?: string
+  market?: string
   color?: string
   language?: BrandLanguage
 }

@@ -3,6 +3,7 @@ import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { withDerivedAliases } from '@/lib/brand-aliases'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -149,6 +150,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
+
+  // Keep the legal-suffix-stripped alias in sync when name + aliases are sent
+  // together (the edit form sends both), so exact-match detection keeps working.
+  if (typeof parsed.data.name === 'string' && Array.isArray(parsed.data.aliases)) {
+    parsed.data.aliases = withDerivedAliases(parsed.data.name, parsed.data.aliases)
+  }
+
   const { data, error } = await db
     .from('brands')
     .update(parsed.data)
@@ -227,6 +235,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const updateData = Object.fromEntries(
     Object.entries(parsed.data).filter(([_, v]) => v !== undefined),
   )
+
+  // Keep the legal-suffix-stripped alias in sync when name + aliases change.
+  if (typeof updateData.name === 'string' && Array.isArray(updateData.aliases)) {
+    updateData.aliases = withDerivedAliases(
+      updateData.name as string,
+      updateData.aliases as string[],
+    )
+  }
 
   const { data, error } = await db
     .from('brands')

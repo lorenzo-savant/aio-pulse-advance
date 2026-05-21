@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError, dbNotConfigured } from '@/lib/supabase'
 import { slugify } from '@/lib/utils'
+import { withDerivedAliases } from '@/lib/brand-aliases'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 import { logAudit } from '@/lib/services/audit-log'
@@ -211,6 +212,9 @@ export async function POST(req: NextRequest) {
 
   const insertData: any = {
     ...parsed.data,
+    // Auto-add the legal-suffix-stripped name as an alias (e.g. "Savant Media
+    // AB" → "Savant Media") so exact-match brand detection works out of the box.
+    aliases: withDerivedAliases(parsed.data.name, parsed.data.aliases),
     user_id: userId,
     slug,
   }

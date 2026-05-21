@@ -364,6 +364,7 @@ CREATE TABLE IF NOT EXISTS weekly_reviews (
 CREATE TABLE IF NOT EXISTS workflow_executions (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   brand_id uuid REFERENCES brands(id) ON DELETE SET NULL,
+  prompt_id uuid REFERENCES prompts(id) ON DELETE SET NULL,
   user_id text NOT NULL,
   type text NOT NULL,
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled', 'retrying')),
@@ -379,6 +380,11 @@ CREATE TABLE IF NOT EXISTS workflow_executions (
 -- ═══════════════════════════════════════════════════════════════════════════
 -- BACKFILL MISSING COLUMNS (for DBs from older schema versions)
 -- ═══════════════════════════════════════════════════════════════════════════
+
+-- workflow_executions.prompt_id (needed by monitoring/createWorkflow inserts;
+-- without it every insert fails and the Workflows page stays empty)
+ALTER TABLE workflow_executions
+  ADD COLUMN IF NOT EXISTS prompt_id uuid REFERENCES prompts(id) ON DELETE SET NULL;
 
 -- brand.language (i18n)
 ALTER TABLE brands

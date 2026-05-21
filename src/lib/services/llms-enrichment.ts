@@ -51,9 +51,94 @@ export interface EnrichmentResult {
 interface ScrapeResult {
   title: string | null
   description: string | null
-  /** Raw visible-ish text snippet for the AI synthesis step. */
+  /** Combined visible-ish text across the homepage + a few key pages, for the
+   *  AI synthesis + FAQ extraction step. */
   rawText: string | null
   importantPages: Array<{ title: string; url: string; description: string }>
+  /** FAQs lifted directly from JSON-LD FAQPage schema on any crawled page. */
+  jsonLdFaqs: Array<{ question: string; answer: string }>
+}
+
+// Parse FAQ Q&A out of JSON-LD FAQPage / Question blocks embedded in the HTML.
+// This is the most reliable signal when a site ships structured data.
+function extractJsonLdFaqs(html: string): Array<{ question: string; answer: string }> {
+  const out: Array<{ question: string; answer: string }> = []
+  const blocks = html.matchAll(
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  )
+  for (const b of blocks) {
+    const raw = b[1]
+    if (!raw) continue
+    let json: unknown
+    try {
+      json = JSON.parse(raw.trim())
+    } catch {
+      continue
+    }
+    // The block can be a single object or an array (or @graph).
+    const nodes: any[] = Array.isArray(json)
+      ? json
+      : (json as any)?.['@graph']
+        ? (json as any)['@graph']
+        : [json]
+    for (const node of nodes) {
+      const entities = node?.mainEntity ?? (node?.['@type'] === 'Question' ? [node] : null)
+      const list = Array.isArray(entities) ? entities : entities ? [entities] : []
+      for (const q of list) {
+        const question = typeof q?.name === 'string' ? q.name.trim() : ''
+        const answer =
+          typeof q?.acceptedAnswer?.text === 'string' ? stripTags(q.acceptedAnswer.text).trim() : ''
+        if (question && answer) out.push({ question, answer })
+      }
+    }
+  }
+  return out
+}
+
+// Extract internal links from homepage <a href> tags — a fallback for sites
+// without a sitemap.xml, and the source of pages we deep-crawl for FAQs.
+function extractInternalLinks(html: string, base: string): string[] {
+  let origin: string
+  try {
+    origin = new URL(base).origin
+  } catch {
+    return []
+  }
+  const hrefs = [...html.matchAll(/<a[^>]+href=["']([^"'#]+)["']/gi)]
+    .map((m) => m[1]?.trim())
+    .filter((h): h is string => !!h)
+  const out = new Set<string>()
+  for (const href of hrefs) {
+    let abs: string
+    try {
+      abs = new URL(href, origin).toString()
+    } catch {
+      continue
+    }
+    if (new URL(abs).origin !== origin) continue // same-site only
+    if (/\.(jpg|jpeg|png|gif|webp|svg|css|js|pdf|zip|mp4)(\?|$)/i.test(abs)) continue
+    out.add(abs.split('#')[0]!.replace(/\/$/, ''))
+  }
+  return [...out]
+}
+
+// Pages most likely to carry FAQ / product / about content, so the deep crawl
+// spends its budget where the useful info lives.
+const KEY_PAGE_HINTS =
+  /(faq|vanliga|fragor|fr%C3%A5gor|domande|about|om-oss|chi-siamo|pricing|pris|prezzi|product|produkt|prodotto|service|tjanst|servizi|features|funktioner|funzioni|digital-twin|support|help|hjalp)/i
+
+function titleFromPath(url: string): string {
+  let path: string
+  try {
+    path = new URL(url).pathname.replace(/\/$/, '')
+  } catch {
+    return ''
+  }
+  const slug = path.split('/').filter(Boolean).pop() ?? ''
+  return slug
+    .replace(/[-_]+/g, ' ')
+    .replace(/\.\w+$/, '')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 function decodeEntities(s: string): string {
@@ -99,16 +184,22 @@ async function scrapeSite(domain: string): Promise<ScrapeResult> {
     description: null,
     rawText: null,
     importantPages: [],
+    jsonLdFaqs: [],
   }
 
-  // Homepage
+  const textParts: string[] = []
+  let homepageLinks: string[] = []
+
+  // ── Homepage ──────────────────────────────────────────────────────────────
   try {
     const { text: html } = await safeFetchText(base, { timeout: 10_000, maxBytes: 1_500_000 })
     const titleMatch = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)
     result.title = titleMatch?.[1] ? decodeEntities(titleMatch[1]) : null
     result.description =
       extractMeta(html, ['description', 'og:description', 'twitter:description']) ?? null
-    result.rawText = stripTags(html).slice(0, 4000)
+    textParts.push(stripTags(html).slice(0, 3000))
+    result.jsonLdFaqs.push(...extractJsonLdFaqs(html))
+    homepageLinks = extractInternalLinks(html, base)
   } catch (err) {
     logger.warn('llms-enrichment: homepage scrape failed', {
       domain,
@@ -116,44 +207,74 @@ async function scrapeSite(domain: string): Promise<ScrapeResult> {
     })
   }
 
-  // sitemap.xml → important pages (best-effort, capped)
+  // ── Discover candidate URLs: sitemap.xml first, then homepage links ────────
+  let urls: string[] = []
   try {
     const { text: xml } = await safeFetchText(`${base}/sitemap.xml`, {
       timeout: 8_000,
       maxBytes: 2_000_000,
     })
-    const urls = [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)]
+    urls = [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)]
       .map((m) => m[1]?.trim())
       .filter((u): u is string => !!u)
-    // Skip the bare homepage (already linked separately) and asset-ish URLs.
-    const seen = new Set<string>()
-    for (const url of urls) {
-      if (result.importantPages.length >= 12) break
-      if (/\.(xml|jpg|jpeg|png|gif|webp|svg|css|js|pdf)$/i.test(url)) continue
-      let path: string
-      try {
-        path = new URL(url).pathname.replace(/\/$/, '')
-      } catch {
-        continue
-      }
-      if (!path || path === '' || seen.has(path)) continue
-      seen.add(path)
-      // Derive a human title from the last path segment.
-      const slug = path.split('/').filter(Boolean).pop() ?? ''
-      const title = slug
-        .replace(/[-_]+/g, ' ')
-        .replace(/\.\w+$/, '')
-        .replace(/\b\w/g, (c) => c.toUpperCase())
-      if (!title) continue
-      result.importantPages.push({ title, url, description: `${title} page` })
+  } catch {
+    /* no sitemap — fall back to homepage links below */
+  }
+  if (urls.length === 0) urls = homepageLinks
+
+  // Build the importantPages list (deduped, non-asset, homepage excluded).
+  const seen = new Set<string>()
+  let homePath = ''
+  try {
+    homePath = new URL(base).pathname.replace(/\/$/, '')
+  } catch {
+    /* ignore */
+  }
+  for (const url of urls) {
+    if (result.importantPages.length >= 12) break
+    if (/\.(xml|jpg|jpeg|png|gif|webp|svg|css|js|pdf)$/i.test(url)) continue
+    let path: string
+    try {
+      path = new URL(url).pathname.replace(/\/$/, '')
+    } catch {
+      continue
     }
-  } catch (err) {
-    logger.warn('llms-enrichment: sitemap scrape failed', {
-      domain,
-      err: err instanceof Error ? err.message : String(err),
-    })
+    if (!path || path === homePath || seen.has(path)) continue
+    seen.add(path)
+    const title = titleFromPath(url)
+    if (!title) continue
+    result.importantPages.push({ title, url, description: `${title} page` })
   }
 
+  // ── Deep-crawl a few key pages (FAQ/product/about) for content + FAQs ──────
+  const keyPages = result.importantPages
+    .filter((p) => KEY_PAGE_HINTS.test(p.url))
+    .slice(0, 4)
+    // If no obvious key pages, just take the first couple so we still get more
+    // than the homepage.
+    .concat(result.importantPages.filter((p) => !KEY_PAGE_HINTS.test(p.url)).slice(0, 2))
+    .slice(0, 4)
+
+  const crawled = await Promise.allSettled(
+    keyPages.map((p) => safeFetchText(p.url, { timeout: 6_000, maxBytes: 1_000_000 })),
+  )
+  for (const r of crawled) {
+    if (r.status !== 'fulfilled') continue
+    const html = r.value.text
+    result.jsonLdFaqs.push(...extractJsonLdFaqs(html))
+    textParts.push(stripTags(html).slice(0, 2500))
+  }
+
+  // Dedup JSON-LD FAQs by question.
+  const faqSeen = new Set<string>()
+  result.jsonLdFaqs = result.jsonLdFaqs.filter((f) => {
+    const k = f.question.toLowerCase().trim()
+    if (faqSeen.has(k)) return false
+    faqSeen.add(k)
+    return true
+  })
+
+  result.rawText = textParts.join('\n\n').slice(0, 7000) || null
   return result
 }
 
@@ -233,19 +354,21 @@ interface SynthesisInput {
 interface SynthesisOutput {
   description: string
   products: Array<{ name: string; description: string }>
+  faqs: Array<{ question: string; answer: string }>
 }
 
 function buildSynthesisSystemPrompt(): string {
   return [
     'You are a brand analyst writing the content of an llms.txt file — a curated Markdown brief that helps AI assistants (ChatGPT, Gemini, Perplexity, Claude) understand a company.',
-    'You will be given a brand name, its industry, and raw text scraped from its homepage.',
+    'You will be given a brand name, its industry, and raw text scraped from several of its web pages.',
     'Produce a single JSON object. JSON only, no prose, no markdown fences.',
-    'Schema: { "description": string, "products": [ { "name": string, "description": string } ] }',
+    'Schema: { "description": string, "products": [ { "name": string, "description": string } ], "faqs": [ { "question": string, "answer": string } ] }',
     'Rules:',
     '1. "description" is 1-3 factual sentences describing what the company does and who it serves. No marketing fluff, no superlatives you cannot support from the input.',
     '2. "products" lists 0-6 concrete products/services. Each description is one sentence. If the input does not clearly reveal products, return an empty array — do NOT invent.',
-    '3. Never fabricate facts (prices, founding dates, locations) not present in the input.',
-    '4. Write in the same language as the scraped homepage text when it is clearly non-English; otherwise English.',
+    '3. "faqs": if the scraped text contains an FAQ / "Vanliga frågor" / "Domande frequenti" / Q&A section, extract up to 10 question→answer pairs VERBATIM in meaning from the text. Only include a pair when BOTH the question AND a real answer are present in the input. If a question has no visible answer in the text, omit it. Never invent answers. Return an empty array if there is no FAQ content.',
+    '4. Never fabricate facts (prices, founding dates, locations) not present in the input.',
+    '5. Write in the same language as the scraped text when it is clearly non-English; otherwise English.',
   ].join('\n')
 }
 
@@ -280,6 +403,7 @@ async function synthesize(
     const parsed = JSON.parse(cleaned) as {
       description?: unknown
       products?: unknown
+      faqs?: unknown
     }
     const description = typeof parsed.description === 'string' ? parsed.description.trim() : ''
     const products = Array.isArray(parsed.products)
@@ -294,10 +418,24 @@ async function synthesize(
           .map((p) => ({ name: p.name.trim(), description: p.description.trim() }))
           .slice(0, 6)
       : []
-    if (!description && products.length === 0) {
+    const faqs = Array.isArray(parsed.faqs)
+      ? parsed.faqs
+          .filter(
+            (f): f is { question: string; answer: string } =>
+              !!f &&
+              typeof f === 'object' &&
+              typeof (f as any).question === 'string' &&
+              typeof (f as any).answer === 'string' &&
+              (f as any).question.trim().length > 0 &&
+              (f as any).answer.trim().length > 0,
+          )
+          .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
+          .slice(0, 10)
+      : []
+    if (!description && products.length === 0 && faqs.length === 0) {
       return { output: null, provider: llm.provider, note: 'AI returned no usable content' }
     }
-    return { output: { description, products }, provider: llm.provider }
+    return { output: { description, products, faqs }, provider: llm.provider }
   } catch (err) {
     const note = err instanceof Error ? err.message : String(err)
     logger.warn('llms-enrichment: AI synthesis failed', { note })
@@ -351,12 +489,13 @@ export async function enrichLlmsInput(
     if (!sources.scrape.ok) sources.scrape.note = 'site unreachable or empty'
   }
 
-  if (faqs.length > 0) {
-    patch.faqs = faqs
-    sources.aeo = { ok: true, faqs: faqs.length }
-  } else if (opts.aeoFaqs) {
-    sources.aeo.note = 'no AEO snippets for this brand yet'
-  }
+  // FAQs come from three sources, in order of trust: JSON-LD FAQPage on the
+  // site, the aeo_snippets table, and AI extraction from the crawled page
+  // text. They're merged + deduped at the end.
+  const collectedFaqs: Array<{ question: string; answer: string }> = [
+    ...(scrape?.jsonLdFaqs ?? []),
+    ...faqs,
+  ]
 
   if (specialties.length > 0) {
     patch.keyFacts = { ...(patch.keyFacts ?? {}), specialties }
@@ -365,7 +504,8 @@ export async function enrichLlmsInput(
     sources.keywords.note = 'no tracked keywords yet'
   }
 
-  // AI synthesis runs last so it can use the scraped raw text.
+  // AI synthesis runs last so it can use the scraped raw text (homepage + key
+  // pages) — including extracting FAQ Q&A the site didn't expose as schema.
   if (opts.aiSynthesis) {
     const { output, provider, note } = await synthesize({
       brandName: brand.name,
@@ -381,10 +521,26 @@ export async function enrichLlmsInput(
       // AI description wins over the meta-tag one (richer, brand-aware).
       if (output.description) patch.description = output.description
       if (output.products.length > 0) patch.products = output.products
+      collectedFaqs.push(...output.faqs)
       sources.ai = { ok: true, provider, products: output.products.length }
     } else {
       sources.ai = { ok: false, provider, products: 0, note: note ?? 'no content' }
     }
+  }
+
+  // Dedup FAQs by question (case-insensitive), cap at 12.
+  const faqSeen = new Set<string>()
+  const mergedFaqs = collectedFaqs.filter((f) => {
+    const k = f.question.toLowerCase().trim()
+    if (!k || faqSeen.has(k)) return false
+    faqSeen.add(k)
+    return true
+  })
+  if (mergedFaqs.length > 0) {
+    patch.faqs = mergedFaqs.slice(0, 12)
+    sources.aeo = { ok: true, faqs: patch.faqs.length }
+  } else if (opts.aeoFaqs || opts.scrapeSite) {
+    sources.aeo.note = 'no FAQ found on the site, in AEO snippets, or via AI'
   }
 
   return { patch, sources }

@@ -7,15 +7,46 @@ import { Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from '@/compon
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
 
-interface ObsidianExportButtonProps {
+interface ExportButtonProps {
   brandId: string
   brandName: string
 }
 
-export function ObsidianExportButton({ brandId, brandName }: ObsidianExportButtonProps) {
+type ExportFormat = 'obsidian' | 'markdown' | 'json'
+
+interface ExportedNote {
+  filename: string
+  path: string
+  content: string
+}
+
+const FORMATS: Array<{ id: ExportFormat; label: string; hint: string; ext: string }> = [
+  {
+    id: 'obsidian',
+    label: 'Obsidian vault',
+    hint: 'ZIP of Markdown notes with YAML frontmatter, organized in folders.',
+    ext: 'zip',
+  },
+  {
+    id: 'markdown',
+    label: 'Single Markdown',
+    hint: 'One .md file with every note concatenated. Good for quick reading or pasting.',
+    ext: 'md',
+  },
+  {
+    id: 'json',
+    label: 'JSON',
+    hint: 'Structured array of notes (path, filename, content). Good for programmatic use.',
+    ext: 'json',
+  },
+]
+
+export function ExportButton({ brandId, brandName }: ExportButtonProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [format, setFormat] = useState<ExportFormat>('obsidian')
 
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -29,6 +60,48 @@ export function ObsidianExportButton({ brandId, brandName }: ObsidianExportButto
   const [includeHallucinations, setIncludeHallucinations] = useState(true)
   const [includePromptTests, setIncludePromptTests] = useState(true)
 
+  const safeName = brandName.replace(/\s+/g, '-')
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const buildAndDownload = async (notes: ExportedNote[]) => {
+    if (format === 'json') {
+      const blob = new Blob([JSON.stringify(notes, null, 2)], { type: 'application/json' })
+      triggerDownload(blob, `${safeName}-export-${dateTo}.json`)
+      return
+    }
+
+    if (format === 'markdown') {
+      // Concatenate every note into a single document, separated by rules and
+      // headed with the note path so the origin of each section is clear.
+      const body = notes
+        .map((n) => `<!-- ${n.path}${n.filename} -->\n\n${n.content.trim()}`)
+        .join('\n\n---\n\n')
+      const header = `# ${brandName} — Export\n\n_Range ${dateFrom} → ${dateTo} · ${notes.length} notes_\n\n---\n\n`
+      const blob = new Blob([header + body + '\n'], { type: 'text/markdown' })
+      triggerDownload(blob, `${safeName}-export-${dateTo}.md`)
+      return
+    }
+
+    // obsidian — ZIP preserving folder structure
+    const zip = new JSZip()
+    const baseFolder = `${safeName}-obsidian-export/`
+    for (const note of notes) {
+      zip.folder(baseFolder + note.path)?.file(note.filename, note.content)
+    }
+    const zipBlob = await zip.generateAsync({ type: 'blob' })
+    triggerDownload(zipBlob, `${safeName}-obsidian-${dateTo}.zip`)
+  }
+
   const handleExport = async () => {
     const types: Array<'snapshot' | 'hallucination' | 'prompt-test'> = []
     if (includeSnapshots) types.push('snapshot')
@@ -36,7 +109,7 @@ export function ObsidianExportButton({ brandId, brandName }: ObsidianExportButto
     if (includePromptTests) types.push('prompt-test')
 
     if (types.length === 0) {
-      setError('Select at least one export type')
+      setError('Select at least one data type')
       return
     }
 
@@ -44,16 +117,12 @@ export function ObsidianExportButton({ brandId, brandName }: ObsidianExportButto
     setError(null)
 
     try {
+      // The export API renders the data as Markdown notes; every format here
+      // is derived from that same payload client-side.
       const res = await fetch('/api/export/obsidian', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          brandId,
-          brandName,
-          dateFrom,
-          dateTo,
-          types,
-        }),
+        body: JSON.stringify({ brandId, brandName, dateFrom, dateTo, types }),
       })
 
       const data = await res.json()
@@ -63,26 +132,10 @@ export function ObsidianExportButton({ brandId, brandName }: ObsidianExportButto
         return
       }
 
-      const zip = new JSZip()
-      const baseFolder = `${brandName.replace(/\s+/g, '-')}-obsidian-export/`
-
-      for (const note of data.notes) {
-        const folderPath = baseFolder + note.path
-        zip.folder(folderPath)?.file(note.filename, note.content)
-      }
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' })
-      const url = URL.createObjectURL(zipBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${brandName.replace(/\s+/g, '-')}-obsidian-${dateTo}.zip`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      await buildAndDownload(data.notes as ExportedNote[])
 
       setOpen(false)
-      toast.success('Obsidian export downloaded')
+      toast.success(`Export downloaded (${format})`)
     } catch (err) {
       console.error('Export error:', err)
       setError('Network error. Please try again.')
@@ -95,19 +148,44 @@ export function ObsidianExportButton({ brandId, brandName }: ObsidianExportButto
     <>
       <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
         <Download className="mr-2 h-4 w-4" />
-        Export to Obsidian
+        Export
       </Button>
 
       <Modal open={open} onOpenChange={setOpen} className="max-w-md">
         <ModalHeader>
-          <ModalTitle>Export to Obsidian Vault</ModalTitle>
+          <ModalTitle>Export Data</ModalTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Export {brandName} monitoring data as Markdown notes with YAML frontmatter for your
-            Obsidian vault.
+            Export {brandName} monitoring data. Pick a format and a date range.
           </p>
         </ModalHeader>
         <ModalBody>
           <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Format
+              </label>
+              <div className="space-y-2">
+                {FORMATS.map((f) => (
+                  <label
+                    key={f.id}
+                    className="bg-secondary/50 flex cursor-pointer items-start gap-3 rounded-xl border border-border px-3 py-2.5"
+                  >
+                    <input
+                      type="radio"
+                      name="export-format"
+                      checked={format === f.id}
+                      onChange={() => setFormat(f.id)}
+                      className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                    />
+                    <span className="flex flex-col">
+                      <span className="text-sm font-semibold text-foreground">{f.label}</span>
+                      <span className="text-xs text-muted-foreground">{f.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -184,7 +262,7 @@ export function ObsidianExportButton({ brandId, brandName }: ObsidianExportButto
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Download ZIP
+                Download {FORMATS.find((f) => f.id === format)?.ext.toUpperCase()}
               </>
             )}
           </Button>

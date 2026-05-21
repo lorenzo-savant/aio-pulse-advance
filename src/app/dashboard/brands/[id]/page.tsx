@@ -46,7 +46,7 @@ import {
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { ObsidianExportButton } from '@/components/ObsidianExportButton'
+import { ExportButton } from '@/components/ExportButton'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand, MonitoringResult, BrandLanguage } from '@/types'
@@ -612,7 +612,7 @@ export default function BrandDetailPage() {
             <Edit3 className="mr-2 h-4 w-4" />
             Edit
           </Button>
-          {brand && <ObsidianExportButton brandId={brand.id} brandName={brand.name} />}
+          {brand && <ExportButton brandId={brand.id} brandName={brand.name} />}
         </div>
       </div>
 

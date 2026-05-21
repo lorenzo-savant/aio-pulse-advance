@@ -59,7 +59,7 @@ const AiOutputSchema = z.object({
 
 // ─── Provider chain ────────────────────────────────────────────────────────
 
-interface LLMCall {
+export interface LLMCall {
   text: string
   provider: string
   model: string
@@ -161,7 +161,14 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<LLM
   return { text, provider: 'openai', model: 'gpt-4o-mini' }
 }
 
-async function callLLM(systemPrompt: string, userPrompt: string): Promise<LLMCall> {
+/**
+ * Generic JSON-mode LLM call with the shared provider chain
+ * (Groq → Gemini → OpenAI). Exported so other services (e.g. llms.txt
+ * enrichment) can reuse the exact same fallback behavior instead of
+ * duplicating the provider plumbing. Returns the raw text — the caller
+ * is responsible for parsing/validating the JSON.
+ */
+export async function callLLM(systemPrompt: string, userPrompt: string): Promise<LLMCall> {
   if (process.env['GROQ_API_KEY']) {
     return callGroq(systemPrompt, userPrompt)
   }

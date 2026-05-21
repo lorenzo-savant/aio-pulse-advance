@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { z } from 'zod'
 import { generateLlmsTxt, generateLlmsFullTxt, LlmsInput } from '@/lib/services/llms-generator'
+import { enrichLlmsInput } from '@/lib/services/llms-enrichment'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 import { formatValidationError } from '@/lib/format-validation-error'
@@ -44,6 +45,20 @@ const requestSchema = z.object({
         answer: z.string(),
       }),
     )
+    .optional(),
+  /** When true, auto-enrich the file from the website + AEO + keywords + AI
+   *  before generating. Manually-supplied fields above always take priority
+   *  over enrichment. Default false — keeps the original lightweight behavior. */
+  enrich: z.boolean().optional(),
+  /** Per-source switches; only consulted when `enrich` is true. All default
+   *  to true so a bare `{ enrich: true }` turns everything on. */
+  enrichSources: z
+    .object({
+      scrapeSite: z.boolean().optional(),
+      aeoFaqs: z.boolean().optional(),
+      keywordSpecialties: z.boolean().optional(),
+      aiSynthesis: z.boolean().optional(),
+    })
     .optional(),
 })
 
@@ -131,7 +146,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { brandId, products, keyFacts, importantPages, faqs } = parsed.data
+  const { brandId, products, keyFacts, importantPages, faqs, enrich, enrichSources } = parsed.data
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
@@ -149,17 +164,50 @@ export async function POST(req: NextRequest) {
 
   const domain = brand.domain || `${brand.name.toLowerCase().replace(/\s+/g, '')}.com`
 
+  // Optional auto-enrichment. Runs the four data sources, then merges so that
+  // any field the caller supplied MANUALLY wins over the enriched value.
+  let enrichmentSources: Awaited<ReturnType<typeof enrichLlmsInput>>['sources'] | null = null
+  let enrichedPatch: Partial<LlmsInput> = {}
+  if (enrich) {
+    try {
+      const result = await enrichLlmsInput(
+        db,
+        {
+          name: brand.name,
+          domain,
+          description: brand.description,
+          industry: brand.industry,
+          competitors: brand.competitors,
+        },
+        brandId,
+        {
+          scrapeSite: enrichSources?.scrapeSite ?? true,
+          aeoFaqs: enrichSources?.aeoFaqs ?? true,
+          keywordSpecialties: enrichSources?.keywordSpecialties ?? true,
+          aiSynthesis: enrichSources?.aiSynthesis ?? true,
+        },
+      )
+      enrichedPatch = result.patch
+      enrichmentSources = result.sources
+    } catch (enrichErr) {
+      // Enrichment must never block generation — log and fall through to the
+      // un-enriched input.
+      logger.warn('generate/llms-txt: enrichment failed', { error: String(enrichErr) })
+    }
+  }
+
   const input: LlmsInput = {
     brandName: brand.name,
     domain,
-    description: brand.description || undefined,
+    description: brand.description || enrichedPatch.description || undefined,
     industry: brand.industry || undefined,
     competitors: brand.competitors || undefined,
     aliases: brand.aliases || undefined,
-    products,
-    keyFacts,
-    importantPages,
-    faqs,
+    // Manual values win; otherwise fall back to whatever enrichment produced.
+    products: products ?? enrichedPatch.products,
+    keyFacts: keyFacts ?? enrichedPatch.keyFacts,
+    importantPages: importantPages ?? enrichedPatch.importantPages,
+    faqs: faqs ?? enrichedPatch.faqs,
   }
 
   const llmsTxt = generateLlmsTxt(input)
@@ -206,5 +254,6 @@ export async function POST(req: NextRequest) {
       'llms-full.txt': llmsFullTxt,
     },
     instructions,
+    enrichment: enrichmentSources,
   })
 }

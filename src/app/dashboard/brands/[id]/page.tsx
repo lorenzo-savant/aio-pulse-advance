@@ -27,6 +27,8 @@ import {
   Copy,
   Download,
   Globe,
+  Sparkles,
+  RefreshCw,
 } from 'lucide-react'
 import { Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -184,6 +186,14 @@ export default function BrandDetailPage() {
   } | null>(null)
   const [llmsInstructions, setLlmsInstructions] = useState<string[]>([])
   const [llmsActiveTab, setLlmsActiveTab] = useState<'llms.txt' | 'llms-full.txt'>('llms.txt')
+  // When on, the file is auto-enriched from the website + AEO + keywords + AI.
+  const [llmsEnrich, setLlmsEnrich] = useState(true)
+  const [llmsEnrichment, setLlmsEnrichment] = useState<{
+    scrape: { ok: boolean; pages: number; description: boolean; note?: string }
+    aeo: { ok: boolean; faqs: number; note?: string }
+    keywords: { ok: boolean; specialties: number; note?: string }
+    ai: { ok: boolean; provider: string | null; products: number; note?: string }
+  } | null>(null)
 
   // Team state
   const [teamMembers, setTeamMembers] = useState<any[]>([])
@@ -255,17 +265,19 @@ export default function BrandDetailPage() {
     setLlmsLoading(true)
     setLlmsFiles(null)
     setLlmsInstructions([])
+    setLlmsEnrichment(null)
     setLlmsModalOpen(true)
     try {
       const res = await fetch('/api/generate/llms-txt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brandId }),
+        body: JSON.stringify({ brandId, enrich: llmsEnrich }),
       })
       const data = await res.json()
       if (data.success) {
         setLlmsFiles(data.files)
         setLlmsInstructions(data.instructions)
+        setLlmsEnrichment(data.enrichment ?? null)
       } else {
         toast.error(data.message || 'Failed to generate llms files')
       }
@@ -1052,6 +1064,83 @@ export default function BrandDetailPage() {
           </p>
         </ModalHeader>
         <ModalBody>
+          {/* Enrichment control — always visible so users can toggle + regenerate */}
+          <div className="bg-secondary/50 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={llmsEnrich}
+                onChange={(e) => setLlmsEnrich(e.target.checked)}
+                disabled={llmsLoading}
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+              />
+              <span className="flex flex-col">
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Enrich automatically
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Pulls description &amp; links from the website, FAQs from AEO snippets,
+                  specialties from keywords, and an AI-written summary (Groq).
+                </span>
+              </span>
+            </label>
+            <Button variant="outline" size="sm" onClick={handleGenerateLlms} disabled={llmsLoading}>
+              <RefreshCw className={cn('mr-2 h-4 w-4', llmsLoading && 'animate-spin')} />
+              {llmsFiles ? 'Regenerate' : 'Generate'}
+            </Button>
+          </div>
+
+          {llmsEnrichment && !llmsLoading && (
+            <div className="mb-4 flex flex-wrap gap-2 text-xs">
+              <span
+                className={cn(
+                  'rounded-md px-2 py-1',
+                  llmsEnrichment.scrape.ok
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-secondary text-muted-foreground',
+                )}
+                title={llmsEnrichment.scrape.note}
+              >
+                Website:{' '}
+                {llmsEnrichment.scrape.ok ? `${llmsEnrichment.scrape.pages} links` : 'none'}
+              </span>
+              <span
+                className={cn(
+                  'rounded-md px-2 py-1',
+                  llmsEnrichment.aeo.ok
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-secondary text-muted-foreground',
+                )}
+                title={llmsEnrichment.aeo.note}
+              >
+                FAQ: {llmsEnrichment.aeo.faqs}
+              </span>
+              <span
+                className={cn(
+                  'rounded-md px-2 py-1',
+                  llmsEnrichment.keywords.ok
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-secondary text-muted-foreground',
+                )}
+                title={llmsEnrichment.keywords.note}
+              >
+                Specialties: {llmsEnrichment.keywords.specialties}
+              </span>
+              <span
+                className={cn(
+                  'rounded-md px-2 py-1',
+                  llmsEnrichment.ai.ok
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-secondary text-muted-foreground',
+                )}
+                title={llmsEnrichment.ai.note}
+              >
+                AI: {llmsEnrichment.ai.ok ? `${llmsEnrichment.ai.provider}` : 'off'}
+              </span>
+            </div>
+          )}
+
           {llmsLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />

@@ -29,7 +29,6 @@ import {
   Sparkles,
   Coins,
   Radio,
-  Wand2,
   GitBranch,
   Sparkle,
   Link2,
@@ -85,15 +84,12 @@ const NAV_SECTIONS: NavSection[] = [
         badge: (s) => ({ text: String(s.brands), kind: 'count' }),
       },
       {
+        // Prompts now hosts the AI generator inline ("Generate (AI)" button),
+        // so the standalone tool page no longer needs its own nav entry.
         href: '/dashboard/prompts',
         icon: MessageSquare,
         labelKey: 'sidebar.items.prompts',
         badge: (s) => ({ text: String(s.prompts), kind: 'count' }),
-      },
-      {
-        href: '/dashboard/tools/prompt-generator',
-        icon: Wand2,
-        labelKey: 'sidebar.items.prompt_generator',
       },
     ],
   },

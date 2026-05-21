@@ -393,6 +393,7 @@
     "page_title": "Prompts",
     "page_subtitle": "Configure the queries to monitor across AI engines.",
     "add_from_library": "Add from Library",
+    "generate_ai": "Generate (AI)",
     "new_prompt": "New Prompt",
     "filter_by_brand": "Brand",
     "all_brands": "All",

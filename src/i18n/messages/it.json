@@ -393,6 +393,7 @@
     "page_title": "Prompt",
     "page_subtitle": "Configura le query da monitorare sui motori AI.",
     "add_from_library": "Aggiungi dalla Libreria",
+    "generate_ai": "Genera (AI)",
     "new_prompt": "Nuovo Prompt",
     "filter_by_brand": "Brand",
     "all_brands": "Tutti",

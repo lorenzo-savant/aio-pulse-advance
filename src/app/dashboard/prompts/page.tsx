@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Plus, X, Play, Loader2, MessageSquare, Clock, Library } from 'lucide-react'
+import { Plus, X, Play, Loader2, MessageSquare, Clock, Library, Wand2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast'
 import type { Brand, Prompt, MonitoringEngine } from '@/types'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PromptLibrarySelector } from '@/components/PromptLibrarySelector'
+import { PromptGeneratorPanel } from '@/components/PromptGeneratorPanel'
 import { JourneyGuide } from '@/components/JourneyGuide'
 
 const PROMPT_TEMPLATES = {
@@ -146,6 +147,7 @@ function PromptsPageContent() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [templateLang, setTemplateLang] = useState<'en' | 'it' | 'sv'>('en')
   const [showLibrary, setShowLibrary] = useState(false)
+  const [showGenerator, setShowGenerator] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -327,6 +329,17 @@ function PromptsPageContent() {
               if (!selectedBrandId && brands.length > 0) {
                 setSelectedBrandId(brands[0]!.id)
               }
+              setShowGenerator((v) => !v)
+            }}
+          >
+            <Wand2 className="h-5 w-5" /> {t('prompts.generate_ai')}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!selectedBrandId && brands.length > 0) {
+                setSelectedBrandId(brands[0]!.id)
+              }
               setShowLibrary(true)
             }}
           >
@@ -370,6 +383,47 @@ function PromptsPageContent() {
           ))}
         </div>
       </Card>
+
+      {/* AI Prompt Generator — merged on top of the list. Suggests prompts for
+          the selected brand with category/frequency/engines/language already
+          mapped, and creates them straight into the list below. */}
+      {showGenerator && (
+        <Card className="border-brand-500/30 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-5 w-5 text-brand" />
+              <h2 className="text-base font-bold text-foreground">{t('prompts.generate_ai')}</h2>
+            </div>
+            <button
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => setShowGenerator(false)}
+              aria-label="Close generator"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          {selectedBrandId ? (
+            (() => {
+              const b = brands.find((x) => x.id === selectedBrandId)
+              return (
+                <PromptGeneratorPanel
+                  brandId={selectedBrandId}
+                  brandName={b?.name ?? 'Brand'}
+                  brandDomain={b?.domain ?? undefined}
+                  industry={b?.industry ?? undefined}
+                  competitors={(b?.competitors as string[] | undefined) ?? []}
+                  language={(b?.language as 'en' | 'it' | 'sv') ?? 'en'}
+                  onCreated={() => void loadData()}
+                />
+              )
+            })()
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {t('prompts.library.select_brand_first')}
+            </p>
+          )}
+        </Card>
+      )}
 
       {showForm && (
         <Card className="border-brand-500/30 p-6">

@@ -17,7 +17,13 @@ import {
   simulateEngineResponse as routerSimulate,
   analyzeResponseForBrand as routerAnalyze,
 } from './ai-router'
+import { cleanCitations, groundCitationsViaBrave } from './citation-grounding'
 import { logger } from '@/lib/logger'
+
+// Engines whose API returns REAL web citations (Gemini grounding, Perplexity
+// Sonar). The others (ChatGPT, Claude) answer from model memory, so any URL in
+// their text is unreliable — those get Brave-grounded citations instead.
+const NATIVE_CITATION_ENGINES: MonitoringEngine[] = ['gemini', 'perplexity']
 
 function parseJson<T>(raw: string): T {
   const cleaned = raw
@@ -166,6 +172,24 @@ export async function runMonitoringCheck(
     )
   }
 
+  // ── Citations ────────────────────────────────────────────────────────────
+  // Gemini/Perplexity return real web citations → clean (de-junk + dedup) the
+  // engine + in-text URLs, and only Brave-ground if they came back empty.
+  // ChatGPT/Claude answer from memory, so their in-text URLs are unreliable —
+  // ground against real Brave sources instead (cached: ~1 hit per unique
+  // prompt). Brave grounding soft-fails to [] so a run never breaks on quota.
+  let citedUrls: string[]
+  if (NATIVE_CITATION_ENGINES.includes(engine)) {
+    citedUrls = cleanCitations([...engineCitations, ...analysis.cited_urls])
+    if (citedUrls.length === 0) {
+      citedUrls = (await groundCitationsViaBrave(prompt.text, language)).citations
+    }
+  } else {
+    const grounded = await groundCitationsViaBrave(prompt.text, language)
+    citedUrls =
+      grounded.citations.length > 0 ? grounded.citations : cleanCitations(analysis.cited_urls)
+  }
+
   return {
     prompt_id: prompt.id,
     brand_id: brand.id,
@@ -180,7 +204,7 @@ export async function runMonitoringCheck(
     visibility_score: Math.min(100, Math.max(0, analysis.visibility_score)),
     sentiment: analysis.sentiment as SentimentLabel,
     sentiment_score: Math.min(1, Math.max(-1, analysis.sentiment_score)),
-    cited_urls: Array.from(new Set([...engineCitations, ...analysis.cited_urls])),
+    cited_urls: citedUrls,
     competitor_mentions: analysis.competitor_mentions as CompetitorMention[],
     has_hallucination: analysis.has_hallucination,
     hallucination_flags: analysis.hallucination_flags as HallucinationFlag[],

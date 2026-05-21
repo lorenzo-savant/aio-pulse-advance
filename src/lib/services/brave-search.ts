@@ -463,6 +463,39 @@ export async function searchBrandRanking(
   }
 }
 
+/**
+ * Generic top web results for a query — the organic pages an AI engine would
+ * draw on. Used by citation-grounding to give real source URLs to engines that
+ * don't natively cite (ChatGPT, Claude). Shares the SERP cache, so grounding
+ * the same prompt across engines/brands costs a single Brave hit.
+ */
+export async function fetchWebResults(
+  query: string,
+  language?: string,
+  count = 10,
+): Promise<BraveOrganicResult[]> {
+  const locale = localeParams(language)
+  const json = (await withSerpCache(
+    {
+      provider: 'brave',
+      endpoint: 'web/search',
+      params: { q: query, count, ...locale },
+    },
+    () =>
+      callBrave({
+        path: 'web/search',
+        params: { q: query, count: String(count), ...locale },
+      }),
+  )) as BraveWebSearchResponse
+
+  return (json.web?.results || []).slice(0, count).map((r, i) => ({
+    title: r.title || '',
+    url: r.url || '',
+    rank: i + 1,
+    description: r.description,
+  }))
+}
+
 // ─── Summarizer (AI Overview substitute) ─────────────────────────────────────
 
 export interface BraveSummary {

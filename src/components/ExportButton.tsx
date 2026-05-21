@@ -12,7 +12,7 @@ interface ExportButtonProps {
   brandName: string
 }
 
-type ExportFormat = 'obsidian' | 'markdown' | 'json'
+type ExportFormat = 'csv' | 'pdf' | 'obsidian' | 'markdown' | 'json'
 
 interface ExportedNote {
   filename: string
@@ -20,10 +20,28 @@ interface ExportedNote {
   content: string
 }
 
+// "notes" formats are built from the Markdown-notes payload (snapshots /
+// hallucinations / prompt-tests). csv + pdf come straight from the
+// /api/export endpoint over monitoring results, so the "Include" picker
+// doesn't apply to them.
+const NOTES_FORMATS: ExportFormat[] = ['obsidian', 'markdown', 'json']
+
 const FORMATS: Array<{ id: ExportFormat; label: string; hint: string; ext: string }> = [
   {
+    id: 'csv',
+    label: 'CSV',
+    hint: 'Spreadsheet of monitoring results (date, engine, mention, visibility, sentiment).',
+    ext: 'csv',
+  },
+  {
+    id: 'pdf',
+    label: 'PDF report',
+    hint: 'Branded summary report: mention rate, engine breakdown, recent results.',
+    ext: 'pdf',
+  },
+  {
     id: 'obsidian',
-    label: 'Obsidian vault',
+    label: 'ZIP',
     hint: 'ZIP of Markdown notes with YAML frontmatter, organized in folders.',
     ext: 'zip',
   },
@@ -92,17 +110,27 @@ export function ExportButton({ brandId, brandName }: ExportButtonProps) {
       return
     }
 
-    // obsidian — ZIP preserving folder structure
+    // ZIP preserving folder structure (Markdown notes with frontmatter)
     const zip = new JSZip()
-    const baseFolder = `${safeName}-obsidian-export/`
+    const baseFolder = `${safeName}-export/`
     for (const note of notes) {
       zip.folder(baseFolder + note.path)?.file(note.filename, note.content)
     }
     const zipBlob = await zip.generateAsync({ type: 'blob' })
-    triggerDownload(zipBlob, `${safeName}-obsidian-${dateTo}.zip`)
+    triggerDownload(zipBlob, `${safeName}-export-${dateTo}.zip`)
   }
 
   const handleExport = async () => {
+    // CSV / PDF are produced server-side over monitoring results — just open
+    // the download URL with the chosen date range. No "Include" picker.
+    if (format === 'csv' || format === 'pdf') {
+      const url = `/api/export?brand_id=${brandId}&format=${format}&from=${dateFrom}&to=${dateTo}`
+      window.open(url, '_blank')
+      setOpen(false)
+      toast.success(`Export started (${format.toUpperCase()})`)
+      return
+    }
+
     const types: Array<'snapshot' | 'hallucination' | 'prompt-test'> = []
     if (includeSnapshots) types.push('snapshot')
     if (includeHallucinations) types.push('hallucination')
@@ -135,7 +163,8 @@ export function ExportButton({ brandId, brandName }: ExportButtonProps) {
       await buildAndDownload(data.notes as ExportedNote[])
 
       setOpen(false)
-      toast.success(`Export downloaded (${format})`)
+      const fmtLabel = FORMATS.find((f) => f.id === format)?.label ?? 'file'
+      toast.success(`Export downloaded (${fmtLabel})`)
     } catch (err) {
       console.error('Export error:', err)
       setError('Network error. Please try again.')
@@ -211,40 +240,48 @@ export function ExportButton({ brandId, brandName }: ExportButtonProps) {
               </div>
             </div>
 
-            <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Include
-              </label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={includeSnapshots}
-                    onChange={(e) => setIncludeSnapshots(e.target.checked)}
-                    className="h-4 w-4 rounded border-border"
-                  />
-                  <span className="text-sm text-foreground">Snapshots</span>
+            {NOTES_FORMATS.includes(format) ? (
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Include
                 </label>
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={includeHallucinations}
-                    onChange={(e) => setIncludeHallucinations(e.target.checked)}
-                    className="h-4 w-4 rounded border-border"
-                  />
-                  <span className="text-sm text-foreground">Hallucinations</span>
-                </label>
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={includePromptTests}
-                    onChange={(e) => setIncludePromptTests(e.target.checked)}
-                    className="h-4 w-4 rounded border-border"
-                  />
-                  <span className="text-sm text-foreground">Prompt Tests</span>
-                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={includeSnapshots}
+                      onChange={(e) => setIncludeSnapshots(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-foreground">Snapshots</span>
+                  </label>
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={includeHallucinations}
+                      onChange={(e) => setIncludeHallucinations(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-foreground">Hallucinations</span>
+                  </label>
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={includePromptTests}
+                      onChange={(e) => setIncludePromptTests(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <span className="text-sm text-foreground">Prompt Tests</span>
+                  </label>
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {format === 'csv'
+                  ? 'Exports all monitoring results in the date range as spreadsheet rows.'
+                  : 'Generates a branded PDF report from monitoring results in the date range.'}
+              </p>
+            )}
 
             {error && <p className="text-sm text-red-400">{error}</p>}
           </div>

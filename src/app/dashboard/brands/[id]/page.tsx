@@ -570,49 +570,28 @@ export default function BrandDetailPage() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {brand.industry && <Badge>{brand.industry}</Badge>}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split('T')[0]
-              const to = new Date().toISOString().split('T')[0]
-              window.open(
-                `/api/export?brand_id=${brand.id}&format=csv&from=${from}&to=${to}`,
-                '_blank',
-              )
-            }}
-          >
-            CSV
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split('T')[0]
-              const to = new Date().toISOString().split('T')[0]
-              window.open(
-                `/api/export?brand_id=${brand.id}&format=pdf&from=${from}&to=${to}`,
-                '_blank',
-              )
-            }}
-          >
-            PDF
-          </Button>
+          {/* All export formats (CSV / PDF / ZIP / Markdown / JSON) live in one
+              control so the action bar reads as a single coherent group. */}
+          {brand && <ExportButton brandId={brand.id} brandName={brand.name} />}
           <Button variant="outline" size="sm" onClick={handleGenerateLlms}>
             <FileText className="mr-2 h-4 w-4" />
             Generate llms.txt
           </Button>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setIsEditing(true)
+              document
+                .getElementById('report-branding')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}
+          >
             <Edit3 className="mr-2 h-4 w-4" />
             Edit
           </Button>
-          {brand && <ExportButton brandId={brand.id} brandName={brand.name} />}
         </div>
       </div>
 
@@ -744,7 +723,7 @@ export default function BrandDetailPage() {
       </Card>
 
       {/* White-label Settings */}
-      <Card className="p-6">
+      <Card id="report-branding" className="scroll-mt-24 p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Palette className="h-5 w-5 text-muted-foreground" />

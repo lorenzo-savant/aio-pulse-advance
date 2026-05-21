@@ -2,6 +2,7 @@ import type { AnalysisResult, EngineId, IntentType } from '@/types'
 import { generateId } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { safeFetch } from '@/lib/utils/safe-fetch'
+import { callLLM } from './prompt-generator-ai'
 import { GEO } from '@/lib/geo-config'
 import { buildAnalysisGlossaryContext } from '@/lib/data/glossary'
 import {
@@ -161,7 +162,21 @@ Respond ONLY with a valid JSON object matching this exact schema (no markdown, n
 
 export async function callGemini(prompt: string): Promise<string> {
   const apiKey = process.env['GEMINI_API_KEY']
-  if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
+  if (!apiKey) {
+    // No Gemini key — fall back to the shared provider chain (Groq → Gemini →
+    // OpenAI) so analysis still works on a Groq-primary deployment. callLLM
+    // uses JSON-object mode, which suits the structured analysis prompt.
+    if (process.env['GROQ_API_KEY'] || process.env['OPENAI_API_KEY']) {
+      const { text } = await callLLM(
+        'You are an SEO/GEO analyst. Follow the user instructions exactly and respond with the requested JSON only.',
+        prompt,
+      )
+      return text
+    }
+    throw new Error(
+      'No LLM provider configured. Set GROQ_API_KEY (recommended), GEMINI_API_KEY, or OPENAI_API_KEY.',
+    )
+  }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
 

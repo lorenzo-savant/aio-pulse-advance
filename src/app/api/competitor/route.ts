@@ -180,36 +180,79 @@ export async function POST(req: NextRequest) {
   const normalizedPrimary = normalizeUrl(primaryUrl)
   const normalizedCompetitors = competitorUrls.map(normalizeUrl)
 
-  try {
-    // Analyze all URLs in parallel
-    const [primary, ...competitors] = await Promise.all([
-      analyzeCompetitor(normalizedPrimary),
-      ...normalizedCompetitors.map(analyzeCompetitor),
-    ])
+  // Analyze every URL independently so one unreachable/blocking competitor
+  // site doesn't sink the whole comparison (the old Promise.all behavior).
+  const [primarySettled, ...competitorsSettled] = await Promise.allSettled([
+    analyzeCompetitor(normalizedPrimary),
+    ...normalizedCompetitors.map(analyzeCompetitor),
+  ])
 
-    // ── Save to database ───────────────────────────────────────────────────
-    if (userId && !userId.startsWith('anonymous:') && db) {
-      try {
-        await db.from('competitor_analyses').insert({
-          brand_id: brandId,
-          user_id: userId,
-          primary_url: normalizedPrimary,
-          competitors: { primary, competitors } as unknown as Json,
-          summary: `Analyzed ${normalizedPrimary} against ${competitorUrls.length} competitors`,
-          raw_response: { primary, competitors } as unknown as Json,
-        })
-      } catch (dbError) {
-        logger.error('Failed to save result', { source: 'competitor', error: String(dbError) })
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: { primary, competitors },
-      timestamp: Date.now(),
-    })
-  } catch (error: unknown) {
-    logger.error('Competitor analysis error', { source: 'competitor', error: String(error) })
-    return NextResponse.json({ success: false, message: 'Comparison failed' }, { status: 500 })
+  // The primary site is mandatory — if it failed, surface the real reason
+  // (e.g. "GEMINI_API_KEY not configured", "Access denied (403)…") instead
+  // of a generic message so the user can act on it.
+  if (primarySettled.status === 'rejected') {
+    const reason =
+      primarySettled.reason instanceof Error
+        ? primarySettled.reason.message
+        : String(primarySettled.reason)
+    logger.error('Competitor analysis: primary failed', { source: 'competitor', reason })
+    return err(`Could not analyze ${normalizedPrimary}: ${reason}`, 502)
   }
+  const primary = primarySettled.value
+
+  const competitors = competitorsSettled
+    .filter(
+      (r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof analyzeCompetitor>>> =>
+        r.status === 'fulfilled',
+    )
+    .map((r) => r.value)
+
+  const failedCompetitors = competitorsSettled
+    .map((r, i) =>
+      r.status === 'rejected'
+        ? {
+            url: normalizedCompetitors[i],
+            reason: r.reason instanceof Error ? r.reason.message : String(r.reason),
+          }
+        : null,
+    )
+    .filter((x): x is { url: string | undefined; reason: string } => x !== null)
+
+  if (failedCompetitors.length > 0) {
+    logger.warn('Competitor analysis: some competitors failed', {
+      source: 'competitor',
+      failed: failedCompetitors,
+    })
+  }
+
+  // Every competitor failed — tell the user why rather than returning an
+  // empty, confusing result set.
+  if (competitors.length === 0) {
+    const reason = failedCompetitors[0]?.reason ?? 'unknown error'
+    return err(`Could not analyze any competitor URL: ${reason}`, 502)
+  }
+
+  // ── Save to database ───────────────────────────────────────────────────
+  if (userId && !userId.startsWith('anonymous:') && db) {
+    try {
+      await db.from('competitor_analyses').insert({
+        brand_id: brandId,
+        user_id: userId,
+        primary_url: normalizedPrimary,
+        competitors: { primary, competitors } as unknown as Json,
+        summary: `Analyzed ${normalizedPrimary} against ${competitors.length} competitors`,
+        raw_response: { primary, competitors } as unknown as Json,
+      })
+    } catch (dbError) {
+      logger.error('Failed to save result', { source: 'competitor', error: String(dbError) })
+    }
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: { primary, competitors },
+    // Surface partial failures so the UI can warn without hard-failing.
+    warnings: failedCompetitors.length > 0 ? failedCompetitors : undefined,
+    timestamp: Date.now(),
+  })
 }

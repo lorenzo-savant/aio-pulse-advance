@@ -23,6 +23,8 @@ export const dynamic = 'force-dynamic'
 const bodySchema = z.object({
   brand_id: z.string().uuid(),
   question: z.string().min(3).max(500).optional(),
+  /** Output language for the advice. Defaults to the brand's language. */
+  language: z.enum(['en', 'it', 'sv']).optional(),
 })
 
 function err(message: string, status = 500) {
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest) {
       parsed.data.brand_id,
       parsed.data.question,
       userId,
+      parsed.data.language,
     )
     return NextResponse.json({ success: true, data: result, timestamp: Date.now() })
   } catch (e) {

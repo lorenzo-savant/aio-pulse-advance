@@ -31,6 +31,7 @@ interface Brand {
   name: string
   color: string
   domain?: string | null
+  language?: string | null
 }
 
 interface Recommendation {
@@ -123,6 +124,7 @@ function formatConfidence(n: number): { label: string; tone: string } {
 export default function AdvisorPage() {
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+  const [language, setLanguage] = useState<'en' | 'it' | 'sv'>('en')
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -173,6 +175,11 @@ export default function AdvisorPage() {
     }
   }
 
+  // Picks a starting language for the selector: the brand's own language when
+  // it's one we support, else English.
+  const langForBrand = (b: Brand | null): 'en' | 'it' | 'sv' =>
+    b?.language === 'it' || b?.language === 'sv' ? b.language : 'en'
+
   useEffect(() => {
     ;(async () => {
       try {
@@ -182,6 +189,7 @@ export default function AdvisorPage() {
         setBrands(list)
         if (list.length > 0) {
           setSelectedBrand(list[0])
+          setLanguage(langForBrand(list[0]))
           loadHistory(list[0].id)
         }
       } catch {
@@ -196,7 +204,10 @@ export default function AdvisorPage() {
     setError(null)
     setResult(null)
     try {
-      const body: { brand_id: string; question?: string } = { brand_id: selectedBrand.id }
+      const body: { brand_id: string; question?: string; language: 'en' | 'it' | 'sv' } = {
+        brand_id: selectedBrand.id,
+        language,
+      }
       if (question.trim().length > 0) body.question = question.trim()
       const res = await fetch('/api/advisor', {
         method: 'POST',
@@ -234,25 +245,50 @@ export default function AdvisorPage() {
             site-readiness audit.
           </p>
         </div>
-        {brands.length > 1 && (
-          <select
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
-            value={selectedBrand?.id || ''}
-            onChange={(e) => {
-              const b = brands.find((x) => x.id === e.target.value)
-              if (b) {
-                setSelectedBrand(b)
-                loadHistory(b.id)
-              }
-            }}
-          >
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        )}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          {/* Brand selector — always visible so the focus is explicit */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Brand
+            </label>
+            <select
+              className="min-w-[180px] rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none disabled:opacity-50"
+              value={selectedBrand?.id || ''}
+              disabled={brands.length === 0}
+              onChange={(e) => {
+                const b = brands.find((x) => x.id === e.target.value)
+                if (b) {
+                  setSelectedBrand(b)
+                  setLanguage(langForBrand(b))
+                  loadHistory(b.id)
+                }
+              }}
+            >
+              {brands.length === 0 && <option value="">No brands yet</option>}
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Advice language — defaults to the brand's language, overridable */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Advice language
+            </label>
+            <select
+              className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as 'en' | 'it' | 'sv')}
+            >
+              <option value="en">🇬🇧 English</option>
+              <option value="it">🇮🇹 Italiano</option>
+              <option value="sv">🇸🇪 Svenska</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Question input */}

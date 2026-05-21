@@ -588,10 +588,19 @@ function disambiguationFor(brandName: string): string | null {
 
 interface StrategistOptions {
   question?: string
+  /** Output language for the advice prose. Defaults to the brand's language
+   *  (or English). JSON keys + enum values always stay English. */
+  language?: 'en' | 'it' | 'sv'
   /** Override provider selection (mainly for tests). */
   provider?: 'groq' | 'gemini' | 'openai'
   /** Override model. */
   model?: string
+}
+
+const LANGUAGE_LABELS: Record<'en' | 'it' | 'sv', string> = {
+  en: 'English',
+  it: 'Italian',
+  sv: 'Swedish',
 }
 
 export async function runStrategist(
@@ -599,7 +608,14 @@ export async function runStrategist(
   options: StrategistOptions = {},
 ): Promise<{ strategy: StrategyOutput; provider: string; model: string }> {
   const question = options.question?.trim() || DEFAULT_QUESTION
-  const systemPrompt = buildSystemPrompt()
+  // Resolve output language: explicit option wins, else the brand's own
+  // language, else English.
+  const resolvedLang: 'en' | 'it' | 'sv' =
+    options.language ??
+    (context.brand.language === 'it' || context.brand.language === 'sv'
+      ? context.brand.language
+      : 'en')
+  const systemPrompt = buildSystemPrompt(resolvedLang)
   const userPrompt = buildUserPrompt(context, question)
 
   const { text, provider, model } = await callLLM(systemPrompt, userPrompt, options)
@@ -630,9 +646,10 @@ export async function getAdvisorRecommendation(
   brandId: string,
   question?: string,
   userId?: string,
+  language?: 'en' | 'it' | 'sv',
 ): Promise<AdvisorResult> {
   const context = await buildAdvisorContext(brandId)
-  const { strategy, provider, model } = await runStrategist(context, { question })
+  const { strategy, provider, model } = await runStrategist(context, { question, language })
 
   // Persist to recommendation_history asynchronously (non-blocking)
   if (userId) {
@@ -714,11 +731,14 @@ export async function getAdvisorHistory(
 
 // ─── Internals ───────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(language: 'en' | 'it' | 'sv' = 'en'): string {
   const geoKnowledge = formatGeoKnowledgeForPrompt()
+  const langLabel = LANGUAGE_LABELS[language]
   return [
     'You are an AI Visibility strategist for AIO Pulse, a SaaS that monitors how brands are surfaced by AI answer engines (ChatGPT, Gemini, Perplexity, Claude).',
     'You advise a colleague on what to do next for ONE specific brand, using ONLY the facts in the CONTEXT block.',
+    '',
+    `OUTPUT LANGUAGE: Write all human-readable prose (summary, each recommendation's title, rationale, actions, sources, and any newPrompts text) in ${langLabel}. Do NOT translate the JSON keys or the enum values (impact/effort/priority must stay "high"/"medium"/"low"; intentBucket stays like "B1"). Quoted prompt texts and proper names from CONTEXT keep their original language.`,
     '',
     'GEO RESEARCH REFERENCE (use to calibrate engine-specific recommendations):',
     geoKnowledge,

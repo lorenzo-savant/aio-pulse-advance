@@ -41,16 +41,20 @@ const BRAND_COLORS = [
   '#84cc16',
 ]
 
+// Aligned with the prompt-generator presets so a brand's industry maps to the
+// right template/competitor set (a casting brand should get casting prompts,
+// not generic SaaS ones). Labels mirror INDUSTRY_PRESETS[].name.en.
 const INDUSTRIES = [
-  'Technology',
-  'SaaS / Software',
+  'Casting & Talent',
+  'SaaS B2B',
   'E-commerce',
+  'Local Business',
+  'Real Estate',
   'Healthcare',
-  'Finance',
-  'Marketing / Agency',
   'Education',
-  'Media / Publishing',
-  'Consulting',
+  'Hospitality & Tourism',
+  'Automotive',
+  'Construction',
   'Other',
 ]
 
@@ -90,15 +94,16 @@ interface Prompt {
 // brand + competitors + locale, so an approximate preset is fine — it only
 // supplies secondary category/role hints the model can override.
 const INDUSTRY_TO_PRESET: Record<string, string> = {
-  Technology: 'saas-b2b',
-  'SaaS / Software': 'saas-b2b',
+  'Casting & Talent': 'casting-talent',
+  'SaaS B2B': 'saas-b2b',
   'E-commerce': 'ecommerce',
+  'Local Business': 'local-business',
+  'Real Estate': 'real-estate',
   Healthcare: 'healthcare',
-  Finance: 'saas-b2b',
-  'Marketing / Agency': 'saas-b2b',
   Education: 'education',
-  'Media / Publishing': 'saas-b2b',
-  Consulting: 'saas-b2b',
+  'Hospitality & Tourism': 'hospitality',
+  Automotive: 'automotive',
+  Construction: 'construction',
   Other: 'saas-b2b',
 }
 
@@ -291,6 +296,14 @@ export default function NewBrandWizard() {
       toast.error('Brand name is required')
       return
     }
+    if (!form.domain.trim()) {
+      toast.error('Domain is required')
+      return
+    }
+    if (form.competitors.length === 0) {
+      toast.error('Add at least one competitor — prompts are tailored around them')
+      return
+    }
 
     setLoading(true)
 
@@ -376,7 +389,15 @@ export default function NewBrandWizard() {
   }
 
   const canProceed = () => {
-    if (step === 1) return form.name.trim().length > 0 && form.primaryLanguage.trim().length > 0
+    if (step === 1)
+      // Name + domain + at least one competitor are mandatory: they're what
+      // lets the generator produce tailored ("vs X", domain-aware) prompts.
+      return (
+        form.name.trim().length > 0 &&
+        form.domain.trim().length > 0 &&
+        form.competitors.length > 0 &&
+        form.primaryLanguage.trim().length > 0
+      )
     if (step === 2) return prompts.length > 0
     if (step === 3) return form.engines.length > 0
     return true
@@ -457,7 +478,7 @@ export default function NewBrandWizard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Primary Domain
+                  Primary Domain *
                 </label>
                 <input
                   className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -566,8 +587,12 @@ export default function NewBrandWizard() {
           {/* Competitors */}
           <div>
             <h3 className="mb-2 text-sm font-black uppercase tracking-widest text-muted-foreground">
-              Competitors
+              Competitors *
             </h3>
+            <p className="mb-2 text-xs text-muted-foreground">
+              At least one. Generated &ldquo;vs&rdquo; and comparison prompts are built around
+              these.
+            </p>
             <div className="mb-3 flex gap-2">
               <input
                 className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"

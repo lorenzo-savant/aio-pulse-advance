@@ -41,7 +41,9 @@ export async function POST(req: NextRequest) {
   const { brand, brandDomain, industryId, locale, location, competitors, withAi } = parsed.data
 
   // 1. Static template engine — always runs. Deterministic, free.
-  const prompts = generatePrompts(brand, industryId, locale as Locale, location)
+  //    Pass the brand's real competitors so "vs <competitor>" prompts use
+  //    them instead of the preset's generic placeholders.
+  const prompts = generatePrompts(brand, industryId, locale as Locale, location, competitors)
 
   if (prompts.length === 0) {
     return NextResponse.json(

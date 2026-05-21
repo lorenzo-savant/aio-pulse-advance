@@ -843,7 +843,17 @@ function suggestFrequency(priority: 'high' | 'medium' | 'low'): 'daily' | 'weekl
   return 'monthly'
 }
 
-function getActiveCompetitors(preset: IndustryPreset, locale: Locale): string[] {
+function getActiveCompetitors(
+  preset: IndustryPreset,
+  locale: Locale,
+  override?: string[],
+): string[] {
+  // When the brand supplies its OWN competitors, use them — the preset's
+  // competitor list is a generic placeholder (e.g. Salesforce/HubSpot for
+  // saas-b2b) and produces misleading "<brand> vs <wrong competitor>" prompts.
+  if (override && override.length > 0) {
+    return [...new Set(override.map((c) => c.trim()).filter(Boolean))]
+  }
   const base = [...preset.competitors]
   if (locale !== 'en' && preset.localCompetitors?.[locale]) {
     for (const c of preset.localCompetitors[locale]!) {
@@ -860,9 +870,10 @@ function expandPattern(
   locale: Locale,
   bucket: string,
   priority: 'high' | 'medium' | 'low',
+  competitorOverride?: string[],
 ): ExpandedQuery[] {
   const result: ExpandedQuery[] = []
-  const competitors = getActiveCompetitors(preset, locale)
+  const competitors = getActiveCompetitors(preset, locale, competitorOverride)
 
   if (template.includes('{competitor}')) {
     for (const competitor of competitors.slice(0, 5)) {
@@ -910,6 +921,7 @@ export function expandKeywords(
   industryId: string,
   locale: Locale,
   location?: string,
+  competitors?: string[],
 ): ExpandedQuery[] {
   const preset = INDUSTRY_PRESETS.find((p) => p.id === industryId)
   if (!preset) return []
@@ -932,6 +944,7 @@ export function expandKeywords(
         locale,
         pattern.bucket,
         pattern.priority,
+        competitors,
       ),
     )
   }
@@ -939,7 +952,7 @@ export function expandKeywords(
   const localTemplates = preset.localizedTemplates?.[locale]
   if (localTemplates) {
     for (const lt of localTemplates) {
-      queries.push(...expandPattern(lt, variables, preset, locale, 'B1', 'medium'))
+      queries.push(...expandPattern(lt, variables, preset, locale, 'B1', 'medium', competitors))
     }
   }
 
@@ -951,11 +964,12 @@ export function generatePrompts(
   industryId: string,
   locale: Locale,
   location?: string,
+  competitors?: string[],
 ): GeneratedPrompt[] {
   const preset = INDUSTRY_PRESETS.find((p) => p.id === industryId)
   if (!preset) return []
 
-  const expandedQueries = expandKeywords(brand, industryId, locale, location)
+  const expandedQueries = expandKeywords(brand, industryId, locale, location, competitors)
   const systemPrompt = buildSystemPrompt(preset, locale)
   const expectedOutput = buildExpectedOutput(locale)
 

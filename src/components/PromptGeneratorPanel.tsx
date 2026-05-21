@@ -93,6 +93,25 @@ function mapEngines(arr: string[] | undefined): Engine[] {
   return out.length > 0 ? out : ['chatgpt', 'gemini', 'perplexity']
 }
 
+// Best-effort match of a brand's free-text industry to a preset id. Returns
+// '' when nothing matches so the caller can prompt the user to pick — better
+// than silently defaulting to a wrong preset (e.g. a casting brand getting
+// SaaS prompts).
+function matchPreset(list: IndustryOption[], industry?: string): string {
+  if (list.length === 0) return ''
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, '')
+  const target = norm(industry || '')
+  if (target) {
+    for (const ind of list) {
+      if (norm(ind.id).includes(target) || target.includes(norm(ind.id))) return ind.id
+      for (const name of Object.values(ind.name)) {
+        if (norm(name).includes(target) || target.includes(norm(name))) return ind.id
+      }
+    }
+  }
+  return ''
+}
+
 const CATEGORY_TONE: Record<PromptCategory, string> = {
   awareness: 'bg-blue-500/10 text-blue-400',
   comparison: 'bg-purple-500/10 text-purple-400',
@@ -111,6 +130,7 @@ export function PromptGeneratorPanel({
   onCreated,
 }: Props) {
   const [industries, setIndustries] = useState<IndustryOption[]>([])
+  const [presetId, setPresetId] = useState('')
   const [useAi, setUseAi] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [drafts, setDrafts] = useState<Draft[]>([])
@@ -122,29 +142,20 @@ export function PromptGeneratorPanel({
     fetch('/api/industries')
       .then((r) => r.json())
       .then((j) => {
-        if (j.success) setIndustries(j.data)
+        if (j.success) {
+          setIndustries(j.data)
+          // Default the selector to the closest match for the brand's industry.
+          setPresetId((cur) => cur || matchPreset(j.data, industry))
+        }
       })
       .catch(() => {})
-  }, [])
-
-  // Resolve the brand's free-text industry to the closest preset id the
-  // generator API understands (it's preset-locked). Falls back to saas-b2b.
-  const resolvePresetId = useCallback((): string => {
-    if (industries.length === 0) return 'saas-b2b'
-    const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, '')
-    const target = norm(industry || '')
-    if (target) {
-      for (const ind of industries) {
-        if (norm(ind.id).includes(target) || target.includes(norm(ind.id))) return ind.id
-        for (const name of Object.values(ind.name)) {
-          if (norm(name).includes(target) || target.includes(norm(name))) return ind.id
-        }
-      }
-    }
-    return industries.find((i) => i.id === 'saas-b2b')?.id ?? industries[0]?.id ?? 'saas-b2b'
-  }, [industries, industry])
+  }, [industry])
 
   const generate = useCallback(async () => {
+    if (!presetId) {
+      toast.error('Pick an industry for this brand first')
+      return
+    }
     setGenerating(true)
     setDrafts([])
     setAiNote(null)
@@ -156,7 +167,7 @@ export function PromptGeneratorPanel({
         body: JSON.stringify({
           brand: brandName,
           brandDomain: brandDomain || undefined,
-          industryId: resolvePresetId(),
+          industryId: presetId,
           locale: language,
           competitors,
           withAi: useAi,
@@ -204,7 +215,7 @@ export function PromptGeneratorPanel({
     } finally {
       setGenerating(false)
     }
-  }, [brandName, brandDomain, resolvePresetId, language, competitors, useAi])
+  }, [brandName, brandDomain, presetId, language, competitors, useAi])
 
   const createOne = useCallback(
     async (d: Draft) => {
@@ -258,18 +269,40 @@ export function PromptGeneratorPanel({
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-          <input
-            type="checkbox"
-            checked={useAi}
-            onChange={(e) => setUseAi(e.target.checked)}
-            disabled={generating}
-            className="h-4 w-4 cursor-pointer accent-brand"
-          />
-          <Sparkles className="h-4 w-4 text-brand" />
-          Augment with AI (Groq)
-        </label>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Industry preset — the templates + categories are preset-driven, so
+              picking the right one is what keeps prompts on-topic. */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Industry
+            </label>
+            <select
+              value={presetId}
+              onChange={(e) => setPresetId(e.target.value)}
+              disabled={generating || industries.length === 0}
+              className="rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+            >
+              <option value="">Select industry…</option>
+              {industries.map((ind) => (
+                <option key={ind.id} value={ind.id}>
+                  {ind.name[language] ?? ind.name.en}
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 pb-2 text-sm text-foreground">
+            <input
+              type="checkbox"
+              checked={useAi}
+              onChange={(e) => setUseAi(e.target.checked)}
+              disabled={generating}
+              className="h-4 w-4 cursor-pointer accent-brand"
+            />
+            <Sparkles className="h-4 w-4 text-brand" />
+            Augment with AI (Groq)
+          </label>
+        </div>
         <Button onClick={generate} disabled={generating || !brandId} size="sm">
           {generating ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -279,6 +312,13 @@ export function PromptGeneratorPanel({
           {generating ? 'Generating…' : 'Generate prompts'}
         </Button>
       </div>
+
+      {competitors.length === 0 && (
+        <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-400">
+          This brand has no competitors set — comparison prompts will be skipped or generic. Add
+          competitors in the brand settings for tailored &ldquo;vs&rdquo; prompts.
+        </p>
+      )}
 
       {aiNote && (
         <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-400">

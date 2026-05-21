@@ -637,7 +637,7 @@ function PromptsPageContent() {
       )}
       <ConfirmDialog />
 
-      <Modal open={showLibrary} onOpenChange={setShowLibrary}>
+      <Modal open={showLibrary} onOpenChange={setShowLibrary} className="max-w-2xl">
         <ModalHeader>
           <ModalTitle>{t('prompts.library.title')}</ModalTitle>
         </ModalHeader>

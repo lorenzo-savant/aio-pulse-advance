@@ -15,24 +15,26 @@ export function Modal({ open, onOpenChange, children, className }: ModalProps) {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => onOpenChange(false)}
           />
           <div
             className={cn(
-              'animate-in zoom-in-95 border-surface-input-border relative z-10 w-full max-w-lg rounded-2xl border bg-card p-6 shadow-2xl',
+              'animate-in zoom-in-95 border-surface-input-border relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border bg-card shadow-2xl',
               className,
             )}
           >
             <button
               onClick={() => onOpenChange(false)}
-              className="text-text-muted-surface hover:bg-surface-row-hover hover:text-text-on-surface absolute right-4 top-4 rounded-lg p-1"
+              className="text-text-muted-surface hover:bg-surface-row-hover hover:text-text-on-surface bg-card/80 absolute right-4 top-4 z-20 rounded-lg p-1 backdrop-blur"
             >
               <X className="h-4 w-4" />
             </button>
-            {children}
+            {/* Scrollable content — caps the modal at the viewport so footers
+                / action buttons are always reachable on short screens. */}
+            <div className="overflow-y-auto p-6">{children}</div>
           </div>
         </div>
       )}

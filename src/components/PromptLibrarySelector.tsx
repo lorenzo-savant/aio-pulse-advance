@@ -154,7 +154,7 @@ export function PromptLibrarySelector({
         </div>
       </div>
 
-      <div className="max-h-[400px] space-y-2 overflow-y-auto">
+      <div className="space-y-2">
         {categories.map((cat) => {
           const info = PROMPT_CATEGORIES[cat]
           const templates = templatesByCategory[cat]
@@ -219,7 +219,7 @@ export function PromptLibrarySelector({
         })}
       </div>
 
-      <div className="bg-secondary/50 flex items-center justify-between rounded-xl border border-border px-4 py-3">
+      <div className="sticky bottom-0 z-10 flex items-center justify-between rounded-xl border border-border bg-secondary px-4 py-3 shadow-lg">
         <span className="text-sm text-muted-foreground">
           {selectedCategories.size} categor
           {selectedCategories.size !== 1 ? 'ies' : ''} selected ({selectedPromptsCount} prompts)

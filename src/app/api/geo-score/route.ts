@@ -5,6 +5,7 @@ import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { calculateGeoScore, gradeFor, type GeoScoreInput } from '@/lib/services/geo-score'
 import { loadLatestSiteAuditSummary } from '@/lib/services/site-audit-summary'
+import { sampleConfidence } from '@/lib/services/confidence'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -95,10 +96,24 @@ export async function GET(req: NextRequest) {
       .order('date', { ascending: false })
       .limit(200)
 
-    const [{ data, error }, siteAudit] = await Promise.all([
+    // Sample size = how many real monitoring responses back this score in the
+    // window. Drives a confidence label so a score from 6 scans isn't shown as
+    // certain (AI-Visibility-Readiness "confidence scales with sample size").
+    const countQuery = (
+      db as unknown as ReturnType<typeof createServerClient> & { from: (t: string) => any }
+    )
+      .from('monitoring_results')
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .gte('created_at', startDate.toISOString())
+
+    const [{ data, error }, siteAudit, { count: sampleCount }] = await Promise.all([
       healthQuery,
       loadLatestSiteAuditSummary(brandId),
+      countQuery,
     ])
+    const sampleSize = sampleCount ?? 0
+    const confidence = sampleConfidence(sampleSize)
 
     if (error) {
       logger.error('/api/geo-score query failed', { err: error })
@@ -122,6 +137,8 @@ export async function GET(req: NextRequest) {
           date: null,
           hasData: false,
           siteAudit,
+          sampleSize,
+          confidence,
         },
         timestamp: Date.now(),
       })
@@ -160,6 +177,8 @@ export async function GET(req: NextRequest) {
         date: latest.date,
         hasData: true,
         siteAudit,
+        sampleSize,
+        confidence,
       },
       timestamp: Date.now(),
     })

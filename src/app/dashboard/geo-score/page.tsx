@@ -75,6 +75,10 @@ interface GeoData {
   hasData: boolean
   /** Latest cached static site audit (from /api/audit/technical). */
   siteAudit: SiteAudit | null
+  /** Number of monitoring responses backing the score in the period. */
+  sampleSize?: number
+  /** Sample-size confidence in the score. */
+  confidence?: 'low' | 'medium' | 'high'
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -382,6 +386,31 @@ export default function GeoScorePage() {
                   </p>
                 )}
               </div>
+
+              {/* Sample-size confidence — a score from few responses isn't
+                  presented as certain (no false precision). */}
+              {data.confidence && (
+                <div className="mt-4 flex justify-center">
+                  <span
+                    className={cn(
+                      'rounded-full px-3 py-1 text-xs font-bold',
+                      data.confidence === 'high'
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : data.confidence === 'medium'
+                          ? 'bg-amber-500/10 text-amber-400'
+                          : 'bg-input text-muted-foreground',
+                    )}
+                  >
+                    {data.confidence} confidence
+                    {typeof data.sampleSize === 'number' && (
+                      <span className="font-normal opacity-70">
+                        {' '}
+                        · {data.sampleSize} response{data.sampleSize === 1 ? '' : 's'}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
 
               {/* Inline link to the static site audit — connects this live
                   visibility score to the static readiness audit that already

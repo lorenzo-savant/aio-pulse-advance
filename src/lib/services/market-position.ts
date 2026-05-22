@@ -8,6 +8,8 @@
 //
 // Pure + deterministic → unit-tested directly.
 
+import { sampleConfidence } from './confidence'
+
 export type CategoryRole = 'leader' | 'challenger' | 'niche'
 export type InnovationPerception = 'innovator' | 'disruptor' | 'traditionalist'
 
@@ -78,8 +80,7 @@ export function classifyMarketPosition(input: MarketPositionInput): MarketPositi
   const categoryRole = classifyRole(input)
   const innovationPerception = classifyInnovation(input)
 
-  const confidence: MarketPosition['confidence'] =
-    input.totalResponses >= 30 ? 'high' : input.totalResponses >= 10 ? 'medium' : 'low'
+  const confidence: MarketPosition['confidence'] = sampleConfidence(input.totalResponses)
 
   const parts: string[] = [
     `${ROLE_BLURB[categoryRole]} (${Math.round(input.share)}% share of voice, rank #${input.rank} of ${input.entityCount})`,

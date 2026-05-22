@@ -192,6 +192,15 @@ export const GEO_KNOWLEDGE: GeoKnowledge = {
       applicableEngines: ['ChatGPT', 'Claude', 'Gemini', 'Perplexity'],
     },
     {
+      id: 'structured-formatting',
+      name: 'Format key facts as tables and lists',
+      description:
+        'Content that presents comparisons and specs in tables and scannable lists is cited markedly more often — table-formatted answers see roughly a 2.5× citation rate vs the same facts in prose. Answer engines extract structured, list-detectable content more reliably.',
+      impact: '~2.5× citation rate',
+      source: 'Conductor 2026 AEO/GEO Benchmarks Report',
+      applicableEngines: ['ChatGPT', 'Perplexity', 'Gemini', 'Google AI Overviews'],
+    },
+    {
       id: 'content-freshness',
       name: 'Maintain content freshness (<3 months)',
       description:

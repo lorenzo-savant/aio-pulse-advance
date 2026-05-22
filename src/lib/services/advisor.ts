@@ -109,6 +109,10 @@ export interface AdvisorContext {
   prompts: {
     active: number
     byLanguage: Record<string, number>
+    /** Active prompts not run in >14 days (or never) — blind spots. */
+    stale: number
+    /** Up to 5 stale prompt texts, for concrete "reactivate X" recommendations. */
+    staleSample: string[]
   }
   aeo: {
     total: number
@@ -793,6 +797,7 @@ function buildSystemPrompt(language: 'en' | 'it' | 'sv' = 'en'): string {
     '    - If externalPresence.reddit.found === true with matchCount, acknowledge it (e.g. "you appear in N Reddit threads") and skip the "build Reddit presence" recommendation.',
     '    - If externalPresence is null (check failed) do NOT speculate — skip both recommendations.',
     '15. CATEGORY DIVERSITY: tag each recommendation with a `category` from {content, schema, authority, competitive, prompts, technical}. Across your (max 3) recommendations, prefer DISTINCT categories — do not return three "content" recommendations when the data points to schema, authority, or competitive gaps too.',
+    '16. STALE PROMPTS: if CONTEXT.prompts.stale > 0, these active prompts stopped running (>14 days) — they are measurement blind spots. Recommend reactivating them (category "prompts"), naming concrete texts from CONTEXT.prompts.staleSample. Re-running them is low-effort and restores visibility data.',
     '',
     'Schema:',
     '{ "summary": string, "recommendations": [ { "title": string, "rationale": string, "category": "content"|"schema"|"authority"|"competitive"|"prompts"|"technical", "impact": "high"|"medium"|"low", "effort": "high"|"medium"|"low", "actions": string[], "sources": string[] } ], "newPrompts"?: [ { "text": string, "intentBucket": string, "priority": "high"|"medium"|"low" } ], "confidence": number }',
@@ -838,6 +843,15 @@ function summariseFindings(c: AdvisorContext): string {
   lines.push(
     `PROMPTS: ${c.prompts.active} active · by language ${JSON.stringify(c.prompts.byLanguage)}`,
   )
+  if (c.prompts.stale > 0) {
+    lines.push(
+      `STALE PROMPTS: ${c.prompts.stale} active prompt(s) not run in >14 days (blind spots)${
+        c.prompts.staleSample.length
+          ? `: ${c.prompts.staleSample.map((t) => `"${t}"`).join(' | ')}`
+          : ''
+      }`,
+    )
+  }
 
   if (c.promptInsights.worstPerforming.length) {
     lines.push(
@@ -1144,21 +1158,38 @@ async function summarizePrompts(
   const dbAny = db as any
   const byLanguage: Record<string, number> = {}
   let active = 0
+  let stale = 0
+  const staleSample: string[] = []
+  // A prompt is "stale" if it's active but hasn't run in >14 days (or never) —
+  // a blind spot the advisor can recommend reactivating (and the user can turn
+  // into a work order). Idea borrowed from TrekYatra's staleness detection.
+  const staleCutoff = Date.now() - 14 * 24 * 60 * 60 * 1000
   try {
     const { data } = (await dbAny
       .from('prompts')
-      .select('language')
+      .select('text, language, last_run_at')
       .eq('brand_id', brandId)
-      .eq('is_active', true)) as { data: Array<{ language: string | null }> | null }
+      .eq('is_active', true)) as {
+      data: Array<{
+        text: string | null
+        language: string | null
+        last_run_at: string | null
+      }> | null
+    }
     for (const row of data || []) {
       active++
       const lang = row.language || 'unknown'
       byLanguage[lang] = (byLanguage[lang] || 0) + 1
+      const lastRun = row.last_run_at ? new Date(row.last_run_at).getTime() : 0
+      if (lastRun < staleCutoff) {
+        stale++
+        if (staleSample.length < 5 && row.text) staleSample.push(row.text)
+      }
     }
   } catch (e) {
     logger.warn('advisor: prompts summary failed', { err: String(e) })
   }
-  return { active, byLanguage }
+  return { active, byLanguage, stale, staleSample }
 }
 
 async function summarizeAeo(

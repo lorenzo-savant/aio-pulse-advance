@@ -27,13 +27,15 @@ function err(message: string, status = 500) {
 }
 
 function toInput(row: HealthRow): GeoScoreInput {
+  // Pass null (not 0) for absent signals → calculateGeoScore excludes those
+  // pillars and re-normalizes, instead of a phantom-0 dragging the composite.
   return {
-    citationRate: row.citation_rate ?? 0,
-    mentionRate: row.mention_rate ?? row.visibility_score ?? 0,
-    recommendationRate: row.recommendation_rate ?? 0,
-    sentimentScore: row.sentiment_score ?? 0,
-    positionAvg: row.position_avg ?? 0,
-    hallucinationRate: row.hallucination_rate ?? 0,
+    citationRate: row.citation_rate ?? null,
+    mentionRate: row.mention_rate ?? row.visibility_score ?? null,
+    recommendationRate: row.recommendation_rate ?? null,
+    sentimentScore: row.sentiment_score ?? null,
+    positionAvg: row.position_avg ?? null,
+    hallucinationRate: row.hallucination_rate ?? null,
   }
 }
 

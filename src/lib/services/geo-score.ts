@@ -20,13 +20,17 @@
 // breaks the score into weighted pillars and emits prioritized, actionable
 // recommendations for the weakest ones.
 
+// Each field may be `null` meaning "no data for this pillar". Null pillars are
+// EXCLUDED and the remaining pillar weights re-normalized to sum to 1, so a
+// missing signal never fabricates a phantom-0 that drags the score down
+// (idea from aeo-platform's sparse-data re-normalization). A real 0 is kept.
 export interface GeoScoreInput {
-  citationRate: number // 0–100
-  mentionRate: number // 0–100
-  recommendationRate: number // 0–100
-  sentimentScore: number // −1..1
-  positionAvg: number // ≥1, 0 = never positioned
-  hallucinationRate: number // 0..1
+  citationRate: number | null // 0–100
+  mentionRate: number | null // 0–100
+  recommendationRate: number | null // 0–100
+  sentimentScore: number | null // −1..1
+  positionAvg: number | null // ≥1, 0 = never positioned
+  hallucinationRate: number | null // 0..1
 }
 
 export type GeoGrade = 'A' | 'B' | 'C' | 'D' | 'F'
@@ -167,35 +171,62 @@ const REC_ACTIONS: Record<GeoPillar['key'], string[]> = {
  * Pure and deterministic — safe to unit test and call from API routes.
  */
 export function calculateGeoScore(input: GeoScoreInput): GeoScoreResult {
-  const citationNorm = clamp(input.citationRate, 0, 100)
-  const presenceNorm = clamp(input.mentionRate, 0, 100)
-  const authorityNorm = clamp(input.recommendationRate, 0, 100)
-  const positionNorm = normalizePosition(input.positionAvg)
-  const sentimentNorm = normalizeSentiment(input.sentimentScore)
-  const antiHallucination = clamp(100 - clamp(input.hallucinationRate, 0, 1) * 100, 0, 100)
-  const trustNorm = (sentimentNorm + antiHallucination) / 2
-
-  const pillarScores: Record<GeoPillar['key'], number> = {
-    citation: citationNorm,
-    presence: presenceNorm,
-    authority: authorityNorm,
-    position: positionNorm,
-    trust: trustNorm,
+  // Per-pillar presence + normalized score. `present` is false when the pillar
+  // has no underlying data (input null) → it's excluded and weights re-normalize.
+  // Trust blends sentiment + anti-hallucination; it's present if EITHER exists.
+  const trustComponents: number[] = []
+  if (input.sentimentScore != null) trustComponents.push(normalizeSentiment(input.sentimentScore))
+  if (input.hallucinationRate != null) {
+    trustComponents.push(clamp(100 - clamp(input.hallucinationRate, 0, 1) * 100, 0, 100))
   }
 
-  const pillars: GeoPillar[] = (Object.keys(GEO_WEIGHTS) as GeoPillar['key'][]).map((key) => {
-    const weight = GEO_WEIGHTS[key]
-    const score = round1(pillarScores[key])
+  const pillarData: Record<GeoPillar['key'], { present: boolean; score: number }> = {
+    citation: {
+      present: input.citationRate != null,
+      score: clamp(input.citationRate ?? 0, 0, 100),
+    },
+    presence: { present: input.mentionRate != null, score: clamp(input.mentionRate ?? 0, 0, 100) },
+    authority: {
+      present: input.recommendationRate != null,
+      score: clamp(input.recommendationRate ?? 0, 0, 100),
+    },
+    position: {
+      present: input.positionAvg != null,
+      score: normalizePosition(input.positionAvg ?? 0),
+    },
+    trust: {
+      present: trustComponents.length > 0,
+      score: trustComponents.length
+        ? trustComponents.reduce((a, b) => a + b, 0) / trustComponents.length
+        : 0,
+    },
+  }
+
+  const allKeys = Object.keys(GEO_WEIGHTS) as GeoPillar['key'][]
+  const presentKeys = allKeys.filter((k) => pillarData[k].present)
+  // Re-normalize: present weights scaled so they sum to 1 (the composite stays
+  // 0–100). When every pillar is present this is identity (weights already sum 1).
+  const baseWeightSum = presentKeys.reduce((s, k) => s + GEO_WEIGHTS[k], 0)
+
+  const pillars: GeoPillar[] = presentKeys.map((key) => {
+    const weight = baseWeightSum > 0 ? GEO_WEIGHTS[key] / baseWeightSum : 0
+    const score = round1(pillarData[key].score)
     return {
       key,
       label: PILLAR_LABELS[key],
       score,
-      weight,
+      weight: Math.round(weight * 1000) / 1000,
       contribution: round1(score * weight),
     }
   })
 
-  const raw = pillars.reduce((sum, p) => sum + pillarScores[p.key] * p.weight, 0)
+  const raw =
+    baseWeightSum > 0
+      ? presentKeys.reduce(
+          (sum, k) => sum + pillarData[k].score * (GEO_WEIGHTS[k] / baseWeightSum),
+          0,
+        )
+      : 0
   const score = round1(clamp(raw, 0, 100))
 
   // Prioritize by recoverable points (gap × weight): the pillar with the most

@@ -106,6 +106,56 @@ describe('calculateGeoScore', () => {
     expect(trustToxic).toBe(0)
     expect(trustClean).toBe(100)
   })
+
+  // ── Sparse-data re-normalization (aeo-platform-inspired) ──────────────────
+  it('excludes null pillars and re-normalizes the remaining weights', () => {
+    const r = calculateGeoScore({
+      citationRate: null, // no citation data → excluded
+      mentionRate: 80,
+      recommendationRate: 60,
+      sentimentScore: 0.5,
+      positionAvg: 1,
+      hallucinationRate: 0,
+    })
+    // citation pillar dropped → 4 pillars, weights re-normalized to sum ~1
+    expect(r.pillars.map((p) => p.key).sort()).toEqual([
+      'authority',
+      'position',
+      'presence',
+      'trust',
+    ])
+    const weightSum = r.pillars.reduce((a, p) => a + p.weight, 0)
+    expect(weightSum).toBeCloseTo(1, 2)
+    expect(r.pillars.reduce((a, p) => a + p.contribution, 0)).toBeCloseTo(r.score, 0)
+  })
+
+  it('a null pillar scores HIGHER than a real 0 (no phantom drag)', () => {
+    const withNull = calculateGeoScore({ ...zero, citationRate: null, mentionRate: 90 })
+    const withZero = calculateGeoScore({ ...zero, citationRate: 0, mentionRate: 90 })
+    // With citation excluded, the strong presence carries more weight → higher.
+    expect(withNull.score).toBeGreaterThan(withZero.score)
+  })
+
+  it('returns score 0 and no pillars when every signal is null', () => {
+    const r = calculateGeoScore({
+      citationRate: null,
+      mentionRate: null,
+      recommendationRate: null,
+      sentimentScore: null,
+      positionAvg: null,
+      hallucinationRate: null,
+    })
+    expect(r.score).toBe(0)
+    expect(r.pillars).toEqual([])
+    expect(r.recommendations).toEqual([])
+  })
+
+  it('all-present numeric input keeps the original base weights (identity)', () => {
+    const r = calculateGeoScore({ ...zero, citationRate: 50 })
+    const citation = r.pillars.find((p) => p.key === 'citation')!
+    expect(citation.weight).toBeCloseTo(GEO_WEIGHTS.citation, 3)
+    expect(r.pillars).toHaveLength(5)
+  })
 })
 
 describe('gradeFor', () => {

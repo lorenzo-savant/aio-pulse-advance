@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Plus, X, Play, Loader2, MessageSquare, Clock, Library, Wand2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { Modal, ModalHeader, ModalTitle, ModalBody } from '@/components/ui/Modal'
@@ -148,6 +149,61 @@ function PromptsPageContent() {
   const [templateLang, setTemplateLang] = useState<'en' | 'it' | 'sv'>('en')
   const [showLibrary, setShowLibrary] = useState(false)
   const [showGenerator, setShowGenerator] = useState(false)
+  // Borrow #1 — prompt suggestions from Perplexity's related_questions.
+  const [suggestions, setSuggestions] = useState<Array<{ text: string; source: string }>>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const [suggestionsReason, setSuggestionsReason] = useState<string | null>(null)
+  const [addingSuggestion, setAddingSuggestion] = useState<string | null>(null)
+
+  const fetchSuggestions = async () => {
+    if (!selectedBrandId) {
+      toast.error(t('prompts.toast.select_brand_error'))
+      return
+    }
+    setSuggestionsLoading(true)
+    setSuggestionsReason(null)
+    try {
+      const res = await fetch('/api/prompts/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandId: selectedBrandId }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.message || t('errors.bad_request'))
+      setSuggestions(json.suggestions ?? [])
+      setSuggestionsReason(json.reason ?? null)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('prompts.toast.load_failed'))
+    } finally {
+      setSuggestionsLoading(false)
+    }
+  }
+
+  const addSuggestion = async (text: string) => {
+    if (!selectedBrandId) return
+    setAddingSuggestion(text)
+    try {
+      const b = brands.find((x) => x.id === selectedBrandId)
+      const res = await fetch('/api/prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand_id: selectedBrandId,
+          text,
+          language: (b?.language as string) ?? 'en',
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.message || t('errors.bad_request'))
+      setPrompts((prev) => [json.data, ...prev])
+      setSuggestions((prev) => prev.filter((s) => s.text !== text))
+      toast.success(t('prompts.toast.created'))
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('errors.bad_request'))
+    } finally {
+      setAddingSuggestion(null)
+    }
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -294,6 +350,7 @@ function PromptsPageContent() {
 
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="prompts" />
       <JourneyGuide
         step={1}
         title={t('prompts.journey_guide.title')}
@@ -429,6 +486,64 @@ function PromptsPageContent() {
             <p className="py-6 text-center text-sm text-muted-foreground">
               {t('prompts.library.select_brand_first')}
             </p>
+          )}
+        </Card>
+      )}
+
+      {selectedBrandId && (
+        <Card className="p-6">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-brand" />
+              <h2 className="text-base font-bold text-foreground">
+                {t('prompts.suggestions.title')}
+              </h2>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void fetchSuggestions()}
+              disabled={suggestionsLoading}
+            >
+              {suggestionsLoading ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Wand2 className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {t('prompts.suggestions.fetch')}
+            </Button>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">{t('prompts.suggestions.subtitle')}</p>
+          {suggestions.length > 0 ? (
+            <ul className="space-y-2">
+              {suggestions.map((s) => (
+                <li
+                  key={s.text}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
+                >
+                  <span className="text-sm text-foreground">{s.text}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void addSuggestion(s.text)}
+                    disabled={addingSuggestion === s.text}
+                  >
+                    {addingSuggestion === s.text ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <Plus className="mr-1 h-3.5 w-3.5" />
+                        {t('prompts.suggestions.add')}
+                      </>
+                    )}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            suggestionsReason && (
+              <p className="text-sm text-muted-foreground">{suggestionsReason}</p>
+            )
           )}
         </Card>
       )}

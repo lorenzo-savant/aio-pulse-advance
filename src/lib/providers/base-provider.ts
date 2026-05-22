@@ -17,7 +17,10 @@ export abstract class BaseProvider {
 
   protected abstract healthCheckRequest(): Promise<Response>
 
-  protected abstract executeRequest(request: AIProviderRequest): Promise<Response>
+  protected abstract executeRequest(
+    request: AIProviderRequest,
+    signal?: AbortSignal,
+  ): Promise<Response>
 
   protected abstract transformResponse(data: unknown): AIProviderResult
 
@@ -81,7 +84,7 @@ export abstract class BaseProvider {
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs)
 
     try {
-      const response = await this.executeRequest(request)
+      const response = await this.executeRequest(request, controller.signal)
       clearTimeout(timeoutId)
 
       if (!response.ok) {

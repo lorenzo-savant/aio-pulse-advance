@@ -1,7 +1,7 @@
 // PATH: src/app/api/recommendations/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { callGemini } from '@/lib/services/gemini'
+import { callLLM } from '@/lib/services/prompt-generator-ai'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { rateLimitGate } from '@/lib/api-auth'
 import { logger } from '@/lib/logger'
@@ -186,20 +186,29 @@ Respond ONLY with valid JSON (no markdown):
 }`
 
   try {
-    const raw = await callGemini(prompt)
-    const cleaned = raw
+    // Resilient JSON-mode chain (Groq → Cerebras → Mistral → Gemini → OpenAI):
+    // a single provider's rate-limit / timeout / truncation falls back to the
+    // next instead of failing the whole request (the cause of the previous
+    // "Failed to generate recommendations" on a single bare-Gemini call).
+    const systemPrompt =
+      'You are an AIO/GEO content consultant. Respond with ONLY a single valid JSON object matching the schema in the user message — no markdown, no code fences, no prose.'
+    const { text: raw } = await callLLM(systemPrompt, prompt)
+
+    // Strip fences, then slice the outermost {...} so any stray prose around the
+    // object never breaks parsing.
+    const stripped = raw
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim()
+    const start = stripped.indexOf('{')
+    const end = stripped.lastIndexOf('}')
+    const candidate = start !== -1 && end > start ? stripped.slice(start, end + 1) : stripped
 
     let parsed: any
     try {
-      parsed = JSON.parse(cleaned)
+      parsed = JSON.parse(candidate)
     } catch {
-      // Try to extract JSON
-      const match = cleaned.match(/\{[\s\S]*\}/)
-      if (match) parsed = JSON.parse(match[0])
-      else throw new Error('Failed to parse recommendations')
+      throw new Error('Failed to parse recommendations')
     }
 
     // ── Save to database ───────────────────────────────────────────────────

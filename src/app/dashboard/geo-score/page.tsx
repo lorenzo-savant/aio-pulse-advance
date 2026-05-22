@@ -23,6 +23,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
 
@@ -239,6 +240,7 @@ export default function GeoScorePage() {
 
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="geo-score" />
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

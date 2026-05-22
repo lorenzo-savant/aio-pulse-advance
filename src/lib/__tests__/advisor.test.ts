@@ -185,4 +185,16 @@ describe('extractJson', () => {
   it('trims surrounding whitespace', () => {
     expect(extractJson('  \n {"a":1}  \n')).toBe('{"a":1}')
   })
+
+  it('extracts a JSON object wrapped in prose (no fences)', () => {
+    expect(extractJson('Här är strategin:\n{"a":1}\nLycka till!')).toBe('{"a":1}')
+  })
+
+  it('drops trailing prose after the JSON object', () => {
+    expect(extractJson('{"a":1}\n\nHope this helps!')).toBe('{"a":1}')
+  })
+
+  it('recovers a fenced object that still has a prose preamble', () => {
+    expect(extractJson('Sure:\n```json\n{"a":1}\n```')).toBe('{"a":1}')
+  })
 })

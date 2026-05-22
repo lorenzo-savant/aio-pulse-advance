@@ -14,6 +14,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import {
   TrendingUp,
   TrendingDown,
@@ -242,6 +243,7 @@ export default function CitationsPage() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="citations" />
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

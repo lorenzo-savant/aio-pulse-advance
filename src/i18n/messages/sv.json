@@ -169,7 +169,7 @@
       "content_optimizer": "Innehållsoptimering",
       "content_audit": "Innehållsgranskning",
       "recommendations": "Rekommendationer",
-      "strategy_advisor": "Strategy Advisor",
+      "strategy_advisor": "Strategirådgivare",
       "engine_info": "Motorinfo",
       "billing": "Fakturering",
       "credits": "Krediter",
@@ -350,52 +350,52 @@
     "edit_brand": "Redigera Varumärke",
     "delete_brand": "Ta bort Varumärke",
     "form": {
-      "name_label": "Brand Name",
-      "name_placeholder": "Enter brand name...",
+      "name_label": "Varumärkesnamn",
+      "name_placeholder": "Ange varumärkesnamn...",
       "domain_label": "Domain",
       "domain_placeholder": "example.com",
       "description_label": "Description",
-      "description_placeholder": "Brief description...",
+      "description_placeholder": "Kort beskrivning...",
       "industry_label": "Industry",
-      "industry_placeholder": "Select industry...",
-      "language_label": "Primary Market Language",
-      "language_helper": "Prompts and AI simulations will run in this language.",
-      "color_label": "Brand Color",
-      "save_button": "Save Brand",
-      "update_button": "Update Brand"
+      "industry_placeholder": "Välj bransch...",
+      "language_label": "Primärt marknadsspråk",
+      "language_helper": "Prompts och AI-simuleringar körs på detta språk.",
+      "color_label": "Varumärkesfärg",
+      "save_button": "Spara varumärke",
+      "update_button": "Uppdatera varumärke"
     },
     "card": {
-      "view_details": "View Details",
-      "run_monitoring": "Run Monitoring",
+      "view_details": "Visa detaljer",
+      "run_monitoring": "Kör övervakning",
       "edit": "Edit",
       "delete": "Delete"
     },
     "language_nudge": {
-      "title": "Set primary market",
-      "description": "Set the primary market for this brand to get more accurate AI monitoring results.",
-      "cta": "Set Language"
+      "title": "Ange primär marknad",
+      "description": "Ange primär marknad för detta varumärke för att få mer exakta AI-övervakningsresultat.",
+      "cta": "Ange språk"
     },
     "white_label": {
-      "title": "White-label Report Settings",
-      "subtitle": "Customize how your brand appears in PDF reports. Leave empty to use default AIO Pulse branding.",
-      "report_brand_name": "Report Brand Name",
-      "report_brand_name_placeholder": "Your Company Name",
-      "primary_color": "Primary Color (Hex)",
-      "logo_url": "Logo URL",
+      "title": "White-label-rapportinställningar",
+      "subtitle": "Anpassa hur ditt varumärke visas i PDF-rapporter. Lämna tomt för att använda AIO Pulses standardvarumärke.",
+      "report_brand_name": "Varumärkesnamn i rapport",
+      "report_brand_name_placeholder": "Ditt företagsnamn",
+      "primary_color": "Primärfärg (Hex)",
+      "logo_url": "Logotyp-URL",
       "logo_url_placeholder": "https://your-company.com/logo.png",
       "configure": "Configure",
       "save": "Save"
     },
     "team": {
-      "title": "Team Members",
-      "subtitle": "Invite team members to collaborate on this brand.",
+      "title": "Teammedlemmar",
+      "subtitle": "Bjud in teammedlemmar att samarbeta om detta varumärke.",
       "invite_email": "colleague@company.com",
       "role_viewer": "Viewer",
       "role_editor": "Editor",
       "invite": "Invite",
       "inviting": "Sending...",
-      "pending_invitations": "Pending Invitations",
-      "no_members": "No team members yet.",
+      "pending_invitations": "Väntande inbjudningar",
+      "no_members": "Inga teammedlemmar ännu.",
       "expires": "Expires"
     }
   },
@@ -433,7 +433,7 @@
       "select_brand_first": "Välj ett varumärke för att lägga till prompts från biblioteket.",
       "select_all": "Välj Alla",
       "select_none": "Välj Inga",
-      "seed_button": "Seed {count} Prompts",
+      "seed_button": "Skapa {count} prompts",
       "created": "Skapade {created}, {skipped} överhoppade",
       "categories_selected": "{count} kategorier valda ({prompts} prompts)"
     },
@@ -469,6 +469,12 @@
         "responses_captured": "Varje svar fångat: varumärkesomnämnanden, sentiment, citat",
         "avi_computed": "AVI-poäng beräknad från dessa körningar"
       }
+    },
+    "suggestions": {
+      "title": "Förslag från AI-motorer",
+      "subtitle": "Verkliga följdfrågor som Perplexity visar för detta varumärke — lägg till de relevanta som prompts.",
+      "fetch": "Hämta förslag",
+      "add": "Lägg till"
     }
   },
   "monitoring": {
@@ -1112,32 +1118,32 @@
     }
   },
   "gsc": {
-    "top_pages": "Top Pages",
-    "top_queries": "Top Queries",
+    "top_pages": "Toppsidor",
+    "top_queries": "Toppfrågor",
     "position": "Position",
     "mobile": "Mobile",
     "page": "Page",
     "clicks": "Clicks",
-    "auto_sync": "Auto Sync",
-    "sync_success": "Synced rows successfully",
+    "auto_sync": "Automatisk synk",
+    "sync_success": "Rader synkade",
     "ctr": "CTR",
-    "last_sync": "Last Sync",
+    "last_sync": "Senaste synk",
     "tablet": "Tablet",
     "impressions": "Impressions",
-    "not_configured": "GSC not configured",
+    "not_configured": "GSC ej konfigurerad",
     "title": "Google Search Console",
-    "sync_error": "Sync failed",
-    "sync_status": "Sync Status",
-    "device_breakdown": "Device Breakdown",
-    "sync_now": "Sync Now",
+    "sync_error": "Synk misslyckades",
+    "sync_status": "Synkstatus",
+    "device_breakdown": "Enhetsfördelning",
+    "sync_now": "Synka nu",
     "query": "Query",
-    "daily_trend": "Daily Trend",
+    "daily_trend": "Daglig trend",
     "desktop": "Desktop",
-    "country_breakdown": "Country Breakdown"
+    "country_breakdown": "Landsfördelning"
   },
   "keyword_research": {
     "intent": "Intent",
-    "title": "Keyword Research",
+    "title": "Nyckelordsanalys",
     "intents": {
       "navigational": "Navigational",
       "informational": "Informational",
@@ -1153,37 +1159,37 @@
     "difficulty": "Difficulty",
     "trending": "Trending",
     "cpc": "CPC",
-    "search_volume": "Search Volume",
-    "refresh_now": "Refresh Keywords",
-    "refresh_error": "Keyword refresh failed",
-    "not_configured": "DataForSEO not configured",
-    "refresh_success": "Keywords updated"
+    "search_volume": "Sökvolym",
+    "refresh_now": "Uppdatera nyckelord",
+    "refresh_error": "Uppdatering av nyckelord misslyckades",
+    "not_configured": "DataForSEO ej konfigurerad",
+    "refresh_success": "Nyckelord uppdaterade"
   },
   "ai_agents": {
-    "typing": "AI is analyzing your data...",
-    "subtitle": "Ask questions about your brand data in real-time",
+    "typing": "AI analyserar dina data...",
+    "subtitle": "Ställ frågor om dina varumärkesdata i realtid",
     "send": "Send",
-    "colleagues_online": "colleagues online",
+    "colleagues_online": "kollegor online",
     "agents": {
       "brand_monitor": {
-        "name": "Brand Monitor",
-        "description": "Real-time brand health and visibility analysis"
+        "name": "Varumärkesövervakare",
+        "description": "Analys av varumärkeshälsa och synlighet i realtid"
       },
       "keyword_expert": {
-        "name": "Keyword Expert",
-        "description": "Search volume, trends, and intent analysis"
+        "name": "Nyckelordsexpert",
+        "description": "Sökvolym, trender och avsiktsanalys"
       },
       "report_builder": {
-        "name": "Report Builder",
-        "description": "Generate and customize performance reports"
+        "name": "Rapportbyggare",
+        "description": "Generera och anpassa prestandarapporter"
       },
       "competitor_analyst": {
-        "name": "Competitor Analyst",
-        "description": "Competitive positioning and gap analysis"
+        "name": "Konkurrentanalytiker",
+        "description": "Konkurrenspositionering och gap-analys"
       }
     },
-    "placeholder": "Ask about brand health, competitors, keywords...",
-    "real_time": "Live data",
+    "placeholder": "Fråga om varumärkeshälsa, konkurrenter, nyckelord...",
+    "real_time": "Livedata",
     "suggestions": [
       "How is my brand health trending?",
       "Which competitors are gaining visibility?",
@@ -1191,43 +1197,43 @@
       "Generate a 30-day performance report",
       "Why did my citation rate drop?"
     ],
-    "shared_insights": "Shared Insights",
-    "error": "Failed to get response. Please try again.",
-    "title": "AI Assistant",
-    "team_chat": "Team Collaboration"
+    "shared_insights": "Delade insikter",
+    "error": "Kunde inte få svar. Försök igen.",
+    "title": "AI-assistent",
+    "team_chat": "Teamsamarbete"
   },
   "reports": {
     "preview": "Preview",
     "csv": "CSV",
-    "create_report": "Create Report",
-    "error": "Failed to generate report",
-    "success": "Report generated successfully",
+    "create_report": "Skapa rapport",
+    "error": "Kunde inte generera rapport",
+    "success": "Rapport genererad",
     "download": "Download",
     "sections": {
-      "keyword_performance": "Keyword Performance",
-      "gsc_performance": "Search Console Performance",
-      "competitor_comparison": "Competitor Comparison",
-      "visibility_trends": "Visibility Trends",
-      "health_scores": "Health Scores",
-      "citation_analysis": "Citation Analysis",
+      "keyword_performance": "Nyckelordsprestanda",
+      "gsc_performance": "Search Console-prestanda",
+      "competitor_comparison": "Konkurrentjämförelse",
+      "visibility_trends": "Synlighetstrender",
+      "health_scores": "Hälsopoäng",
+      "citation_analysis": "Citeringsanalys",
       "recommendations": "Recommendations",
-      "executive_summary": "Executive Summary"
+      "executive_summary": "Sammanfattning"
     },
     "period": "Period",
     "pdf": "PDF",
-    "subtitle": "Generate and export brand performance reports",
-    "report_type": "Report Type",
-    "weekly": "Weekly Report",
-    "no_reports": "No reports generated yet",
-    "history": "Report History",
-    "title": "Report Center",
+    "subtitle": "Generera och exportera rapporter om varumärkesprestanda",
+    "report_type": "Rapporttyp",
+    "weekly": "Veckorapport",
+    "no_reports": "Inga rapporter genererade ännu",
+    "history": "Rapporthistorik",
+    "title": "Rapportcenter",
     "generate": "Generate",
     "format": "Format",
-    "custom": "Custom Period",
-    "generating": "Generating report...",
+    "custom": "Anpassad period",
+    "generating": "Genererar rapport...",
     "markdown": "Markdown",
-    "monthly": "Monthly Report",
-    "scheduled": "Scheduled Reports"
+    "monthly": "Månadsrapport",
+    "scheduled": "Schemalagda rapporter"
   },
   "brand_overview": {
     "score_table": {
@@ -1239,49 +1245,49 @@
       "fair": "Fair",
       "excellent": "Excellent",
       "change": "Change",
-      "title": "Score Table",
+      "title": "Poängtabell",
       "metric": "Metric"
     },
-    "title": "Brand Overview",
+    "title": "Varumärkesöversikt",
     "visibility": "Visibility",
     "infographic": {
-      "title": "Brand Infographic",
-      "download_png": "Download PNG",
-      "download_pdf": "Download PDF",
-      "share": "Share Report"
+      "title": "Varumärkesinfografik",
+      "download_png": "Ladda ner PNG",
+      "download_pdf": "Ladda ner PDF",
+      "share": "Dela rapport"
     },
-    "health_score": "Health Score",
-    "trend_down": "Trending Down",
-    "position_avg": "Avg Position",
-    "trend_up": "Trending Up",
+    "health_score": "Hälsopoäng",
+    "trend_down": "Nedåtgående trend",
+    "position_avg": "Snittposition",
+    "trend_up": "Uppåtgående trend",
     "trend_stable": "Stable",
     "sentiment": "Sentiment",
     "mention_count": "Mentions",
-    "citation_rate": "Citation Rate",
+    "citation_rate": "Citeringsgrad",
     "period": {
-      "90d": "90 Days",
-      "30d": "30 Days",
-      "7d": "7 Days",
-      "60d": "60 Days"
+      "90d": "90 dagar",
+      "30d": "30 dagar",
+      "7d": "7 dagar",
+      "60d": "60 dagar"
     },
-    "subtitle": "Real-time brand monitoring and performance insights"
+    "subtitle": "Varumärkesövervakning i realtid och prestandainsikter"
   },
   "scraper": {
-    "mentions_found": "Mentions Found",
-    "title": "Brand Mention Scraper",
-    "last_scrape": "Last Scrape",
+    "mentions_found": "Hittade omnämnanden",
+    "title": "Skrapare för varumärkesomnämnanden",
+    "last_scrape": "Senaste skrapning",
     "geolocation": "Geolocation",
-    "run_error": "Scrape failed",
-    "results": "Scrape Results",
-    "status": "Scraper Status",
-    "ai_overview_cited": "AI Overview Cited",
+    "run_error": "Skrapning misslyckades",
+    "results": "Skrapningsresultat",
+    "status": "Skraparstatus",
+    "ai_overview_cited": "Citerad i AI Overview",
     "schedule": "Schedule",
     "keywords": "Keywords",
     "snapshot": "Snapshot",
-    "run_now": "Run Scraper",
-    "dataset": "Dataset ID",
-    "not_configured": "Bright Data not configured",
-    "run_success": "Scraped successfully",
+    "run_now": "Kör skrapare",
+    "dataset": "Dataset-ID",
+    "not_configured": "Bright Data ej konfigurerad",
+    "run_success": "Skrapning klar",
     "sources": "Sources"
   },
   "prompt_generator": {
@@ -1304,5 +1310,9 @@
     "ai_powered_by": "Drivs av",
     "ai_unavailable": "AI-förstärkning ej tillgänglig",
     "ai_rationale": "Varför denna prompt"
+  },
+  "breadcrumb": {
+    "home": "Dashboard",
+    "next": "Nästa"
   }
 }

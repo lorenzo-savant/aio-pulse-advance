@@ -201,6 +201,24 @@ export const GEO_KNOWLEDGE: GeoKnowledge = {
       applicableEngines: ['ChatGPT', 'Perplexity', 'Gemini', 'Google AI Overviews'],
     },
     {
+      id: 'answer-block-length',
+      name: 'Write self-contained ~130–170 word answer blocks',
+      description:
+        'Answer engines lift a single self-contained passage to quote, not a whole page. Structuring each section as a complete, standalone answer of roughly 130–170 words (a full thought the engine can extract verbatim without surrounding context) markedly raises the odds your passage is the one selected. Too short reads as a fragment; too long gets truncated mid-thought.',
+      impact: 'Higher verbatim-extraction rate',
+      source: 'GeoKit + Ultimate SEO/GEO citability rules (2026)',
+      applicableEngines: ['ChatGPT', 'Perplexity', 'Gemini', 'Claude', 'Google AI Overviews'],
+    },
+    {
+      id: 'front-load-answer',
+      name: 'Front-load the key fact in the first ~60 words',
+      description:
+        'AI engines weight the opening of a passage heavily when deciding what to quote. Stating the direct answer and the key fact within the first ~60 words — before background or elaboration — increases the chance the passage is both selected and quoted accurately. Lead with the conclusion, then support it.',
+      impact: 'Improved answer selection + attribution accuracy',
+      source: 'GeoKit + Ultimate SEO/GEO citability rules (2026)',
+      applicableEngines: ['ChatGPT', 'Perplexity', 'Gemini', 'Claude', 'Google AI Overviews'],
+    },
+    {
       id: 'content-freshness',
       name: 'Maintain content freshness (<3 months)',
       description:

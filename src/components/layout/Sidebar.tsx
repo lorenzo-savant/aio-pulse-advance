@@ -66,7 +66,9 @@ interface NavSection {
   items: NavItem[]
 }
 
-const NAV_SECTIONS: NavSection[] = [
+// Exported so the Breadcrumb (and any future nav-derived UI) reuses the exact
+// same workflow model — single source of truth for section/step/order.
+export const NAV_SECTIONS: NavSection[] = [
   {
     // Standalone overview — it summarizes every step, so it sits above the
     // numbered flow rather than inside "3 · Insights".

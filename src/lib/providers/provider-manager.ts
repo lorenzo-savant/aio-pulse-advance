@@ -260,13 +260,23 @@ export class ProviderManager {
     fn: () => Promise<T>,
   ): Promise<{ result: T; timedOut: boolean; latencyMs: number }> {
     const config = this.getTimeoutConfig(providerId)
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), config.timeoutMs)
-
     const startTime = Date.now()
+
+    // Real wall-clock cap. The previous version created an AbortController whose
+    // signal was never wired into fn()'s fetch, so the timeout was inert (and
+    // `timedOut` was always false). fn is opaque here, so we enforce the cap with
+    // Promise.race; the inner provider.execute now aborts its own fetch (see
+    // BaseProvider.executeWithTimeout) — this is the outer safety net.
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error(`Provider ${providerId} timed out after ${config.timeoutMs}ms`)),
+        config.timeoutMs,
+      )
+    })
+
     try {
-      const result = await fn()
-      clearTimeout(timeoutId)
+      const result = await Promise.race([fn(), timeout])
       const latencyMs = Date.now() - startTime
 
       if (latencyMs > config.warningMs) {
@@ -274,9 +284,8 @@ export class ProviderManager {
       }
 
       return { result, timedOut: false, latencyMs }
-    } catch (error) {
-      clearTimeout(timeoutId)
-      throw error
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId)
     }
   }
 

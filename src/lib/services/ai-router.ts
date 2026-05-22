@@ -217,6 +217,8 @@ export async function simulateEngineResponse(
   text: string
   provider: string
   citations?: string[]
+  /** Follow-up questions the engine surfaced (currently Perplexity only). */
+  relatedQuestions?: string[]
   retrieval: 'live' | 'model-memory'
 }> {
   const enginePersona: Record<MonitoringEngine, string> = {
@@ -289,8 +291,8 @@ export async function simulateEngineResponse(
 
   if (engine === 'perplexity' && isPerplexityAvailable()) {
     try {
-      const { text, citations } = await callPerplexityWithCitations(fullPrompt)
-      return { text, provider: 'perplexity:sonar', citations, retrieval: 'live' }
+      const { text, citations, relatedQuestions } = await callPerplexityWithCitations(fullPrompt)
+      return { text, provider: 'perplexity:sonar', citations, relatedQuestions, retrieval: 'live' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Perplexity: ${msg}`)

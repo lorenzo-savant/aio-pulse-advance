@@ -37,7 +37,10 @@ export class AzureOpenAIProvider extends BaseProvider {
     })
   }
 
-  protected override async executeRequest(request: AIProviderRequest): Promise<Response> {
+  protected override async executeRequest(
+    request: AIProviderRequest,
+    signal?: AbortSignal,
+  ): Promise<Response> {
     const endpoint = process.env['AZURE_OPENAI_ENDPOINT']
     const apiKey = process.env['AZURE_OPENAI_API_KEY']
     const deployment = process.env['AZURE_OPENAI_DEPLOYMENT_NAME']
@@ -75,6 +78,7 @@ export class AzureOpenAIProvider extends BaseProvider {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
+        signal,
       },
     )
   }

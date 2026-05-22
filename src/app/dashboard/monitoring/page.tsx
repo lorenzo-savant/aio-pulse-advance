@@ -16,6 +16,7 @@ import {
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { JourneyGuide } from '@/components/JourneyGuide'
@@ -263,6 +264,7 @@ export default function MonitoringPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="monitoring" />
       <JourneyGuide
         step={2}
         title="Run AI engine checks and watch results stream in"

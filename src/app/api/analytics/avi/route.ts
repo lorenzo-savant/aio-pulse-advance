@@ -1,16 +1,17 @@
 // PATH: src/app/api/analytics/avi/route.ts
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { createServerClient, getCurrentUserId } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase'
+import { requireUser } from '@/lib/api-auth'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  const cookieHeader = req.headers.get('cookie')
-  const userId = await getCurrentUserId(authHeader, cookieHeader, req)
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  // getCurrentUserId THROWS AuthError on failure (never returns falsy), so the
+  // old `if (!userId)` guard was dead code → an unauth request surfaced as a
+  // 500 instead of 401. requireUser catches AuthError and returns a clean 401.
+  const auth = await requireUser(req)
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const ip = getClientIp(req.headers)
   const rateCheck = await checkRateLimit(`analytics-avi:${ip}`, 30, 60_000)

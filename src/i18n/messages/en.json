@@ -469,6 +469,12 @@
         "responses_captured": "Each response captured: brand mentions, sentiment, citations",
         "avi_computed": "AVI score computed from these runs"
       }
+    },
+    "suggestions": {
+      "title": "Suggested by AI engines",
+      "subtitle": "Real follow-up questions Perplexity surfaces for this brand — add the relevant ones as prompts.",
+      "fetch": "Get suggestions",
+      "add": "Add"
     }
   },
   "monitoring": {
@@ -1304,5 +1310,9 @@
     "ai_powered_by": "Powered by",
     "ai_unavailable": "AI augmentation unavailable",
     "ai_rationale": "Why this prompt"
+  },
+  "breadcrumb": {
+    "home": "Dashboard",
+    "next": "Next"
   }
 }

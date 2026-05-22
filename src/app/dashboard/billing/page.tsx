@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
@@ -156,6 +157,7 @@ function BillingPage() {
 
   return (
     <div className="space-y-6 bg-background">
+      <SectionHelp section="billing" />
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">

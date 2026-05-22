@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { useAppStore } from '@/lib/store'
@@ -230,6 +231,7 @@ export default function HistoryPage() {
 
   return (
     <div className="animate-in space-y-6">
+      <SectionHelp section="history" />
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>

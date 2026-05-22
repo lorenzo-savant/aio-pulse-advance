@@ -23,6 +23,12 @@ export interface EeatSignals {
   sameAs: {
     present: boolean
     links: string[]
+    /** Subset of sameAs links that are canonical Knowledge Graph anchors (Wikidata / Wikipedia). */
+    authorityLinks?: string[]
+    /** True when a Wikidata entity (wikidata.org/wiki/Q…) is linked — the strongest KG signal. */
+    hasWikidata?: boolean
+    /** True when a Wikipedia article is linked. */
+    hasWikipedia?: boolean
   }
   credentials: {
     present: boolean
@@ -47,6 +53,17 @@ export interface KnowledgeGraphResult {
   entities: Entity[]
   eeatSignals: EeatSignals
   eeatScore: number
+  /** Actionable Knowledge-Graph-visibility advice (e.g. add a Wikidata sameAs). */
+  kgRecommendations: string[]
+}
+
+// Canonical entity anchors. A sameAs pointing here is what lets Google's
+// Knowledge Graph (and Gemini's entity recognition) confidently identify and
+// disambiguate a brand — far stronger than a social-profile sameAs.
+const KG_AUTHORITY_PATTERNS: RegExp[] = [/(?:^|\.)wikidata\.org/i, /(?:^|\.)wikipedia\.org/i]
+
+export function isAuthoritySameAs(link: string): boolean {
+  return KG_AUTHORITY_PATTERNS.some((p) => p.test(link))
 }
 
 const ENTITY_TYPE_MAP: Record<string, EntityType> = {
@@ -238,11 +255,16 @@ export function extractEeatSignals(html: string, jsonLd: object[]): EeatSignals 
   const hasAbout = aboutMatches.length > 0
   const hasContact = contactMatches.length > 0
 
+  const authoritySameAs = sameAsLinks.filter(isAuthoritySameAs)
+
   return {
     author: authorInfo,
     sameAs: {
       present: sameAsLinks.length > 0,
       links: sameAsLinks,
+      authorityLinks: authoritySameAs,
+      hasWikidata: sameAsLinks.some((l) => /(?:^|\.)wikidata\.org/i.test(l)),
+      hasWikipedia: sameAsLinks.some((l) => /(?:^|\.)wikipedia\.org/i.test(l)),
     },
     credentials: {
       present: credentials.length > 0,
@@ -277,14 +299,42 @@ export function calculateEeatScore(signals: EeatSignals): number {
   return score
 }
 
+/**
+ * Knowledge-Graph-visibility advice focused on entity anchoring. Wikidata and
+ * Wikipedia sameAs links are the highest-leverage signal: they let Google's
+ * Knowledge Graph and Gemini's entity recognition identify the brand as a known
+ * entity, which is a prerequisite for rich citation across AI engines.
+ */
+export function getKnowledgeGraphRecommendations(signals: EeatSignals): string[] {
+  const recs: string[] = []
+  if (!signals.sameAs.present) {
+    recs.push(
+      'Add a sameAs array to your Organization schema linking your official entity profiles (Wikidata, Wikipedia, LinkedIn, Crunchbase) — this consolidates the signals AI engines use to recognize your brand.',
+    )
+  }
+  if (!signals.sameAs.hasWikidata) {
+    recs.push(
+      "Add a Wikidata sameAs link (https://www.wikidata.org/wiki/Q…). Wikidata is the canonical entity anchor Google's Knowledge Graph and Gemini use to identify and disambiguate a brand.",
+    )
+  }
+  if (!signals.sameAs.hasWikipedia) {
+    recs.push(
+      'Add a Wikipedia sameAs link if an article exists — Wikipedia is the single largest ChatGPT citation source (≈48% of top citations).',
+    )
+  }
+  return recs
+}
+
 export function analyzeKnowledgeGraph(html: string, jsonLd: object[]): KnowledgeGraphResult {
   const entities = extractEntities(jsonLd)
   const eeatSignals = extractEeatSignals(html, jsonLd)
   const eeatScore = calculateEeatScore(eeatSignals)
+  const kgRecommendations = getKnowledgeGraphRecommendations(eeatSignals)
 
   return {
     entities,
     eeatSignals,
     eeatScore,
+    kgRecommendations,
   }
 }

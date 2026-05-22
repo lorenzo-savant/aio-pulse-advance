@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Badge } from '@/components/ui/index'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import { PageTransition, StaggerGrid, StaggerItem, ExpandSection } from '@/components/ui/Motion'
@@ -167,6 +168,7 @@ export default function WorkflowsPage() {
   return (
     <PageTransition>
       <div className="space-y-6">
+        <SectionHelp section="workflows" />
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

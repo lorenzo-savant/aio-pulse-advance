@@ -16,6 +16,7 @@ import {
   Search,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
@@ -207,6 +208,7 @@ export default function AEOSnippetsPage() {
 
   return (
     <div className="animate-in space-y-8 bg-background">
+      <SectionHelp section="aeo-snippets" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-black tracking-tight text-foreground">

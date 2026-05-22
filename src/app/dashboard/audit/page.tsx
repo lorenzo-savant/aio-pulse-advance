@@ -33,6 +33,7 @@ import {
   Tooltip,
 } from 'recharts'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
@@ -534,6 +535,7 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-6 bg-background">
+      <SectionHelp section="audit" />
       {/* Header */}
       <div>
         <h1 className="text-3xl font-black tracking-tight text-foreground">Content Audit</h1>

@@ -8,6 +8,7 @@ interface PerplexityResponse {
   choices?: Array<{ message?: { content?: string } }>
   citations?: string[]
   search_results?: Array<{ url?: string }>
+  related_questions?: string[]
 }
 
 export async function callPerplexity(prompt: string): Promise<string> {
@@ -17,7 +18,7 @@ export async function callPerplexity(prompt: string): Promise<string> {
 
 export async function callPerplexityWithCitations(
   prompt: string,
-): Promise<{ text: string; citations: string[] }> {
+): Promise<{ text: string; citations: string[]; relatedQuestions: string[] }> {
   const apiKey = process.env.PERPLEXITY_API_KEY
   if (!apiKey) throw new Error('PERPLEXITY_API_KEY not configured')
 
@@ -33,6 +34,10 @@ export async function callPerplexityWithCitations(
       temperature: 0.3,
       max_tokens: 2048,
       return_citations: true,
+      // The follow-up questions Perplexity surfaces under an answer. Free to
+      // request (no extra key/cost) and a strong source of real prompt ideas —
+      // they are the queries actual users ask next about this topic.
+      return_related_questions: true,
     }),
     signal: AbortSignal.timeout(30_000),
   })
@@ -46,8 +51,13 @@ export async function callPerplexityWithCitations(
     .concat((data.search_results || []).map((s) => s.url || ''))
     .filter((u): u is string => typeof u === 'string' && u.length > 0)
 
+  const relatedQuestions = (data.related_questions || []).filter(
+    (q): q is string => typeof q === 'string' && q.trim().length > 0,
+  )
+
   return {
     text: data.choices?.[0]?.message?.content || '',
     citations,
+    relatedQuestions,
   }
 }

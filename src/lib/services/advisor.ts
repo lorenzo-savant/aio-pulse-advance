@@ -636,7 +636,20 @@ export async function runStrategist(
   const systemPrompt = buildSystemPrompt(resolvedLang)
   const userPrompt = buildUserPrompt(context, question)
 
-  const { text, provider, model } = await callLLM(systemPrompt, userPrompt, options)
+  // Validate inside callLLM so a bad response from one provider falls back to the
+  // next (Gemini → Groq → OpenAI) instead of throwing on the first one.
+  const { text, provider, model } = await callLLM(
+    systemPrompt,
+    userPrompt,
+    options,
+    30_000,
+    (t) => {
+      const candidate: unknown = JSON.parse(extractJson(t))
+      if (!StrategyOutputSchema.safeParse(candidate).success) {
+        throw new Error('schema validation failed')
+      }
+    },
+  )
 
   let parsed: unknown
   try {
@@ -926,6 +939,7 @@ async function callLLM(
   userPrompt: string,
   options: StrategistOptions,
   timeoutMs = 30_000,
+  validate?: (text: string) => void,
 ): Promise<LLMCallResult> {
   const explicit = options.provider
   const have = {
@@ -937,7 +951,16 @@ async function callLLM(
     gemini: () =>
       callGemini(systemPrompt, userPrompt, options.model ?? 'gemini-2.5-flash', timeoutMs),
     groq: () =>
-      callGroq(systemPrompt, userPrompt, options.model ?? 'llama-3.3-70b-versatile', timeoutMs),
+      // Advisor reasoning model. Default Llama 3.3 70B; set GROQ_ADVISOR_MODEL to
+      // reserve a reasoning model (e.g. deepseek-r1-distill-llama-70b) for the
+      // advisor only — kept out of the high-volume JSON path. JSON output is
+      // validated below, so a reasoning model that breaks JSON falls back safely.
+      callGroq(
+        systemPrompt,
+        userPrompt,
+        options.model ?? process.env['GROQ_ADVISOR_MODEL'] ?? 'llama-3.3-70b-versatile',
+        timeoutMs,
+      ),
     openai: () =>
       callOpenAIChat(systemPrompt, userPrompt, options.model ?? 'gpt-4o-mini', timeoutMs),
   }
@@ -962,7 +985,12 @@ async function callLLM(
   for (let i = 0; i < configured.length; i++) {
     const p = configured[i]!
     try {
-      return await runners[p]()
+      const result = await runners[p]()
+      // Validate output (JSON-parse + schema) INSIDE the loop so a provider that
+      // returns truncated / prose / non-JSON output falls back to the next one
+      // instead of failing the whole request.
+      validate?.(result.text)
+      return result
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`${p}: ${msg}`)
@@ -992,7 +1020,7 @@ async function callGroq(
       model,
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      max_tokens: 1500,
+      max_tokens: 2048,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -1026,8 +1054,12 @@ async function callGemini(
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 1500,
+        // Headroom for a full 3-recommendation JSON, and thinking disabled so
+        // 2.5 Flash's reasoning tokens don't consume the budget and truncate the
+        // JSON mid-object (a common cause of "non-JSON output").
+        maxOutputTokens: 2048,
         responseMimeType: 'application/json',
+        thinkingConfig: { thinkingBudget: 0 },
       },
     }),
     signal: AbortSignal.timeout(timeoutMs),
@@ -1058,7 +1090,7 @@ async function callOpenAIChat(
       model,
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      max_tokens: 1500,
+      max_tokens: 2048,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -1077,9 +1109,19 @@ async function callOpenAIChat(
 // Strip them defensively before parsing.
 export function extractJson(raw: string): string {
   const trimmed = raw.trim()
+  // ```json … ``` or ``` … ``` fenced block (some models wrap despite JSON mode).
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-  if (fenced) return fenced[1]!.trim()
-  return trimmed
+  const candidate = (fenced ? fenced[1]! : trimmed).trim()
+  // Slice from the first opening bracket to the last matching closing bracket,
+  // dropping any prose a model prepended/appended ("Here is the strategy: …").
+  const firstObj = candidate.indexOf('{')
+  const firstArr = candidate.indexOf('[')
+  const start =
+    firstObj === -1 ? firstArr : firstArr === -1 ? firstObj : Math.min(firstObj, firstArr)
+  if (start === -1) return candidate
+  const close = candidate[start] === '[' ? ']' : '}'
+  const end = candidate.lastIndexOf(close)
+  return end > start ? candidate.slice(start, end + 1) : candidate.slice(start)
 }
 
 function round1(v: number): number {

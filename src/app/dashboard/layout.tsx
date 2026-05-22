@@ -15,6 +15,11 @@ const TopBar = dynamic(() => import('@/components/layout/TopBar').then((m) => m.
   ssr: false,
 })
 
+const Breadcrumb = dynamic(
+  () => import('@/components/layout/Breadcrumb').then((m) => m.Breadcrumb),
+  { ssr: false },
+)
+
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
@@ -60,7 +65,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <TopBar />
           </div>
           <main className="flex-1 overflow-y-auto px-4 pb-8 pt-1 md:px-8 xl:px-10">
-            <div className="mx-auto max-w-7xl">{children}</div>
+            <div className="mx-auto max-w-7xl">
+              <Breadcrumb />
+              {children}
+            </div>
           </main>
         </div>
       </div>

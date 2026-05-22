@@ -12,6 +12,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
@@ -153,6 +154,7 @@ export default function KeywordsPage() {
 
   return (
     <div className="animate-in space-y-8 bg-background">
+      <SectionHelp section="keywords" />
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

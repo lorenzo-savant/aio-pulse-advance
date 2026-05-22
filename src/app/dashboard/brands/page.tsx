@@ -18,6 +18,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -162,6 +163,7 @@ export default function BrandsPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="brands" />
       <JourneyGuide
         step={1}
         title={t('brands.journey_guide.title')}

@@ -30,6 +30,7 @@ import {
   Tooltip,
 } from 'recharts'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { useAppStore } from '@/lib/store'
@@ -532,6 +533,7 @@ export default function OptimizerPage() {
 
   return (
     <div className="animate-in space-y-8 bg-background">
+      <SectionHelp section="optimizer" />
       {/* Header */}
       <div>
         <h1 className="text-3xl font-black tracking-tight text-foreground">Content Optimizer</h1>

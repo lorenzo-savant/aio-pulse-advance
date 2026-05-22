@@ -4,6 +4,8 @@ import {
   extractEeatSignals,
   calculateEeatScore,
   analyzeKnowledgeGraph,
+  getKnowledgeGraphRecommendations,
+  isAuthoritySameAs,
   type EeatSignals,
 } from '../services/knowledge-graph'
 
@@ -211,6 +213,48 @@ describe('knowledge-graph', () => {
       expect(result.eeatSignals.sameAs.present).toBe(true)
       expect(result.eeatSignals.aboutPage.present).toBe(true)
       expect(result.eeatSignals.contactPage.present).toBe(true)
+    })
+  })
+
+  describe('Wikidata/Wikipedia KG anchoring', () => {
+    it('flags Wikidata and Wikipedia among sameAs links', () => {
+      const signals = extractEeatSignals('<html></html>', [
+        {
+          '@type': 'Organization',
+          name: 'Acme',
+          sameAs: [
+            'https://twitter.com/acme',
+            'https://www.wikidata.org/wiki/Q12345',
+            'https://en.wikipedia.org/wiki/Acme',
+          ],
+        },
+      ])
+      expect(signals.sameAs.hasWikidata).toBe(true)
+      expect(signals.sameAs.hasWikipedia).toBe(true)
+      expect(signals.sameAs.authorityLinks).toHaveLength(2)
+    })
+
+    it('isAuthoritySameAs distinguishes KG anchors from social links', () => {
+      expect(isAuthoritySameAs('https://www.wikidata.org/wiki/Q42')).toBe(true)
+      expect(isAuthoritySameAs('https://it.wikipedia.org/wiki/Acme')).toBe(true)
+      expect(isAuthoritySameAs('https://twitter.com/acme')).toBe(false)
+    })
+
+    it('recommends adding Wikidata/Wikipedia when missing', () => {
+      const signals = extractEeatSignals('<html></html>', [
+        { '@type': 'Organization', name: 'Acme', sameAs: ['https://twitter.com/acme'] },
+      ])
+      const recs = getKnowledgeGraphRecommendations(signals)
+      expect(recs.some((r) => /Wikidata/.test(r))).toBe(true)
+      expect(recs.some((r) => /Wikipedia/.test(r))).toBe(true)
+    })
+
+    it('analyzeKnowledgeGraph surfaces kgRecommendations', () => {
+      const result = analyzeKnowledgeGraph('<html></html>', [
+        { '@type': 'Organization', name: 'Acme' },
+      ])
+      expect(Array.isArray(result.kgRecommendations)).toBe(true)
+      expect(result.kgRecommendations.length).toBeGreaterThan(0)
     })
   })
 })

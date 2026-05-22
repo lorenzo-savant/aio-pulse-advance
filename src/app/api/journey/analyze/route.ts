@@ -40,10 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (turns.length > MAX_TURNS) {
-      return NextResponse.json(
-        { error: `Too many turns (max ${MAX_TURNS})` },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: `Too many turns (max ${MAX_TURNS})` }, { status: 400 })
     }
 
     for (const turn of turns) {

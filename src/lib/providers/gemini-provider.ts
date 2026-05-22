@@ -14,7 +14,10 @@ export class GeminiProvider extends BaseProvider {
     return fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
   }
 
-  protected override async executeRequest(request: AIProviderRequest): Promise<Response> {
+  protected override async executeRequest(
+    request: AIProviderRequest,
+    signal?: AbortSignal,
+  ): Promise<Response> {
     const apiKey = process.env['GEMINI_API_KEY']
 
     const body: Record<string, unknown> = {
@@ -37,6 +40,7 @@ export class GeminiProvider extends BaseProvider {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal,
       },
     )
   }

@@ -27,7 +27,10 @@ export class PerplexityProvider extends BaseProvider {
     })
   }
 
-  protected override async executeRequest(request: AIProviderRequest): Promise<Response> {
+  protected override async executeRequest(
+    request: AIProviderRequest,
+    signal?: AbortSignal,
+  ): Promise<Response> {
     const apiKey = process.env['PERPLEXITY_API_KEY']
 
     const messages: { role: string; content: string }[] = []
@@ -48,8 +51,10 @@ export class PerplexityProvider extends BaseProvider {
         temperature: request.temperature ?? 0.2,
         max_tokens: request.maxTokens ?? 1000,
         return_citations: true,
+        return_related_questions: true,
         search_recency_filter: 'm',
       }),
+      signal,
     })
   }
 

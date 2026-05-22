@@ -236,7 +236,9 @@ export interface CompetitorMention {
 export interface HallucinationFlag {
   text: string
   severity: 'low' | 'medium' | 'high'
-  type: 'factual_error' | 'attribution_error' | 'fabrication' | 'date_error'
+  type: 'factual_error' | 'attribution_error' | 'fabrication' | 'date_error' | 'unsupported_claim'
+  /** Model's 0–1 confidence that this is a genuine hallucination (not a false positive). */
+  confidence?: number
 }
 
 export interface MonitoringResult {

@@ -11,8 +11,10 @@ import {
   Coins,
   TrendingUp,
   ExternalLink,
+  Download,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +25,7 @@ interface SerpProvider {
   configured: boolean
   calls: number
   costCents: number
+  costUsd: number
   capCents: number | null
   capCalls: number | null
   utilization: number
@@ -37,6 +40,7 @@ interface AiProvider {
   outputTokens: number
   totalTokens: number
   costCents: number
+  costUsd: number
 }
 
 interface Credits {
@@ -49,16 +53,32 @@ interface Credits {
 interface ApiCostOverview {
   month: string
   totalSpendCents: number
-  serp: { providers: SerpProvider[]; totalCostCents: number }
-  ai: { providers: AiProvider[]; totalCostCents: number }
+  totalSpendUsd: number
+  serp: { providers: SerpProvider[]; totalCostCents: number; totalCostUsd: number }
+  ai: { providers: AiProvider[]; totalCostCents: number; totalCostUsd: number }
   credits: Credits
 }
+
+type Granularity = 'day' | 'week' | 'month'
+type ExportFormat = 'csv' | 'xlsx' | 'pdf'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function dollars(cents: number): string {
   if (cents === 0) return '$0.00'
   return `$${(cents / 100).toFixed(2)}`
+}
+
+// Full-precision dollars so accumulating sub-cent AI costs stay visible:
+// 4 decimals under $1 (e.g. $0.0123), 2 decimals above.
+function dollarsPrecise(usd: number): string {
+  if (usd === 0) return '$0.00'
+  if (Math.abs(usd) < 1) return `$${usd.toFixed(4)}`
+  return `$${usd.toFixed(2)}`
+}
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10)
 }
 
 function utilColor(util: number): string {
@@ -105,6 +125,33 @@ export default function ApiCostsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Export controls (by date range + granularity + format).
+  const [granularity, setGranularity] = useState<Granularity>('day')
+  const [from, setFrom] = useState(() => isoDate(new Date(Date.now() - 30 * 86400000)))
+  const [to, setTo] = useState(() => isoDate(new Date()))
+
+  const exportCosts = useCallback(
+    (format: ExportFormat) => {
+      const p = new URLSearchParams({ format, granularity })
+      if (from) p.set('from', from)
+      if (to) p.set('to', `${to}T23:59:59.999Z`) // inclusive end-of-day
+      const url = `/api/api-costs/export?${p.toString()}`
+      if (format === 'pdf') {
+        window.open(url, '_blank', 'noopener') // renders + auto-prints
+        return
+      }
+      // CSV / Excel: server sets Content-Disposition; an anchor click downloads
+      // without navigating away.
+      const a = document.createElement('a')
+      a.href = url
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+    },
+    [granularity, from, to],
+  )
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -128,6 +175,7 @@ export default function ApiCostsPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="api-costs" />
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -176,7 +224,7 @@ export default function ApiCostsPage() {
                 Total Spend ({data.month})
               </p>
               <p className="mt-2 text-4xl font-black text-foreground">
-                {dollars(data.totalSpendCents)}
+                {dollarsPrecise(data.totalSpendUsd)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 SERP + AI providers, current month
@@ -201,7 +249,7 @@ export default function ApiCostsPage() {
                 AI Providers
               </p>
               <p className="mt-2 text-4xl font-black text-foreground">
-                {dollars(data.ai.totalCostCents)}
+                {dollarsPrecise(data.ai.totalCostUsd)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {data.ai.providers.filter((p) => p.configured).length} of {data.ai.providers.length}{' '}
@@ -209,6 +257,64 @@ export default function ApiCostsPage() {
               </p>
             </Card>
           </div>
+
+          {/* Export breakdown (by date range, granularity & format) */}
+          <Card className="p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <Download className="h-4 w-4 text-brand" />
+              <h2 className="text-lg font-bold text-foreground">Export cost breakdown</h2>
+            </div>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Per-period × provider AI spend at full decimal precision, for the range below. CSV and
+              Excel download; PDF opens a print-ready view. Excel keeps the cost column as a real
+              number.
+            </p>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+                Granularity
+                <select
+                  value={granularity}
+                  onChange={(e) => setGranularity(e.target.value as Granularity)}
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                >
+                  <option value="day">Daily</option>
+                  <option value="week">Weekly</option>
+                  <option value="month">Monthly</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+                From
+                <input
+                  type="date"
+                  value={from}
+                  max={to}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+                To
+                <input
+                  type="date"
+                  value={to}
+                  min={from}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => exportCosts('csv')}>
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> CSV
+                </Button>
+                <Button variant="outline" onClick={() => exportCosts('xlsx')}>
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> Excel
+                </Button>
+                <Button variant="outline" onClick={() => exportCosts('pdf')}>
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> PDF
+                </Button>
+              </div>
+            </div>
+          </Card>
 
           {/* SERP detail */}
           <Card className="p-6">
@@ -289,7 +395,7 @@ export default function ApiCostsPage() {
               <Bot className="h-4 w-4 text-brand" />
               <h2 className="text-lg font-bold text-foreground">AI Provider Usage</h2>
             </div>
-            {data.ai.totalCostCents === 0 && (
+            {data.ai.totalCostUsd === 0 && (
               <p className="mb-4 text-sm text-muted-foreground">
                 No AI spend logged this month yet — providers below show their configured status.
                 Costs are recorded in{' '}
@@ -364,7 +470,7 @@ export default function ApiCostsPage() {
                             {formatNumber(p.outputTokens)}
                           </td>
                           <td className="py-3 text-right font-bold text-foreground">
-                            {dollars(p.costCents)}
+                            {dollarsPrecise(p.costUsd)}
                           </td>
                         </tr>
                       )
@@ -377,7 +483,7 @@ export default function ApiCostsPage() {
                       <td className="py-3 pr-4 text-right text-muted-foreground">—</td>
                       <td className="py-3 pr-4 text-right text-muted-foreground">—</td>
                       <td className="py-3 text-right text-foreground">
-                        {dollars(data.ai.totalCostCents)}
+                        {dollarsPrecise(data.ai.totalCostUsd)}
                       </td>
                     </tr>
                   </tbody>

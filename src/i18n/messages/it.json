@@ -169,7 +169,7 @@
       "content_optimizer": "Ottimizzatore Contenuti",
       "content_audit": "Audit Contenuti",
       "recommendations": "Raccomandazioni",
-      "strategy_advisor": "Strategy Advisor",
+      "strategy_advisor": "Consulente strategico",
       "engine_info": "Info Motori",
       "billing": "Fatturazione",
       "credits": "Crediti",
@@ -350,52 +350,52 @@
     "edit_brand": "Modifica Brand",
     "delete_brand": "Elimina Brand",
     "form": {
-      "name_label": "Brand Name",
-      "name_placeholder": "Enter brand name...",
+      "name_label": "Nome brand",
+      "name_placeholder": "Inserisci il nome del brand...",
       "domain_label": "Domain",
       "domain_placeholder": "example.com",
       "description_label": "Description",
-      "description_placeholder": "Brief description...",
+      "description_placeholder": "Breve descrizione...",
       "industry_label": "Industry",
-      "industry_placeholder": "Select industry...",
-      "language_label": "Primary Market Language",
-      "language_helper": "Prompts and AI simulations will run in this language.",
-      "color_label": "Brand Color",
-      "save_button": "Save Brand",
-      "update_button": "Update Brand"
+      "industry_placeholder": "Seleziona settore...",
+      "language_label": "Lingua principale del mercato",
+      "language_helper": "I prompt e le simulazioni AI verranno eseguiti in questa lingua.",
+      "color_label": "Colore del brand",
+      "save_button": "Salva brand",
+      "update_button": "Aggiorna brand"
     },
     "card": {
-      "view_details": "View Details",
-      "run_monitoring": "Run Monitoring",
+      "view_details": "Vedi dettagli",
+      "run_monitoring": "Avvia monitoraggio",
       "edit": "Edit",
       "delete": "Delete"
     },
     "language_nudge": {
-      "title": "Set primary market",
-      "description": "Set the primary market for this brand to get more accurate AI monitoring results.",
-      "cta": "Set Language"
+      "title": "Imposta il mercato principale",
+      "description": "Imposta il mercato principale per questo brand per ottenere risultati di monitoraggio AI più accurati.",
+      "cta": "Imposta lingua"
     },
     "white_label": {
-      "title": "White-label Report Settings",
-      "subtitle": "Customize how your brand appears in PDF reports. Leave empty to use default AIO Pulse branding.",
-      "report_brand_name": "Report Brand Name",
-      "report_brand_name_placeholder": "Your Company Name",
-      "primary_color": "Primary Color (Hex)",
-      "logo_url": "Logo URL",
+      "title": "Impostazioni report white-label",
+      "subtitle": "Personalizza come appare il tuo brand nei report PDF. Lascia vuoto per usare il branding predefinito di AIO Pulse.",
+      "report_brand_name": "Nome brand nel report",
+      "report_brand_name_placeholder": "Il nome della tua azienda",
+      "primary_color": "Colore primario (Hex)",
+      "logo_url": "URL del logo",
       "logo_url_placeholder": "https://your-company.com/logo.png",
       "configure": "Configure",
       "save": "Save"
     },
     "team": {
-      "title": "Team Members",
-      "subtitle": "Invite team members to collaborate on this brand.",
+      "title": "Membri del team",
+      "subtitle": "Invita membri del team a collaborare su questo brand.",
       "invite_email": "colleague@company.com",
       "role_viewer": "Viewer",
       "role_editor": "Editor",
       "invite": "Invite",
       "inviting": "Sending...",
-      "pending_invitations": "Pending Invitations",
-      "no_members": "No team members yet.",
+      "pending_invitations": "Inviti in sospeso",
+      "no_members": "Ancora nessun membro del team.",
       "expires": "Expires"
     }
   },
@@ -469,6 +469,12 @@
         "responses_captured": "Ogni risposta catturata: menzioni brand, sentiment, citazioni",
         "avi_computed": "Punteggio AVI calcolato da queste esecuzioni"
       }
+    },
+    "suggestions": {
+      "title": "Suggeriti dai motori AI",
+      "subtitle": "Domande di follow-up reali che Perplexity mostra per questo brand — aggiungi quelle rilevanti come prompt.",
+      "fetch": "Ottieni suggerimenti",
+      "add": "Aggiungi"
     }
   },
   "monitoring": {
@@ -1035,7 +1041,7 @@
       "not_mentioned": "Non menzionato",
       "tier1": "Tier 1 (Critico)",
       "tier2": "Tier 2 (Importante)",
-      "tier3": "Tier 3 (Training)",
+      "tier3": "Livello 3 (Addestramento)",
       "not_analyzed": "Accesso crawler non ancora analizzato"
     },
     "platforms": {
@@ -1112,32 +1118,32 @@
     }
   },
   "gsc": {
-    "top_pages": "Top Pages",
-    "top_queries": "Top Queries",
+    "top_pages": "Pagine principali",
+    "top_queries": "Query principali",
     "position": "Position",
     "mobile": "Mobile",
     "page": "Page",
     "clicks": "Clicks",
-    "auto_sync": "Auto Sync",
-    "sync_success": "Synced rows successfully",
+    "auto_sync": "Sincronizzazione automatica",
+    "sync_success": "Righe sincronizzate con successo",
     "ctr": "CTR",
-    "last_sync": "Last Sync",
+    "last_sync": "Ultima sincronizzazione",
     "tablet": "Tablet",
     "impressions": "Impressions",
-    "not_configured": "GSC not configured",
+    "not_configured": "GSC non configurato",
     "title": "Google Search Console",
-    "sync_error": "Sync failed",
-    "sync_status": "Sync Status",
-    "device_breakdown": "Device Breakdown",
-    "sync_now": "Sync Now",
+    "sync_error": "Sincronizzazione fallita",
+    "sync_status": "Stato sincronizzazione",
+    "device_breakdown": "Ripartizione per dispositivo",
+    "sync_now": "Sincronizza ora",
     "query": "Query",
-    "daily_trend": "Daily Trend",
+    "daily_trend": "Trend giornaliero",
     "desktop": "Desktop",
-    "country_breakdown": "Country Breakdown"
+    "country_breakdown": "Ripartizione per paese"
   },
   "keyword_research": {
     "intent": "Intent",
-    "title": "Keyword Research",
+    "title": "Ricerca keyword",
     "intents": {
       "navigational": "Navigational",
       "informational": "Informational",
@@ -1153,37 +1159,37 @@
     "difficulty": "Difficulty",
     "trending": "Trending",
     "cpc": "CPC",
-    "search_volume": "Search Volume",
-    "refresh_now": "Refresh Keywords",
-    "refresh_error": "Keyword refresh failed",
-    "not_configured": "DataForSEO not configured",
-    "refresh_success": "Keywords updated"
+    "search_volume": "Volume di ricerca",
+    "refresh_now": "Aggiorna keyword",
+    "refresh_error": "Aggiornamento keyword fallito",
+    "not_configured": "DataForSEO non configurato",
+    "refresh_success": "Keyword aggiornate"
   },
   "ai_agents": {
-    "typing": "AI is analyzing your data...",
-    "subtitle": "Ask questions about your brand data in real-time",
+    "typing": "L'AI sta analizzando i tuoi dati...",
+    "subtitle": "Fai domande sui dati del tuo brand in tempo reale",
     "send": "Send",
-    "colleagues_online": "colleagues online",
+    "colleagues_online": "colleghi online",
     "agents": {
       "brand_monitor": {
-        "name": "Brand Monitor",
-        "description": "Real-time brand health and visibility analysis"
+        "name": "Monitor del brand",
+        "description": "Analisi in tempo reale della salute e visibilità del brand"
       },
       "keyword_expert": {
-        "name": "Keyword Expert",
-        "description": "Search volume, trends, and intent analysis"
+        "name": "Esperto keyword",
+        "description": "Volume di ricerca, trend e analisi dell'intento"
       },
       "report_builder": {
-        "name": "Report Builder",
-        "description": "Generate and customize performance reports"
+        "name": "Generatore di report",
+        "description": "Genera e personalizza report sulle performance"
       },
       "competitor_analyst": {
-        "name": "Competitor Analyst",
-        "description": "Competitive positioning and gap analysis"
+        "name": "Analista competitor",
+        "description": "Posizionamento competitivo e analisi dei gap"
       }
     },
-    "placeholder": "Ask about brand health, competitors, keywords...",
-    "real_time": "Live data",
+    "placeholder": "Chiedi su salute del brand, competitor, keyword...",
+    "real_time": "Dati in tempo reale",
     "suggestions": [
       "How is my brand health trending?",
       "Which competitors are gaining visibility?",
@@ -1191,43 +1197,43 @@
       "Generate a 30-day performance report",
       "Why did my citation rate drop?"
     ],
-    "shared_insights": "Shared Insights",
-    "error": "Failed to get response. Please try again.",
-    "title": "AI Assistant",
-    "team_chat": "Team Collaboration"
+    "shared_insights": "Insight condivisi",
+    "error": "Impossibile ottenere una risposta. Riprova.",
+    "title": "Assistente AI",
+    "team_chat": "Collaborazione di team"
   },
   "reports": {
     "preview": "Preview",
     "csv": "CSV",
-    "create_report": "Create Report",
-    "error": "Failed to generate report",
-    "success": "Report generated successfully",
+    "create_report": "Crea report",
+    "error": "Generazione del report fallita",
+    "success": "Report generato con successo",
     "download": "Download",
     "sections": {
-      "keyword_performance": "Keyword Performance",
-      "gsc_performance": "Search Console Performance",
-      "competitor_comparison": "Competitor Comparison",
-      "visibility_trends": "Visibility Trends",
-      "health_scores": "Health Scores",
-      "citation_analysis": "Citation Analysis",
+      "keyword_performance": "Performance keyword",
+      "gsc_performance": "Performance di Search Console",
+      "competitor_comparison": "Confronto competitor",
+      "visibility_trends": "Trend di visibilità",
+      "health_scores": "Punteggi di salute",
+      "citation_analysis": "Analisi delle citazioni",
       "recommendations": "Recommendations",
-      "executive_summary": "Executive Summary"
+      "executive_summary": "Sintesi esecutiva"
     },
     "period": "Period",
     "pdf": "PDF",
-    "subtitle": "Generate and export brand performance reports",
-    "report_type": "Report Type",
-    "weekly": "Weekly Report",
-    "no_reports": "No reports generated yet",
-    "history": "Report History",
-    "title": "Report Center",
+    "subtitle": "Genera ed esporta report sulle performance del brand",
+    "report_type": "Tipo di report",
+    "weekly": "Report settimanale",
+    "no_reports": "Ancora nessun report generato",
+    "history": "Cronologia report",
+    "title": "Centro report",
     "generate": "Generate",
     "format": "Format",
-    "custom": "Custom Period",
-    "generating": "Generating report...",
+    "custom": "Periodo personalizzato",
+    "generating": "Generazione del report...",
     "markdown": "Markdown",
-    "monthly": "Monthly Report",
-    "scheduled": "Scheduled Reports"
+    "monthly": "Report mensile",
+    "scheduled": "Report programmati"
   },
   "brand_overview": {
     "score_table": {
@@ -1239,49 +1245,49 @@
       "fair": "Fair",
       "excellent": "Excellent",
       "change": "Change",
-      "title": "Score Table",
+      "title": "Tabella punteggi",
       "metric": "Metric"
     },
-    "title": "Brand Overview",
+    "title": "Panoramica brand",
     "visibility": "Visibility",
     "infographic": {
-      "title": "Brand Infographic",
-      "download_png": "Download PNG",
-      "download_pdf": "Download PDF",
-      "share": "Share Report"
+      "title": "Infografica brand",
+      "download_png": "Scarica PNG",
+      "download_pdf": "Scarica PDF",
+      "share": "Condividi report"
     },
-    "health_score": "Health Score",
-    "trend_down": "Trending Down",
-    "position_avg": "Avg Position",
-    "trend_up": "Trending Up",
+    "health_score": "Punteggio di salute",
+    "trend_down": "In calo",
+    "position_avg": "Posizione media",
+    "trend_up": "In crescita",
     "trend_stable": "Stable",
     "sentiment": "Sentiment",
     "mention_count": "Mentions",
-    "citation_rate": "Citation Rate",
+    "citation_rate": "Tasso di citazione",
     "period": {
-      "90d": "90 Days",
-      "30d": "30 Days",
-      "7d": "7 Days",
-      "60d": "60 Days"
+      "90d": "90 giorni",
+      "30d": "30 giorni",
+      "7d": "7 giorni",
+      "60d": "60 giorni"
     },
-    "subtitle": "Real-time brand monitoring and performance insights"
+    "subtitle": "Monitoraggio del brand in tempo reale e insight sulle performance"
   },
   "scraper": {
-    "mentions_found": "Mentions Found",
-    "title": "Brand Mention Scraper",
-    "last_scrape": "Last Scrape",
+    "mentions_found": "Menzioni trovate",
+    "title": "Scraper di menzioni del brand",
+    "last_scrape": "Ultimo scraping",
     "geolocation": "Geolocation",
-    "run_error": "Scrape failed",
-    "results": "Scrape Results",
-    "status": "Scraper Status",
-    "ai_overview_cited": "AI Overview Cited",
+    "run_error": "Scraping fallito",
+    "results": "Risultati dello scraping",
+    "status": "Stato dello scraper",
+    "ai_overview_cited": "Citato in AI Overview",
     "schedule": "Schedule",
     "keywords": "Keywords",
     "snapshot": "Snapshot",
-    "run_now": "Run Scraper",
-    "dataset": "Dataset ID",
-    "not_configured": "Bright Data not configured",
-    "run_success": "Scraped successfully",
+    "run_now": "Avvia scraper",
+    "dataset": "ID dataset",
+    "not_configured": "Bright Data non configurato",
+    "run_success": "Scraping completato con successo",
     "sources": "Sources"
   },
   "prompt_generator": {
@@ -1304,5 +1310,9 @@
     "ai_powered_by": "Generato da",
     "ai_unavailable": "Potenziamento AI non disponibile",
     "ai_rationale": "Perché questo prompt"
+  },
+  "breadcrumb": {
+    "home": "Dashboard",
+    "next": "Avanti"
   }
 }

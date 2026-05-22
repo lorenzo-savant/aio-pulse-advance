@@ -27,6 +27,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 
 interface HistoricalData {
@@ -272,6 +273,7 @@ export default function EnhancedAnalyticsPage() {
 
   return (
     <div className="space-y-6">
+      <SectionHelp section="analytics" />
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>

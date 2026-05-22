@@ -17,6 +17,7 @@ import {
   Webhook,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { formatRelativeTime, cn } from '@/lib/utils'
@@ -497,6 +498,7 @@ export default function AlertsPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="alerts" />
       <JourneyGuide
         step={2}
         title="Get notified when your AI visibility changes"

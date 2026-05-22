@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { Link2, RefreshCw, AlertCircle, ExternalLink, Globe } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
@@ -161,6 +162,7 @@ export default function CitationSourcesPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="citation-sources" />
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

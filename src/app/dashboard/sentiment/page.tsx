@@ -28,6 +28,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand } from '@/types'
@@ -553,6 +554,7 @@ export default function SentimentPage() {
 
   return (
     <div className="animate-in space-y-8">
+      <SectionHelp section="sentiment" />
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>

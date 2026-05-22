@@ -59,7 +59,10 @@ export class DataForSEOProvider extends BaseProvider {
     })
   }
 
-  protected override async executeRequest(request: AIProviderRequest): Promise<Response> {
+  protected override async executeRequest(
+    request: AIProviderRequest,
+    signal?: AbortSignal,
+  ): Promise<Response> {
     const credentials = this.getCredentials()
     const config = this.getConfig(request)
 
@@ -85,6 +88,7 @@ export class DataForSEOProvider extends BaseProvider {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
+      signal,
     })
   }
 

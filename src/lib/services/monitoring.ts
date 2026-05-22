@@ -59,7 +59,14 @@ const analysisOutputSchema = z.object({
       z.object({
         text: z.string(),
         severity: z.enum(['low', 'medium', 'high']),
-        type: z.enum(['factual_error', 'attribution_error', 'fabrication', 'date_error']),
+        type: z.enum([
+          'factual_error',
+          'attribution_error',
+          'fabrication',
+          'date_error',
+          'unsupported_claim',
+        ]),
+        confidence: z.number().min(0).max(1).optional(),
       }),
     )
     .optional()
@@ -167,7 +174,8 @@ Respond ONLY with a valid JSON object (no markdown, no extra text):
     {
       "text": "<the potentially false claim>",
       "severity": <"low" | "medium" | "high">,
-      "type": <"factual_error" | "attribution_error" | "fabrication" | "date_error">
+      "type": <"factual_error" (wrong fact) | "attribution_error" (credits wrong source) | "fabrication" (invented entity/quote/source) | "date_error" (wrong date/timeline) | "unsupported_claim" (assertion with no evidence or basis)>,
+      "confidence": <float 0.0-1.0 — how confident you are this is a genuine hallucination, not a false positive>
     }
   ]
 }`
@@ -370,7 +378,8 @@ Respond ONLY with valid JSON (no markdown):
     {
       "text": "<exact claim that may be false>",
       "severity": <"low" | "medium" | "high">,
-      "type": <"factual_error" | "attribution_error" | "fabrication" | "date_error">
+      "type": <"factual_error" | "attribution_error" | "fabrication" | "date_error" | "unsupported_claim">,
+      "confidence": <float 0.0-1.0 for this specific flag>
     }
   ],
   "summary": "<one paragraph overall assessment>"

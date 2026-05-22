@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Building2, Users, Key, Activity, Settings, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Badge } from '@/components/ui/Badge'
 
 interface Organization {
@@ -74,6 +75,7 @@ export default function OrganizationDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <SectionHelp section="org" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{org.name}</h1>

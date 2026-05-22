@@ -32,6 +32,12 @@ export interface SerpProviderSnapshot {
   calls: number
   /** $ spent this month in cents. 0 for free-tier providers like Brave. */
   costCents: number
+  /**
+   * $ spent this month as a full-precision float (USD). Carried alongside
+   * costCents because sub-cent per-call costs accumulate to a meaningful
+   * total that integer cents would floor away.
+   */
+  costUsd: number
   /** Monthly cap in cents (DFS) or call count (Brave/SerpApi). null if uncapped. */
   capCents: number | null
   capCalls: number | null
@@ -50,6 +56,12 @@ export interface AiProviderSnapshot {
   outputTokens: number
   totalTokens: number
   costCents: number
+  /**
+   * Full-precision spend (USD float) before rounding to cents. ai_cost_logs
+   * records float cost_usd per call; rounding each call to whole cents floors
+   * sub-cent calls to 0, so we sum the float and round ONCE for display.
+   */
+  costUsd: number
 }
 
 // Canonical LLM providers we always surface on the cost dashboard, mapped to
@@ -95,13 +107,17 @@ export interface ApiCostOverview {
   month: string
   /** Grand total spend in cents (SERP + AI). Credits are a separate ledger. */
   totalSpendCents: number
+  /** Grand total spend as a full-precision USD float (SERP + AI). */
+  totalSpendUsd: number
   serp: {
     providers: SerpProviderSnapshot[]
     totalCostCents: number
+    totalCostUsd: number
   }
   ai: {
     providers: AiProviderSnapshot[]
     totalCostCents: number
+    totalCostUsd: number
   }
   credits: CreditsSnapshot
 }
@@ -118,6 +134,7 @@ function currentMonth(): string {
 async function loadSerpSnapshot(): Promise<{
   providers: SerpProviderSnapshot[]
   totalCostCents: number
+  totalCostUsd: number
 }> {
   // Reuse the spending-monitor for Brave + DFS — same source of truth as
   // the cap-gate. Then add SerpApi separately since spending-monitor
@@ -136,6 +153,7 @@ async function loadSerpSnapshot(): Promise<{
         configured: p.configured,
         calls: used,
         costCents: 0,
+        costUsd: 0,
         capCents: null,
         capCalls: limit > 0 ? limit : null,
         utilization: p.utilization,
@@ -155,6 +173,7 @@ async function loadSerpSnapshot(): Promise<{
       configured: p.configured,
       calls: 0,
       costCents: p.costCents,
+      costUsd: p.costCents / 100,
       capCents: defaultCapCents,
       capCalls: null,
       utilization: p.utilization,
@@ -200,6 +219,7 @@ async function loadSerpSnapshot(): Promise<{
           configured: true, // present in DB means it was configured at some point
           calls: (serpRow.count as number | undefined) ?? 0,
           costCents: (serpRow.cost_cents as number | undefined) ?? 0,
+          costUsd: ((serpRow.cost_cents as number | undefined) ?? 0) / 100,
           capCents: null,
           capCalls: null,
           utilization: 0,
@@ -211,8 +231,12 @@ async function loadSerpSnapshot(): Promise<{
     }
   }
 
+  // Sync costUsd from the (possibly hydrated) costCents so SERP figures stay
+  // consistent across both units, then total in each.
+  for (const p of providers) p.costUsd = p.costCents / 100
   const totalCostCents = providers.reduce((a, p) => a + p.costCents, 0)
-  return { providers, totalCostCents }
+  const totalCostUsd = providers.reduce((a, p) => a + p.costUsd, 0)
+  return { providers, totalCostCents, totalCostUsd }
 }
 
 function emptyProvider(key: string): AiProviderSnapshot {
@@ -224,12 +248,14 @@ function emptyProvider(key: string): AiProviderSnapshot {
     outputTokens: 0,
     totalTokens: 0,
     costCents: 0,
+    costUsd: 0,
   }
 }
 
 async function loadAiSnapshot(userId: string): Promise<{
   providers: AiProviderSnapshot[]
   totalCostCents: number
+  totalCostUsd: number
 }> {
   // Seed with every known provider so the dashboard always lists Gemini,
   // OpenAI, Claude, Perplexity and Groq with their configured status — even
@@ -268,8 +294,10 @@ async function loadAiSnapshot(userId: string): Promise<{
         acc.inputTokens += r.input_tokens ?? 0
         acc.outputTokens += r.output_tokens ?? 0
         acc.totalTokens += r.total_tokens ?? 0
-        // ai_cost_logs.cost_usd is float USD; convert to integer cents.
-        acc.costCents += Math.round((r.cost_usd ?? 0) * 100)
+        // Accumulate the float USD; rounding each call to whole cents would
+        // floor sub-cent calls to 0 and lose the accumulating total. We round
+        // ONCE, after summing, below.
+        acc.costUsd += r.cost_usd ?? 0
         byProvider.set(key, acc)
       }
     } catch (err) {
@@ -277,16 +305,20 @@ async function loadAiSnapshot(userId: string): Promise<{
     }
   }
 
+  // Round to whole cents ONCE, after summing the per-call floats.
+  for (const p of byProvider.values()) p.costCents = Math.round(p.costUsd * 100)
+
   // Sort: spend desc, then configured-before-unconfigured, then name — so the
   // active/paid providers float to the top and known-but-idle keys still show.
   const providers = [...byProvider.values()].sort(
     (a, b) =>
-      b.costCents - a.costCents ||
+      b.costUsd - a.costUsd ||
       Number(b.configured) - Number(a.configured) ||
       a.provider.localeCompare(b.provider),
   )
   const totalCostCents = providers.reduce((a, p) => a + p.costCents, 0)
-  return { providers, totalCostCents }
+  const totalCostUsd = providers.reduce((a, p) => a + p.costUsd, 0)
+  return { providers, totalCostCents, totalCostUsd }
 }
 
 async function loadCreditsSnapshot(userId: string): Promise<CreditsSnapshot> {
@@ -350,8 +382,125 @@ export async function getApiCostOverview(userId: string): Promise<ApiCostOvervie
   return {
     month: currentMonth(),
     totalSpendCents: serp.totalCostCents + ai.totalCostCents,
+    totalSpendUsd: serp.totalCostUsd + ai.totalCostUsd,
     serp,
     ai,
     credits,
+  }
+}
+
+// ─── Time-series breakdown (for weekly/monthly views + export) ──────────────
+
+export type CostGranularity = 'day' | 'week' | 'month'
+
+/** One bucket × provider row of AI spend, full float precision. */
+export interface CostBreakdownRow {
+  /** Bucket key: YYYY-MM-DD (day), YYYY-Www (ISO week), or YYYY-MM (month). */
+  bucket: string
+  /** Canonical provider key (openai, gemini, …). */
+  provider: string
+  calls: number
+  inputTokens: number
+  outputTokens: number
+  costUsd: number
+}
+
+export interface CostBreakdown {
+  granularity: CostGranularity
+  from: string
+  to: string
+  rows: CostBreakdownRow[]
+  totalCostUsd: number
+  totalCalls: number
+}
+
+/** ISO-8601 week key (YYYY-Www) for a date, using Thursday-of-week rule. */
+function isoWeekKey(d: Date): string {
+  const dt = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+  const day = dt.getUTCDay() || 7 // Sun=0 → 7
+  dt.setUTCDate(dt.getUTCDate() + 4 - day) // shift to Thursday
+  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1))
+  const week = Math.ceil(((dt.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+  return `${dt.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
+}
+
+function bucketKey(iso: string, granularity: CostGranularity): string {
+  const d = new Date(iso)
+  if (granularity === 'month')
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+  if (granularity === 'week') return isoWeekKey(d)
+  return d.toISOString().slice(0, 10) // YYYY-MM-DD
+}
+
+/**
+ * Per-bucket × per-provider AI spend over a date range, summed in full float
+ * precision. Powers the weekly/monthly toggle and the CSV/Excel/PDF export.
+ *
+ * Defaults to the trailing 30 days, daily granularity. SERP costs are monthly
+ * aggregates (no per-call timestamps) so they are intentionally excluded here
+ * — this breakdown is the per-call AI ledger, which is where sub-cent costs
+ * accumulate and where date/type granularity is meaningful.
+ */
+export async function getCostBreakdown(
+  userId: string,
+  opts: { granularity?: CostGranularity; from?: Date; to?: Date } = {},
+): Promise<CostBreakdown> {
+  const granularity = opts.granularity ?? 'day'
+  const to = opts.to ?? new Date()
+  const from = opts.from ?? new Date(to.getTime() - 30 * 86400000)
+
+  const map = new Map<string, CostBreakdownRow>()
+  const db = createServerClient() as any
+
+  if (db) {
+    try {
+      const { data: rows } = await db
+        .from('ai_cost_logs')
+        .select('provider, input_tokens, output_tokens, cost_usd, created_at')
+        .eq('user_id', userId)
+        .gte('created_at', from.toISOString())
+        .lte('created_at', to.toISOString())
+        .limit(100000)
+
+      for (const r of (rows ?? []) as Array<{
+        provider: string | null
+        input_tokens: number | null
+        output_tokens: number | null
+        cost_usd: number | null
+        created_at: string
+      }>) {
+        const provider = canonicalProvider(r.provider || 'unknown')
+        const bucket = bucketKey(r.created_at, granularity)
+        const k = `${bucket}|${provider}`
+        const acc = map.get(k) ?? {
+          bucket,
+          provider,
+          calls: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          costUsd: 0,
+        }
+        acc.calls += 1
+        acc.inputTokens += r.input_tokens ?? 0
+        acc.outputTokens += r.output_tokens ?? 0
+        acc.costUsd += r.cost_usd ?? 0
+        map.set(k, acc)
+      }
+    } catch (err) {
+      logger.warn('api-cost-overview: breakdown read failed', { err: String(err) })
+    }
+  }
+
+  // Sort by bucket then provider for stable, readable export output.
+  const rows = [...map.values()].sort(
+    (a, b) => a.bucket.localeCompare(b.bucket) || a.provider.localeCompare(b.provider),
+  )
+  return {
+    granularity,
+    from: from.toISOString(),
+    to: to.toISOString(),
+    rows,
+    totalCostUsd: rows.reduce((s, r) => s + r.costUsd, 0),
+    totalCalls: rows.reduce((s, r) => s + r.calls, 0),
   }
 }

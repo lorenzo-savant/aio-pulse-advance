@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { User, Key, Bell, Save, Loader2, Trash2, Globe } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -412,6 +413,7 @@ export default function SettingsPage() {
 
   return (
     <div className="animate-in space-y-8 bg-background">
+      <SectionHelp section="settings" />
       <div>
         <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
         <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>

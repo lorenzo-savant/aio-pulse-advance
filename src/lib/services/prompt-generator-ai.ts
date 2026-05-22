@@ -66,6 +66,12 @@ export interface LLMCall {
   model: string
 }
 
+// Groq model for the high-volume JSON path (prompt generation + extraction).
+// Default Llama 3.3 70B — best JSON + multilingual balance for our workload.
+// Override with GROQ_MODEL to A/B another Groq model (e.g. a Qwen build for
+// stronger sv/it). Verify the exact current model ID in the Groq console.
+const GROQ_MODEL = process.env['GROQ_MODEL'] || 'llama-3.3-70b-versatile'
+
 async function callGroq(systemPrompt: string, userPrompt: string): Promise<LLMCall> {
   const apiKey = process.env['GROQ_API_KEY']
   if (!apiKey) throw new Error('GROQ_API_KEY not set')
@@ -76,7 +82,7 @@ async function callGroq(systemPrompt: string, userPrompt: string): Promise<LLMCa
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_MODEL,
       response_format: { type: 'json_object' },
       temperature: 0.4, // slightly higher than the strict-analysis path —
       // we want some variation in the prompts, not deterministic output
@@ -95,7 +101,7 @@ async function callGroq(systemPrompt: string, userPrompt: string): Promise<LLMCa
   const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> }
   const text = data.choices?.[0]?.message?.content
   if (!text) throw new Error('Empty response from Groq')
-  return { text, provider: 'groq', model: 'llama-3.3-70b-versatile' }
+  return { text, provider: 'groq', model: GROQ_MODEL }
 }
 
 async function callGemini(systemPrompt: string, userPrompt: string): Promise<LLMCall> {

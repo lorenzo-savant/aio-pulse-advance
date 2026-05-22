@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Badge } from '@/components/ui/index'
 import { HorizonChart } from '@/components/ui/Chart'
 import { PageTransition, StaggerGrid, StaggerItem } from '@/components/ui/Motion'
@@ -306,6 +307,7 @@ export default function BrandOverviewPage() {
   return (
     <PageTransition>
       <div className="space-y-6">
+        <SectionHelp section="overview" />
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

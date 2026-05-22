@@ -16,6 +16,7 @@ import {
   Clock,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
@@ -201,6 +202,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 bg-background">
+      <SectionHelp section="reports" />
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

@@ -19,6 +19,7 @@ import {
   analyzeResponseForBrand as routerAnalyze,
 } from './ai-router'
 import { cleanCitations, groundCitationsViaBrave } from './citation-grounding'
+import { detectBrandMention, extractUrlsFromText } from './brand-mention'
 import { lexicalSentiment, sentimentAgreement } from './sentiment-lexicon'
 import type { LexiconLabel, ConflictLevel } from './sentiment-lexicon'
 import { logger } from '@/lib/logger'
@@ -221,16 +222,30 @@ export async function runMonitoringCheck(
     )
   }
 
-  // ── Citations ────────────────────────────────────────────────────────────
-  // With web search enabled, every engine returns real web citations → clean
-  // (de-junk + dedup) the engine + in-text URLs. Only when nothing real came
-  // back (web search disabled/failed, or a model-memory fallback) do we
-  // Brave-ground the prompt (cached: ~1 hit per unique prompt). Brave grounding
-  // soft-fails to [] so a run never breaks on quota.
-  let citedUrls = cleanCitations([...engineCitations, ...analysis.cited_urls])
+  // ── Two-pass reconciliation (deterministic ground truth) ──────────────────
+  // Whether / how often the brand appears, and which URLs the answer contains,
+  // are exact-match questions — regex whole-word detection is more reliable
+  // than the LLM's prose-rule judgment (it fixes look-alikes like Acast≠Acasting
+  // AND the legal-suffix under-count "Savant Media" vs "Savant Media AB") and it
+  // never invents URLs. Deterministic wins for those fields; the LLM keeps
+  // sentiment / aspects / hallucination / competitors / visibility.
+  const det = detectBrandMention(responseText, {
+    name: brand.name,
+    aliases: brand.aliases,
+    domain: brand.domain,
+  })
+
+  // Citations: real engine citations + URLs ACTUALLY present in the text (never
+  // the LLM's possibly-invented cited_urls). Brave-ground only if empty.
+  let citedUrls = cleanCitations([...engineCitations, ...extractUrlsFromText(responseText)])
   if (citedUrls.length === 0) {
     citedUrls = (await groundCitationsViaBrave(prompt.text, language)).citations
   }
+
+  // Keep visibility consistent with the deterministic mention: if the brand IS
+  // mentioned but the model scored 0, floor it so the row isn't self-contradictory.
+  let visibility = Math.min(100, Math.max(0, analysis.visibility_score))
+  if (det.brandMentioned && visibility === 0) visibility = 20
 
   return {
     prompt_id: prompt.id,
@@ -239,11 +254,11 @@ export async function runMonitoringCheck(
     engine,
     prompt_text: prompt.text || 'No prompt text',
     response_text: responseText.length > 5000 ? responseText.slice(0, 5000) + '…' : responseText,
-    brand_mentioned: analysis.brand_mentioned,
-    mention_position: analysis.mention_position ?? null,
-    mention_count: analysis.mention_count,
-    mention_type: analysis.mention_type as MentionType,
-    visibility_score: Math.min(100, Math.max(0, analysis.visibility_score)),
+    brand_mentioned: det.brandMentioned,
+    mention_position: det.mentionPosition,
+    mention_count: det.mentionCount,
+    mention_type: det.mentionType as MentionType,
+    visibility_score: visibility,
     sentiment: analysis.sentiment as SentimentLabel,
     sentiment_score: Math.min(1, Math.max(-1, analysis.sentiment_score)),
     sentiment_aspects: analysis.sentiment_aspects as SentimentAspect[],

@@ -215,6 +215,14 @@ function PromptsPageContent() {
         run_frequency: 'daily',
       })
       toast.success(t('prompts.toast.created'))
+      // Non-blocking semantic dedup hint: the prompt is created, but warn that
+      // a very similar one already exists so the user can avoid redundancy.
+      if (json.similar && typeof json.similar.score === 'number') {
+        toast(
+          `⚠︎ Similar to an existing prompt (${Math.round(json.similar.score * 100)}% match): "${json.similar.text}"`,
+          { duration: 6000 },
+        )
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.server_error'))
     } finally {

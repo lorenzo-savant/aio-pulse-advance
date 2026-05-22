@@ -1448,6 +1448,33 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_embeddings: {
+        Row: {
+          prompt_id: string
+          brand_id: string
+          user_id: string
+          text: string
+          embedding: Json
+          created_at: string
+        }
+        Insert: {
+          prompt_id: string
+          brand_id: string
+          user_id: string
+          text: string
+          embedding: Json
+          created_at?: string
+        }
+        Update: {
+          prompt_id?: string
+          brand_id?: string
+          user_id?: string
+          text?: string
+          embedding?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
       work_orders: {
         Row: {
           id: string

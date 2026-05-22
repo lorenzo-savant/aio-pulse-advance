@@ -2,10 +2,14 @@
 import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import type { Json } from '@/types/database'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { parsePaginationParams, paginatedResponse } from '@/lib/api-utils'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { embedText, mostSimilar, NEAR_DUPLICATE_THRESHOLD } from '@/lib/services/semantic'
 import { logger } from '@/lib/logger'
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const PROMPT_RATE_LIMIT = 50
 
@@ -143,6 +147,31 @@ export async function POST(req: NextRequest) {
 
   if (!brand) return err('Brand not found or access denied', 404)
 
+  // Semantic dedup (best-effort): embed the new prompt and compare against the
+  // brand's existing prompt embeddings. A near-duplicate is reported as a
+  // non-blocking `similar` warning — we still create the prompt. Soft-fails
+  // entirely (no OPENAI_API_KEY / no migration) so creation never breaks.
+  const embedding = await embedText(parsed.data.text)
+  let similar: { text: string; score: number } | null = null
+  if (embedding) {
+    try {
+      const { data: rows } = await (db as any)
+        .from('prompt_embeddings')
+        .select('text, embedding')
+        .eq('brand_id', parsed.data.brand_id)
+        .limit(500)
+      const candidates = ((rows ?? []) as Array<{ text: string; embedding: unknown }>)
+        .filter((r) => Array.isArray(r.embedding))
+        .map((r) => ({ text: r.text, embedding: r.embedding as number[] }))
+      const best = mostSimilar(embedding, candidates)
+      if (best && best.score >= NEAR_DUPLICATE_THRESHOLD) {
+        similar = { text: best.text, score: best.score }
+      }
+    } catch {
+      /* table may not exist yet — skip dedup */
+    }
+  }
+
   // Insert prompt - user_id must be UUID
   const { data, error } = await db
     .from('prompts')
@@ -154,7 +183,23 @@ export async function POST(req: NextRequest) {
     logger.error('Insert error', { source: 'prompts', error: String(error) })
     return err(error.message)
   }
-  return NextResponse.json({ success: true, data, timestamp: Date.now() }, { status: 201 })
+
+  // Persist the embedding for future dedup (best-effort).
+  if (embedding && data?.id) {
+    try {
+      await (db as any).from('prompt_embeddings').upsert({
+        prompt_id: data.id,
+        brand_id: parsed.data.brand_id,
+        user_id: userId,
+        text: parsed.data.text,
+        embedding: embedding as unknown as Json,
+      })
+    } catch {
+      /* non-critical */
+    }
+  }
+
+  return NextResponse.json({ success: true, data, similar, timestamp: Date.now() }, { status: 201 })
 }
 
 // ─── DELETE /api/prompts ──────────────────────────────────────────────────────

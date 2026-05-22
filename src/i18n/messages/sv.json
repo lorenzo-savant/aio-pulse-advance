@@ -755,6 +755,8 @@
     "trend_title": "Sentimenttrend",
     "aspect_title": "Vad Driver Sentimentet",
     "aspect_hint": "Varumärkesaspekter som AI-svaren faktiskt utvärderar — grönt positivt, rött negativt.",
+    "themes_title": "Teman AI förknippar med dig",
+    "themes_hint": "Semantiska kluster av svaren som nämner ditt varumärke — vilka ämnen de samlas kring, och sentimentet per tema.",
     "aspects": {
       "pricing": "Pris",
       "quality": "Kvalitet",

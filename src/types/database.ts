@@ -1448,6 +1448,36 @@ export type Database = {
         }
         Relationships: []
       }
+      response_embeddings: {
+        Row: {
+          monitoring_result_id: string
+          brand_id: string
+          user_id: string
+          text: string
+          embedding: Json
+          sentiment_score: number | null
+          created_at: string
+        }
+        Insert: {
+          monitoring_result_id: string
+          brand_id: string
+          user_id: string
+          text: string
+          embedding: Json
+          sentiment_score?: number | null
+          created_at?: string
+        }
+        Update: {
+          monitoring_result_id?: string
+          brand_id?: string
+          user_id?: string
+          text?: string
+          embedding?: Json
+          sentiment_score?: number | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       prompt_embeddings: {
         Row: {
           prompt_id: string

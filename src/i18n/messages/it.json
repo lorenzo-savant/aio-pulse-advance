@@ -755,6 +755,8 @@
     "trend_title": "Andamento del Sentiment",
     "aspect_title": "Cosa Guida il Sentiment",
     "aspect_hint": "Gli aspetti del brand che le risposte AI valutano davvero — verde positivo, rosso negativo.",
+    "themes_title": "Temi che gli AI associano a te",
+    "themes_hint": "Cluster semantici delle risposte che menzionano il brand — attorno a quali argomenti si raggruppano, con il sentiment per tema.",
     "aspects": {
       "pricing": "Prezzo",
       "quality": "Qualità",

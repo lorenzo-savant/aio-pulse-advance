@@ -41,6 +41,14 @@ interface AspectBreakdown {
   net: number
 }
 
+interface Theme {
+  label: string
+  size: number
+  share: number
+  avgSentiment: number | null
+  sampleTexts: string[]
+}
+
 interface SentimentStats {
   sentimentCounts: { positive: number; negative: number; neutral: number }
   avgSentimentScore: number
@@ -481,6 +489,8 @@ export default function SentimentPage() {
   const [selectedBrand, setSelectedBrand] = useState('')
   const [stats, setStats] = useState<SentimentStats | null>(null)
   const [loadingStats, setLoadingStats] = useState(false)
+  const [themes, setThemes] = useState<Theme[]>([])
+  const [loadingThemes, setLoadingThemes] = useState(false)
 
   useEffect(() => {
     fetch('/api/brands')
@@ -509,6 +519,28 @@ export default function SentimentPage() {
   useEffect(() => {
     if (selectedBrand) void loadStats(selectedBrand)
   }, [selectedBrand, loadStats])
+
+  // Themes: what the AI engines associate with the brand (semantic clusters of
+  // the responses). Best-effort — empty if embeddings/migration unavailable.
+  useEffect(() => {
+    if (!selectedBrand) return
+    let cancelled = false
+    setLoadingThemes(true)
+    fetch(`/api/themes?brand_id=${selectedBrand}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!cancelled) setThemes(j.success ? (j.data?.themes ?? []) : [])
+      })
+      .catch(() => {
+        if (!cancelled) setThemes([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingThemes(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedBrand])
 
   const engineData = stats
     ? Object.entries(stats.byEngine).map(([engine, d]) => ({
@@ -708,6 +740,55 @@ export default function SentimentPage() {
                   )
                 })}
               </div>
+            </Card>
+          )}
+
+          {/* Themes — semantic clusters of the responses that mention the brand */}
+          {(themes.length > 0 || loadingThemes) && (
+            <Card className="border-border bg-secondary p-6">
+              <h2 className="text-lg font-bold text-foreground">{t('themes_title')}</h2>
+              <p className="mb-5 text-sm text-muted-foreground">{t('themes_hint')}</p>
+              {loadingThemes && themes.length === 0 ? (
+                <p className="text-sm text-muted-foreground">…</p>
+              ) : (
+                <div className="space-y-3">
+                  {themes.map((th, i) => (
+                    <div key={i} className="bg-input/40 rounded-xl border border-input p-3">
+                      <div className="flex items-center gap-3">
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold capitalize text-foreground">
+                          {th.label}
+                        </span>
+                        {th.avgSentiment != null && (
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold',
+                              th.avgSentiment > 0.15
+                                ? 'bg-emerald-500/10 text-emerald-400'
+                                : th.avgSentiment < -0.15
+                                  ? 'bg-rose-500/10 text-rose-400'
+                                  : 'bg-input text-muted-foreground',
+                            )}
+                          >
+                            {th.avgSentiment > 0 ? '+' : ''}
+                            {th.avgSentiment.toFixed(2)}
+                          </span>
+                        )}
+                        <span className="w-12 shrink-0 text-right text-sm font-black text-foreground">
+                          {th.share}%
+                        </span>
+                        <span className="w-10 shrink-0 text-right text-xs text-muted-foreground">
+                          ×{th.size}
+                        </span>
+                      </div>
+                      {th.sampleTexts[0] && (
+                        <p className="mt-1.5 line-clamp-2 text-xs italic text-muted-foreground">
+                          “{th.sampleTexts[0].slice(0, 160)}…”
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           )}
 

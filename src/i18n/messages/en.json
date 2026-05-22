@@ -755,6 +755,8 @@
     "trend_title": "Sentiment Trend",
     "aspect_title": "What Drives Sentiment",
     "aspect_hint": "Brand facets the AI responses actually evaluate — green positive, red negative.",
+    "themes_title": "Themes AI associates with you",
+    "themes_hint": "Semantic clusters of the answers that mention your brand — what topics they group around, and the sentiment per theme.",
     "aspects": {
       "pricing": "Pricing",
       "quality": "Quality",

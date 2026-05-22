@@ -82,3 +82,35 @@ export async function embedText(text: string): Promise<number[] | null> {
     return null
   }
 }
+
+/**
+ * Batch-embed many texts in a SINGLE API call (the embeddings endpoint accepts
+ * an array). Returns embeddings aligned to the input order, or null on failure.
+ * Used by thematic clustering to embed a page of responses cheaply.
+ */
+export async function embedTexts(texts: string[]): Promise<Array<number[] | null> | null> {
+  const apiKey = process.env['OPENAI_API_KEY']
+  if (!apiKey || !texts.length) return null
+  // Empty strings aren't valid input — substitute a placeholder, null them after.
+  const inputs = texts.map((t) => ((t || '').trim() || ' ').slice(0, 8000))
+  try {
+    const res = await safeFetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: EMBEDDING_MODEL, input: inputs }),
+      signal: AbortSignal.timeout(30_000),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { data?: Array<{ index?: number; embedding?: number[] }> }
+    const out: Array<number[] | null> = new Array(texts.length).fill(null)
+    for (const row of data.data ?? []) {
+      const i = typeof row.index === 'number' ? row.index : -1
+      if (i >= 0 && i < out.length && Array.isArray(row.embedding) && row.embedding.length > 0) {
+        out[i] = (texts[i] || '').trim() ? row.embedding : null
+      }
+    }
+    return out
+  } catch {
+    return null
+  }
+}

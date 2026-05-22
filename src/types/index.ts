@@ -283,6 +283,31 @@ export interface SentimentAspect {
   sentiment: SentimentLabel
 }
 
+// ─── WORK ORDERS ────────────────────────────────────────────────────────────
+// Trackable recommendation: a unit of work with a status + GEO baseline/recheck
+// deltas, so the advisor loop closes (did the action move the score?).
+export type WorkOrderStatus = 'open' | 'in_progress' | 'done' | 'dismissed'
+
+export interface WorkOrder {
+  id: string
+  brand_id: string
+  user_id: string
+  title: string
+  category: string | null
+  impact: string | null
+  effort: string | null
+  rationale: string | null
+  actions: string[]
+  status: WorkOrderStatus
+  source: string
+  baseline_geo_score: number | null
+  recheck_geo_score: number | null
+  recheck_delta: number | null
+  created_at: string
+  completed_at: string | null
+  metadata: Record<string, unknown> | null
+}
+
 // ─── ALERTS ───────────────────────────────────────────────────────────────────
 export type AlertType =
   | 'mention_new'

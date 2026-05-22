@@ -23,6 +23,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
+import type { WorkOrder, WorkOrderStatus } from '@/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ interface Brand {
 interface Recommendation {
   title: string
   rationale: string
+  category?: string
   impact: 'high' | 'medium' | 'low'
   effort: 'high' | 'medium' | 'low'
   actions: string[]
@@ -134,6 +136,65 @@ export default function AdvisorPage() {
   const [createdPrompts, setCreatedPrompts] = useState<Set<string>>(new Set())
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([])
+  const [creatingWO, setCreatingWO] = useState<Set<string>>(new Set())
+
+  const loadWorkOrders = useCallback(async (brandId: string) => {
+    try {
+      const res = await fetch(`/api/work-orders?brand_id=${brandId}`)
+      const json = await res.json()
+      if (json.success) setWorkOrders(json.data as WorkOrder[])
+    } catch {
+      /* silent */
+    }
+  }, [])
+
+  const createWorkOrder = async (rec: Recommendation) => {
+    if (!selectedBrand || creatingWO.has(rec.title)) return
+    setCreatingWO((s) => new Set(s).add(rec.title))
+    try {
+      const res = await fetch('/api/work-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand_id: selectedBrand.id,
+          title: rec.title,
+          category: rec.category,
+          impact: rec.impact,
+          effort: rec.effort,
+          rationale: rec.rationale,
+          actions: rec.actions,
+          source: 'advisor',
+        }),
+      })
+      const json = await res.json()
+      if (json.success) setWorkOrders((w) => [json.data as WorkOrder, ...w])
+    } catch {
+      /* silent */
+    } finally {
+      setCreatingWO((s) => {
+        const next = new Set(s)
+        next.delete(rec.title)
+        return next
+      })
+    }
+  }
+
+  const updateWorkOrderStatus = async (id: string, status: WorkOrderStatus) => {
+    try {
+      const res = await fetch('/api/work-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setWorkOrders((w) => w.map((wo) => (wo.id === id ? (json.data as WorkOrder) : wo)))
+      }
+    } catch {
+      /* silent */
+    }
+  }
 
   const loadHistory = useCallback(async (brandId: string) => {
     setHistoryLoading(true)
@@ -197,6 +258,11 @@ export default function AdvisorPage() {
       }
     })()
   }, [loadHistory])
+
+  // Load work orders whenever the selected brand changes (initial + switches).
+  useEffect(() => {
+    if (selectedBrand) loadWorkOrders(selectedBrand.id)
+  }, [selectedBrand, loadWorkOrders])
 
   const ask = async () => {
     if (!selectedBrand) return
@@ -411,6 +477,31 @@ export default function AdvisorPage() {
                     </ul>
                   </div>
                 )}
+                {(() => {
+                  const tracked = workOrders.some((w) => w.title === rec.title)
+                  const isCreating = creatingWO.has(rec.title)
+                  return (
+                    <div className="mt-4 border-t border-border pt-3">
+                      <Button
+                        size="sm"
+                        variant={tracked ? 'ghost' : 'outline'}
+                        disabled={tracked || isCreating}
+                        onClick={() => createWorkOrder(rec)}
+                      >
+                        {tracked ? (
+                          <>
+                            <Check className="mr-1.5 h-3.5 w-3.5" /> Tracked as work order
+                          </>
+                        ) : (
+                          <>
+                            <ListChecks className="mr-1.5 h-3.5 w-3.5" />{' '}
+                            {isCreating ? 'Adding…' : 'Create work order'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )
+                })()}
               </Card>
             ))}
           </div>
@@ -533,6 +624,73 @@ export default function AdvisorPage() {
             )}
           </Card>
         </>
+      )}
+
+      {/* Work Orders — persists across visits (closes the advisor loop):
+          create from a recommendation, mark done, and we re-check the GEO
+          score to attribute movement. Shows whenever any exist for the brand. */}
+      {workOrders.length > 0 && (
+        <Card className="p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <ListChecks className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-bold text-foreground">Work Orders</h2>
+            <span className="ml-auto text-xs text-muted-foreground">
+              Track actions → re-verify GEO impact
+            </span>
+          </div>
+          <div className="space-y-2">
+            {workOrders.map((wo) => (
+              <div
+                key={wo.id}
+                className="bg-secondary/30 flex items-start gap-3 rounded-lg border border-border px-4 py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={cn(
+                      'text-sm font-medium',
+                      wo.status === 'done'
+                        ? 'text-muted-foreground line-through'
+                        : wo.status === 'dismissed'
+                          ? 'text-muted-foreground'
+                          : 'text-foreground',
+                    )}
+                  >
+                    {wo.title}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                    {wo.category && <Badge variant="default">{wo.category}</Badge>}
+                    {wo.impact && <span>impact {wo.impact}</span>}
+                    {wo.status === 'done' && wo.recheck_delta != null && (
+                      <span
+                        className={cn(
+                          'font-bold',
+                          wo.recheck_delta > 0
+                            ? 'text-emerald-400'
+                            : wo.recheck_delta < 0
+                              ? 'text-red-400'
+                              : 'text-muted-foreground',
+                        )}
+                      >
+                        GEO {wo.recheck_delta > 0 ? '+' : ''}
+                        {wo.recheck_delta} since created
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <select
+                  value={wo.status}
+                  onChange={(e) => updateWorkOrderStatus(wo.id, e.target.value as WorkOrderStatus)}
+                  className="shrink-0 rounded-lg border border-input bg-input px-2 py-1 text-xs text-foreground outline-none focus:border-primary"
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="done">Done</option>
+                  <option value="dismissed">Dismissed</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
     </div>
   )

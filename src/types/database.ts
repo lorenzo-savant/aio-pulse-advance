@@ -1448,6 +1448,66 @@ export type Database = {
         }
         Relationships: []
       }
+      work_orders: {
+        Row: {
+          id: string
+          brand_id: string
+          user_id: string
+          title: string
+          category: string | null
+          impact: string | null
+          effort: string | null
+          rationale: string | null
+          actions: Json
+          status: string
+          source: string
+          baseline_geo_score: number | null
+          recheck_geo_score: number | null
+          recheck_delta: number | null
+          created_at: string
+          completed_at: string | null
+          metadata: Json
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          user_id: string
+          title: string
+          category?: string | null
+          impact?: string | null
+          effort?: string | null
+          rationale?: string | null
+          actions?: Json
+          status?: string
+          source?: string
+          baseline_geo_score?: number | null
+          recheck_geo_score?: number | null
+          recheck_delta?: number | null
+          created_at?: string
+          completed_at?: string | null
+          metadata?: Json
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          user_id?: string
+          title?: string
+          category?: string | null
+          impact?: string | null
+          effort?: string | null
+          rationale?: string | null
+          actions?: Json
+          status?: string
+          source?: string
+          baseline_geo_score?: number | null
+          recheck_geo_score?: number | null
+          recheck_delta?: number | null
+          created_at?: string
+          completed_at?: string | null
+          metadata?: Json
+        }
+        Relationships: []
+      }
       brand_invitations: {
         Row: {
           id: string

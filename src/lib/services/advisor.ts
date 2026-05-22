@@ -37,9 +37,22 @@ import { logger } from '@/lib/logger'
 
 // ─── Public types ────────────────────────────────────────────────────────────
 
+// Recommendation category — enables a "diversify across categories" constraint
+// (borrowed from aeosudit) so the strategist doesn't return 3 content tweaks.
+// Optional so a model that omits it never fails validation.
+export const STRATEGY_CATEGORIES = [
+  'content',
+  'schema',
+  'authority',
+  'competitive',
+  'prompts',
+  'technical',
+] as const
+
 const StrategyRecommendationSchema = z.object({
   title: z.string().min(3).max(140),
   rationale: z.string().min(10).max(600),
+  category: z.enum(STRATEGY_CATEGORIES).optional(),
   impact: z.enum(['high', 'medium', 'low']),
   effort: z.enum(['high', 'medium', 'low']),
   actions: z.array(z.string().min(3)).min(1).max(6),
@@ -779,19 +792,109 @@ function buildSystemPrompt(language: 'en' | 'it' | 'sv' = 'en'): string {
     '    - If externalPresence.reddit.found === false AND the brand is consumer-facing or in an industry with active subreddits, recommend authentic Reddit engagement (not promotion). Quote the 46.7% Perplexity citation share. impact:medium effort:medium.',
     '    - If externalPresence.reddit.found === true with matchCount, acknowledge it (e.g. "you appear in N Reddit threads") and skip the "build Reddit presence" recommendation.',
     '    - If externalPresence is null (check failed) do NOT speculate — skip both recommendations.',
+    '15. CATEGORY DIVERSITY: tag each recommendation with a `category` from {content, schema, authority, competitive, prompts, technical}. Across your (max 3) recommendations, prefer DISTINCT categories — do not return three "content" recommendations when the data points to schema, authority, or competitive gaps too.',
     '',
     'Schema:',
-    '{ "summary": string, "recommendations": [ { "title": string, "rationale": string, "impact": "high"|"medium"|"low", "effort": "high"|"medium"|"low", "actions": string[], "sources": string[] } ], "newPrompts"?: [ { "text": string, "intentBucket": string, "priority": "high"|"medium"|"low" } ], "confidence": number }',
+    '{ "summary": string, "recommendations": [ { "title": string, "rationale": string, "category": "content"|"schema"|"authority"|"competitive"|"prompts"|"technical", "impact": "high"|"medium"|"low", "effort": "high"|"medium"|"low", "actions": string[], "sources": string[] } ], "newPrompts"?: [ { "text": string, "intentBucket": string, "priority": "high"|"medium"|"low" } ], "confidence": number }',
   ].join('\n')
+}
+
+/**
+ * Condense the AdvisorContext into a compact, high-signal digest (the
+ * "_summarise_findings" pattern from aeosudit). Leading the prompt with this
+ * sharpens the model's focus AND cuts tokens; the full minified JSON still
+ * follows so every CONTEXT-path rule keeps its data.
+ */
+function summariseFindings(c: AdvisorContext): string {
+  const lines: string[] = []
+  const pct = (n: number) => `${Math.round(n)}%`
+  const signed = (n: number) => (n > 0 ? `+${Math.round(n)}` : `${Math.round(n)}`)
+
+  lines.push(
+    `BRAND: ${c.brand.name}${c.brand.domain ? ` (${c.brand.domain})` : ''} · industry: ${c.brand.industry ?? 'unset'} · lang: ${c.brand.language ?? 'en'}`,
+  )
+  lines.push(
+    `Competitors configured: ${c.brand.competitors.length ? c.brand.competitors.join(', ') : 'NONE'} · aliases: ${c.brand.aliases.length ? c.brand.aliases.join(', ') : 'none'}`,
+  )
+
+  if (c.health) {
+    const h = c.health
+    lines.push(
+      `HEALTH: AVI ${Math.round(h.aviScore)} · citation ${pct(h.citationRate)} · mention ${pct(h.mentionRate)} · recommendation ${pct(h.recommendationRate)} · sentiment ${h.sentimentScore.toFixed(2)} · avg position ${h.positionAvg || 'n/a'} · hallucination ${pct(h.hallucinationRate * 100)}`,
+    )
+  } else {
+    lines.push('HEALTH: no health-score row yet')
+  }
+  if (c.weekDelta) {
+    const d = c.weekDelta
+    lines.push(
+      `WEEK Δ: AVI ${signed(d.aviDelta)} · citation ${signed(d.citationRateDelta)} · mention ${signed(d.mentionRateDelta)} · sentiment ${d.sentimentDelta.toFixed(2)}`,
+    )
+  }
+
+  lines.push(
+    `MONITORING (7d): ${c.monitoring.last7Days} runs · per-engine ${JSON.stringify(c.monitoring.perEngineLast7Days)} · failed workflows ${c.monitoring.failedWorkflowsLast7Days}`,
+  )
+  lines.push(
+    `PROMPTS: ${c.prompts.active} active · by language ${JSON.stringify(c.prompts.byLanguage)}`,
+  )
+
+  if (c.promptInsights.worstPerforming.length) {
+    lines.push(
+      `WORST PROMPTS: ${c.promptInsights.worstPerforming
+        .slice(0, 3)
+        .map((p) => `"${p.text}" (${Math.round(p.mentionRate)}% over ${p.runs} runs)`)
+        .join(' | ')}`,
+    )
+  }
+  if (c.promptInsights.topPerforming.length) {
+    lines.push(
+      `TOP PROMPTS: ${c.promptInsights.topPerforming
+        .slice(0, 3)
+        .map((p) => `"${p.text}" (${Math.round(p.mentionRate)}%)`)
+        .join(' | ')}`,
+    )
+  }
+
+  if (c.topMentionedCompetitors.length) {
+    lines.push(
+      `COMPETITORS THE AI ACTUALLY MENTIONS: ${c.topMentionedCompetitors
+        .map((x) => `${x.name} (${x.count})`)
+        .join(', ')}`,
+    )
+  }
+
+  if (c.aeo) {
+    lines.push(`AEO: ${c.aeo.covered}/${c.aeo.total} covered · ${c.aeo.gap} gaps`)
+  }
+  if (c.externalPresence) {
+    const ep = c.externalPresence
+    lines.push(
+      `EXTERNAL PRESENCE: Wikipedia ${ep.wikipedia?.found ? 'YES' : 'NO'} · Reddit ${ep.reddit?.found ? `YES (${ep.reddit.matchCount ?? '?'} threads)` : 'NO'}`,
+    )
+  }
+  if (c.promptGenerator?.suggestedNewPrompts?.length) {
+    lines.push(
+      `SUGGESTED PROMPTS (${c.promptGenerator.industryLabel}): ${c.promptGenerator.suggestedNewPrompts.length} available`,
+    )
+  }
+  if (c.brandDisambiguation) {
+    lines.push(`DISAMBIGUATION: ${c.brandDisambiguation}`)
+  }
+
+  return lines.join('\n')
 }
 
 function buildUserPrompt(context: AdvisorContext, question: string): string {
   return [
     `QUESTION: ${question}`,
     '',
-    'CONTEXT (live data from this brand):',
+    'KEY FINDINGS (read these first):',
+    summariseFindings(context),
+    '',
+    'FULL DATA (CONTEXT — authoritative; cite exact values/prompts from here):',
     '```json',
-    JSON.stringify(context, null, 2),
+    JSON.stringify(context),
     '```',
     '',
     'Return JSON only.',

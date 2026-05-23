@@ -7,6 +7,7 @@ import { SectionHelp } from '@/components/help/SectionHelp'
 import { Badge } from '@/components/ui/index'
 import { HorizonChart } from '@/components/ui/Chart'
 import { PageTransition, StaggerGrid, StaggerItem } from '@/components/ui/Motion'
+import { StrikingDistancePanel } from '@/components/StrikingDistancePanel'
 import { useRealtime } from '@/lib/hooks/use-realtime'
 import {
   TrendingUp,
@@ -558,6 +559,8 @@ export default function BrandOverviewPage() {
             </div>
           </Card>
         </div>
+
+        <StrikingDistancePanel />
 
         {/* AI Agent Chat with Team Collaboration */}
         <Card>

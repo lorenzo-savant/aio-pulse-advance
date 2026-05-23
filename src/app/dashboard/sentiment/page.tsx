@@ -484,6 +484,71 @@ function InfoSection() {
   )
 }
 
+interface SentimentSource {
+  domain: string
+  owned: boolean
+  mentions: number
+  avgSentiment: number
+  skew: 'positive' | 'negative' | 'neutral'
+  pos: number
+  neg: number
+  neu: number
+  engines: string[]
+}
+
+interface SourcesData {
+  summary: {
+    totalAnalyzed: number
+    negativeSources: number
+    positiveSources: number
+    minMentions: number
+    ownedDomain: string | null
+  }
+  sources: SentimentSource[]
+  topNegative: SentimentSource[]
+  topPositive: SentimentSource[]
+}
+
+function SourceRow({ s }: { s: SentimentSource }) {
+  const tone =
+    s.skew === 'negative'
+      ? 'bg-rose-500/10 text-rose-400'
+      : s.skew === 'positive'
+        ? 'bg-emerald-500/10 text-emerald-400'
+        : 'bg-input text-muted-foreground'
+  return (
+    <div className="bg-input/40 flex flex-col gap-2 rounded-lg border border-input px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-semibold text-foreground">{s.domain}</span>
+          {s.owned && (
+            <span className="shrink-0 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+              your domain
+            </span>
+          )}
+          <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-bold', tone)}>
+            {s.avgSentiment > 0 ? '+' : ''}
+            {s.avgSentiment.toFixed(2)}
+          </span>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+          <span>{s.mentions} mentions</span>
+          <span>·</span>
+          <span className="text-emerald-400/80">+{s.pos}</span>
+          <span className="text-rose-400/80">−{s.neg}</span>
+          <span>={s.neu}</span>
+          {s.engines.length > 0 && (
+            <>
+              <span>·</span>
+              <span className="capitalize">{s.engines.join(', ')}</span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SentimentPage() {
   const t = useTranslations('sentiment')
   const [brands, setBrands] = useState<Brand[]>([])
@@ -492,6 +557,11 @@ export default function SentimentPage() {
   const [loadingStats, setLoadingStats] = useState(false)
   const [themes, setThemes] = useState<Theme[]>([])
   const [loadingThemes, setLoadingThemes] = useState(false)
+  // Sentiment-by-source (closes Semrush best-practice #5 — "look at sentiment
+  // sources / triggers"). Aggregates by cited domain so the user can see
+  // WHERE the AI is getting its negative impressions from.
+  const [sourcesData, setSourcesData] = useState<SourcesData | null>(null)
+  const [loadingSources, setLoadingSources] = useState(false)
 
   useEffect(() => {
     fetch('/api/brands')
@@ -537,6 +607,28 @@ export default function SentimentPage() {
       })
       .finally(() => {
         if (!cancelled) setLoadingThemes(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedBrand])
+
+  // Sentiment by source: which cited domains correlate with negative vs
+  // positive sentiment. Pure aggregation over monitoring_results (no new API).
+  useEffect(() => {
+    if (!selectedBrand) return
+    let cancelled = false
+    setLoadingSources(true)
+    fetch(`/api/sentiment/by-source?brand_id=${selectedBrand}&days=30`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!cancelled) setSourcesData(j.success ? (j.data ?? null) : null)
+      })
+      .catch(() => {
+        if (!cancelled) setSourcesData(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSources(false)
       })
     return () => {
       cancelled = true
@@ -791,6 +883,53 @@ export default function SentimentPage() {
                   ))}
                 </div>
               )}
+            </Card>
+          )}
+
+          {/* Sentiment by Source — which cited domains drive the AI's framing.
+              Closes the Semrush "look at sentiment sources / triggers"
+              best-practice. Hidden when no sources are aggregated yet. */}
+          {sourcesData &&
+            (sourcesData.topNegative.length > 0 || sourcesData.topPositive.length > 0) && (
+              <Card className="border-border bg-secondary p-6">
+                <h2 className="text-lg font-bold text-foreground">Sentiment by Source</h2>
+                <p className="mb-5 text-sm text-muted-foreground">
+                  Which cited domains correlate with negative vs. positive AI responses (
+                  {sourcesData.summary.totalAnalyzed} analyzed, min{' '}
+                  {sourcesData.summary.minMentions} mentions). Fix or counter the sources at the top
+                  of the negative list to shift the AI&rsquo;s framing of your brand.
+                </p>
+
+                {sourcesData.topNegative.length > 0 && (
+                  <div className="mb-6">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-rose-400">
+                      Most-negative sources ({sourcesData.summary.negativeSources})
+                    </p>
+                    <div className="space-y-2">
+                      {sourcesData.topNegative.slice(0, 10).map((s) => (
+                        <SourceRow key={s.domain} s={s} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {sourcesData.topPositive.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                      Most-positive sources ({sourcesData.summary.positiveSources})
+                    </p>
+                    <div className="space-y-2">
+                      {sourcesData.topPositive.slice(0, 5).map((s) => (
+                        <SourceRow key={s.domain} s={s} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )}
+          {loadingSources && !sourcesData && (
+            <Card className="border-border bg-secondary p-6 text-sm text-muted-foreground">
+              Loading sentiment-by-source…
             </Card>
           )}
 

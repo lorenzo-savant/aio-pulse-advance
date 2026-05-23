@@ -32,6 +32,7 @@ import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { CompetitorPositioningPanel } from '@/components/CompetitorPositioningPanel'
 import { CompetitorSentimentPanel } from '@/components/CompetitorSentimentPanel'
+import { SourceOpportunitiesPanel } from '@/components/SourceOpportunitiesPanel'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { exportToJson } from '@/lib/export'
@@ -784,6 +785,8 @@ export default function CompetitorPage() {
       <CompetitorPositioningPanel />
 
       <CompetitorSentimentPanel />
+
+      <SourceOpportunitiesPanel />
 
       <HistoricalSection />
 

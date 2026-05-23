@@ -774,6 +774,85 @@ function checkContentStructure(html: string, url: string): AuditCategory {
     })
   }
 
+  // 8) Last-updated freshness — AI engines prefer recently-updated content
+  //    (geo-knowledge tactic content-freshness: "<3 months = 3× more likely
+  //    to be cited"). We look in 4 places, pick the MOST RECENT parseable
+  //    date, and flag the page as stale when nothing is younger than 1 year.
+  //
+  //    Sources, in priority of reliability:
+  //      a. JSON-LD "dateModified" inside any <script type=application/ld+json>
+  //      b. <meta property="article:modified_time" content="…">
+  //      c. <meta name="last-modified" content="…">
+  //      d. The first <time datetime="…">
+  const dateCandidates: number[] = []
+  for (const m of html.matchAll(/"dateModified"\s*:\s*"([^"]+)"/gi)) {
+    const t = Date.parse(m[1]!)
+    if (Number.isFinite(t)) dateCandidates.push(t)
+  }
+  const articleModified = html.match(
+    /<meta[^>]*property=["']article:modified_time["'][^>]*content=["']([^"']+)["']/i,
+  )
+  if (articleModified) {
+    const t = Date.parse(articleModified[1]!)
+    if (Number.isFinite(t)) dateCandidates.push(t)
+  }
+  const metaLastModified = html.match(
+    /<meta[^>]*name=["']last-modified["'][^>]*content=["']([^"']+)["']/i,
+  )
+  if (metaLastModified) {
+    const t = Date.parse(metaLastModified[1]!)
+    if (Number.isFinite(t)) dateCandidates.push(t)
+  }
+  const timeTag = html.match(/<time[^>]*datetime=["']([^"']+)["']/i)
+  if (timeTag) {
+    const t = Date.parse(timeTag[1]!)
+    if (Number.isFinite(t)) dateCandidates.push(t)
+  }
+
+  if (dateCandidates.length === 0) {
+    checks.push({
+      id: 'content-last-updated',
+      name: 'Last updated',
+      status: 'info',
+      message:
+        'No machine-readable last-updated date found (add dateModified JSON-LD or article:modified_time meta — AI engines prefer recent content)',
+    })
+  } else {
+    const mostRecent = Math.max(...dateCandidates)
+    const ageDays = Math.floor((Date.now() - mostRecent) / 86_400_000)
+    const ageLabel = new Date(mostRecent).toISOString().slice(0, 10)
+    if (ageDays < 0) {
+      // Future-dated content is suspect (typo or scheduled-publish leak).
+      checks.push({
+        id: 'content-last-updated',
+        name: 'Last updated',
+        status: 'warning',
+        message: `Last-updated date is in the future (${ageLabel}) — likely a typo or pre-publish leak`,
+      })
+    } else if (ageDays <= 90) {
+      checks.push({
+        id: 'content-last-updated',
+        name: 'Last updated',
+        status: 'pass',
+        message: `Updated ${ageDays} days ago (${ageLabel}) — fresh`,
+      })
+    } else if (ageDays <= 365) {
+      checks.push({
+        id: 'content-last-updated',
+        name: 'Last updated',
+        status: 'pass',
+        message: `Updated ${ageDays} days ago (${ageLabel})`,
+      })
+    } else {
+      checks.push({
+        id: 'content-last-updated',
+        name: 'Last updated',
+        status: 'warning',
+        message: `Stale: last updated ${ageDays} days ago (${ageLabel}) — refresh to improve AI citation odds`,
+      })
+    }
+  }
+
   let pass = 0
   let warn = 0
   let fail = 0

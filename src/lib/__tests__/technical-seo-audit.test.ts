@@ -274,6 +274,67 @@ describe('runTechnicalAudit', () => {
     expect(ids).not.toContain('perf-lcp')
   })
 
+  // ─── content-last-updated (freshness) ────────────────────────────────────
+
+  it('content-last-updated: flags pages with no machine-readable date as info', async () => {
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_RICH) // HTML_RICH has no date metadata
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://acme.com')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-last-updated',
+    )
+    expect(check?.status).toBe('info')
+    expect(check?.message).toMatch(/No machine-readable/)
+  })
+
+  it('content-last-updated: passes when JSON-LD dateModified is recent', async () => {
+    const recent = new Date(Date.now() - 30 * 86_400_000).toISOString()
+    const HTML_FRESH = `<!doctype html><html><head>
+      <title>x</title>
+      <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","dateModified":"${recent}"}</script>
+    </head><body><h1>x</h1></body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_FRESH)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://fresh.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-last-updated',
+    )
+    expect(check?.status).toBe('pass')
+    expect(check?.message).toMatch(/fresh|Updated/)
+  })
+
+  it('content-last-updated: warns when content is older than 365 days', async () => {
+    const stale = '2023-01-15T00:00:00.000Z' // unambiguously >365 days old
+    const HTML_STALE = `<!doctype html><html><head>
+      <meta property="article:modified_time" content="${stale}">
+    </head><body><h1>x</h1></body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_STALE)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://stale.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-last-updated',
+    )
+    expect(check?.status).toBe('warning')
+    expect(check?.message).toMatch(/Stale|refresh/)
+  })
+
   it('contentStructure: passes valid hreflang and skips mixed-content on http://', async () => {
     const HTML_HREFLANG = `<!doctype html><html><head>
       <title>Y</title>

@@ -48,9 +48,18 @@ interface Summary {
   ownedDomain: string | null
 }
 
+interface OwnedPageRow {
+  url: string
+  count: number
+  share: number
+  engines: string[]
+  lastSeen: string
+}
+
 interface SourcesData {
   summary: Summary
   domains: DomainRow[]
+  ownedPages: OwnedPageRow[]
   engineBreakdown: { engine: string; count: number }[]
   timeline: { date: string; count: number }[]
 }
@@ -362,6 +371,66 @@ export default function CitationSourcesPage() {
               ))}
             </div>
           </Card>
+
+          {/* Your Cited Pages — page-level breakdown of citations to YOUR domain */}
+          {data.ownedPages.length > 0 && (
+            <Card className="p-6">
+              <h2 className="mb-1 text-lg font-bold text-foreground">Your Cited Pages</h2>
+              <p className="mb-5 text-xs text-muted-foreground">
+                Which specific pages on {data.summary.ownedDomain ?? 'your domain'} the AI engines
+                actually cited. Use this to see which content earns citations and double down on it.
+              </p>
+              <div className="space-y-2">
+                {data.ownedPages.map((p) => {
+                  const maxOwnedCount = data.ownedPages[0]?.count || 1
+                  return (
+                    <div
+                      key={p.url}
+                      className="bg-secondary/30 flex flex-col gap-2 rounded-lg border border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={p.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-w-0 truncate text-sm font-medium text-foreground hover:text-primary"
+                            title={p.url}
+                          >
+                            {p.url}
+                          </a>
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        </div>
+                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-700"
+                            style={{ width: `${(p.count / maxOwnedCount) * 100}%` }}
+                          />
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {p.engines.map((e) => (
+                            <span
+                              key={e}
+                              className="rounded px-1.5 py-0.5 text-[10px] font-medium capitalize text-white"
+                              style={{ backgroundColor: ENGINE_COLORS[e] || '#6b7280' }}
+                            >
+                              {e}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-black text-foreground">{p.count}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.share.toFixed(1)}% of yours
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Timeline */}

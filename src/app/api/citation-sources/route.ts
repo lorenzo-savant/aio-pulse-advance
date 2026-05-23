@@ -99,7 +99,15 @@ export async function GET(req: NextRequest) {
       sampleUrls: Set<string>
       lastSeen: string
     }
+    /** Page-level aggregation for URLs on the brand's OWN domain. */
+    interface PageAgg {
+      url: string
+      count: number
+      engines: Set<string>
+      lastSeen: string
+    }
     const domains = new Map<string, Agg>()
+    const ownedPagesMap = new Map<string, PageAgg>()
     const byEngine = new Map<string, number>()
     const byDay = new Map<string, number>()
 
@@ -143,6 +151,33 @@ export async function GET(req: NextRequest) {
         agg.engines.add(eng)
         if (agg.sampleUrls.size < 3) agg.sampleUrls.add(rawUrl)
         if (row.created_at > agg.lastSeen) agg.lastSeen = row.created_at
+
+        // Page-level aggregation for owned URLs: normalize the path so the
+        // same page with different query strings / fragments collapses.
+        if (owned) {
+          let normalizedUrl: string
+          try {
+            const u = new URL(rawUrl)
+            // Strip query + fragment; keep trailing slash off for stable keys.
+            const path = u.pathname.replace(/\/+$/, '') || '/'
+            normalizedUrl = `${u.protocol}//${u.host}${path}`
+          } catch {
+            normalizedUrl = rawUrl
+          }
+          let pageAgg = ownedPagesMap.get(normalizedUrl)
+          if (!pageAgg) {
+            pageAgg = {
+              url: normalizedUrl,
+              count: 0,
+              engines: new Set(),
+              lastSeen: row.created_at,
+            }
+            ownedPagesMap.set(normalizedUrl, pageAgg)
+          }
+          pageAgg.count++
+          pageAgg.engines.add(eng)
+          if (row.created_at > pageAgg.lastSeen) pageAgg.lastSeen = row.created_at
+        }
       }
     }
 
@@ -157,6 +192,17 @@ export async function GET(req: NextRequest) {
         engines: [...d.engines].sort(),
         sampleUrls: [...d.sampleUrls],
         lastSeen: d.lastSeen,
+      }))
+
+    const ownedPages = [...ownedPagesMap.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 50)
+      .map((p) => ({
+        url: p.url,
+        count: p.count,
+        share: ownedCitations > 0 ? Math.round((p.count / ownedCitations) * 1000) / 10 : 0,
+        engines: [...p.engines].sort(),
+        lastSeen: p.lastSeen,
       }))
 
     const timeline = [...byDay.entries()]
@@ -186,6 +232,12 @@ export async function GET(req: NextRequest) {
           ownedDomain,
         },
         domains: topDomains,
+        /**
+         * Top URLs on the brand's own domain that AI engines cited, with the
+         * full path preserved (query/fragment stripped). Empty if the brand
+         * has no configured domain or no owned citations in the window.
+         */
+        ownedPages,
         engineBreakdown,
         timeline,
         filters: { engine, days },

@@ -15,6 +15,14 @@ export interface PromptTemplate {
   category: PromptCategory
   description: string
   texts: Record<PromptLang, string>
+  /**
+   * Optional industry tags. When set, the template is offered only when the
+   * brand's industry preset matches one of these slugs. When omitted, the
+   * template is industry-agnostic (default behaviour). Keeps the existing
+   * generic templates 100% backward-compatible while letting us layer in
+   * industry-specific seeds (see getTemplatesByIndustry below).
+   */
+  industries?: string[]
 }
 
 export interface HydrationParams {
@@ -759,6 +767,188 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
       sv: 'Vilka priser har {brand} vunnit?',
     },
   },
+
+  // ─── Industry-specific templates (IND-*) ───────────────────────────────────
+  // Layered ON TOP of the generic templates above. Only offered when the
+  // brand's industry preset matches the `industries` slug. Keeps the seed
+  // pool richer per industry without polluting industry-agnostic flows.
+
+  // Marketing & Advertising
+  {
+    id: 'IND-MA-01',
+    category: 'recommendation',
+    description: 'Best agencies in a location (marketing)',
+    industries: ['marketing-advertising'],
+    texts: {
+      en: 'What are the best {category} agencies in {location}?',
+      it: 'Quali sono le migliori agenzie di {category} a {location}?',
+      sv: 'Vilka är de bästa {category}-byråerna i {location}?',
+    },
+  },
+  {
+    id: 'IND-MA-02',
+    category: 'problem',
+    description: 'How to choose an agency for a use case',
+    industries: ['marketing-advertising'],
+    texts: {
+      en: 'How do I choose a {category} agency for {use_case}?',
+      it: "Come scelgo un'agenzia di {category} per {use_case}?",
+      sv: 'Hur väljer jag en {category}-byrå för {use_case}?',
+    },
+  },
+  {
+    id: 'IND-MA-03',
+    category: 'expert',
+    description: 'Typical ROI / KPI expectations for the service',
+    industries: ['marketing-advertising'],
+    texts: {
+      en: 'What ROI should I expect from a {category} agency?',
+      it: "Quale ROI posso aspettarmi da un'agenzia di {category}?",
+      sv: 'Vilken ROI ska jag förvänta mig från en {category}-byrå?',
+    },
+  },
+
+  // Casting & Talent
+  {
+    id: 'IND-CT-01',
+    category: 'discovery',
+    description: 'Where to find talent for a use case in a location',
+    industries: ['casting-talent'],
+    texts: {
+      en: 'Where can I find {use_case} talent in {location}?',
+      it: 'Dove posso trovare talenti per {use_case} a {location}?',
+      sv: 'Var hittar jag {use_case}-talanger i {location}?',
+    },
+  },
+  {
+    id: 'IND-CT-02',
+    category: 'comparison',
+    description: 'Best casting platforms for a category',
+    industries: ['casting-talent'],
+    texts: {
+      en: 'Best casting platforms for {category} projects',
+      it: 'Migliori piattaforme di casting per progetti di {category}',
+      sv: 'Bästa casting-plattformarna för {category}-projekt',
+    },
+  },
+
+  // SaaS / B2B
+  {
+    id: 'IND-SAAS-01',
+    category: 'expert',
+    description: 'Pricing structure of a B2B SaaS',
+    industries: ['saas'],
+    texts: {
+      en: "What is {brand}'s pricing structure and how does it scale?",
+      it: 'Qual è la struttura di prezzo di {brand} e come scala?',
+      sv: 'Vilken prisstruktur har {brand} och hur skalar den?',
+    },
+  },
+  {
+    id: 'IND-SAAS-02',
+    category: 'expert',
+    description: 'Compliance and security posture',
+    industries: ['saas'],
+    texts: {
+      en: 'Is {brand} GDPR / SOC2 compliant and what certifications does it have?',
+      it: 'È {brand} conforme a GDPR / SOC2 e quali certificazioni ha?',
+      sv: 'Är {brand} GDPR/SOC2-kompatibelt och vilka certifieringar har det?',
+    },
+  },
+  {
+    id: 'IND-SAAS-03',
+    category: 'comparison',
+    description: 'Enterprise vs SMB alternatives',
+    industries: ['saas'],
+    texts: {
+      en: 'How does {brand} compare to enterprise alternatives like {competitor}?',
+      it: 'Come si confronta {brand} con alternative enterprise come {competitor}?',
+      sv: 'Hur jämför sig {brand} med enterprise-alternativ som {competitor}?',
+    },
+  },
+
+  // E-commerce / D2C
+  {
+    id: 'IND-EC-01',
+    category: 'recommendation',
+    description: 'Best brands in a category for a use case',
+    industries: ['ecommerce'],
+    texts: {
+      en: 'Best {category} brands for {use_case}',
+      it: 'Migliori marchi di {category} per {use_case}',
+      sv: 'Bästa {category}-varumärken för {use_case}',
+    },
+  },
+  {
+    id: 'IND-EC-02',
+    category: 'local',
+    description: 'Where to buy in a location',
+    industries: ['ecommerce'],
+    texts: {
+      en: 'Where can I buy {brand} products in {location}?',
+      it: 'Dove posso acquistare i prodotti {brand} a {location}?',
+      sv: 'Var kan jag köpa {brand}-produkter i {location}?',
+    },
+  },
+
+  // Hospitality / Travel
+  {
+    id: 'IND-HOSP-01',
+    category: 'local',
+    description: 'Top venues in a location for a use case',
+    industries: ['hospitality'],
+    texts: {
+      en: 'Top {category} in {location} for {use_case}',
+      it: 'Migliori {category} a {location} per {use_case}',
+      sv: 'Bästa {category} i {location} för {use_case}',
+    },
+  },
+  {
+    id: 'IND-HOSP-02',
+    category: 'reputation',
+    description: 'Reviews and reputation summary',
+    industries: ['hospitality'],
+    texts: {
+      en: 'What do recent reviews say about {brand}?',
+      it: 'Cosa dicono le recensioni recenti su {brand}?',
+      sv: 'Vad säger de senaste recensionerna om {brand}?',
+    },
+  },
+
+  // Professional services (consulting / legal / finance)
+  {
+    id: 'IND-PS-01',
+    category: 'comparison',
+    description: 'Best consultancies in a location',
+    industries: ['professional-services'],
+    texts: {
+      en: 'Best {category} consultancies in {location}',
+      it: 'Migliori società di consulenza in {category} a {location}',
+      sv: 'Bästa {category}-konsultbyråerna i {location}',
+    },
+  },
+  {
+    id: 'IND-PS-02',
+    category: 'expert',
+    description: 'Typical pricing for the service',
+    industries: ['professional-services'],
+    texts: {
+      en: 'How much does {category} cost on average?',
+      it: 'Quanto costa in media {category}?',
+      sv: 'Vad kostar {category} i genomsnitt?',
+    },
+  },
+  {
+    id: 'IND-PS-03',
+    category: 'reputation',
+    description: 'Independent reviews of the firm',
+    industries: ['professional-services'],
+    texts: {
+      en: 'What do independent reviews say about {brand} services?',
+      it: 'Cosa dicono le recensioni indipendenti sui servizi di {brand}?',
+      sv: 'Vad säger oberoende recensioner om {brand}s tjänster?',
+    },
+  },
 ]
 
 export function hydratePrompt(
@@ -783,4 +973,18 @@ export function getTemplatesByCategory(category: PromptCategory): PromptTemplate
 export function getTemplatesByCategories(categories: PromptCategory[]): PromptTemplate[] {
   if (!categories.length) return PROMPT_TEMPLATES
   return PROMPT_TEMPLATES.filter((t) => categories.includes(t.category))
+}
+
+/**
+ * Templates available for a given industry preset:
+ * the union of (a) every industry-agnostic template (no `industries` field)
+ * and (b) templates explicitly tagged with this industry. Call with `null`
+ * or empty string to get only the agnostic ones.
+ */
+export function getTemplatesByIndustry(industry: string | null | undefined): PromptTemplate[] {
+  const ind = (industry ?? '').trim().toLowerCase()
+  if (!ind) return PROMPT_TEMPLATES.filter((t) => !t.industries || t.industries.length === 0)
+  return PROMPT_TEMPLATES.filter(
+    (t) => !t.industries || t.industries.length === 0 || t.industries.includes(ind),
+  )
 }

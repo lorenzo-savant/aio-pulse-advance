@@ -5,6 +5,7 @@ import {
   hydratePrompt,
   getTemplatesByCategory,
   getTemplatesByCategories,
+  getTemplatesByIndustry,
   type PromptCategory,
   type PromptLang,
   type PromptTemplate,
@@ -13,8 +14,8 @@ import {
 const SUPPORTED_LANGS: PromptLang[] = ['en', 'it', 'sv']
 
 describe('PROMPT_TEMPLATES catalogue', () => {
-  it('contains exactly 70 templates', () => {
-    expect(PROMPT_TEMPLATES.length).toBe(70)
+  it('contains the expected number of templates (70 generic + 15 industry-tagged = 85)', () => {
+    expect(PROMPT_TEMPLATES.length).toBe(85)
   })
 
   it('every template has non-empty id, description, and all 3 language texts', () => {
@@ -137,6 +138,38 @@ describe('getTemplatesByCategories', () => {
     const result = getTemplatesByCategories(['discovery', 'comparison'])
     expect(result.length).toBeGreaterThan(0)
     expect(result.every((t) => t.category === 'discovery' || t.category === 'comparison')).toBe(
+      true,
+    )
+  })
+})
+
+describe('getTemplatesByIndustry', () => {
+  it('returns only industry-agnostic templates when industry is empty/null', () => {
+    const agnostic = getTemplatesByIndustry(null)
+    expect(agnostic.every((t) => !t.industries || t.industries.length === 0)).toBe(true)
+    // The pre-existing 70 templates are all industry-agnostic.
+    expect(agnostic.length).toBe(70)
+    expect(getTemplatesByIndustry('').length).toBe(agnostic.length)
+  })
+
+  it('includes both agnostic templates AND the ones tagged for that industry', () => {
+    const saas = getTemplatesByIndustry('saas')
+    // Should include all 70 agnostic + the SaaS-tagged templates.
+    expect(saas.length).toBeGreaterThan(70)
+    const tagged = saas.filter((t) => t.industries?.includes('saas'))
+    expect(tagged.length).toBeGreaterThan(0)
+    expect(saas.some((t) => t.id === 'IND-SAAS-01')).toBe(true)
+  })
+
+  it('excludes templates tagged for OTHER industries', () => {
+    const ma = getTemplatesByIndustry('marketing-advertising')
+    // Should NOT contain SaaS-tagged templates.
+    expect(ma.some((t) => t.id === 'IND-SAAS-01')).toBe(false)
+    expect(ma.some((t) => t.id === 'IND-MA-01')).toBe(true)
+  })
+
+  it('is case-insensitive and trims whitespace on the industry slug', () => {
+    expect(getTemplatesByIndustry('  Casting-Talent  ').some((t) => t.id === 'IND-CT-01')).toBe(
       true,
     )
   })

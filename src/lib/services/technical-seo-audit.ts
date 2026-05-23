@@ -25,6 +25,14 @@ export interface AuditResult {
     metaTags: AuditCategory
     securityHeaders: AuditCategory
     performance: AuditCategory
+    /**
+     * Additional deterministic on-page checks (hreflang, multi-H1, image
+     * alt-text, meta robots, Open Graph completeness, canonical vs og:url
+     * consistency, mixed-content). Status `info` when a check is not
+     * applicable (e.g. no images on the page) so non-applicability never
+     * penalizes the score.
+     */
+    contentStructure: AuditCategory
   }
 }
 
@@ -186,7 +194,9 @@ function checkLlmsTxt(llmsTxt: string | null): AuditCategory {
 }
 
 function checkSchemaMarkup(html: string): AuditCategory {
-  const weight = 0.25
+  // Weight reduced from 0.25 -> 0.20 to make room for the new
+  // `contentStructure` category (0.05). Sums to 1.0 across all categories.
+  const weight = 0.2
   const checks: AuditCheck[] = []
 
   const tier1Types = ['Organization', 'WebSite', 'BreadcrumbList', 'FAQPage', 'Article']
@@ -433,6 +443,193 @@ function checkPerformance(response: Response | null, startTime: number): AuditCa
   return { score, weight, checks }
 }
 
+// ─── Content structure (single-URL deterministic) ────────────────────────────
+//
+// Additional deterministic on-page checks beyond the original 6 categories.
+// Status `info` when a check is non-applicable (e.g. no images on the page,
+// single-locale site) so missing-by-design never penalizes the score.
+// Score = pass / (pass + warning + fail), info excluded; all-info -> 100.
+
+function countMatches(html: string, regex: RegExp): number {
+  return [...html.matchAll(regex)].length
+}
+
+function checkContentStructure(html: string, url: string): AuditCategory {
+  const weight = 0.05
+  const checks: AuditCheck[] = []
+
+  // 1) Hreflang — parse <link rel="alternate" hreflang="..." href="...">.
+  const hreflangRegex = /<link[^>]*rel=["']alternate["'][^>]*hreflang=["']([^"']+)["'][^>]*>/gi
+  const hreflangs: string[] = []
+  for (const m of html.matchAll(hreflangRegex)) if (m[1]) hreflangs.push(m[1])
+  const hasXDefault = hreflangs.some((c) => c.toLowerCase() === 'x-default')
+  const validShape = /^([a-z]{2,3}(-[A-Z]{2})?|x-default)$/
+  const invalidLangs = hreflangs.filter((c) => !validShape.test(c))
+
+  if (hreflangs.length === 0) {
+    checks.push({
+      id: 'content-hreflang',
+      name: 'Hreflang',
+      status: 'info',
+      message: 'No hreflang declared (only relevant for multi-locale sites)',
+    })
+  } else if (invalidLangs.length > 0) {
+    checks.push({
+      id: 'content-hreflang',
+      name: 'Hreflang',
+      status: 'warning',
+      message: `Hreflang present but malformed: ${invalidLangs.join(', ')}`,
+    })
+  } else {
+    checks.push({
+      id: 'content-hreflang',
+      name: 'Hreflang',
+      status: 'pass',
+      message: `${hreflangs.length} hreflang entries, ${hasXDefault ? 'with' : 'no'} x-default`,
+    })
+  }
+
+  // 2) Multi-H1 — exactly one H1 per page is the canonical SEO/A11Y rule.
+  const h1Count = countMatches(html, /<h1\b[^>]*>/gi)
+  checks.push({
+    id: 'content-multi-h1',
+    name: 'Multiple H1',
+    status: h1Count > 1 ? 'warning' : 'pass',
+    message:
+      h1Count > 1 ? `Page has ${h1Count} H1 tags — keep exactly one` : `H1 count: ${h1Count}`,
+  })
+
+  // 3) Image alt-text coverage.
+  const imgTags = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0])
+  const imgWithoutAlt = imgTags.filter((t) => !/\salt\s*=\s*["'][^"']*["']/i.test(t))
+  if (imgTags.length === 0) {
+    checks.push({
+      id: 'content-img-alt',
+      name: 'Image alt-text',
+      status: 'info',
+      message: 'No <img> tags on this page',
+    })
+  } else if (imgWithoutAlt.length === 0) {
+    checks.push({
+      id: 'content-img-alt',
+      name: 'Image alt-text',
+      status: 'pass',
+      message: `All ${imgTags.length} images have alt attributes`,
+    })
+  } else {
+    checks.push({
+      id: 'content-img-alt',
+      name: 'Image alt-text',
+      status: 'warning',
+      message: `${imgWithoutAlt.length}/${imgTags.length} images missing alt attribute`,
+    })
+  }
+
+  // 4) Meta robots — noindex/nofollow detection.
+  const robotsMatch = html.match(/<meta[^>]*name=["']robots["'][^>]*content=["']([^"']+)["']/i)
+  const robotsContent = robotsMatch?.[1]?.toLowerCase() ?? ''
+  const hasNoindex = /\bnoindex\b/.test(robotsContent)
+  checks.push({
+    id: 'content-meta-robots',
+    name: 'Meta robots',
+    status: hasNoindex ? 'warning' : 'pass',
+    message: hasNoindex
+      ? `Page is noindex (${robotsContent}) — invisible to search/AI engines`
+      : robotsMatch
+        ? `Meta robots: ${robotsContent}`
+        : 'No meta robots (default: index, follow)',
+  })
+
+  // 5) Open Graph completeness (og:title + og:description + og:image).
+  const ogTitle = /<meta[^>]*property=["']og:title["']/i.test(html)
+  const ogDesc = /<meta[^>]*property=["']og:description["']/i.test(html)
+  const ogImage = /<meta[^>]*property=["']og:image["']/i.test(html)
+  const ogCount = [ogTitle, ogDesc, ogImage].filter(Boolean).length
+  if (ogCount === 0) {
+    checks.push({
+      id: 'content-og',
+      name: 'Open Graph',
+      status: 'info',
+      message: 'No Open Graph tags (recommended for social/AI link unfurling)',
+    })
+  } else if (ogCount === 3) {
+    checks.push({
+      id: 'content-og',
+      name: 'Open Graph',
+      status: 'pass',
+      message: 'og:title, og:description and og:image all present',
+    })
+  } else {
+    const missing = [
+      !ogTitle && 'og:title',
+      !ogDesc && 'og:description',
+      !ogImage && 'og:image',
+    ].filter(Boolean) as string[]
+    checks.push({
+      id: 'content-og',
+      name: 'Open Graph',
+      status: 'warning',
+      message: `Open Graph incomplete — missing: ${missing.join(', ')}`,
+    })
+  }
+
+  // 6) Canonical vs og:url consistency (only when both are present).
+  const canonical = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1]
+  const ogUrl = html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i)?.[1]
+  if (canonical && ogUrl) {
+    const matches = canonical.replace(/\/$/, '') === ogUrl.replace(/\/$/, '')
+    checks.push({
+      id: 'content-canonical-consistency',
+      name: 'Canonical vs og:url',
+      status: matches ? 'pass' : 'warning',
+      message: matches
+        ? 'Canonical and og:url agree'
+        : `Canonical (${canonical}) and og:url (${ogUrl}) disagree`,
+    })
+  } else {
+    checks.push({
+      id: 'content-canonical-consistency',
+      name: 'Canonical vs og:url',
+      status: 'info',
+      message: 'Only one (or neither) of canonical/og:url present — nothing to cross-check',
+    })
+  }
+
+  // 7) Mixed content — http:// resources referenced from an HTTPS page.
+  if (url.startsWith('https://')) {
+    const mixed = countMatches(html, /(?:src|href)\s*=\s*["']http:\/\/[^"']+["']/gi)
+    checks.push({
+      id: 'content-mixed',
+      name: 'Mixed content',
+      status: mixed === 0 ? 'pass' : 'warning',
+      message:
+        mixed === 0
+          ? 'No http:// resources referenced from this HTTPS page'
+          : `${mixed} http:// resource refs on an HTTPS page — browsers block or downgrade these`,
+    })
+  } else {
+    checks.push({
+      id: 'content-mixed',
+      name: 'Mixed content',
+      status: 'info',
+      message: 'Page is not HTTPS — mixed-content check skipped',
+    })
+  }
+
+  let pass = 0
+  let warn = 0
+  let fail = 0
+  for (const c of checks) {
+    if (c.status === 'pass') pass++
+    else if (c.status === 'warning') warn++
+    else if (c.status === 'fail') fail++
+  }
+  const denom = pass + warn + fail
+  const score = denom === 0 ? 100 : Math.round((pass / denom) * 100)
+
+  return { score, weight, checks }
+}
+
 export async function runTechnicalAudit(url: string): Promise<AuditResult> {
   const startTime = Date.now()
   const baseUrl = getBaseUrl(url)
@@ -452,6 +649,7 @@ export async function runTechnicalAudit(url: string): Promise<AuditResult> {
   const metaTags = checkMetaTags(html || '')
   const securityHeaders = checkSecurityHeaders(response, url)
   const performance = checkPerformance(response, startTime - ttfb + Date.now() - startTime)
+  const contentStructure = checkContentStructure(html || '', url)
 
   const categories = {
     aiCrawlerAccess,
@@ -460,6 +658,7 @@ export async function runTechnicalAudit(url: string): Promise<AuditResult> {
     metaTags,
     securityHeaders,
     performance,
+    contentStructure,
   }
 
   const overallScore = Math.round(
@@ -468,7 +667,8 @@ export async function runTechnicalAudit(url: string): Promise<AuditResult> {
       schemaMarkup.score * schemaMarkup.weight +
       metaTags.score * metaTags.weight +
       securityHeaders.score * securityHeaders.weight +
-      performance.score * performance.weight,
+      performance.score * performance.weight +
+      contentStructure.score * contentStructure.weight,
   )
 
   return {

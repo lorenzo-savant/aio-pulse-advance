@@ -125,4 +125,81 @@ describe('runTechnicalAudit', () => {
     )
     expect(httpsCheck?.status).toBe('fail')
   })
+
+  // ─── contentStructure category (new deterministic on-page checks) ─────────
+
+  it('contentStructure: HTML_RICH has no warnings (good baseline)', async () => {
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return mockResponse(LLMS_TXT_GOOD)
+      return mockResponse(HTML_RICH)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://acme.com')
+    const cs = result.categories.contentStructure
+    expect(cs).toBeDefined()
+    expect(cs.score).toBe(100)
+    expect(cs.checks.some((c) => c.status === 'warning' || c.status === 'fail')).toBe(false)
+  })
+
+  it('contentStructure: flags multi-H1, missing alt, noindex, partial OG, and mixed content', async () => {
+    const HTML_BAD_STRUCTURE = `<!doctype html><html><head>
+      <title>X</title>
+      <meta name="robots" content="noindex, follow">
+      <meta property="og:title" content="X">
+      <link rel="canonical" href="https://x.com/page">
+      <meta property="og:url" content="https://x.com/different">
+    </head><body>
+      <h1>One</h1><h1>Two</h1>
+      <img src="/a.png">
+      <img src="/b.png" alt="b">
+      <script src="http://cdn.example.com/lib.js"></script>
+    </body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_BAD_STRUCTURE)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://x.com/page')
+    const cs = result.categories.contentStructure
+
+    const byId = Object.fromEntries(cs.checks.map((c) => [c.id, c]))
+    expect(byId['content-multi-h1']?.status).toBe('warning')
+    expect(byId['content-img-alt']?.status).toBe('warning')
+    expect(byId['content-img-alt']?.message).toMatch(/1\/2/)
+    expect(byId['content-meta-robots']?.status).toBe('warning')
+    expect(byId['content-meta-robots']?.message).toMatch(/noindex/)
+    expect(byId['content-og']?.status).toBe('warning')
+    expect(byId['content-og']?.message).toMatch(/og:description/)
+    expect(byId['content-canonical-consistency']?.status).toBe('warning')
+    expect(byId['content-mixed']?.status).toBe('warning')
+    expect(cs.score).toBeLessThan(50)
+  })
+
+  it('contentStructure: passes valid hreflang and skips mixed-content on http://', async () => {
+    const HTML_HREFLANG = `<!doctype html><html><head>
+      <title>Y</title>
+      <link rel="alternate" hreflang="en" href="https://y.com/">
+      <link rel="alternate" hreflang="it-IT" href="https://y.com/it/">
+      <link rel="alternate" hreflang="x-default" href="https://y.com/">
+    </head><body><h1>Y</h1></body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_HREFLANG)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('http://y.com')
+    const cs = result.categories.contentStructure
+    const byId = Object.fromEntries(cs.checks.map((c) => [c.id, c]))
+    expect(byId['content-hreflang']?.status).toBe('pass')
+    expect(byId['content-hreflang']?.message).toMatch(/with x-default/)
+    expect(byId['content-mixed']?.status).toBe('info') // http:// page -> skipped
+  })
 })

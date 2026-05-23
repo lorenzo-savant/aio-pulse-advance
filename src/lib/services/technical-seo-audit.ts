@@ -406,12 +406,67 @@ function checkSecurityHeaders(response: Response | null, url: string): AuditCate
   return { score, weight, checks }
 }
 
-function checkPerformance(response: Response | null, startTime: number): AuditCategory {
+// ─── PageSpeed Insights (real Core Web Vitals) ───────────────────────────────
+//
+// Free Google API. Without a key it works at low quota; set PAGESPEED_API_KEY
+// for the higher per-key quota. Fails closed (returns null) on any error so
+// the audit always degrades to the TTFB-only score path.
+
+interface PsiData {
+  /** Lighthouse performance score 0–100. */
+  performanceScore: number
+  /** Largest Contentful Paint (ms). */
+  lcpMs?: number
+  /** Cumulative Layout Shift (unitless). */
+  clsValue?: number
+  /** Interaction to Next Paint (ms). */
+  inpMs?: number
+}
+
+async function fetchPageSpeedInsights(url: string): Promise<PsiData | null> {
+  const apiKey = process.env['PAGESPEED_API_KEY']
+  const params = new URLSearchParams({
+    url,
+    strategy: 'mobile',
+    category: 'performance',
+  })
+  if (apiKey) params.set('key', apiKey)
+  try {
+    const res = await safeFetch(
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`,
+      { timeout: 25000 },
+    )
+    if (!res.ok) return null
+    const data = (await res.json().catch(() => null)) as {
+      lighthouseResult?: {
+        categories?: { performance?: { score?: number | null } }
+        audits?: Record<string, { numericValue?: number } | undefined>
+      }
+    } | null
+    const perf = data?.lighthouseResult?.categories?.performance
+    if (!perf) return null
+    const a = data?.lighthouseResult?.audits ?? {}
+    return {
+      performanceScore: Math.round((perf.score ?? 0) * 100),
+      lcpMs: a['largest-contentful-paint']?.numericValue,
+      clsValue: a['cumulative-layout-shift']?.numericValue,
+      inpMs: a['interaction-to-next-paint']?.numericValue,
+    }
+  } catch {
+    return null
+  }
+}
+
+function checkPerformance(
+  response: Response | null,
+  startTime: number,
+  psi: PsiData | null,
+): AuditCategory {
   const weight = 0.05
   const checks: AuditCheck[] = []
 
+  // Server-side TTFB (always available, cheap measurement).
   const ttfb = Date.now() - startTime
-
   checks.push({
     id: 'perf-ttfb',
     name: 'Time to First Byte',
@@ -427,7 +482,6 @@ function checkPerformance(response: Response | null, startTime: number): AuditCa
 
   const contentLength = response ? response.headers.get('content-length') : null
   const sizeOk = contentLength ? parseInt(contentLength) < 5 * 1024 * 1024 : true
-
   checks.push({
     id: 'perf-size',
     name: 'Response size',
@@ -435,6 +489,57 @@ function checkPerformance(response: Response | null, startTime: number): AuditCa
     message: sizeOk ? 'Response size OK (< 5MB)' : 'Response size large (> 5MB)',
   })
 
+  // Core Web Vitals from PageSpeed Insights (Google's official thresholds).
+  if (psi) {
+    if (psi.lcpMs !== undefined) {
+      const lcp = Math.round(psi.lcpMs)
+      checks.push({
+        id: 'perf-lcp',
+        name: 'Largest Contentful Paint',
+        status: lcp < 2500 ? 'pass' : lcp < 4000 ? 'warning' : 'fail',
+        message:
+          lcp < 2500
+            ? `LCP good: ${lcp}ms`
+            : lcp < 4000
+              ? `LCP needs improvement: ${lcp}ms (target <2500ms)`
+              : `LCP poor: ${lcp}ms (target <2500ms)`,
+      })
+    }
+    if (psi.clsValue !== undefined) {
+      const cls = Math.round(psi.clsValue * 1000) / 1000
+      checks.push({
+        id: 'perf-cls',
+        name: 'Cumulative Layout Shift',
+        status: cls < 0.1 ? 'pass' : cls < 0.25 ? 'warning' : 'fail',
+        message:
+          cls < 0.1
+            ? `CLS good: ${cls}`
+            : cls < 0.25
+              ? `CLS needs improvement: ${cls} (target <0.1)`
+              : `CLS poor: ${cls} (target <0.1)`,
+      })
+    }
+    if (psi.inpMs !== undefined) {
+      const inp = Math.round(psi.inpMs)
+      checks.push({
+        id: 'perf-inp',
+        name: 'Interaction to Next Paint',
+        status: inp < 200 ? 'pass' : inp < 500 ? 'warning' : 'fail',
+        message:
+          inp < 200
+            ? `INP good: ${inp}ms`
+            : inp < 500
+              ? `INP needs improvement: ${inp}ms (target <200ms)`
+              : `INP poor: ${inp}ms (target <200ms)`,
+      })
+    }
+    // Use Lighthouse's performance score as canonical when PSI is available —
+    // it reflects real-world CWV, not just our server-side TTFB.
+    return { score: psi.performanceScore, weight, checks }
+  }
+
+  // Fall-back when PSI is unavailable (no key + quota exhausted, network
+  // error, parse failure, etc.): score from our own TTFB measurement.
   let score = 25
   if (ttfb < 500) score = 100
   else if (ttfb < 800) score = 75
@@ -634,10 +739,11 @@ export async function runTechnicalAudit(url: string): Promise<AuditResult> {
   const startTime = Date.now()
   const baseUrl = getBaseUrl(url)
 
-  const [html, robotsTxt, llmsTxt] = await Promise.all([
+  const [html, robotsTxt, llmsTxt, psi] = await Promise.all([
     fetchText(url, 10000),
     fetchText(`${baseUrl}/robots.txt`, 5000),
     fetchText(`${baseUrl}/llms.txt`, 5000),
+    fetchPageSpeedInsights(url),
   ])
 
   const response = await fetchWithTimeout(url, 10000)
@@ -648,7 +754,7 @@ export async function runTechnicalAudit(url: string): Promise<AuditResult> {
   const schemaMarkup = checkSchemaMarkup(html || '')
   const metaTags = checkMetaTags(html || '')
   const securityHeaders = checkSecurityHeaders(response, url)
-  const performance = checkPerformance(response, startTime - ttfb + Date.now() - startTime)
+  const performance = checkPerformance(response, startTime - ttfb + Date.now() - startTime, psi)
   const contentStructure = checkContentStructure(html || '', url)
 
   const categories = {

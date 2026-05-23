@@ -180,6 +180,65 @@ describe('runTechnicalAudit', () => {
     expect(cs.score).toBeLessThan(50)
   })
 
+  // ─── PageSpeed Insights (Core Web Vitals) ────────────────────────────────
+
+  it('integrates PageSpeed Insights when available (uses Lighthouse score + CWV checks)', async () => {
+    const PSI_RESPONSE = {
+      lighthouseResult: {
+        categories: { performance: { score: 0.92 } },
+        audits: {
+          'largest-contentful-paint': { numericValue: 1800 },
+          'cumulative-layout-shift': { numericValue: 0.05 },
+          'interaction-to-next-paint': { numericValue: 150 },
+        },
+      },
+    }
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.includes('pagespeedonline')) return mockResponse(JSON.stringify(PSI_RESPONSE))
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return mockResponse(LLMS_TXT_GOOD)
+      return mockResponse(HTML_RICH)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://acme.com')
+    const perf = result.categories.performance
+    // Lighthouse performance score (0.92 -> 92) becomes the canonical perf score.
+    expect(perf.score).toBe(92)
+    const byId = Object.fromEntries(perf.checks.map((c) => [c.id, c]))
+    expect(byId['perf-lcp']?.status).toBe('pass')
+    expect(byId['perf-lcp']?.message).toMatch(/LCP good/)
+    expect(byId['perf-cls']?.status).toBe('pass')
+    expect(byId['perf-inp']?.status).toBe('pass')
+  })
+
+  it('PSI: flags poor LCP/CLS/INP with the correct severity', async () => {
+    const POOR_PSI = {
+      lighthouseResult: {
+        categories: { performance: { score: 0.25 } },
+        audits: {
+          'largest-contentful-paint': { numericValue: 5200 },
+          'cumulative-layout-shift': { numericValue: 0.4 },
+          'interaction-to-next-paint': { numericValue: 700 },
+        },
+      },
+    }
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.includes('pagespeedonline')) return mockResponse(JSON.stringify(POOR_PSI))
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_RICH)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://slow.example')
+    const byId = Object.fromEntries(result.categories.performance.checks.map((c) => [c.id, c]))
+    expect(byId['perf-lcp']?.status).toBe('fail')
+    expect(byId['perf-cls']?.status).toBe('fail')
+    expect(byId['perf-inp']?.status).toBe('fail')
+    expect(result.categories.performance.score).toBe(25)
+  })
+
   it('contentStructure: passes valid hreflang and skips mixed-content on http://', async () => {
     const HTML_HREFLANG = `<!doctype html><html><head>
       <title>Y</title>

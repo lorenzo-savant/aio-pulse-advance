@@ -22,6 +22,7 @@ import {
   Code2,
   Tag,
   Zap,
+  Layers,
 } from 'lucide-react'
 import {
   RadarChart,
@@ -97,6 +98,7 @@ interface TechAuditResult {
     metaTags: TechAuditCategory
     securityHeaders: TechAuditCategory
     performance: TechAuditCategory
+    contentStructure: TechAuditCategory
   }
 }
 
@@ -350,7 +352,8 @@ function getCategoryName(key: string): string {
     schemaMarkup: 'Schema Markup',
     metaTags: 'Meta Tags',
     securityHeaders: 'Security Headers',
-    performance: 'Performance',
+    performance: 'Performance (Core Web Vitals)',
+    contentStructure: 'Content Structure',
   }
   return names[key] || key
 }
@@ -363,6 +366,7 @@ function getCategoryIcon(key: string): React.ReactNode {
     metaTags: <Tag className="h-5 w-5" />,
     securityHeaders: <Shield className="h-5 w-5" />,
     performance: <Zap className="h-5 w-5" />,
+    contentStructure: <Layers className="h-5 w-5" />,
   }
   return icons[key] || <BarChart3 className="h-5 w-5" />
 }

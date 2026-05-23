@@ -34,6 +34,16 @@ interface TypeBreakdown {
   multimedia: number
 }
 
+type TrustCategory =
+  | 'institutional'
+  | 'wiki'
+  | 'official_press'
+  | 'community'
+  | 'social'
+  | 'aggregator'
+  | 'commercial'
+  | 'unknown'
+
 interface DomainRow {
   domain: string
   count: number
@@ -43,6 +53,10 @@ interface DomainRow {
   sampleUrls: string[]
   dominantType: CitationType
   typeBreakdown: TypeBreakdown
+  trustScore: number
+  trustCategory: TrustCategory
+  trustReasoning: string[]
+  avgSentiment: number | null
   lastSeen: string
 }
 
@@ -412,6 +426,19 @@ export default function CitationSourcesPage() {
                         title={`${d.typeBreakdown.informational} info · ${d.typeBreakdown.product} product · ${d.typeBreakdown.multimedia} multimedia`}
                       >
                         {d.dominantType}
+                      </span>
+                      <span
+                        className={cn(
+                          'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                          d.trustScore >= 60
+                            ? 'bg-emerald-500/15 text-emerald-300'
+                            : d.trustScore >= 30
+                              ? 'bg-amber-500/15 text-amber-300'
+                              : 'bg-rose-500/15 text-rose-300',
+                        )}
+                        title={`AI Trust ${d.trustScore}/100 — ${d.trustReasoning.join(' · ')}`}
+                      >
+                        Trust {d.trustScore}
                       </span>
                       {d.sampleUrls[0] && (
                         <a

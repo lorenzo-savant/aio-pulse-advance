@@ -4,6 +4,11 @@ import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { classifyCitation, type CitationType } from '@/lib/utils/citation-classifier'
+import {
+  classifyDomainAuthority,
+  computeAiTrustScore,
+  type DomainCategory,
+} from '@/lib/utils/ai-trust-score'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -13,6 +18,7 @@ interface ResultRow {
   engine: string | null
   created_at: string
   brand_mentioned: boolean | null
+  sentiment_score: number | null
 }
 
 function err(message: string, status = 500) {
@@ -72,7 +78,7 @@ export async function GET(req: NextRequest) {
       }
     )
       .from('monitoring_results')
-      .select('cited_urls, engine, created_at, brand_mentioned')
+      .select('cited_urls, engine, created_at, brand_mentioned, sentiment_score')
       .eq('brand_id', brandId)
       .gte('created_at', since.toISOString())
       .order('created_at', { ascending: false })
@@ -117,6 +123,8 @@ export async function GET(req: NextRequest) {
       engines: Set<string>
       sampleUrls: Set<string>
       types: TypeBreakdown
+      sentimentSum: number
+      sentimentCount: number
       lastSeen: string
     }
     /** Page-level aggregation for URLs on the brand's OWN domain. */
@@ -168,6 +176,8 @@ export async function GET(req: NextRequest) {
             engines: new Set(),
             sampleUrls: new Set(),
             types: emptyBreakdown(),
+            sentimentSum: 0,
+            sentimentCount: 0,
             lastSeen: row.created_at,
           }
           domains.set(host, agg)
@@ -175,6 +185,10 @@ export async function GET(req: NextRequest) {
         agg.count++
         agg.engines.add(eng)
         agg.types[citationType]++
+        if (typeof row.sentiment_score === 'number') {
+          agg.sentimentSum += row.sentiment_score
+          agg.sentimentCount++
+        }
         if (agg.sampleUrls.size < 3) agg.sampleUrls.add(rawUrl)
         if (row.created_at > agg.lastSeen) agg.lastSeen = row.created_at
 
@@ -210,19 +224,35 @@ export async function GET(req: NextRequest) {
     const topDomains = [...domains.values()]
       .sort((a, b) => b.count - a.count)
       .slice(0, 50)
-      .map((d) => ({
-        domain: d.domain,
-        count: d.count,
-        share: totalCitations > 0 ? Math.round((d.count / totalCitations) * 1000) / 10 : 0,
-        owned: d.owned,
-        engines: [...d.engines].sort(),
-        sampleUrls: [...d.sampleUrls],
-        // Citation-type breakdown for this domain + the dominant bucket — lets
-        // the UI render a per-row badge (informational / product / multimedia).
-        dominantType: dominantOf(d.types),
-        typeBreakdown: d.types,
-        lastSeen: d.lastSeen,
-      }))
+      .map((d) => {
+        const avgSentiment = d.sentimentCount > 0 ? d.sentimentSum / d.sentimentCount : null
+        const category: DomainCategory = classifyDomainAuthority(d.domain)
+        const trust = computeAiTrustScore({
+          host: d.domain,
+          category,
+          citationsCount: d.count,
+          totalCitationsInWindow: totalCitations,
+          engines: [...d.engines],
+          avgSentiment,
+        })
+        return {
+          domain: d.domain,
+          count: d.count,
+          share: totalCitations > 0 ? Math.round((d.count / totalCitations) * 1000) / 10 : 0,
+          owned: d.owned,
+          engines: [...d.engines].sort(),
+          sampleUrls: [...d.sampleUrls],
+          dominantType: dominantOf(d.types),
+          typeBreakdown: d.types,
+          // AI Trust Score: proprietary 0–100 metric (cross-engine + domain
+          // category + volume share + sentiment alignment). Free signals only.
+          trustScore: trust.score,
+          trustCategory: trust.category,
+          trustReasoning: trust.reasoning,
+          avgSentiment: avgSentiment !== null ? Math.round(avgSentiment * 1000) / 1000 : null,
+          lastSeen: d.lastSeen,
+        }
+      })
 
     const ownedPages = [...ownedPagesMap.values()]
       .sort((a, b) => b.count - a.count)

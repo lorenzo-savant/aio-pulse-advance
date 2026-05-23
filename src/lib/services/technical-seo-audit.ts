@@ -408,9 +408,22 @@ function checkSecurityHeaders(response: Response | null, url: string): AuditCate
 
 // ─── PageSpeed Insights (real Core Web Vitals) ───────────────────────────────
 //
-// Free Google API. Without a key it works at low quota; set PAGESPEED_API_KEY
-// for the higher per-key quota. Fails closed (returns null) on any error so
-// the audit always degrades to the TTFB-only score path.
+// Free Google API. Quota model:
+//   • WITHOUT an API key: shared per-IP pool. From a server (Vercel etc.)
+//     this is almost certainly exhausted by other tenants → calls will fail
+//     or rate-limit. Each failed attempt still burns the 25s safeFetch
+//     timeout, making every audit feel hung. → We SKIP PSI entirely when
+//     no key is set and degrade to the TTFB-only score.
+//   • WITH PAGESPEED_API_KEY: your own 25,000/day quota. Get one at
+//     https://console.cloud.google.com/apis/credentials (enable "PageSpeed
+//     Insights API" first). The per-URL in-memory cache below means
+//     re-auditing the same URL within 1h costs zero quota.
+//
+// Rate-limit defenses, in order:
+//   1. Skip when no key (avoids dead calls on shared IP).
+//   2. Per-URL in-memory cache, 1h TTL, capped at 200 URLs (LRU drop).
+//   3. The audit route already has its own 1h CACHE_TTL_MS for the full
+//      AuditResult, so most repeated audits never even reach this code.
 
 interface PsiData {
   /** Lighthouse performance score 0–100. */
@@ -423,20 +436,50 @@ interface PsiData {
   inpMs?: number
 }
 
+const PSI_CACHE = new Map<string, { data: PsiData | null; expiresAt: number }>()
+const PSI_CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
+const PSI_CACHE_MAX = 200
+
+function psiCacheGet(url: string): PsiData | null | undefined {
+  const hit = PSI_CACHE.get(url)
+  if (!hit) return undefined
+  if (hit.expiresAt <= Date.now()) {
+    PSI_CACHE.delete(url)
+    return undefined
+  }
+  return hit.data
+}
+
+function psiCacheSet(url: string, data: PsiData | null): void {
+  if (PSI_CACHE.size >= PSI_CACHE_MAX) {
+    const firstKey = PSI_CACHE.keys().next().value
+    if (firstKey !== undefined) PSI_CACHE.delete(firstKey)
+  }
+  PSI_CACHE.set(url, { data, expiresAt: Date.now() + PSI_CACHE_TTL_MS })
+}
+
 async function fetchPageSpeedInsights(url: string): Promise<PsiData | null> {
   const apiKey = process.env['PAGESPEED_API_KEY']
+  if (!apiKey) return null // no key → skip (see comment above)
+
+  const cached = psiCacheGet(url)
+  if (cached !== undefined) return cached
+
   const params = new URLSearchParams({
     url,
     strategy: 'mobile',
     category: 'performance',
+    key: apiKey,
   })
-  if (apiKey) params.set('key', apiKey)
   try {
     const res = await safeFetch(
       `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`,
       { timeout: 25000 },
     )
-    if (!res.ok) return null
+    if (!res.ok) {
+      psiCacheSet(url, null) // cache the failure too, don't retry-storm
+      return null
+    }
     const data = (await res.json().catch(() => null)) as {
       lighthouseResult?: {
         categories?: { performance?: { score?: number | null } }
@@ -444,17 +487,27 @@ async function fetchPageSpeedInsights(url: string): Promise<PsiData | null> {
       }
     } | null
     const perf = data?.lighthouseResult?.categories?.performance
-    if (!perf) return null
+    if (!perf) {
+      psiCacheSet(url, null)
+      return null
+    }
     const a = data?.lighthouseResult?.audits ?? {}
-    return {
+    const result: PsiData = {
       performanceScore: Math.round((perf.score ?? 0) * 100),
       lcpMs: a['largest-contentful-paint']?.numericValue,
       clsValue: a['cumulative-layout-shift']?.numericValue,
       inpMs: a['interaction-to-next-paint']?.numericValue,
     }
+    psiCacheSet(url, result)
+    return result
   } catch {
     return null
   }
+}
+
+/** Test-only: clear the PSI in-memory cache. Not exported for production use. */
+export function __clearPsiCacheForTests(): void {
+  PSI_CACHE.clear()
 }
 
 function checkPerformance(

@@ -26,6 +26,14 @@ interface Brand {
   color: string
 }
 
+type CitationType = 'informational' | 'product' | 'multimedia'
+
+interface TypeBreakdown {
+  informational: number
+  product: number
+  multimedia: number
+}
+
 interface DomainRow {
   domain: string
   count: number
@@ -33,6 +41,8 @@ interface DomainRow {
   owned: boolean
   engines: string[]
   sampleUrls: string[]
+  dominantType: CitationType
+  typeBreakdown: TypeBreakdown
   lastSeen: string
 }
 
@@ -46,6 +56,7 @@ interface Summary {
   externalCitations: number
   ownedShare: number
   ownedDomain: string | null
+  citationTypeBreakdown: TypeBreakdown
 }
 
 interface OwnedPageRow {
@@ -313,6 +324,65 @@ export default function CitationSourcesPage() {
             </div>
           </Card>
 
+          {/* Citation type mix — informational / product / multimedia */}
+          {(() => {
+            const t = summary.citationTypeBreakdown
+            const total = t.informational + t.product + t.multimedia
+            if (total === 0) return null
+            const pct = (n: number) => (n / total) * 100
+            return (
+              <Card className="p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <Link2 className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-lg font-bold text-foreground">Citation Type Mix</h2>
+                </div>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  How the AI engines cite your space: informational links (articles, docs, wiki),
+                  product links (shopping pages), or multimedia (image/video/audio sources).
+                </p>
+                <div className="flex h-4 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full bg-sky-500/80 transition-all duration-700"
+                    style={{ width: `${pct(t.informational)}%` }}
+                    title={`${t.informational} informational`}
+                  />
+                  <div
+                    className="h-full bg-violet-500/80 transition-all duration-700"
+                    style={{ width: `${pct(t.product)}%` }}
+                    title={`${t.product} product`}
+                  />
+                  <div
+                    className="h-full bg-amber-500/80 transition-all duration-700"
+                    style={{ width: `${pct(t.multimedia)}%` }}
+                    title={`${t.multimedia} multimedia`}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <p className="text-sky-400">
+                      <span className="font-bold">{t.informational}</span> informational
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {pct(t.informational).toFixed(1)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-violet-400">
+                      <span className="font-bold">{t.product}</span> product
+                    </p>
+                    <p className="text-xs text-muted-foreground">{pct(t.product).toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-amber-400">
+                      <span className="font-bold">{t.multimedia}</span> multimedia
+                    </p>
+                    <p className="text-xs text-muted-foreground">{pct(t.multimedia).toFixed(1)}%</p>
+                  </div>
+                </div>
+              </Card>
+            )
+          })()}
+
           {/* Top domains */}
           <Card className="p-6">
             <h2 className="mb-6 text-lg font-bold text-foreground">Top Cited Domains</h2>
@@ -330,6 +400,19 @@ export default function CitationSourcesPage() {
                           Your domain
                         </Badge>
                       )}
+                      <span
+                        className={cn(
+                          'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                          d.dominantType === 'product'
+                            ? 'bg-violet-500/15 text-violet-300'
+                            : d.dominantType === 'multimedia'
+                              ? 'bg-amber-500/15 text-amber-300'
+                              : 'bg-sky-500/15 text-sky-300',
+                        )}
+                        title={`${d.typeBreakdown.informational} info · ${d.typeBreakdown.product} product · ${d.typeBreakdown.multimedia} multimedia`}
+                      >
+                        {d.dominantType}
+                      </span>
                       {d.sampleUrls[0] && (
                         <a
                           href={d.sampleUrls[0]}

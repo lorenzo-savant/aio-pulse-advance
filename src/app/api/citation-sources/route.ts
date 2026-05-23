@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { classifyCitation, type CitationType } from '@/lib/utils/citation-classifier'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -91,12 +92,31 @@ export async function GET(req: NextRequest) {
     const isOwned = (host: string): boolean =>
       !!ownedDomain && (host === ownedDomain || host.endsWith(`.${ownedDomain}`))
 
+    interface TypeBreakdown {
+      informational: number
+      product: number
+      multimedia: number
+    }
+    const emptyBreakdown = (): TypeBreakdown => ({ informational: 0, product: 0, multimedia: 0 })
+    const dominantOf = (b: TypeBreakdown): CitationType => {
+      // Highest count wins; ties resolved by the deterministic order
+      // informational > product > multimedia (mirrors the heuristic precedence).
+      const entries: Array<[CitationType, number]> = [
+        ['informational', b.informational],
+        ['product', b.product],
+        ['multimedia', b.multimedia],
+      ]
+      entries.sort((a, b) => b[1] - a[1])
+      return entries[0]![0]
+    }
+
     interface Agg {
       domain: string
       count: number
       owned: boolean
       engines: Set<string>
       sampleUrls: Set<string>
+      types: TypeBreakdown
       lastSeen: string
     }
     /** Page-level aggregation for URLs on the brand's OWN domain. */
@@ -110,6 +130,7 @@ export async function GET(req: NextRequest) {
     const ownedPagesMap = new Map<string, PageAgg>()
     const byEngine = new Map<string, number>()
     const byDay = new Map<string, number>()
+    const citationTypeBreakdown: TypeBreakdown = emptyBreakdown()
 
     let totalResponses = 0
     let responsesWithSources = 0
@@ -132,6 +153,9 @@ export async function GET(req: NextRequest) {
         const owned = isOwned(host)
         if (owned) ownedCitations++
 
+        const citationType = classifyCitation(rawUrl)
+        citationTypeBreakdown[citationType]++
+
         byEngine.set(eng, (byEngine.get(eng) || 0) + 1)
         byDay.set(day, (byDay.get(day) || 0) + 1)
 
@@ -143,12 +167,14 @@ export async function GET(req: NextRequest) {
             owned,
             engines: new Set(),
             sampleUrls: new Set(),
+            types: emptyBreakdown(),
             lastSeen: row.created_at,
           }
           domains.set(host, agg)
         }
         agg.count++
         agg.engines.add(eng)
+        agg.types[citationType]++
         if (agg.sampleUrls.size < 3) agg.sampleUrls.add(rawUrl)
         if (row.created_at > agg.lastSeen) agg.lastSeen = row.created_at
 
@@ -191,6 +217,10 @@ export async function GET(req: NextRequest) {
         owned: d.owned,
         engines: [...d.engines].sort(),
         sampleUrls: [...d.sampleUrls],
+        // Citation-type breakdown for this domain + the dominant bucket — lets
+        // the UI render a per-row badge (informational / product / multimedia).
+        dominantType: dominantOf(d.types),
+        typeBreakdown: d.types,
         lastSeen: d.lastSeen,
       }))
 
@@ -230,6 +260,8 @@ export async function GET(req: NextRequest) {
           ownedShare:
             totalCitations > 0 ? Math.round((ownedCitations / totalCitations) * 1000) / 10 : 0,
           ownedDomain,
+          // Citation-type mix across all sources for the period.
+          citationTypeBreakdown,
         },
         domains: topDomains,
         /**

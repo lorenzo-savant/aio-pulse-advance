@@ -34,6 +34,8 @@ import {
   Tooltip,
 } from 'recharts'
 import { Card } from '@/components/ui/Card'
+import { ActionPlanPanel } from '@/components/ActionPlanPanel'
+import type { AuditResult as TechnicalAuditResult } from '@/lib/services/technical-seo-audit'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
@@ -649,6 +651,10 @@ export default function AuditPage() {
               />
             ))}
           </div>
+
+          {/* Prioritised Today / This week / This month action plan derived
+              from the audit findings — cheap-win M. */}
+          <ActionPlanPanel audit={techResult as unknown as TechnicalAuditResult} />
         </div>
       )}
 

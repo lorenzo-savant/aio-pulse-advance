@@ -230,3 +230,90 @@ export function brandedGrowthRate(timeline: BrandedDailyPoint[]): {
     impressionsDeltaPct: delta(iFirst, iSecond),
   }
 }
+
+export type AiAssistVerdict = 'assisted' | 'neutral' | 'cannibalised' | 'unknown'
+
+export interface AiAssistScore {
+  /** Score in [-100, 100]. Positive = branded growth outpacing non-branded
+   *  decline (AI is making people search for you). Negative = non-branded
+   *  growing faster than branded (AI is cannibalising your informational
+   *  pages). Null when there isn't enough data to compute either half. */
+  score: number | null
+  verdict: AiAssistVerdict
+  /** Branded-volume delta over the window (impressions-based, %). */
+  brandedDeltaPct: number | null
+  /** Non-branded-volume delta over the window (impressions-based, %). */
+  nonBrandedDeltaPct: number | null
+  reason: string
+}
+
+/**
+ * Compares branded vs non-branded growth rates within the window to
+ * produce a single "AI assist" verdict.
+ *
+ * Semrush "Zero-click search" piece + AEO chapter:
+ *   "Zero-click visibility can still contribute to measurable business
+ *    outcomes... track branded search growth, assisted conversions,
+ *    share-of-voice trends. Even when users don't click immediately,
+ *    repeated exposure to your brand in search features and AI answers
+ *    can build trust and drive conversions later in the buying process."
+ *
+ * The pattern Semrush calls out: AI Overviews push the click below the
+ * fold for INFORMATIONAL queries (non-branded ↓), but the user remembers
+ * the brand they saw cited and types it directly later (branded ↑). When
+ * branded growth materially outpaces non-branded decline, AI is acting
+ * as an assist channel. When non-branded grows but branded doesn't, AI
+ * is just cannibalising your top-of-funnel.
+ *
+ * Score = brandedDelta - nonBrandedDelta, clamped to [-100, 100].
+ * Verdict: ≥+15 assisted, ≤-15 cannibalised, else neutral.
+ */
+export function aiAssistScore(timeline: BrandedDailyPoint[]): AiAssistScore {
+  if (timeline.length < 4) {
+    return {
+      score: null,
+      verdict: 'unknown',
+      brandedDeltaPct: null,
+      nonBrandedDeltaPct: null,
+      reason: 'Need at least 4 daily points to compute an assist score.',
+    }
+  }
+  const mid = Math.floor(timeline.length / 2)
+  const firstHalf = timeline.slice(0, mid)
+  const secondHalf = timeline.slice(mid)
+  const sum = (arr: BrandedDailyPoint[], key: 'brandedImpressions' | 'nonBrandedImpressions') =>
+    arr.reduce((a, p) => a + p[key], 0)
+  const brandedFirst = sum(firstHalf, 'brandedImpressions')
+  const brandedSecond = sum(secondHalf, 'brandedImpressions')
+  const nbFirst = sum(firstHalf, 'nonBrandedImpressions')
+  const nbSecond = sum(secondHalf, 'nonBrandedImpressions')
+  const delta = (a: number, b: number) => (a > 0 ? Math.round(((b - a) / a) * 1000) / 10 : null)
+  const brandedDeltaPct = delta(brandedFirst, brandedSecond)
+  const nonBrandedDeltaPct = delta(nbFirst, nbSecond)
+  if (brandedDeltaPct == null && nonBrandedDeltaPct == null) {
+    return {
+      score: null,
+      verdict: 'unknown',
+      brandedDeltaPct,
+      nonBrandedDeltaPct,
+      reason: 'Both branded and non-branded baselines are zero — no growth signal.',
+    }
+  }
+  const b = brandedDeltaPct ?? 0
+  const n = nonBrandedDeltaPct ?? 0
+  const raw = b - n
+  const score = Math.max(-100, Math.min(100, Math.round(raw * 10) / 10))
+  let verdict: AiAssistVerdict
+  let reason: string
+  if (score >= 15) {
+    verdict = 'assisted'
+    reason = `Branded volume growing ${score.toFixed(1)}pp faster than non-branded — AI exposure is driving direct searches for you.`
+  } else if (score <= -15) {
+    verdict = 'cannibalised'
+    reason = `Non-branded volume growing ${Math.abs(score).toFixed(1)}pp faster than branded — AI surfaces may be answering for you without driving brand recall.`
+  } else {
+    verdict = 'neutral'
+    reason = `Branded and non-branded volumes are moving roughly in sync (Δ ${score.toFixed(1)}pp).`
+  }
+  return { score, verdict, brandedDeltaPct, nonBrandedDeltaPct, reason }
+}

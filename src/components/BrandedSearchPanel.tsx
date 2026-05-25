@@ -47,6 +47,16 @@ interface Growth {
   impressionsDeltaPct: number | null
 }
 
+type AiAssistVerdict = 'assisted' | 'neutral' | 'cannibalised' | 'unknown'
+
+interface AiAssistShape {
+  score: number | null
+  verdict: AiAssistVerdict
+  brandedDeltaPct: number | null
+  nonBrandedDeltaPct: number | null
+  reason: string
+}
+
 interface TopBrandedQuery {
   query: string
   clicks: number
@@ -58,6 +68,7 @@ interface BrandedSearchData {
   summary: BrandedSummary
   timeline: TimelinePoint[]
   growth: Growth
+  aiAssist?: AiAssistShape
   topBrandedQueries: TopBrandedQuery[]
   filters: { days: number }
 }
@@ -179,6 +190,32 @@ export function BrandedSearchPanel({ brandId: brandIdProp }: { brandId?: string 
         rising while CTR falls is the &ldquo;AI is making people search for you&rdquo; pattern — AI
         surfaces strip the click but the brand sticks. Window: last {data.filters.days} days.
       </p>
+
+      {data.aiAssist && data.aiAssist.verdict !== 'unknown' && data.aiAssist.score != null && (
+        <div
+          className={
+            'mb-4 rounded-lg border px-4 py-3 text-sm ' +
+            (data.aiAssist.verdict === 'assisted'
+              ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
+              : data.aiAssist.verdict === 'cannibalised'
+                ? 'border-rose-500/30 bg-rose-500/5 text-rose-300'
+                : 'bg-secondary/40 border-border text-muted-foreground')
+          }
+        >
+          <div className="mb-1 flex items-baseline justify-between gap-3">
+            <p className="text-xs font-bold uppercase tracking-wider">
+              AI assist score:{' '}
+              <span className="text-foreground">{data.aiAssist.score.toFixed(1)}</span>{' '}
+              <span className="text-muted-foreground">({data.aiAssist.verdict.toUpperCase()})</span>
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              Δ branded {data.aiAssist.brandedDeltaPct?.toFixed(1) ?? 'n/a'}% · Δ non-branded{' '}
+              {data.aiAssist.nonBrandedDeltaPct?.toFixed(1) ?? 'n/a'}%
+            </p>
+          </div>
+          <p className="text-foreground">{data.aiAssist.reason}</p>
+        </div>
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
         <div className="bg-secondary/40 rounded-lg border border-border px-3 py-2">

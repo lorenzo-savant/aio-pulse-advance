@@ -22,6 +22,7 @@ import {
   brandAnchors,
   classifyBrandedQueries,
   brandedGrowthRate,
+  aiAssistScore,
   isBrandedQuery,
   type QueryRow,
 } from '@/lib/utils/branded-search'
@@ -100,6 +101,7 @@ export async function GET(req: NextRequest) {
 
     const { summary, timeline } = classifyBrandedQueries(rows, anchors)
     const growth = brandedGrowthRate(timeline)
+    const aiAssist = aiAssistScore(timeline)
 
     // Top branded queries by impressions in-window — useful so the UI can
     // show WHICH branded queries grew (e.g. "<brand> reviews" trending up
@@ -124,6 +126,7 @@ export async function GET(req: NextRequest) {
         summary,
         timeline,
         growth,
+        aiAssist,
         topBrandedQueries,
         filters: { days },
       },

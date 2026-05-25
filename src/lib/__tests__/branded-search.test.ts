@@ -4,6 +4,7 @@ import {
   isBrandedQuery,
   classifyBrandedQueries,
   brandedGrowthRate,
+  aiAssistScore,
   type QueryRow,
 } from '@/lib/utils/branded-search'
 
@@ -221,5 +222,76 @@ describe('brandedGrowthRate', () => {
     ]
     const { clicksDeltaPct } = brandedGrowthRate(timeline)
     expect(clicksDeltaPct).toBeNull()
+  })
+})
+
+describe('aiAssistScore', () => {
+  const tl = (points: Array<{ branded: number; nonBranded: number }>) =>
+    points.map((p, i) => ({
+      date: `2026-05-0${i + 1}`,
+      brandedClicks: 0,
+      brandedImpressions: p.branded,
+      nonBrandedClicks: 0,
+      nonBrandedImpressions: p.nonBranded,
+    }))
+
+  it('returns ASSISTED when branded grows much faster than non-branded', () => {
+    const timeline = tl([
+      { branded: 10, nonBranded: 100 },
+      { branded: 10, nonBranded: 100 },
+      { branded: 50, nonBranded: 100 },
+      { branded: 50, nonBranded: 100 },
+    ])
+    // branded delta: (100-20)/20 = 400, non-branded: 0 → score 400 clamped to 100
+    const a = aiAssistScore(timeline)
+    expect(a.verdict).toBe('assisted')
+    expect(a.score).toBe(100)
+    expect(a.reason).toMatch(/driving direct searches/)
+  })
+
+  it('returns CANNIBALISED when non-branded grows much faster than branded', () => {
+    const timeline = tl([
+      { branded: 100, nonBranded: 10 },
+      { branded: 100, nonBranded: 10 },
+      { branded: 100, nonBranded: 50 },
+      { branded: 100, nonBranded: 50 },
+    ])
+    // branded delta 0, non-branded delta 400 → score -400 → clamped -100
+    const a = aiAssistScore(timeline)
+    expect(a.verdict).toBe('cannibalised')
+    expect(a.score).toBe(-100)
+    expect(a.reason).toMatch(/answering for you/)
+  })
+
+  it('returns NEUTRAL when both grow roughly together', () => {
+    const timeline = tl([
+      { branded: 100, nonBranded: 100 },
+      { branded: 100, nonBranded: 100 },
+      { branded: 120, nonBranded: 120 },
+      { branded: 120, nonBranded: 120 },
+    ])
+    const a = aiAssistScore(timeline)
+    expect(a.verdict).toBe('neutral')
+    expect(a.score).toBe(0)
+  })
+
+  it('returns UNKNOWN when the timeline is too short', () => {
+    const a = aiAssistScore(tl([{ branded: 10, nonBranded: 10 }]))
+    expect(a.verdict).toBe('unknown')
+    expect(a.score).toBeNull()
+  })
+
+  it('handles a zero-baseline branded side without crashing', () => {
+    const timeline = tl([
+      { branded: 0, nonBranded: 100 },
+      { branded: 0, nonBranded: 100 },
+      { branded: 50, nonBranded: 100 },
+      { branded: 50, nonBranded: 100 },
+    ])
+    const a = aiAssistScore(timeline)
+    // branded delta null (no baseline) → treated as 0; non-branded 0 → score 0 neutral
+    expect(a.brandedDeltaPct).toBeNull()
+    expect(a.nonBrandedDeltaPct).toBe(0)
+    expect(a.verdict).toBe('neutral')
   })
 })

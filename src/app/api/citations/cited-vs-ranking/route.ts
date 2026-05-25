@@ -104,13 +104,23 @@ export async function GET(req: NextRequest) {
       ])
     /* eslint-enable @typescript-eslint/no-explicit-any */
 
-    if (monErr || gscErr) {
-      logger.error('/api/citations/cited-vs-ranking query failed', {
-        monErr: String(monErr),
-        gscErr: String(gscErr),
+    // Monitoring is the primary signal — if it fails the whole report is
+    // meaningless. GSC is auxiliary: when it's unavailable (table missing
+    // for older deployments, brand has no GSC sync, RLS denial, etc.) we
+    // still produce the citation side of the report and flag
+    // gscAvailable=false so the UI can guide the user.
+    if (monErr) {
+      logger.error('/api/citations/cited-vs-ranking monitoring query failed', {
+        err: String(monErr),
       })
-      return err('Failed to load monitoring or GSC data')
+      return err('Failed to load monitoring data')
     }
+    if (gscErr) {
+      logger.warn('/api/citations/cited-vs-ranking gsc query unavailable — degrading', {
+        err: String(gscErr),
+      })
+    }
+    const gscAvailable = !gscErr
 
     // Aggregate owned cited URLs (count + engines).
     const citedMap = new Map<string, CitedUrlInput>()
@@ -148,6 +158,7 @@ export async function GET(req: NextRequest) {
       data: {
         ownedDomain: ownedHost,
         filters: { days },
+        gscAvailable,
         report,
       },
       timestamp: Date.now(),

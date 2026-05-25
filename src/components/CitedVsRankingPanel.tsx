@@ -44,6 +44,7 @@ interface CrossRefReport {
 interface ResponseData {
   ownedDomain?: string
   filters: { days: number }
+  gscAvailable?: boolean
   report: CrossRefReport | null
   reason?: string
 }
@@ -203,6 +204,13 @@ export function CitedVsRankingPanel({ brandId: brandIdProp }: { brandId?: string
         position 21+ ~90% of the time (Semrush AI Mode study) — these are real opportunities you can
         act on.
       </p>
+
+      {data.gscAvailable === false && (
+        <div className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+          GSC data unavailable — showing citation-only view. Connect Google Search Console to unlock
+          SEO/AEO gap classification.
+        </div>
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
         <div className="bg-secondary/40 rounded-lg border border-border px-3 py-2">

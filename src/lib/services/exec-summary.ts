@@ -304,6 +304,330 @@ export async function buildExecSummary(brand: Brand, days: number): Promise<Exec
   return { ...partial, headline: headlineFor(partial) }
 }
 
+// ────────────────────────────────────────────────────────────────────────
+// Monthly trend (II) — N-month rollup so the deck can show direction
+// instead of a single snapshot. Reads monitoring_results + gsc_performance
+// over the full window in ONE query each, then buckets in memory so we
+// don't trigger N round-trips.
+
+export interface ExecSummaryMonthlyPoint {
+  month: string // YYYY-MM
+  totalResponses: number
+  brandMentions: number
+  mentionRate: number // %
+  avgSentiment: number | null
+  brandedClicks: number
+  brandedImpressions: number
+}
+
+export interface ExecSummaryTrend {
+  brandName: string
+  months: ExecSummaryMonthlyPoint[]
+  // Direction across the available window: "up" if last month > first
+  // month by > 10%, "down" if < −10%, "flat" otherwise.
+  mentionRateDirection: 'up' | 'down' | 'flat'
+  brandedClicksDirection: 'up' | 'down' | 'flat'
+}
+
+function monthKey(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+function directionOf(first: number, last: number): 'up' | 'down' | 'flat' {
+  if (first === 0 && last === 0) return 'flat'
+  if (first === 0) return last > 0 ? 'up' : 'flat'
+  const delta = (last - first) / first
+  if (delta > 0.1) return 'up'
+  if (delta < -0.1) return 'down'
+  return 'flat'
+}
+
+export async function buildExecSummaryTrend(
+  brand: Brand,
+  months: number,
+): Promise<ExecSummaryTrend> {
+  const db = createServerClient()
+  if (!db) throw new Error('Database not configured')
+
+  const clampedMonths = Math.max(2, Math.min(12, Math.floor(months) || 6))
+  const endDate = new Date()
+  const startDate = new Date(endDate)
+  startDate.setUTCMonth(startDate.getUTCMonth() - clampedMonths)
+  const sinceIso = startDate.toISOString()
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const [monitoringRes, gscRes] = await Promise.all([
+    (db as any)
+      .from('monitoring_results')
+      .select('brand_mentioned, sentiment_score, created_at')
+      .eq('brand_id', brand.id)
+      .gte('created_at', sinceIso)
+      .order('created_at', { ascending: true })
+      .limit(50_000),
+    (db as any)
+      .from('gsc_performance')
+      .select('date, dimension_value, clicks, impressions')
+      .eq('brand_id', brand.id)
+      .eq('dimension_type', 'query')
+      .gte('date', startDate.toISOString().slice(0, 10))
+      .order('date', { ascending: true })
+      .limit(50_000),
+  ])
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  if (monitoringRes.error) {
+    logger.warn('exec-summary trend: monitoring query failed', { err: monitoringRes.error })
+  }
+  if (gscRes.error) {
+    logger.warn('exec-summary trend: gsc query failed (non-fatal)', { err: gscRes.error })
+  }
+
+  type MonthBucket = {
+    totalResponses: number
+    brandMentions: number
+    sentimentSum: number
+    sentimentCount: number
+    brandedClicks: number
+    brandedImpressions: number
+  }
+  const bucketByMonth = new Map<string, MonthBucket>()
+  const ensure = (key: string): MonthBucket => {
+    let b = bucketByMonth.get(key)
+    if (!b) {
+      b = {
+        totalResponses: 0,
+        brandMentions: 0,
+        sentimentSum: 0,
+        sentimentCount: 0,
+        brandedClicks: 0,
+        brandedImpressions: 0,
+      }
+      bucketByMonth.set(key, b)
+    }
+    return b
+  }
+
+  for (const row of (monitoringRes.data ?? []) as Array<{
+    brand_mentioned: boolean | null
+    sentiment_score: number | null
+    created_at: string | null
+  }>) {
+    if (!row.created_at) continue
+    const key = monthKey(new Date(row.created_at))
+    const b = ensure(key)
+    b.totalResponses++
+    if (row.brand_mentioned) b.brandMentions++
+    if (row.brand_mentioned && typeof row.sentiment_score === 'number') {
+      b.sentimentSum += row.sentiment_score
+      b.sentimentCount++
+    }
+  }
+
+  const anchors = brandAnchors({ name: brand.name, aliases: brand.aliases ?? [] })
+  for (const row of (gscRes.data ?? []) as GscQueryRow[]) {
+    if (!row.date) continue
+    const text = (row.dimension_value ?? '').toLowerCase()
+    if (anchors.length > 0 && !anchors.some((a) => text.includes(a))) continue
+    const key = monthKey(new Date(row.date))
+    const b = ensure(key)
+    b.brandedClicks += row.clicks ?? 0
+    b.brandedImpressions += row.impressions ?? 0
+  }
+
+  // Render every month in the window even if empty so the table doesn't
+  // collapse on quiet months.
+  const monthList: string[] = []
+  for (let i = 0; i <= clampedMonths; i++) {
+    const d = new Date(startDate)
+    d.setUTCMonth(d.getUTCMonth() + i)
+    monthList.push(monthKey(d))
+  }
+  const seen = new Set<string>()
+  const unique = monthList.filter((m) => {
+    if (seen.has(m)) return false
+    seen.add(m)
+    return true
+  })
+
+  const points: ExecSummaryMonthlyPoint[] = unique.map((month) => {
+    const b = bucketByMonth.get(month)
+    return {
+      month,
+      totalResponses: b?.totalResponses ?? 0,
+      brandMentions: b?.brandMentions ?? 0,
+      mentionRate:
+        b && b.totalResponses > 0
+          ? Math.round((b.brandMentions / b.totalResponses) * 1000) / 10
+          : 0,
+      avgSentiment:
+        b && b.sentimentCount > 0
+          ? Math.round((b.sentimentSum / b.sentimentCount) * 100) / 100
+          : null,
+      brandedClicks: b?.brandedClicks ?? 0,
+      brandedImpressions: b?.brandedImpressions ?? 0,
+    }
+  })
+
+  const firstPoint = points[0]
+  const lastPoint = points[points.length - 1]
+  return {
+    brandName: brand.name,
+    months: points,
+    mentionRateDirection: directionOf(firstPoint?.mentionRate ?? 0, lastPoint?.mentionRate ?? 0),
+    brandedClicksDirection: directionOf(
+      firstPoint?.brandedClicks ?? 0,
+      lastPoint?.brandedClicks ?? 0,
+    ),
+  }
+}
+
+export function execSummaryTrendToMarkdown(trend: ExecSummaryTrend): string {
+  const lines: string[] = []
+  lines.push(`# AI Visibility — Monthly Trend`)
+  lines.push('')
+  lines.push(`**Brand:** ${trend.brandName}`)
+  lines.push(
+    `**Window:** ${trend.months[0]?.month ?? '—'} → ${trend.months[trend.months.length - 1]?.month ?? '—'}`,
+  )
+  lines.push('')
+  lines.push(
+    `**Mention rate trend:** ${trend.mentionRateDirection.toUpperCase()} · **Branded clicks trend:** ${trend.brandedClicksDirection.toUpperCase()}`,
+  )
+  lines.push('')
+  lines.push(
+    '| Month | Responses | Brand mentions | Mention % | Sentiment | Branded clicks | Branded impressions |',
+  )
+  lines.push(
+    '|-------|-----------|----------------|-----------|-----------|----------------|---------------------|',
+  )
+  for (const p of trend.months) {
+    lines.push(
+      `| ${p.month} | ${p.totalResponses} | ${p.brandMentions} | ${p.mentionRate.toFixed(1)}% | ${p.avgSentiment != null ? p.avgSentiment.toFixed(2) : '—'} | ${p.brandedClicks} | ${p.brandedImpressions} |`,
+    )
+  }
+  return lines.join('\n')
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Tiered KPI deck (JJ) — Tier 1 / Tier 2 / Tier 3 framing from the Semrush
+// "Create an SEO + AI Search Marketing Report" piece. Wraps the existing
+// ExecSummary so the same data renders three ways: 4-question JSON, plain
+// MD, and now a client-deck-ready tiered MD.
+
+export interface TieredKpiDeck {
+  brandName: string
+  period: ExecSummaryPeriod
+  tier1: Array<{ label: string; value: string; trend?: string }>
+  tier2: Array<{ label: string; value: string; trend?: string }>
+  tier3: Array<{ label: string; value: string; trend?: string }>
+}
+
+export function buildTieredKpiDeck(summary: ExecSummary): TieredKpiDeck {
+  const tier1: TieredKpiDeck['tier1'] = [
+    {
+      label: 'AI mention rate',
+      value: `${summary.q1.mentionRate.toFixed(1)}%`,
+    },
+    {
+      label: 'Brand mentions',
+      value: `${summary.q1.brandMentions} / ${summary.q1.totalResponses}`,
+    },
+    {
+      label: 'Branded clicks (GSC proxy for AI uplift)',
+      value: String(summary.q4.brandedClicks),
+      trend:
+        summary.q4.brandedClicksDeltaPct != null
+          ? `${summary.q4.brandedClicksDeltaPct >= 0 ? '+' : ''}${summary.q4.brandedClicksDeltaPct.toFixed(1)}% vs first half`
+          : undefined,
+    },
+    {
+      label: 'AI assist verdict',
+      value: summary.q4.aiAssistVerdict,
+      trend:
+        summary.q4.aiAssistScore != null
+          ? `score ${summary.q4.aiAssistScore.toFixed(1)}`
+          : undefined,
+    },
+  ]
+  const tier2: TieredKpiDeck['tier2'] = [
+    {
+      label: 'Share of voice (all engines)',
+      value: `${summary.q3.brandShare.toFixed(1)}%`,
+      trend: `rank ${summary.q3.brandRank ?? '—'} of ${summary.q3.totalCompetitors + 1}`,
+    },
+    {
+      label: 'Unique prompts covered',
+      value: String(summary.q1.uniquePromptsCovered),
+    },
+    ...summary.q3.perEngine.map((e) => ({
+      label: `SOV — ${e.engine}`,
+      value: `${e.share.toFixed(1)}%`,
+      trend: e.rank != null ? `rank ${e.rank}` : undefined,
+    })),
+  ]
+  const tier3: TieredKpiDeck['tier3'] = [
+    {
+      label: 'Avg sentiment',
+      value: summary.q2.avgSentiment != null ? summary.q2.avgSentiment.toFixed(2) : 'no data',
+      trend: summary.q2.sentimentLabel,
+    },
+    ...(summary.q2.topPositiveDriver
+      ? [{ label: 'Owning narrative', value: summary.q2.topPositiveDriver }]
+      : []),
+    ...(summary.q2.topNegativeDriver
+      ? [{ label: 'Losing narrative', value: summary.q2.topNegativeDriver }]
+      : []),
+    ...summary.q3.narrativeGaps.slice(0, 3).map((g) => ({
+      label: `Gap on "${g.driver}"`,
+      value: `${g.leader} leads (−${g.gap})`,
+    })),
+    {
+      label: 'Branded impressions',
+      value: String(summary.q4.brandedImpressions),
+      trend:
+        summary.q4.brandedImpressionsDeltaPct != null
+          ? `${summary.q4.brandedImpressionsDeltaPct >= 0 ? '+' : ''}${summary.q4.brandedImpressionsDeltaPct.toFixed(1)}%`
+          : undefined,
+    },
+  ]
+  return {
+    brandName: summary.brandName,
+    period: summary.period,
+    tier1,
+    tier2,
+    tier3,
+  }
+}
+
+function tierBlock(title: string, items: TieredKpiDeck['tier1']): string[] {
+  const out: string[] = [`## ${title}`, '']
+  for (const it of items) {
+    const trend = it.trend ? ` _(${it.trend})_` : ''
+    out.push(`- **${it.label}:** ${it.value}${trend}`)
+  }
+  out.push('')
+  return out
+}
+
+export function tieredKpiDeckToMarkdown(deck: TieredKpiDeck): string {
+  const out: string[] = []
+  out.push(`# AI Visibility — Tiered KPI Deck`)
+  out.push('')
+  out.push(`**Brand:** ${deck.brandName}`)
+  out.push(
+    `**Period:** ${deck.period.startDate} → ${deck.period.endDate} (${deck.period.days} days)`,
+  )
+  out.push('')
+  out.push(
+    `_Tier framing from the Semrush "Create an SEO + AI Search Marketing Report" template. Tier 1 = business impact, Tier 2 = visibility context, Tier 3 = supporting signal._`,
+  )
+  out.push('')
+  out.push(...tierBlock('Tier 1 — Primary KPIs', deck.tier1))
+  out.push(...tierBlock('Tier 2 — Secondary metrics', deck.tier2))
+  out.push(...tierBlock('Tier 3 — Supporting signals', deck.tier3))
+  return out.join('\n')
+}
+
 /**
  * Render the exec summary as a Markdown document suitable for paste-into-
  * Notion / Slack / PR review. Stable formatting — works for diffs.

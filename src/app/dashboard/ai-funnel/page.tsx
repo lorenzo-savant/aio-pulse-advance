@@ -33,6 +33,9 @@ import { ClaimDivergencePanel } from '@/components/ClaimDivergencePanel'
 import { BrandFactsPanel } from '@/components/BrandFactsPanel'
 import { AIReferralFiltersPanel } from '@/components/AIReferralFiltersPanel'
 import { AIBotLogsPanel } from '@/components/AIBotLogsPanel'
+import { CitationSourceCategoriesPanel } from '@/components/CitationSourceCategoriesPanel'
+import { FirstPartyCitationsPanel } from '@/components/FirstPartyCitationsPanel'
+import { AudienceDeclarationPanel } from '@/components/AudienceDeclarationPanel'
 
 interface BrandLite {
   id: string
@@ -121,14 +124,32 @@ export default function AiFunnelPage() {
             </>
           )}
           {activeBrandId && (
-            <a
-              href={`/api/reports/exec-summary?brand_id=${activeBrandId}&days=30&format=md`}
-              className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
-              title="Download the executive 4-question summary as Markdown"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export exec summary
-            </a>
+            <>
+              <a
+                href={`/api/reports/exec-summary?brand_id=${activeBrandId}&days=30&format=md`}
+                className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
+                title="Download the executive 4-question summary as Markdown"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Exec summary
+              </a>
+              <a
+                href={`/api/reports/exec-summary?brand_id=${activeBrandId}&days=30&format=tiered`}
+                className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
+                title="Tier 1 / Tier 2 / Tier 3 client deck (Semrush template framing)"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Tiered KPI deck
+              </a>
+              <a
+                href={`/api/reports/exec-summary?brand_id=${activeBrandId}&format=trend&months=6`}
+                className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
+                title="6-month trend of mention rate, sentiment, and branded search"
+              >
+                <Download className="h-3.5 w-3.5" />
+                6-mo trend
+              </a>
+            </>
           )}
         </div>
       </div>
@@ -148,6 +169,9 @@ export default function AiFunnelPage() {
         <div className="space-y-6">
           <ShareOfVoiceByEnginePanel brandId={activeBrandId || undefined} />
           <SourceOpportunitiesPanel brandId={activeBrandId || undefined} />
+          <CitationSourceCategoriesPanel brandId={activeBrandId || undefined} />
+          <FirstPartyCitationsPanel brandId={activeBrandId || undefined} />
+          <AudienceDeclarationPanel brandId={activeBrandId || undefined} />
         </div>
       </section>
 

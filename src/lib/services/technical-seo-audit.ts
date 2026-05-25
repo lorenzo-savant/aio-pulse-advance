@@ -1,4 +1,5 @@
 import { safeFetch } from '@/lib/utils/safe-fetch'
+import { analyseZeroClickVulnerability } from '@/lib/utils/zero-click-vulnerability'
 
 export interface AuditCheck {
   id: string
@@ -1020,7 +1021,35 @@ function checkContentStructure(html: string, url: string): AuditCategory {
           : `No E-E-A-T markup found (missing ${eeatMisses.join(', ')}). Add an author bio, reviewer attribution, or original data to improve AI-citation odds.`,
   })
 
-  // 11) Last-updated check (existing — left intact below).
+  // 11) Zero-click vulnerability — how easily can an AI Overview / featured
+  // snippet swallow this page whole? Inverse signal of the audit above:
+  // structure + interactivity + original data raise resilience, short
+  // definition pages lower it. We surface the score (0-100) + verdict so
+  // the operator can prioritise refactors on the most-vulnerable pages.
+  // Semrush "Zero-click search" piece: "Short factual queries are often
+  // fully answered directly in the SERP… formats like original research,
+  // interactive tools, detailed guides remain more resilient."
+  const zeroClick = analyseZeroClickVulnerability(html)
+  const zcReason = zeroClick.reasons.slice(0, 2).join(' · ')
+  const zcStatus: 'pass' | 'warning' | 'fail' =
+    zeroClick.verdict === 'resilient'
+      ? 'pass'
+      : zeroClick.verdict === 'moderate'
+        ? 'warning'
+        : 'fail'
+  checks.push({
+    id: 'content-zero-click-vulnerability',
+    name: 'Zero-click resilience',
+    status: zcStatus,
+    message:
+      zeroClick.verdict === 'resilient'
+        ? `Resilient (score ${zeroClick.score}/100) — page resists AI-Overview replacement. ${zcReason}`
+        : zeroClick.verdict === 'moderate'
+          ? `Moderate (score ${zeroClick.score}/100) — partially extractable by AI. ${zcReason}`
+          : `Vulnerable (score ${zeroClick.score}/100) — AI can replace this page with a summary. ${zcReason}`,
+  })
+
+  // 12) Last-updated check (existing — left intact below).
   if (dateCandidates.length === 0) {
     checks.push({
       id: 'content-last-updated',

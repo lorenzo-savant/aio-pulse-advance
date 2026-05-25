@@ -37,13 +37,22 @@ const HTML_RICH = `<!doctype html>
 </head>
 <body>
   <h1>Acme</h1>
-  <p>Our research surveyed 500 teams and produced the dataset below.</p>
+  <p>Our research surveyed 500 teams and we analyzed the resulting dataset. Our study produced original benchmarks.</p>
+  <p>${'word '.repeat(2000)}</p>
   <table>
     <tr><th>Metric</th><th>Value</th></tr>
     <tr><td>A</td><td>1</td></tr>
     <tr><td>B</td><td>2</td></tr>
     <tr><td>C</td><td>3</td></tr>
   </table>
+  <table>
+    <tr><th>X</th><th>Y</th></tr>
+    <tr><td>1</td><td>2</td></tr>
+  </table>
+  <canvas id="chart-1"></canvas>
+  <div class="chart"></div>
+  <form><input type="text" /></form>
+  <iframe src="https://acme.com/embed"></iframe>
 </body>
 </html>`
 

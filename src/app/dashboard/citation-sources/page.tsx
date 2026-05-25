@@ -17,6 +17,7 @@ import { SectionHelp } from '@/components/help/SectionHelp'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
+import { CitationFreshnessPanel } from '@/components/CitationFreshnessPanel'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -480,6 +481,9 @@ export default function CitationSourcesPage() {
               </Card>
             )
           })()}
+
+          {/* Citation freshness — correlation between age and citation count */}
+          <CitationFreshnessPanel brandId={selectedBrand?.id ?? undefined} />
 
           {/* Top domains */}
           <Card className="p-6">

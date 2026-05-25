@@ -47,6 +47,7 @@ interface StrikingData {
     authority?: AuthorityProfile
   }
   queries: Query[]
+  gscAvailable?: boolean
 }
 
 function pkdClass(b: PkdBand | undefined): string {
@@ -135,7 +136,16 @@ export function StrikingDistancePanel({ brandId: brandIdProp }: { brandId?: stri
     )
   }
   if (error) return <Card className="p-6 text-sm text-rose-400">{error}</Card>
-  if (!data || data.queries.length === 0) return null
+  if (!data) return null
+  if (data.gscAvailable === false) {
+    return (
+      <Card className="p-4 text-xs text-amber-300">
+        <Target className="mr-1.5 inline h-3.5 w-3.5" />
+        GSC data unavailable — connect Google Search Console to surface striking-distance keywords.
+      </Card>
+    )
+  }
+  if (data.queries.length === 0) return null
 
   return (
     <Card className="p-6">

@@ -67,12 +67,18 @@ export async function GET(req: NextRequest) {
       .limit(2000)
     /* eslint-enable @typescript-eslint/no-explicit-any */
 
+    // GSC sync is optional — degrade gracefully when the table is missing
+    // or the brand hasn't connected Search Console. Panel will show an
+    // empty striking-distance list + gscAvailable=false hint.
+    let gscAvailable = true
     if (error) {
-      logger.error('/api/gsc/striking-distance query failed', { err: error })
-      return err('Failed to load GSC query data')
+      logger.warn('/api/gsc/striking-distance gsc query unavailable — degrading', {
+        err: String(error),
+      })
+      gscAvailable = false
     }
 
-    const rows = (data || []) as GscQueryRow[]
+    const rows = (gscAvailable ? data || [] : []) as GscQueryRow[]
 
     // Dedupe per query keeping the MOST RECENT row (rows came back
     // date-desc above, so the first hit per query wins).
@@ -183,6 +189,7 @@ export async function GET(req: NextRequest) {
           },
         },
         queries: enriched.slice(0, 100),
+        gscAvailable,
       },
       timestamp: Date.now(),
     })

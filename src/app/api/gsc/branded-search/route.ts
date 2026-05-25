@@ -76,12 +76,19 @@ export async function GET(req: NextRequest) {
       .limit(10_000)
     /* eslint-enable @typescript-eslint/no-explicit-any */
 
+    // GSC sync is optional — when the brand hasn't connected Search Console
+    // (or the table isn't migrated on this deployment), the query fails.
+    // Degrade gracefully: empty buckets + gscAvailable=false flag so the
+    // panel can show a "connect GSC" hint instead of a raw error.
+    let gscAvailable = true
     if (error) {
-      logger.error('/api/gsc/branded-search query failed', { err: error })
-      return err('Failed to load GSC query data')
+      logger.warn('/api/gsc/branded-search gsc query unavailable — degrading', {
+        err: String(error),
+      })
+      gscAvailable = false
     }
 
-    const rawRows = (data || []) as GscQueryRow[]
+    const rawRows = (gscAvailable ? data || [] : []) as GscQueryRow[]
     const b = brand as Brand
     const anchors = brandAnchors({
       name: b.name,
@@ -128,6 +135,7 @@ export async function GET(req: NextRequest) {
         growth,
         aiAssist,
         topBrandedQueries,
+        gscAvailable,
         filters: { days },
       },
       timestamp: Date.now(),

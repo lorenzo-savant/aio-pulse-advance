@@ -70,6 +70,7 @@ interface BrandedSearchData {
   growth: Growth
   aiAssist?: AiAssistShape
   topBrandedQueries: TopBrandedQuery[]
+  gscAvailable?: boolean
   filters: { days: number }
 }
 
@@ -141,7 +142,17 @@ export function BrandedSearchPanel({ brandId: brandIdProp }: { brandId?: string 
     )
   }
   if (error) return <Card className="p-6 text-sm text-rose-400">{error}</Card>
-  if (!data || data.summary.total.impressions === 0) return null
+  if (!data) return null
+  if (data.gscAvailable === false) {
+    return (
+      <Card className="p-4 text-xs text-amber-300">
+        <Search className="mr-1.5 inline h-3.5 w-3.5" />
+        GSC data unavailable — connect Google Search Console to unlock branded-vs-non-branded growth
+        and the AI-assist verdict.
+      </Card>
+    )
+  }
+  if (data.summary.total.impressions === 0) return null
 
   const { summary, growth, topBrandedQueries } = data
 

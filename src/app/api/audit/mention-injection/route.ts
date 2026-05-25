@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
   const brand = await verifyBrandAccess(brandId, userId)
   if (!brand) return err('Brand not found or access denied', 404)
 
-  let inputPages: InjectionPageInput[] = []
+  const inputPages: InjectionPageInput[] = []
 
   // Pre-fetched pages: trust the caller's text/html, but require url.
   if (Array.isArray(pages)) {

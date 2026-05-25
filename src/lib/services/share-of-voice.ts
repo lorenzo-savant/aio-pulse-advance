@@ -15,6 +15,9 @@ export interface SovInputRow {
   mention_position: number | null
   competitor_mentions: CompetitorMention[] | null
   created_at: string | null
+  /** AI engine that produced this row (chatgpt | gemini | perplexity | claude
+   *  | …). Optional — only consumed by computeShareOfVoiceByEngine. */
+  engine?: string | null
 }
 
 export interface SovEntity {
@@ -182,4 +185,53 @@ export function computeShareOfVoice(
     })
 
   return { entities, timeline, totalResponses, series }
+}
+
+// ─── Per-engine variant ────────────────────────────────────────────────────
+// Closes the Semrush AEO gap: "share of voice — how often your brand appears
+// relative to competitors ACROSS AI-GENERATED ANSWERS" (per platform).
+// Each AI engine has its own retrieval + ranking behaviour, so an aggregate
+// SoV hides where the brand is strong vs weak.
+
+export interface SovEngineBreakdown extends ShareOfVoice {
+  /** Engine label (chatgpt|gemini|perplexity|claude|unknown). */
+  engine: string
+}
+
+export interface SovByEngineResult {
+  /** Aggregate across all engines — same as computeShareOfVoice over rows. */
+  overall: ShareOfVoice
+  /** One entry per engine that produced at least one row. Sorted by total
+   *  responses descending so the most-monitored engine leads. */
+  byEngine: SovEngineBreakdown[]
+}
+
+/**
+ * Group rows by engine and run computeShareOfVoice on each group, then run
+ * it once more on the whole set for the aggregate. Pure aggregation, no
+ * extra work beyond what computeShareOfVoice already does — just N+1 calls.
+ */
+export function computeShareOfVoiceByEngine(
+  rows: SovInputRow[],
+  brandName: string,
+  opts: SovOptions = {},
+): SovByEngineResult {
+  const overall = computeShareOfVoice(rows, brandName, opts)
+
+  const grouped = new Map<string, SovInputRow[]>()
+  for (const row of rows) {
+    const eng = (row.engine || 'unknown').toLowerCase()
+    const list = grouped.get(eng) ?? []
+    list.push(row)
+    grouped.set(eng, list)
+  }
+
+  const byEngine: SovEngineBreakdown[] = [...grouped.entries()]
+    .map(([engine, engineRows]) => ({
+      engine,
+      ...computeShareOfVoice(engineRows, brandName, opts),
+    }))
+    .sort((a, b) => b.totalResponses - a.totalResponses || a.engine.localeCompare(b.engine))
+
+  return { overall, byEngine }
 }

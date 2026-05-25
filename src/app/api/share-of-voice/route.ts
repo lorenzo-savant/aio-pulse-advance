@@ -4,7 +4,11 @@ import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
-import { computeShareOfVoice, type SovInputRow } from '@/lib/services/share-of-voice'
+import {
+  computeShareOfVoice,
+  computeShareOfVoiceByEngine,
+  type SovInputRow,
+} from '@/lib/services/share-of-voice'
 import { classifyMarketPosition } from '@/lib/services/market-position'
 
 export const dynamic = 'force-dynamic'
@@ -27,6 +31,7 @@ export async function GET(req: NextRequest) {
   const brandId = searchParams.get('brand_id')
   const days = Math.min(365, Math.max(1, Number(searchParams.get('days')) || 30))
   const bucket = searchParams.get('bucket') === 'week' ? 'week' : 'day'
+  const includeByEngine = searchParams.get('byEngine') === '1'
 
   if (!brandId) return err('brand_id is required', 400)
 
@@ -42,7 +47,7 @@ export async function GET(req: NextRequest) {
     )
       .from('monitoring_results')
       .select(
-        'brand_mentioned, mention_count, mention_position, competitor_mentions, sentiment_score, created_at',
+        'brand_mentioned, mention_count, mention_position, competitor_mentions, sentiment_score, created_at, engine',
       )
       .eq('brand_id', brandId)
       .gte('created_at', since.toISOString())
@@ -56,6 +61,11 @@ export async function GET(req: NextRequest) {
 
     const rows = (data ?? []) as Array<SovInputRow & { sentiment_score: number | null }>
     const sov = computeShareOfVoice(rows as SovInputRow[], brand.name, { bucket })
+    // Per-engine breakdown — only computed when the caller asks for it,
+    // so the legacy aggregate-only response stays cheap.
+    const byEngine = includeByEngine
+      ? computeShareOfVoiceByEngine(rows as SovInputRow[], brand.name, { bucket }).byEngine
+      : null
 
     // ── Market Position (HubSpot-style role + perception) from REAL signals ──
     const brandEntity = sov.entities.find((e) => e.isBrand)
@@ -93,7 +103,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { ...sov, marketPosition },
+      data: { ...sov, marketPosition, ...(byEngine ? { byEngine } : {}) },
       timestamp: Date.now(),
     })
   } catch (e) {

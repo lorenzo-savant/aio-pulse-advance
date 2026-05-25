@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { computeShareOfVoice, type SovInputRow } from '../services/share-of-voice'
+import {
+  computeShareOfVoice,
+  computeShareOfVoiceByEngine,
+  type SovInputRow,
+} from '../services/share-of-voice'
 
 const row = (over: Partial<SovInputRow>): SovInputRow => ({
   brand_mentioned: false,
@@ -94,6 +98,70 @@ describe('computeShareOfVoice', () => {
     expect(sov.timeline[0]!.shares['Acme']).toBe(100)
     expect(sov.timeline[1]!.shares['Acme']).toBe(50)
     expect(sov.timeline[1]!.shares['Rival']).toBe(50)
+  })
+
+  it('per-engine breakdown groups rows by engine and runs SoV per group', () => {
+    const rs: SovInputRow[] = [
+      row({ engine: 'chatgpt', brand_mentioned: true, mention_count: 1 }),
+      row({
+        engine: 'chatgpt',
+        brand_mentioned: true,
+        mention_count: 1,
+        competitor_mentions: [{ name: 'Rival', position: 1, count: 1 }],
+      }),
+      row({
+        engine: 'gemini',
+        brand_mentioned: false,
+        competitor_mentions: [{ name: 'Rival', position: 1, count: 1 }],
+      }),
+      row({
+        engine: 'gemini',
+        brand_mentioned: false,
+        competitor_mentions: [{ name: 'Rival', position: 1, count: 1 }],
+      }),
+    ]
+    const sov = computeShareOfVoiceByEngine(rs, 'Acme')
+    expect(sov.byEngine.map((e) => e.engine)).toEqual(['chatgpt', 'gemini'])
+
+    const chatgpt = sov.byEngine.find((e) => e.engine === 'chatgpt')!
+    const gemini = sov.byEngine.find((e) => e.engine === 'gemini')!
+    expect(chatgpt.totalResponses).toBe(2)
+    expect(gemini.totalResponses).toBe(2)
+
+    const brandOnChatgpt = chatgpt.entities.find((e) => e.isBrand)!
+    const brandOnGemini = gemini.entities.find((e) => e.isBrand)!
+    // chatgpt: 2 brand, 1 rival → brand share 66.7%
+    expect(brandOnChatgpt.share).toBeCloseTo(66.7, 1)
+    // gemini: 0 brand, 2 rival → brand share 0%
+    expect(brandOnGemini.share).toBe(0)
+
+    // Overall = aggregate as if engine grouping didn't exist.
+    expect(sov.overall.totalResponses).toBe(4)
+    const overallBrand = sov.overall.entities.find((e) => e.isBrand)!
+    expect(overallBrand.mentions).toBe(2)
+  })
+
+  it('per-engine sorts engines by response volume (most-monitored first)', () => {
+    const rs: SovInputRow[] = [
+      row({ engine: 'gemini', brand_mentioned: true, mention_count: 1 }),
+      row({ engine: 'chatgpt', brand_mentioned: true, mention_count: 1 }),
+      row({ engine: 'chatgpt', brand_mentioned: true, mention_count: 1 }),
+      row({ engine: 'chatgpt', brand_mentioned: true, mention_count: 1 }),
+    ]
+    const sov = computeShareOfVoiceByEngine(rs, 'Acme')
+    // chatgpt has 3 responses, gemini 1 → chatgpt first
+    expect(sov.byEngine.map((e) => e.engine)).toEqual(['chatgpt', 'gemini'])
+  })
+
+  it('per-engine labels null/missing engine as "unknown"', () => {
+    const rs: SovInputRow[] = [
+      row({ engine: null, brand_mentioned: true, mention_count: 1 }),
+      row({ brand_mentioned: true, mention_count: 1 }), // engine field absent
+    ]
+    const sov = computeShareOfVoiceByEngine(rs, 'Acme')
+    expect(sov.byEngine).toHaveLength(1)
+    expect(sov.byEngine[0]!.engine).toBe('unknown')
+    expect(sov.byEngine[0]!.totalResponses).toBe(2)
   })
 
   it('caps the timeline series to brand + top N competitors', () => {

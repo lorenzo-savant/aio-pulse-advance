@@ -5,6 +5,13 @@ import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { classifyCitation, type CitationType } from '@/lib/utils/citation-classifier'
 import {
+  classifyCitationDepth,
+  type CitationDepth,
+  type DepthBreakdown,
+  emptyDepthBreakdown,
+  deepPageRate,
+} from '@/lib/utils/citation-depth'
+import {
   classifyDomainAuthority,
   computeAiTrustScore,
   type DomainCategory,
@@ -123,6 +130,7 @@ export async function GET(req: NextRequest) {
       engines: Set<string>
       sampleUrls: Set<string>
       types: TypeBreakdown
+      depths: DepthBreakdown
       sentimentSum: number
       sentimentCount: number
       lastSeen: string
@@ -139,6 +147,7 @@ export async function GET(req: NextRequest) {
     const byEngine = new Map<string, number>()
     const byDay = new Map<string, number>()
     const citationTypeBreakdown: TypeBreakdown = emptyBreakdown()
+    const citationDepthBreakdown: DepthBreakdown = emptyDepthBreakdown()
 
     let totalResponses = 0
     let responsesWithSources = 0
@@ -163,6 +172,8 @@ export async function GET(req: NextRequest) {
 
         const citationType = classifyCitation(rawUrl)
         citationTypeBreakdown[citationType]++
+        const citationDepth: CitationDepth = classifyCitationDepth(rawUrl)
+        citationDepthBreakdown[citationDepth]++
 
         byEngine.set(eng, (byEngine.get(eng) || 0) + 1)
         byDay.set(day, (byDay.get(day) || 0) + 1)
@@ -176,6 +187,7 @@ export async function GET(req: NextRequest) {
             engines: new Set(),
             sampleUrls: new Set(),
             types: emptyBreakdown(),
+            depths: emptyDepthBreakdown(),
             sentimentSum: 0,
             sentimentCount: 0,
             lastSeen: row.created_at,
@@ -185,6 +197,7 @@ export async function GET(req: NextRequest) {
         agg.count++
         agg.engines.add(eng)
         agg.types[citationType]++
+        agg.depths[citationDepth]++
         if (typeof row.sentiment_score === 'number') {
           agg.sentimentSum += row.sentiment_score
           agg.sentimentCount++
@@ -244,6 +257,11 @@ export async function GET(req: NextRequest) {
           sampleUrls: [...d.sampleUrls],
           dominantType: dominantOf(d.types),
           typeBreakdown: d.types,
+          // Page-depth mix for this domain (root / hub / leaf). Used by the
+          // UI to surface "AI cites your blog/docs, not your homepage" per
+          // the Semrush AEO finding that AI favours deep subpages.
+          depthBreakdown: d.depths,
+          deepPageRate: deepPageRate(d.depths),
           // AI Trust Score: proprietary 0–100 metric (cross-engine + domain
           // category + volume share + sentiment alignment). Free signals only.
           trustScore: trust.score,
@@ -292,6 +310,11 @@ export async function GET(req: NextRequest) {
           ownedDomain,
           // Citation-type mix across all sources for the period.
           citationTypeBreakdown,
+          // Citation-depth mix (root / hub / leaf) + deep-page rate %.
+          // Aligns with the Semrush AEO finding that AI engines favour
+          // deep subpages over homepage URLs even when ranking the latter.
+          citationDepthBreakdown,
+          deepPageRate: deepPageRate(citationDepthBreakdown),
         },
         domains: topDomains,
         /**

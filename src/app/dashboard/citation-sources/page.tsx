@@ -27,11 +27,18 @@ interface Brand {
 }
 
 type CitationType = 'informational' | 'product' | 'multimedia'
+type CitationDepth = 'root' | 'hub' | 'leaf'
 
 interface TypeBreakdown {
   informational: number
   product: number
   multimedia: number
+}
+
+interface DepthBreakdown {
+  root: number
+  hub: number
+  leaf: number
 }
 
 type TrustCategory =
@@ -53,6 +60,8 @@ interface DomainRow {
   sampleUrls: string[]
   dominantType: CitationType
   typeBreakdown: TypeBreakdown
+  depthBreakdown: DepthBreakdown
+  deepPageRate: number
   trustScore: number
   trustCategory: TrustCategory
   trustReasoning: string[]
@@ -71,6 +80,8 @@ interface Summary {
   ownedShare: number
   ownedDomain: string | null
   citationTypeBreakdown: TypeBreakdown
+  citationDepthBreakdown: DepthBreakdown
+  deepPageRate: number
 }
 
 interface OwnedPageRow {
@@ -391,6 +402,79 @@ export default function CitationSourcesPage() {
                       <span className="font-bold">{t.multimedia}</span> multimedia
                     </p>
                     <p className="text-xs text-muted-foreground">{pct(t.multimedia).toFixed(1)}%</p>
+                  </div>
+                </div>
+              </Card>
+            )
+          })()}
+
+          {/* Citation depth — root / hub / leaf + deep-page rate */}
+          {(() => {
+            const d = summary.citationDepthBreakdown
+            const total = d.root + d.hub + d.leaf
+            if (total === 0) return null
+            const pct = (n: number) => (n / total) * 100
+            const rate = summary.deepPageRate
+            const rateAccent =
+              rate >= 70 ? 'text-emerald-400' : rate >= 40 ? 'text-amber-400' : 'text-rose-400'
+            return (
+              <Card className="p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Link2 className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="text-lg font-bold text-foreground">Citation Depth</h2>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Deep-page rate
+                    </p>
+                    <p className={cn('text-2xl font-black leading-none', rateAccent)}>
+                      {rate.toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Where on a domain the AI engines pull citations from: the <b>homepage</b> (root),
+                  a <b>section landing</b> (hub like /blog, /docs, /pricing), or a <b>deep page</b>{' '}
+                  (leaf — a specific article, doc, or product). AI engines favour deep subpages even
+                  when ranking the homepage, so a high deep-page rate means your content is earning
+                  the citation.
+                </p>
+                <div className="flex h-4 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full bg-rose-500/80 transition-all duration-700"
+                    style={{ width: `${pct(d.root)}%` }}
+                    title={`${d.root} homepage`}
+                  />
+                  <div
+                    className="h-full bg-amber-500/80 transition-all duration-700"
+                    style={{ width: `${pct(d.hub)}%` }}
+                    title={`${d.hub} hub`}
+                  />
+                  <div
+                    className="h-full bg-emerald-500/80 transition-all duration-700"
+                    style={{ width: `${pct(d.leaf)}%` }}
+                    title={`${d.leaf} deep page`}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <p className="text-rose-400">
+                      <span className="font-bold">{d.root}</span> homepage
+                    </p>
+                    <p className="text-xs text-muted-foreground">{pct(d.root).toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-amber-400">
+                      <span className="font-bold">{d.hub}</span> hub
+                    </p>
+                    <p className="text-xs text-muted-foreground">{pct(d.hub).toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-emerald-400">
+                      <span className="font-bold">{d.leaf}</span> deep page
+                    </p>
+                    <p className="text-xs text-muted-foreground">{pct(d.leaf).toFixed(1)}%</p>
                   </div>
                 </div>
               </Card>

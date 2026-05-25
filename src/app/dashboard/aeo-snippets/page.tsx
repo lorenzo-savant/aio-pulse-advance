@@ -285,6 +285,15 @@ export default function AEOSnippetsPage() {
             variant="primary"
             onClick={runGeneration}
             disabled={running || !selectedBrand || !keywordInput.trim()}
+            title={
+              running
+                ? 'Generation in progress…'
+                : !selectedBrand
+                  ? 'Select a brand first'
+                  : !keywordInput.trim()
+                    ? 'Type a seed keyword to enable Generate'
+                    : 'Generate AEO snippets'
+            }
           >
             {running ? (
               <>
@@ -299,6 +308,14 @@ export default function AEOSnippetsPage() {
             )}
           </Button>
         </div>
+        {!keywordInput.trim() && !running && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Type a seed keyword above to enable <b>Generate</b> — e.g.{' '}
+            <code className="rounded bg-secondary px-1">castingplattform Sverige</code>,{' '}
+            <code className="rounded bg-secondary px-1">marknadsföringsbyrå Stockholm</code>, or{' '}
+            <code className="rounded bg-secondary px-1">best running shoes for flat feet</code>.
+          </p>
+        )}
         {(braveQuota || dataforseoQuota) && (
           <div className="mt-3 space-y-1 text-xs text-muted-foreground">
             {dataforseoQuota && dataforseoQuota.capCents > 0 && (

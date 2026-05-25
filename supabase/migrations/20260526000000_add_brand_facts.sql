@@ -41,6 +41,9 @@ CREATE INDEX IF NOT EXISTS idx_brand_facts_user
 
 ALTER TABLE public.brand_facts ENABLE ROW LEVEL SECURITY;
 
+-- Postgres CREATE POLICY has no IF NOT EXISTS — drop-then-create makes the
+-- migration idempotent on re-runs.
+DROP POLICY IF EXISTS "users_own_brand_facts" ON public.brand_facts;
 CREATE POLICY "users_own_brand_facts" ON public.brand_facts
   FOR ALL USING (
     brand_id IN (SELECT id FROM public.brands WHERE user_id = (SELECT auth.uid())::text)

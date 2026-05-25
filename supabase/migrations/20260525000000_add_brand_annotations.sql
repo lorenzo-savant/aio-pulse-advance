@@ -44,6 +44,10 @@ CREATE INDEX IF NOT EXISTS idx_brand_annotations_user
 -- RLS: only the user that owns the brand can read/write the annotation.
 ALTER TABLE public.brand_annotations ENABLE ROW LEVEL SECURITY;
 
+-- Postgres CREATE POLICY has no IF NOT EXISTS — drop-then-create makes the
+-- migration idempotent on re-runs (DB already partially applied via prior
+-- runs / manual SQL).
+DROP POLICY IF EXISTS "users_own_brand_annotations" ON public.brand_annotations;
 CREATE POLICY "users_own_brand_annotations" ON public.brand_annotations
   FOR ALL USING (
     brand_id IN (SELECT id FROM public.brands WHERE user_id = (SELECT auth.uid())::text)

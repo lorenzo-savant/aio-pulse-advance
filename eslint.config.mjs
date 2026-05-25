@@ -29,14 +29,16 @@ export default [
     rules: {
       // Standard pattern: _-prefixed names are intentional "I needed the
       // position but not the value" (destructuring, callback params, …).
-      // Without this both eslint reports them as "unused" — false noise.
+      // caughtErrors: 'none' — catch(e) where `e` is intentionally ignored
+      // is a deliberate "swallow this, fall through" pattern; reporting it
+      // produces dozens of false-positive warnings across the codebase.
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
           destructuredArrayIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
+          caughtErrors: 'none',
         },
       ],
       '@typescript-eslint/consistent-type-imports': 'warn',

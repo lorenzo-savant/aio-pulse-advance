@@ -14,6 +14,8 @@ import { Card } from '@/components/ui/Card'
 import { Target, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+type PkdBand = 'within_reach' | 'stretch' | 'tough'
+
 interface Query {
   query: string
   impressions: number
@@ -22,6 +24,16 @@ interface Query {
   position: number
   band: 'edge' | 'mid' | 'far'
   upliftClicks: number
+  kd?: number
+  pkd?: number
+  pkdBand?: PkdBand
+}
+
+interface AuthorityProfile {
+  totalClicks: number
+  avgPosition: number | null
+  totalAiCitations: number
+  uniquePages: number
 }
 
 interface StrikingData {
@@ -32,8 +44,23 @@ interface StrikingData {
     targetPosition: number
     minImpressions: number
     positionRange: { min: number; max: number }
+    authority?: AuthorityProfile
   }
   queries: Query[]
+}
+
+function pkdClass(b: PkdBand | undefined): string {
+  if (b === 'within_reach') return 'bg-emerald-500/15 text-emerald-300'
+  if (b === 'stretch') return 'bg-amber-500/15 text-amber-300'
+  if (b === 'tough') return 'bg-rose-500/15 text-rose-300'
+  return 'bg-secondary text-muted-foreground'
+}
+
+function pkdLabel(b: PkdBand | undefined): string {
+  if (b === 'within_reach') return 'within reach'
+  if (b === 'stretch') return 'stretch'
+  if (b === 'tough') return 'tough'
+  return ''
 }
 
 interface BrandLite {
@@ -191,6 +218,20 @@ export function StrikingDistancePanel({ brandId: brandIdProp }: { brandId?: stri
                 <span>CTR {q.ctr.toFixed(2)}%</span>
                 <span>·</span>
                 <span>{q.clicks} clicks now</span>
+                {q.pkd != null && (
+                  <>
+                    <span>·</span>
+                    <span
+                      className={cn(
+                        'rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                        pkdClass(q.pkdBand),
+                      )}
+                      title={`Generic KD: ${q.kd ?? '—'} · Personal KD: ${q.pkd} (${pkdLabel(q.pkdBand)})`}
+                    >
+                      PKD {q.pkd} · {pkdLabel(q.pkdBand)}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             <div className="text-right">

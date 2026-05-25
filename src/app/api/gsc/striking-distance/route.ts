@@ -17,6 +17,11 @@ import {
   strikingDistanceBand,
   STRIKING_DISTANCE_TARGET_POSITION,
 } from '@/lib/utils/striking-distance'
+import {
+  computePersonalKeywordDifficulty,
+  estimateKdFromPosition,
+  type AuthoritySignals,
+} from '@/lib/utils/personal-keyword-difficulty'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -78,6 +83,52 @@ export async function GET(req: NextRequest) {
       if (!latestByQuery.has(q)) latestByQuery.set(q, r)
     }
 
+    // ── Build brand authority signals from the full GSC sample (not just
+    // the striking-distance subset) so PKD reflects overall standing. ──
+    let totalClicksAll = 0
+    let posSum = 0
+    let posCount = 0
+    const allQueries = new Set<string>()
+    for (const r of latestByQuery.values()) {
+      totalClicksAll += r.clicks ?? 0
+      if (typeof r.position === 'number') {
+        posSum += r.position
+        posCount++
+      }
+      if (r.dimension_value) allQueries.add(r.dimension_value)
+    }
+    const avgPosition = posCount > 0 ? posSum / posCount : null
+
+    // Citation + breadth signals come from monitoring_results in the same
+    // window. Best-effort — failure is non-fatal (signals stay at 0).
+    let totalAiCitations = 0
+    let uniquePages = allQueries.size
+    try {
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      const { data: mon } = await (db as any)
+        .from('monitoring_results')
+        .select('cited_urls')
+        .eq('brand_id', brandId)
+        .limit(2000)
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+      const uniqUrls = new Set<string>()
+      for (const row of (mon ?? []) as Array<{ cited_urls: string[] | null }>) {
+        const list = Array.isArray(row.cited_urls) ? row.cited_urls : []
+        totalAiCitations += list.length
+        for (const u of list) uniqUrls.add(u)
+      }
+      uniquePages += uniqUrls.size
+    } catch {
+      // Ignore — PKD just degrades gracefully without citation signals.
+    }
+
+    const authority: AuthoritySignals = {
+      totalClicks: totalClicksAll,
+      avgPosition,
+      totalAiCitations,
+      uniquePages,
+    }
+
     const enriched = [...latestByQuery.values()]
       .filter((r) => {
         const pos = r.position ?? 0
@@ -89,6 +140,10 @@ export async function GET(req: NextRequest) {
         const ctr = r.ctr ?? 0
         const position = r.position ?? 0
         const upliftClicks = estimateUpliftClicks(impressions, ctr)
+        // PKD: derive a KD proxy from the query's current position, then
+        // adjust by the brand's authority profile.
+        const kd = estimateKdFromPosition(position)
+        const pkdResult = computePersonalKeywordDifficulty(kd, authority)
         return {
           query: r.dimension_value!,
           impressions,
@@ -97,6 +152,9 @@ export async function GET(req: NextRequest) {
           position: Math.round(position * 10) / 10,
           band: strikingDistanceBand(position),
           upliftClicks,
+          kd,
+          pkd: pkdResult.pkd,
+          pkdBand: pkdResult.band,
           lastSeen: r.date,
         }
       })
@@ -115,6 +173,14 @@ export async function GET(req: NextRequest) {
           targetPosition: STRIKING_DISTANCE_TARGET_POSITION,
           minImpressions,
           positionRange: { min: minPosition, max: maxPosition },
+          // Brand authority profile used to compute PKD — surfaced so the
+          // UI can show the user where their PKD discount comes from.
+          authority: {
+            totalClicks: totalClicksAll,
+            avgPosition: avgPosition != null ? Math.round(avgPosition * 10) / 10 : null,
+            totalAiCitations,
+            uniquePages,
+          },
         },
         queries: enriched.slice(0, 100),
       },

@@ -381,8 +381,9 @@ export default function ApiCostsPage() {
               {data.serp.providers.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   No SERP providers configured. Set{' '}
-                  <code className="rounded bg-secondary px-1">BRAVE_API_KEYS</code> or{' '}
-                  <code className="rounded bg-secondary px-1">DATAFORSEO_LOGIN</code>+
+                  <code className="rounded bg-secondary px-1">BRAVE_SEARCH_API_KEY</code> (+
+                  optional <code className="rounded bg-secondary px-1">BRAVE_ANSWER_API_KEY</code>)
+                  or <code className="rounded bg-secondary px-1">DATAFORSEO_LOGIN</code>+
                   <code className="rounded bg-secondary px-1">DATAFORSEO_KEY</code> in your env.
                 </p>
               )}

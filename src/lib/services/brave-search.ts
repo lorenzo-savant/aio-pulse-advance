@@ -7,6 +7,16 @@
 // "honest substitute" for Google AI Overview via the Summarizer endpoint.
 // Serper.dev is the paid tier when Brave free runs out (separate provider).
 //
+// Brave sells Search (web/news/images) and AI/Summarizer (Answer/grounding)
+// as SEPARATE subscriptions, each with its own API key + quota. We support
+// two independent key pools:
+//   - "search" pool → web/search, news/search, images/search, …
+//                     env: BRAVE_SEARCH_API_KEY (+ optional ..._API_KEYS list)
+//   - "answer" pool → summarizer/search (the Answer / AI summary endpoint)
+//                     env: BRAVE_ANSWER_API_KEY (+ optional ..._API_KEYS list)
+// Legacy single-key callers can still set BRAVE_API_KEYS / BRAVE_API_KEY —
+// when neither pool-specific var is set, the legacy var feeds both pools.
+//
 // Resilience pattern is INTRA-PROVIDER, not multi-provider rotation:
 //   - 429 (rate limit): exponential backoff with jitter (1s → 2s → 4s → 8s),
 //     max 4 attempts.
@@ -29,20 +39,58 @@ const MIN_REQUEST_INTERVAL_MS = 1000
 
 const BACKOFF_DELAYS_MS = [1000, 2000, 4000, 8000]
 
-function getKeys(): string[] {
-  const raw = process.env['BRAVE_API_KEYS'] || process.env['BRAVE_API_KEY'] || ''
-  return raw
-    .split(',')
-    .map((k) => k.trim())
-    .filter((k) => k.length > 0)
+// Brave pools share the brave_api_usage table. We partition them by key_index:
+// search keys occupy 0..N-1, answer keys occupy ANSWER_POOL_OFFSET..+M-1.
+// Keeping a single table avoids a migration; offset is high enough to never
+// collide with realistic search-key counts (Brave plans cap at ~10 keys).
+export const ANSWER_POOL_OFFSET = 1000
+
+export type BravePool = 'search' | 'answer'
+
+function readKeysFromEnvs(names: string[]): string[] {
+  for (const name of names) {
+    const raw = (process.env[name] || '').trim()
+    if (raw.length === 0) continue
+    const list = raw
+      .split(',')
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0)
+    if (list.length > 0) return list
+  }
+  return []
 }
 
-// Per-key monthly limits aligned by index to BRAVE_API_KEYS.
-//   BRAVE_MONTHLY_LIMIT=2000             → every key gets 2000 (the free cap)
-//   BRAVE_MONTHLY_LIMIT=2000,10000       → key0=2000 (free), key1=10000 (paid)
-export function getPerKeyLimits(keyCount: number): number[] {
+function getLegacyKeys(): string[] {
+  return readKeysFromEnvs(['BRAVE_API_KEYS', 'BRAVE_API_KEY'])
+}
+
+export function getKeysForPool(pool: BravePool): string[] {
+  const direct =
+    pool === 'answer'
+      ? readKeysFromEnvs(['BRAVE_ANSWER_API_KEY', 'BRAVE_ANSWER_API_KEYS'])
+      : readKeysFromEnvs(['BRAVE_SEARCH_API_KEY', 'BRAVE_SEARCH_API_KEYS'])
+  if (direct.length > 0) return direct
+  // Legacy fallback — same key serves both Search and Summarizer.
+  return getLegacyKeys()
+}
+
+function poolForPath(path: string): BravePool {
+  return path.startsWith('summarizer') ? 'answer' : 'search'
+}
+
+function dbKeyIndex(pool: BravePool, idxInPool: number): number {
+  return pool === 'answer' ? idxInPool + ANSWER_POOL_OFFSET : idxInPool
+}
+
+// Per-key monthly limits aligned by index to the pool's key list.
+//   BRAVE_SEARCH_MONTHLY_LIMIT=2000        → every search key gets 2000
+//   BRAVE_SEARCH_MONTHLY_LIMIT=2000,10000  → key0=2000 (free), key1=10000 (paid)
+// Legacy BRAVE_MONTHLY_LIMIT still works as fallback when the pool-specific
+// override is unset (applies to both pools).
+export function getPerKeyLimitsForPool(pool: BravePool, keyCount: number): number[] {
   if (keyCount <= 0) return []
-  const raw = (process.env['BRAVE_MONTHLY_LIMIT'] || '').trim()
+  const envName = pool === 'answer' ? 'BRAVE_ANSWER_MONTHLY_LIMIT' : 'BRAVE_SEARCH_MONTHLY_LIMIT'
+  const raw = (process.env[envName] || process.env['BRAVE_MONTHLY_LIMIT'] || '').trim()
   const tokens = raw.length > 0 ? raw.split(',') : []
   const parsed = tokens.map((t) => {
     const n = parseInt(t.trim(), 10)
@@ -59,6 +107,12 @@ export function getPerKeyLimits(keyCount: number): number[] {
   return limits
 }
 
+// Backward-compat shim — preserves the original single-pool signature used
+// by tests and legacy callers; resolves against the search pool's limits.
+export function getPerKeyLimits(keyCount: number): number[] {
+  return getPerKeyLimitsForPool('search', keyCount)
+}
+
 function currentMonth(): string {
   const d = new Date()
   const m = String(d.getUTCMonth() + 1).padStart(2, '0')
@@ -66,7 +120,11 @@ function currentMonth(): string {
 }
 
 export function isBraveSearchAvailable(): boolean {
-  return getKeys().length > 0
+  return getKeysForPool('search').length > 0
+}
+
+export function isBraveAnswerAvailable(): boolean {
+  return getKeysForPool('answer').length > 0
 }
 
 // brave_api_usage table created by 20260520040000_add_brave_api_usage.sql.
@@ -101,24 +159,52 @@ async function incrementUsage(keyIndex: number): Promise<number> {
   return typeof data === 'number' ? data : 0
 }
 
-export async function getBraveQuota(): Promise<{
+export interface BravePoolQuota {
+  /** Whether this pool has at least one configured key. */
+  configured: boolean
   limit: number
   used: number
   remaining: number
   perKey: Array<{ index: number; used: number; remaining: number }>
-}> {
-  const keys = getKeys()
-  if (keys.length === 0) return { limit: 0, used: 0, remaining: 0, perKey: [] }
-  const limits = getPerKeyLimits(keys.length)
-  const usage = await readUsage()
+}
+
+function poolQuotaFrom(pool: BravePool, usage: Map<number, number>): BravePoolQuota {
+  const keys = getKeysForPool(pool)
+  if (keys.length === 0) return { configured: false, limit: 0, used: 0, remaining: 0, perKey: [] }
+  const limits = getPerKeyLimitsForPool(pool, keys.length)
   const perKey = keys.map((_, i) => {
-    const used = usage.get(i) || 0
+    const used = usage.get(dbKeyIndex(pool, i)) || 0
     const keyLimit = limits[i] ?? BRAVE_DEFAULT_PER_KEY_LIMIT
     return { index: i, used, remaining: Math.max(0, keyLimit - used) }
   })
   const limit = limits.reduce((a, b) => a + b, 0)
   const used = perKey.reduce((a, k) => a + k.used, 0)
-  return { limit, used, remaining: Math.max(0, limit - used), perKey }
+  return { configured: true, limit, used, remaining: Math.max(0, limit - used), perKey }
+}
+
+export async function getBraveQuota(): Promise<{
+  // Aggregate across both pools — preserves the legacy shape so the
+  // SERP spending widget keeps working without per-pool awareness.
+  limit: number
+  used: number
+  remaining: number
+  perKey: Array<{ index: number; used: number; remaining: number }>
+  // Per-pool detail for the new dashboard breakdown.
+  search: BravePoolQuota
+  answer: BravePoolQuota
+}> {
+  const usage = await readUsage()
+  const search = poolQuotaFrom('search', usage)
+  const answer = poolQuotaFrom('answer', usage)
+  const limit = search.limit + answer.limit
+  const used = search.used + answer.used
+  // Flatten perKey for legacy consumers; offset the answer pool's indices so
+  // they don't collide with search keys in UIs that render the array directly.
+  const perKey = [
+    ...search.perKey,
+    ...answer.perKey.map((k) => ({ ...k, index: k.index + ANSWER_POOL_OFFSET })),
+  ]
+  return { limit, used, remaining: Math.max(0, limit - used), perKey, search, answer }
 }
 
 export class BraveQuotaExceeded extends Error {
@@ -143,7 +229,8 @@ async function throttle(): Promise<void> {
   lastRequestAt = Date.now()
 }
 
-let keyIndex = 0
+// Pool-scoped rotation cursors. Both pools share the 1-req/sec throttle.
+const poolKeyCursor: Record<BravePool, number> = { search: 0, answer: 0 }
 
 interface BraveCallOptions {
   /** Brave API path under /res/v1 (e.g. 'web/search', 'summarizer/search'). */
@@ -155,28 +242,41 @@ interface BraveCallOptions {
 /**
  * Low-level Brave API call. Handles auth, rate limit, backoff, quota tracking,
  * key rotation. Caller maps the JSON response to its own typed shape.
+ *
+ * Routing: paths under `summarizer/` hit the Answer-pool keys; everything
+ * else hits the Search-pool keys.
  */
 export async function callBrave({ path, params }: BraveCallOptions): Promise<unknown> {
-  const keys = getKeys()
-  if (keys.length === 0) throw new Error('BRAVE_API_KEYS not configured')
+  const pool = poolForPath(path)
+  const keys = getKeysForPool(pool)
+  if (keys.length === 0) {
+    const envHint =
+      pool === 'answer'
+        ? 'BRAVE_ANSWER_API_KEY (or legacy BRAVE_API_KEYS)'
+        : 'BRAVE_SEARCH_API_KEY (or legacy BRAVE_API_KEYS)'
+    throw new Error(`${envHint} not configured for ${pool} pool`)
+  }
 
-  const limits = getPerKeyLimits(keys.length)
+  const limits = getPerKeyLimitsForPool(pool, keys.length)
   const usage = await readUsage()
 
   let lastErr: Error | null = null
   let allExhausted = true
 
   for (let attempt = 0; attempt < keys.length; attempt++) {
-    const idx = (keyIndex + attempt) % keys.length
-    const keyLimit = limits[idx] ?? BRAVE_DEFAULT_PER_KEY_LIMIT
-    const already = usage.get(idx) || 0
+    const idxInPool = (poolKeyCursor[pool] + attempt) % keys.length
+    const dbIdx = dbKeyIndex(pool, idxInPool)
+    const keyLimit = limits[idxInPool] ?? BRAVE_DEFAULT_PER_KEY_LIMIT
+    const already = usage.get(dbIdx) || 0
     if (already >= keyLimit) {
-      lastErr = new Error(`Brave key #${idx + 1} monthly quota exhausted (${already}/${keyLimit})`)
+      lastErr = new Error(
+        `Brave ${pool} key #${idxInPool + 1} monthly quota exhausted (${already}/${keyLimit})`,
+      )
       continue
     }
     allExhausted = false
 
-    const key = keys[idx]!
+    const key = keys[idxInPool]!
     const url = new URL(`${BRAVE_BASE_URL}/${path}`)
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
 
@@ -193,28 +293,28 @@ export async function callBrave({ path, params }: BraveCallOptions): Promise<unk
         })
 
         if (res.status === 429) {
-          // Add ±25% jitter to backoff so concurrent callers desynchronise.
           const base = BACKOFF_DELAYS_MS[backoffAttempt] ?? 8000
           const jitter = base * (0.75 + Math.random() * 0.5)
           logger.warn(`Brave 429 — backing off ${Math.round(jitter)}ms`, {
             service: 'brave-search',
+            pool,
             attempt: backoffAttempt + 1,
-            keyIndex: idx,
+            keyIndex: idxInPool,
           })
           await new Promise((r) => setTimeout(r, jitter))
-          continue // retry same key
+          continue
         }
 
         if (res.status === 401 || res.status === 403) {
-          // Auth-level failure — don't retry this key, try next one if any.
-          await incrementUsage(idx)
-          usage.set(idx, (usage.get(idx) || 0) + 1)
-          lastErr = new Error(`Brave key #${idx + 1} unauthorized/forbidden (${res.status})`)
-          break // exit backoff loop, try next key
+          await incrementUsage(dbIdx)
+          usage.set(dbIdx, (usage.get(dbIdx) || 0) + 1)
+          lastErr = new Error(
+            `Brave ${pool} key #${idxInPool + 1} unauthorized/forbidden (${res.status})`,
+          )
+          break
         }
 
         if (res.status >= 500) {
-          // Server-side transient. Backoff + retry same key.
           const base = BACKOFF_DELAYS_MS[backoffAttempt] ?? 8000
           await new Promise((r) => setTimeout(r, base))
           lastErr = new Error(`Brave HTTP ${res.status}`)
@@ -222,36 +322,34 @@ export async function callBrave({ path, params }: BraveCallOptions): Promise<unk
         }
 
         if (!res.ok) {
-          // 4xx other than 401/403/429 = caller's bad input. Don't retry.
           const body = await res.text().catch(() => '')
           throw new Error(`Brave HTTP ${res.status}: ${body.slice(0, 200)}`)
         }
 
         const json = (await res.json()) as unknown
-        const newCount = await incrementUsage(idx)
+        const newCount = await incrementUsage(dbIdx)
         if (newCount >= keyLimit) {
-          logger.warn(`Brave key #${idx + 1} reached monthly limit`, {
+          logger.warn(`Brave ${pool} key #${idxInPool + 1} reached monthly limit`, {
             service: 'brave-search',
+            pool,
             used: newCount,
             limit: keyLimit,
           })
         }
-        keyIndex = (idx + 1) % keys.length
+        poolKeyCursor[pool] = (idxInPool + 1) % keys.length
         return json
       } catch (e) {
-        // Network / abort / parse error. Treat as transient — backoff + retry.
         lastErr = e instanceof Error ? e : new Error(String(e))
       }
     }
-    // Backoff exhausted for this key; try next key.
   }
 
   if (allExhausted) {
     throw new BraveQuotaExceeded(
-      `All ${keys.length} Brave keys reached their monthly limits (${limits.join('/')} queries).`,
+      `All ${keys.length} Brave ${pool} keys reached their monthly limits (${limits.join('/')} queries).`,
     )
   }
-  throw lastErr ?? new Error('All Brave keys failed')
+  throw lastErr ?? new Error(`All Brave ${pool} keys failed`)
 }
 
 // ─── High-level helpers ──────────────────────────────────────────────────────
@@ -518,6 +616,12 @@ export async function summarizeQuery(
   query: string,
   language?: string,
 ): Promise<BraveSummary | null> {
+  if (!isBraveAnswerAvailable()) {
+    logger.debug('Brave Summarizer skipped — answer pool not configured', {
+      service: 'brave-search',
+    })
+    return null
+  }
   const locale = localeParams(language)
   const json = (await withSerpCache(
     {

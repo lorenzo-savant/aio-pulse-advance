@@ -3,9 +3,18 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { calculateOrchestratedCost } from '@/lib/services/cost-calculator'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+
+// Loose RPC shape — the generated Database type's rpc<> overloads gate by a
+// fixed name union that doesn't include consume_free_query / deduct_credits.
+// Cast the client to this minimal shape at the RPC boundary instead of `any`.
+type RpcCapableClient = {
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>
+}
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -87,10 +96,13 @@ export async function POST(req: NextRequest) {
     // Atomic: consume_free_query() increments a per-day counter under a row
     // lock, so concurrent requests cannot each pass the free check.
     if (!isPaidUser) {
-      const { data: usedCount, error: freeErr } = await (db as any).rpc('consume_free_query', {
-        p_user_id: userId,
-        p_limit: FREE_QUERIES_PER_DAY,
-      })
+      const { data: usedCount, error: freeErr } = await (db as unknown as RpcCapableClient).rpc(
+        'consume_free_query',
+        {
+          p_user_id: userId,
+          p_limit: FREE_QUERIES_PER_DAY,
+        },
+      )
 
       if (freeErr) {
         logger.error('consume_free_query RPC failed', {
@@ -120,11 +132,14 @@ export async function POST(req: NextRequest) {
     // (deduct_credits): prevents concurrent requests from double-spending.
     const description = `Query with ${engines.join(', ')}`
 
-    const { data: newBalance, error: deductError } = await (db as any).rpc('deduct_credits', {
-      p_user_id: userId,
-      p_amount: creditsNeeded,
-      p_description: description,
-    })
+    const { data: newBalance, error: deductError } = await (db as unknown as RpcCapableClient).rpc(
+      'deduct_credits',
+      {
+        p_user_id: userId,
+        p_amount: creditsNeeded,
+        p_description: description,
+      },
+    )
 
     if (deductError) {
       logger.error('deduct_credits RPC failed', {
@@ -163,7 +178,7 @@ export async function POST(req: NextRequest) {
         description,
         cost_credits: creditsNeeded,
       })
-      .then(({ error: usageError }: { error: any }) => {
+      .then(({ error: usageError }: { error: { message?: string } | null }) => {
         if (usageError)
           logger.error('Failed to record usage', { source: 'credits', error: String(usageError) })
       })
@@ -186,7 +201,7 @@ export async function POST(req: NextRequest) {
 }
 
 // ─── GET /api/credits/use — Get credit costs info ─────────────────────────────
-export async function GET(req: NextRequest) {
+export async function GET() {
   return NextResponse.json({
     success: true,
     data: {

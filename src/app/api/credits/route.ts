@@ -45,13 +45,9 @@ export async function GET(req: NextRequest) {
 
     if (creditsError) throw creditsError
 
-    const totalPurchased = (credits || [])
-      .filter((c: any) => c.amount > 0)
-      .reduce((sum: number, c: any) => sum + c.amount, 0)
-
-    const totalUsed = (credits || [])
-      .filter((c: any) => c.amount < 0)
-      .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0)
+    const rows = (credits ?? []) as Array<{ amount: number }>
+    const totalPurchased = rows.filter((c) => c.amount > 0).reduce((s, c) => s + c.amount, 0)
+    const totalUsed = rows.filter((c) => c.amount < 0).reduce((s, c) => s + Math.abs(c.amount), 0)
 
     const balance = totalPurchased - totalUsed
 
@@ -137,13 +133,9 @@ export async function POST(req: NextRequest) {
     // Fetch updated balance
     const { data: credits } = await db.from('credits').select('amount').eq('user_id', userId)
 
-    const totalPurchased = (credits || [])
-      .filter((c: any) => c.amount > 0)
-      .reduce((sum: number, c: any) => sum + c.amount, 0)
-
-    const totalUsed = (credits || [])
-      .filter((c: any) => c.amount < 0)
-      .reduce((sum: number, c: any) => sum + Math.abs(c.amount), 0)
+    const rows = (credits ?? []) as Array<{ amount: number }>
+    const totalPurchased = rows.filter((c) => c.amount > 0).reduce((s, c) => s + c.amount, 0)
+    const totalUsed = rows.filter((c) => c.amount < 0).reduce((s, c) => s + Math.abs(c.amount), 0)
 
     return NextResponse.json({
       success: true,

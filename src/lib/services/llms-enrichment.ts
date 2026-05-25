@@ -20,6 +20,7 @@
 // the route; individual sources are switched via EnrichOptions.
 
 import type { createServerClient } from '@/lib/supabase'
+import { asUntyped } from '@/lib/supabase-untyped'
 import { logger } from '@/lib/logger'
 import { safeFetchText } from '@/lib/utils/safe-fetch'
 import { callLLM } from './prompt-generator-ai'
@@ -117,18 +118,23 @@ function extractJsonLdFaqs(html: string): Array<{ question: string; answer: stri
       continue
     }
     // The block can be a single object or an array (or @graph).
-    const nodes: any[] = Array.isArray(json)
-      ? json
-      : (json as any)?.['@graph']
-        ? (json as any)['@graph']
-        : [json]
-    for (const node of nodes) {
-      const entities = node?.mainEntity ?? (node?.['@type'] === 'Question' ? [node] : null)
-      const list = Array.isArray(entities) ? entities : entities ? [entities] : []
-      for (const q of list) {
-        const question = typeof q?.name === 'string' ? q.name.trim() : ''
-        const answer =
-          typeof q?.acceptedAnswer?.text === 'string' ? stripTags(q.acceptedAnswer.text).trim() : ''
+    const j = json as Record<string, unknown> | unknown[]
+    const graph = !Array.isArray(j) && j ? (j as Record<string, unknown>)['@graph'] : null
+    const nodes: unknown[] = Array.isArray(j) ? j : Array.isArray(graph) ? graph : [j]
+    for (const rawNode of nodes) {
+      if (!rawNode || typeof rawNode !== 'object') continue
+      const node = rawNode as Record<string, unknown>
+      const mainEntity = node.mainEntity
+      const isQuestion = node['@type'] === 'Question'
+      const entities = mainEntity ?? (isQuestion ? [node] : null)
+      const list: unknown[] = Array.isArray(entities) ? entities : entities ? [entities] : []
+      for (const rawQ of list) {
+        if (!rawQ || typeof rawQ !== 'object') continue
+        const q = rawQ as Record<string, unknown>
+        const question = typeof q.name === 'string' ? q.name.trim() : ''
+        const accepted = q.acceptedAnswer as Record<string, unknown> | undefined
+        const text = accepted && typeof accepted.text === 'string' ? accepted.text : ''
+        const answer = text ? stripTags(text).trim() : ''
         if (question && answer) out.push({ question, answer })
       }
     }
@@ -326,7 +332,7 @@ async function getAeoFaqs(
   brandId: string,
 ): Promise<Array<{ question: string; answer: string }>> {
   if (!db) return []
-  const dbAny = db as any
+  const dbAny = asUntyped(db)
   try {
     const { data } = await dbAny
       .from('aeo_snippets')
@@ -353,7 +359,7 @@ async function getAeoFaqs(
 
 async function getKeywordSpecialties(db: Db, brandId: string): Promise<string[]> {
   if (!db) return []
-  const dbAny = db as any
+  const dbAny = asUntyped(db)
   try {
     const { data } = await dbAny
       .from('keyword_tracking')
@@ -475,27 +481,26 @@ async function synthesize(
     const description = typeof parsed.description === 'string' ? parsed.description.trim() : ''
     const products = Array.isArray(parsed.products)
       ? parsed.products
-          .filter(
-            (p): p is { name: string; description: string } =>
-              !!p &&
-              typeof p === 'object' &&
-              typeof (p as any).name === 'string' &&
-              typeof (p as any).description === 'string',
-          )
+          .filter((p): p is { name: string; description: string } => {
+            if (!p || typeof p !== 'object') return false
+            const o = p as Record<string, unknown>
+            return typeof o.name === 'string' && typeof o.description === 'string'
+          })
           .map((p) => ({ name: p.name.trim(), description: p.description.trim() }))
           .slice(0, 6)
       : []
     const faqs = Array.isArray(parsed.faqs)
       ? parsed.faqs
-          .filter(
-            (f): f is { question: string; answer: string } =>
-              !!f &&
-              typeof f === 'object' &&
-              typeof (f as any).question === 'string' &&
-              typeof (f as any).answer === 'string' &&
-              (f as any).question.trim().length > 0 &&
-              (f as any).answer.trim().length > 0,
-          )
+          .filter((f): f is { question: string; answer: string } => {
+            if (!f || typeof f !== 'object') return false
+            const o = f as Record<string, unknown>
+            return (
+              typeof o.question === 'string' &&
+              typeof o.answer === 'string' &&
+              o.question.trim().length > 0 &&
+              o.answer.trim().length > 0
+            )
+          })
           .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
           .slice(0, 10)
       : []

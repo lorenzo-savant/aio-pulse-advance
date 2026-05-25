@@ -2,14 +2,14 @@
 import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createServerClient, getCurrentUserId, AuthError, dbNotConfigured } from '@/lib/supabase'
+import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { asUntyped, type UntypedSupabaseClient } from '@/lib/supabase-untyped'
 import { slugify } from '@/lib/utils'
 import { withDerivedAliases } from '@/lib/brand-aliases'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 import { logAudit } from '@/lib/services/audit-log'
 import { getCurrentOrganization } from '@/lib/services/organization-auth'
-import { checkPermission } from '@/lib/services/workspace-auth'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -43,7 +43,11 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
-async function getUserBrandIds(db: any, userId: string, workspaceId?: string): Promise<string[]> {
+async function getUserBrandIds(
+  db: UntypedSupabaseClient,
+  userId: string,
+  workspaceId?: string,
+): Promise<string[]> {
   let query = db.from('brands').select('id').eq('user_id', userId)
 
   if (workspaceId) {
@@ -52,7 +56,7 @@ async function getUserBrandIds(db: any, userId: string, workspaceId?: string): P
 
   const { data: ownedBrands } = await query
 
-  const ownedIds = (ownedBrands || []).map((b: any) => b.id)
+  const ownedIds = ((ownedBrands ?? []) as Array<{ id: string }>).map((b) => b.id)
 
   const { data: teamMemberships } = await db
     .from('team_members')
@@ -60,36 +64,14 @@ async function getUserBrandIds(db: any, userId: string, workspaceId?: string): P
     .eq('user_id', userId)
     .eq('status', 'accepted')
 
-  const teamIds = (teamMemberships || []).map((m: any) => m.brand_id)
+  const teamIds = ((teamMemberships ?? []) as Array<{ brand_id: string }>).map((m) => m.brand_id)
 
   return [...ownedIds, ...teamIds]
 }
 
-async function canEditBrand(db: any, brandId: string, userId: string): Promise<boolean> {
-  const { data: brand } = await db
-    .from('brands')
-    .select('user_id, workspace_id')
-    .eq('id', brandId)
-    .single()
-
-  if (String(brand?.user_id) === userId) return true
-
-  if (brand?.workspace_id) {
-    const hasPermission = await checkPermission(userId, brand.workspace_id, 'edit_brand')
-    if (hasPermission) return true
-  }
-
-  const { data: membership } = await db
-    .from('team_members')
-    .select('role')
-    .eq('brand_id', brandId)
-    .eq('user_id', userId)
-    .eq('status', 'accepted')
-    .in('role', ['owner', 'editor'])
-    .single()
-
-  return !!membership
-}
+// canEditBrand was a local helper, never imported. Workspace-level edit
+// checks live in checkPermission (workspace-auth) + authorize.ts now.
+// Removed to clear no-unused-vars; resurrect from git history if needed.
 
 // ─── GET /api/brands ──────────────────────────────────────────────────────────
 // Returns all brands belonging to the authenticated user, optionally scoped to a workspace.
@@ -125,7 +107,7 @@ export async function GET(req: NextRequest) {
 
     const workspaceId = req.nextUrl.searchParams.get('workspaceId')
 
-    const brandIds = await getUserBrandIds(db, userId, workspaceId ?? undefined)
+    const brandIds = await getUserBrandIds(asUntyped(db), userId, workspaceId ?? undefined)
 
     if (brandIds.length === 0) {
       return NextResponse.json({ success: true, data: [], timestamp: Date.now() })
@@ -210,7 +192,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const insertData: any = {
+  const insertData: Record<string, unknown> = {
     ...parsed.data,
     // Auto-add the legal-suffix-stripped name as an alias (e.g. "Savant Media
     // AB" → "Savant Media") so exact-match brand detection works out of the box.
@@ -222,11 +204,13 @@ export async function POST(req: NextRequest) {
   if (workspaceId) insertData.workspace_id = workspaceId
   if (organizationId) insertData.organization_id = organizationId
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const { data, error } = await db
     .from('brands')
     .insert(insertData as any)
     .select(BRAND_LIST_COLS)
     .single()
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (error) {
     if (error.code === '23505') {

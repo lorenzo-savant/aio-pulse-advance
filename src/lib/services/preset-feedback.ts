@@ -14,8 +14,8 @@
 //      the preset may need more patterns in missing buckets.
 
 import { createServerClient } from '@/lib/supabase'
+import { asUntyped } from '@/lib/supabase-untyped'
 import { INDUSTRY_PRESETS, type IndustryPreset, type Locale } from './prompt-generator'
-import { logger } from '@/lib/logger'
 
 export interface PresetFeedbackSuggestion {
   presetId: string
@@ -46,11 +46,11 @@ export interface PresetFeedbackSuggestion {
 }
 
 async function analyzeZeroMentionPrompts(
-  db: ReturnType<typeof createServerClient>,
+  db: NonNullable<ReturnType<typeof createServerClient>>,
   brandId: string,
   sinceIso: string,
 ): Promise<PresetFeedbackSuggestion['deprecatePatterns']> {
-  const dbAny = db as any
+  const dbAny = asUntyped(db)
   try {
     const { data } = (await dbAny
       .from('monitoring_results')
@@ -86,12 +86,12 @@ async function analyzeZeroMentionPrompts(
 }
 
 async function analyzeEmergingCompetitors(
-  db: ReturnType<typeof createServerClient>,
+  db: NonNullable<ReturnType<typeof createServerClient>>,
   brandId: string,
   sinceIso: string,
   preset: IndustryPreset,
 ): Promise<PresetFeedbackSuggestion['addCompetitors']> {
-  const dbAny = db as any
+  const dbAny = asUntyped(db)
   try {
     const { data } = (await dbAny
       .from('monitoring_results')
@@ -172,7 +172,7 @@ export async function getPresetFeedback(brandId: string): Promise<PresetFeedback
   const db = createServerClient()
   if (!db) throw new Error('Database not configured')
 
-  const dbAny = db as any
+  const dbAny = asUntyped(db)
 
   const { data: brandRow } = (await dbAny
     .from('brands')

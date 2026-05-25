@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createServerClient } from '@/lib/supabase'
+import { asUntyped } from '@/lib/supabase-untyped'
 import { logger } from '@/lib/logger'
 import { logAudit } from '@/lib/services/audit-log'
 import { getCurrentOrganization } from '@/lib/services/organization-auth'
@@ -54,10 +55,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
   }
 
+  // Stripe expands customer/subscription fields differently depending on the
+  // request — webhook deliveries send the bare id but the TS union still
+  // includes Customer / DeletedCustomer. Narrow to a string id once.
+  const customerIdOf = (
+    c: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
+  ): string => {
+    if (!c) return ''
+    return typeof c === 'string' ? c : c.id
+  }
+  // Stripe SDK 18+ moved current_period_end under SubscriptionItem; older
+  // webhooks still include the top-level field. Read it without `any`.
+  type SubscriptionWithPeriod = Stripe.Subscription & { current_period_end?: number }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object as any
+        const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.user_id
         const plan = session.metadata?.plan
         const customerId = session.customer
@@ -68,7 +82,7 @@ export async function POST(req: NextRequest) {
 
         // Handle credit package purchases
         if (userId && packageId && credits) {
-          const totalCredits = parseInt(credits) + (parseInt(bonus) || 0)
+          const totalCredits = parseInt(credits) + (parseInt(bonus ?? '0') || 0)
 
           await db.from('credits').insert({
             user_id: userId,
@@ -80,9 +94,10 @@ export async function POST(req: NextRequest) {
           logger.info('Credits added', { source: 'webhook', totalCredits, userId })
         }
 
-        // Handle subscription purchases
+        // Handle subscription purchases — schema-drift workaround: the generated
+        // Database type's `subscriptions` doesn't carry user_id / stripe_* yet.
         if (userId && plan) {
-          await db.from('subscriptions').upsert(
+          await asUntyped(db).from('subscriptions').upsert(
             {
               user_id: userId,
               stripe_customer_id: customerId,
@@ -109,8 +124,8 @@ export async function POST(req: NextRequest) {
       }
 
       case 'customer.subscription.updated': {
-        const subscription = event.data.object as any
-        const customerId = subscription.customer
+        const subscription = event.data.object as Stripe.Subscription
+        const customerId = customerIdOf(subscription.customer)
 
         const { data: sub } = await db
           .from('subscriptions')
@@ -119,9 +134,8 @@ export async function POST(req: NextRequest) {
           .single()
 
         if (sub) {
-          const periodEnd = subscription.current_period_end
-            ? new Date(subscription.current_period_end * 1000).toISOString()
-            : null
+          const cpe = (subscription as SubscriptionWithPeriod).current_period_end
+          const periodEnd = cpe ? new Date(cpe * 1000).toISOString() : null
 
           await db
             .from('subscriptions')
@@ -150,8 +164,8 @@ export async function POST(req: NextRequest) {
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object as any
-        const customerId = subscription.customer
+        const subscription = event.data.object as Stripe.Subscription
+        const customerId = customerIdOf(subscription.customer)
 
         const { data: sub } = await db
           .from('subscriptions')
@@ -187,8 +201,8 @@ export async function POST(req: NextRequest) {
       }
 
       case 'invoice.payment_failed': {
-        const invoice = event.data.object as any
-        const customerId = invoice.customer
+        const invoice = event.data.object as Stripe.Invoice
+        const customerId = customerIdOf(invoice.customer)
 
         const { data: sub } = await db
           .from('subscriptions')

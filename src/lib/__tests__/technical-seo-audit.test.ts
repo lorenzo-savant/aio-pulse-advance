@@ -27,14 +27,24 @@ const HTML_RICH = `<!doctype html>
 <head>
   <title>Acme — Workflow Automation</title>
   <meta name="description" content="B2B automation platform for teams.">
+  <meta name="author" content="Jane Doe">
   <link rel="canonical" href="https://acme.com/">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Acme"}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Acme"}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList"}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage"}</script>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","author":{"@type":"Person","name":"Jane Doe"},"reviewedBy":{"@type":"Person","name":"John Smith"}}</script>
 </head>
-<body><h1>Acme</h1></body>
+<body>
+  <h1>Acme</h1>
+  <p>Our research surveyed 500 teams and produced the dataset below.</p>
+  <table>
+    <tr><th>Metric</th><th>Value</th></tr>
+    <tr><td>A</td><td>1</td></tr>
+    <tr><td>B</td><td>2</td></tr>
+    <tr><td>C</td><td>3</td></tr>
+  </table>
+</body>
 </html>`
 
 const HTML_POOR = `<!doctype html><html><body><p>no head</p></body></html>`
@@ -425,6 +435,121 @@ describe('runTechnicalAudit', () => {
       (c) => c.id === 'content-answer-first',
     )
     expect(check?.status).toBe('fail')
+  })
+
+  // ─── content-eeat-markup (E-E-A-T signals) ──────────────────────────────
+
+  it('content-eeat-markup: passes with author + reviewed-by + original data', async () => {
+    const HTML_EEAT = `<!doctype html><html><head>
+      <meta name="author" content="Jane Doe">
+      <script type="application/ld+json">{"@type":"Article","author":{"@type":"Person","name":"Jane Doe"},"reviewedBy":{"@type":"Person","name":"John Smith"}}</script>
+    </head><body>
+      <h1>A study</h1>
+      <p>Our survey of 1,000 marketers found that AEO matters.</p>
+      <table>
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>A</td><td>1</td></tr>
+        <tr><td>B</td><td>2</td></tr>
+        <tr><td>C</td><td>3</td></tr>
+      </table>
+    </body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_EEAT)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://eeat.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-eeat-markup',
+    )
+    expect(check?.status).toBe('pass')
+    expect(check?.message).toMatch(/3\/3 E-E-A-T signals/)
+  })
+
+  it('content-eeat-markup: warns when only one signal is present', async () => {
+    // Deliberately avoid the trigger phrases for reviewed-by and
+    // original-data so only the byline signal counts.
+    const HTML_PARTIAL = `<!doctype html><html><body>
+      <h1>Post</h1>
+      <p class="byline">By Alice</p>
+      <p>Some general copy about the topic with nothing else specific.</p>
+    </body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_PARTIAL)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://partial.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-eeat-markup',
+    )
+    expect(check?.status).toBe('warning')
+    expect(check?.message).toMatch(/Only 1\/3/)
+  })
+
+  it('content-eeat-markup: fails when no E-E-A-T signals are present', async () => {
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_POOR)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://noeeat.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-eeat-markup',
+    )
+    expect(check?.status).toBe('fail')
+    expect(check?.message).toMatch(/No E-E-A-T markup found/)
+  })
+
+  it('content-eeat-markup: detects original-data via "we surveyed" copy alone', async () => {
+    const HTML_RESEARCH = `<!doctype html><html><body>
+      <h1>Research</h1>
+      <p>We surveyed 500 SEO professionals and found three clear patterns.</p>
+    </body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_RESEARCH)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://research.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-eeat-markup',
+    )
+    // 1 signal (original-data) → warning, but the hit string must include it
+    expect(check?.status).toBe('warning')
+    expect(check?.message).toMatch(/original-data/)
+  })
+
+  it('content-eeat-markup: detects reviewed-by via visible "Medically reviewed by" copy', async () => {
+    const HTML_REVIEWED = `<!doctype html><html><body>
+      <h1>Health post</h1>
+      <p class="reviewer">Medically reviewed by Dr. Brown, MD</p>
+      <p>General content here.</p>
+    </body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_REVIEWED)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://reviewed.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-eeat-markup',
+    )
+    expect(check?.message).toMatch(/reviewed-by/)
   })
 
   it('contentStructure: passes valid hreflang and skips mixed-content on http://', async () => {

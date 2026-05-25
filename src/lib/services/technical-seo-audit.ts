@@ -946,7 +946,81 @@ function checkContentStructure(html: string, url: string): AuditCategory {
     }
   }
 
-  // 10) Last-updated check (existing — left intact below).
+  // 10) E-E-A-T markup — author byline / reviewed-by / original-data signals.
+  // Semrush AEO guidance + AirOps study: "LLMs seem to favor content that
+  // reflects real-world use, personal insights, and/or original research."
+  // We score 3 micro-signals independently then aggregate to pass/warn/fail.
+  let eeatSignals = 0
+  const eeatHits: string[] = []
+  const eeatMisses: string[] = []
+
+  // Signal 1: Author / byline. Accepts JSON-LD Person/author, meta tag,
+  // article:author, OR a visible byline class. Any single match counts.
+  const hasAuthorMeta = /<meta[^>]*name=["']author["']/i.test(html)
+  const hasArticleAuthor = /<meta[^>]*property=["']article:author["']/i.test(html)
+  const hasJsonLdAuthor =
+    /"author"\s*:\s*\{[^}]*"@type"\s*:\s*"Person"/i.test(html) ||
+    /"author"\s*:\s*\[\s*\{[^}]*"@type"\s*:\s*"Person"/i.test(html) ||
+    /"@type"\s*:\s*"Person"[^}]*"name"/i.test(html)
+  const hasVisibleByline = /class=["'][^"']*\b(byline|author|by-line|posted-by)\b[^"']*["']/i.test(
+    html,
+  )
+  const hasAuthor = hasAuthorMeta || hasArticleAuthor || hasJsonLdAuthor || hasVisibleByline
+  if (hasAuthor) {
+    eeatSignals++
+    eeatHits.push('author')
+  } else {
+    eeatMisses.push('author byline')
+  }
+
+  // Signal 2: Reviewed-by / fact-checked / dateReviewed. Schema.org accepts
+  // `reviewedBy` on Article and `dateReviewed` (less common). Many sites
+  // also use a visible "Reviewed by …" or "Fact-checked by …" line.
+  const hasReviewedBy =
+    /"reviewedBy"\s*:/i.test(html) ||
+    /"dateReviewed"\s*:/i.test(html) ||
+    /\b(reviewed by|fact[- ]checked by|medically reviewed by|expert[- ]reviewed by)\b/i.test(html)
+  if (hasReviewedBy) {
+    eeatSignals++
+    eeatHits.push('reviewed-by')
+  } else {
+    eeatMisses.push('reviewed-by')
+  }
+
+  // Signal 3: Original-data / first-party research signals. A data table
+  // with ≥4 rows, OR a chart canvas, OR explicit "our survey/study/research"
+  // copy. This is intentionally fuzzy — we want recall, not precision.
+  const tableRowCount = countMatches(html, /<tr\b/gi)
+  const hasDataTable = tableRowCount >= 4 // header + 3 data rows minimum
+  const hasChart =
+    /<canvas\b/i.test(html) || /class=["'][^"']*\b(chart|graph|recharts|chartjs|d3-)/i.test(html)
+  const hasResearchCopy =
+    /\b(our (survey|study|research|analysis|data|experiment|test))\b/i.test(html) ||
+    /\b(we (surveyed|studied|analy[zs]ed|tested|interviewed)\b)/i.test(html) ||
+    /\b(original (research|data|study))\b/i.test(html)
+  const hasOriginalData = hasDataTable || hasChart || hasResearchCopy
+  if (hasOriginalData) {
+    eeatSignals++
+    eeatHits.push('original-data')
+  } else {
+    eeatMisses.push('original-data')
+  }
+
+  const eeatStatus: 'pass' | 'warning' | 'fail' =
+    eeatSignals >= 2 ? 'pass' : eeatSignals === 1 ? 'warning' : 'fail'
+  checks.push({
+    id: 'content-eeat-markup',
+    name: 'E-E-A-T signals',
+    status: eeatStatus,
+    message:
+      eeatSignals >= 2
+        ? `${eeatSignals}/3 E-E-A-T signals detected: ${eeatHits.join(', ')} — LLMs favour pages with this credibility scaffolding.`
+        : eeatSignals === 1
+          ? `Only 1/3 E-E-A-T signals (${eeatHits.join(', ')}). Missing: ${eeatMisses.join(', ')}.`
+          : `No E-E-A-T markup found (missing ${eeatMisses.join(', ')}). Add an author bio, reviewer attribution, or original data to improve AI-citation odds.`,
+  })
+
+  // 11) Last-updated check (existing — left intact below).
   if (dateCandidates.length === 0) {
     checks.push({
       id: 'content-last-updated',

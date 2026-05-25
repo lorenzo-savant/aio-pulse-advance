@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { Modal, ModalHeader, ModalTitle, ModalBody } from '@/components/ui/Modal'
 import { formatRelativeTime, cn } from '@/lib/utils'
+import { PromptPortfolioPanel } from '@/components/PromptPortfolioPanel'
 import toast from 'react-hot-toast'
 import type { Brand, Prompt, MonitoringEngine } from '@/types'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -351,6 +352,7 @@ function PromptsPageContent() {
   return (
     <div className="animate-in space-y-8">
       <SectionHelp section="prompts" />
+      <PromptPortfolioPanel />
       <JourneyGuide
         step={1}
         title={t('prompts.journey_guide.title')}

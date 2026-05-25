@@ -62,11 +62,60 @@ export async function POST(req: NextRequest) {
   const b = brand as Brand
   const existingTexts = ((existing ?? []) as Array<{ text: string }>).map((r) => r.text)
 
-  // Seed query: reuse a real existing prompt when available (most relevant
-  // related questions), else a discovery query built from the brand.
+  // ─── Build brand-anchored seed + relevance filter ─────────────────────────
+  // Perplexity's `related_questions` reflect the SEED query, not the brand
+  // context we attach downstream. Using `existingTexts[0]` blindly (the old
+  // behavior) leaks topics from off-target prompts: e.g. a casting brand
+  // with a stray "best marketing agency Stockholm" prompt would receive
+  // marketing-agency follow-ups. To prevent this we (1) prefer an existing
+  // prompt that mentions the brand name/alias and (2) fall back to a brand-
+  // descriptor seed.
+  const brandTerms = [b.name, ...(b.aliases ?? [])]
+    .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+    .map((s) => s.trim())
+
+  const brandTermsLc = brandTerms.map((s) => s.toLowerCase())
+  const onTopicExisting = existingTexts.find((t) => {
+    const lc = t.toLowerCase()
+    return brandTermsLc.some((term) => term.length >= 3 && lc.includes(term))
+  })
+
   const seed =
-    existingTexts[0] ??
-    `${b.name}${b.industry ? ` ${b.industry}` : ''}${b.market ? ` ${b.market}` : ''}`.trim()
+    onTopicExisting ||
+    [b.name, b.industry, b.market].filter((p) => p && String(p).trim().length > 0).join(' — ') ||
+    b.name
+
+  // Relevance anchors: brand name + aliases + meaningful words from
+  // industry/description (≥4 chars, no stop-words). These are the terms a
+  // related question SHOULD mention to count as on-topic for this brand.
+  const STOP_WORDS = new Set([
+    'and',
+    'the',
+    'for',
+    'with',
+    'from',
+    'this',
+    'that',
+    'over',
+    'platform',
+    'service',
+    'company',
+    'brand',
+  ])
+  function extractKeywords(text: string | null | undefined): string[] {
+    if (!text) return []
+    return text
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((w) => w.length >= 4 && !STOP_WORDS.has(w))
+  }
+  const relevanceAnchors = Array.from(
+    new Set<string>([
+      ...brandTerms,
+      ...extractKeywords(b.industry),
+      ...extractKeywords(b.description),
+    ]),
+  )
 
   let suggestions: ReturnType<typeof relatedQuestionsToPromptSuggestions> = []
   try {
@@ -79,6 +128,7 @@ export async function POST(req: NextRequest) {
     suggestions = relatedQuestionsToPromptSuggestions(sim.relatedQuestions ?? [], existingTexts, {
       source: 'perplexity',
       max: 8,
+      relevanceAnchors,
     })
   } catch (e) {
     logger.warn('/api/prompts/suggestions failed', { err: String(e) })

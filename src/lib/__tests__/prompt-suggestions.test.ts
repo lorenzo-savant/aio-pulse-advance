@@ -61,4 +61,58 @@ describe('relatedQuestionsToPromptSuggestions', () => {
     ])
     expect(out).toHaveLength(1)
   })
+
+  // ─── Relevance filter (regression: prevent topic leak) ─────────────────────
+
+  it('drops off-topic suggestions when relevance anchors are provided', () => {
+    // Real-world bug: acasting.se (casting platform) seeded with a stray
+    // marketing-agency prompt → Perplexity returned marketing-agency
+    // follow-ups. The relevance filter should drop them.
+    const out = relatedQuestionsToPromptSuggestions(
+      [
+        'Vilka är de bästa byråerna för digital marknadsföring i Sverige?',
+        'Finns det några svenska byråer som specialiserar sig på video och SEO?',
+        'Vilken är den bästa castingplattformen i Sverige?',
+        'Hur fungerar acasting.se för skådespelare?',
+      ],
+      [],
+      { relevanceAnchors: ['acasting', 'casting', 'skådespelare'] },
+    )
+    expect(out.map((s) => s.text)).toEqual([
+      'Vilken är den bästa castingplattformen i Sverige?',
+      'Hur fungerar acasting.se för skådespelare?',
+    ])
+  })
+
+  it('relevance anchors are case-insensitive', () => {
+    const out = relatedQuestionsToPromptSuggestions(['How does ACASTING price its services?'], [], {
+      relevanceAnchors: ['acasting'],
+    })
+    expect(out).toHaveLength(1)
+  })
+
+  it('anchor shorter than 3 chars is ignored (avoids spurious matches)', () => {
+    // Anchor 'ai' would otherwise match "fair", "saint", etc.
+    const out = relatedQuestionsToPromptSuggestions(
+      ['Is the fairground open this weekend?', 'AI brand monitoring tools 2026?'],
+      [],
+      { relevanceAnchors: ['ai', 'brand'] },
+    )
+    // Only the 2nd matches via the longer "brand" anchor (≥3 chars).
+    expect(out.map((s) => s.text)).toEqual(['AI brand monitoring tools 2026?'])
+  })
+
+  it('empty relevanceAnchors disables the filter (legacy behavior preserved)', () => {
+    const out = relatedQuestionsToPromptSuggestions(
+      ['Totally unrelated question about chess?'],
+      [],
+      { relevanceAnchors: [] },
+    )
+    expect(out).toHaveLength(1)
+  })
+
+  it('omitting relevanceAnchors disables the filter (back-compat)', () => {
+    const out = relatedQuestionsToPromptSuggestions(['Totally unrelated question about chess?'])
+    expect(out).toHaveLength(1)
+  })
 })

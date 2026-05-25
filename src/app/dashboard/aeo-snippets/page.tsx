@@ -162,15 +162,25 @@ export default function AEOSnippetsPage() {
       const runResult = json.data as { items?: unknown[]; errors?: string[] } | undefined
       const items = runResult?.items ?? []
       const apiErrors = runResult?.errors ?? []
+      let pendingError: string | null = null
       if (items.length === 0 && apiErrors.length > 0) {
-        setError(apiErrors.join(' • '))
+        pendingError = apiErrors.join(' • ')
+      } else if (items.length === 0) {
+        // No items AND no errors — happens when the run completes but
+        // produced nothing actionable (e.g. PAA box empty for a niche
+        // Swedish/Italian keyword and the server didn't flag it).
+        pendingError =
+          'No snippets generated — DataForSEO returned no People-Also-Ask questions for this keyword. Try a broader seed term.'
       } else if (apiErrors.length > 0) {
         // Partial success — some questions failed (LLM call or gap check);
         // we still got snippets. Surface the partial errors as a hint.
-        setError(`Generated with warnings: ${apiErrors.slice(0, 3).join(' • ')}`)
+        pendingError = `Generated with warnings: ${apiErrors.slice(0, 3).join(' • ')}`
       }
       setKeywordInput('')
       await load()
+      // load() resets `error` to null, so re-apply the post-run message
+      // AFTER load completes — otherwise the user sees a silent failure.
+      if (pendingError) setError(pendingError)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Run failed')
     } finally {

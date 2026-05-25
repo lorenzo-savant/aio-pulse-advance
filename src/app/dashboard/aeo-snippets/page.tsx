@@ -85,6 +85,7 @@ export default function AEOSnippetsPage() {
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [bundleCopied, setBundleCopied] = useState(false)
 
   // Run form
   const [keywordInput, setKeywordInput] = useState('')
@@ -198,6 +199,42 @@ export default function AEOSnippetsPage() {
     window.location.href = url.toString()
   }, [selectedBrand, filter, keywordFilter])
 
+  // Build one FAQPage JSON-LD bundle covering every snippet under the
+  // current filters (keyword + gap_status) and copy the <script> tag to
+  // the clipboard. Per-snippet copy is for landing pages targeting one
+  // question; the bundle is for hub/cluster pages targeting a keyword.
+  const copyBundleSchema = useCallback(async () => {
+    if (!selectedBrand) return
+    try {
+      const url = new URL('/api/aeo-snippets/export-schema', window.location.origin)
+      url.searchParams.set('brand_id', selectedBrand.id)
+      if (filter !== 'all') url.searchParams.set('gap', filter)
+      if (keywordFilter) url.searchParams.set('keyword', keywordFilter)
+      const res = await fetch(url.toString())
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load bundle')
+      const schema = json.data?.schema as Record<string, unknown> | undefined
+      if (!schema) throw new Error('Empty schema bundle')
+      const html = `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`
+      await navigator.clipboard.writeText(html)
+      setBundleCopied(true)
+      setTimeout(() => setBundleCopied(false), 1800)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to copy bundle schema')
+    }
+  }, [selectedBrand, filter, keywordFilter])
+
+  const downloadBundleSchema = useCallback(() => {
+    if (!selectedBrand) return
+    const url = new URL('/api/aeo-snippets/export-schema', window.location.origin)
+    url.searchParams.set('brand_id', selectedBrand.id)
+    url.searchParams.set('format', 'html')
+    url.searchParams.set('download', '1')
+    if (filter !== 'all') url.searchParams.set('gap', filter)
+    if (keywordFilter) url.searchParams.set('keyword', keywordFilter)
+    window.location.href = url.toString()
+  }, [selectedBrand, filter, keywordFilter])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -237,6 +274,37 @@ export default function AEOSnippetsPage() {
               ))}
             </select>
           )}
+          <Button
+            variant="ghost"
+            onClick={copyBundleSchema}
+            disabled={counts.total === 0}
+            title={
+              keywordFilter
+                ? `Copy one FAQPage JSON-LD bundle for "${keywordFilter}"`
+                : 'Copy one FAQPage JSON-LD bundle for every snippet on this brand'
+            }
+          >
+            {bundleCopied ? (
+              <>
+                <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
+                Bundle copied
+              </>
+            ) : (
+              <>
+                <Copy className="mr-1.5 h-3.5 w-3.5" />
+                Copy FAQ bundle
+              </>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={downloadBundleSchema}
+            disabled={counts.total === 0}
+            title="Download the FAQ bundle as an HTML <script> snippet"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Download .html
+          </Button>
           <Button variant="ghost" onClick={exportCsv} disabled={counts.total === 0}>
             <Download className="mr-1.5 h-3.5 w-3.5" />
             Export CSV

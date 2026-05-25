@@ -93,34 +93,54 @@ export class DataForSEOProvider extends BaseProvider {
   }
 
   protected override transformResponse(data: unknown): DataForSEOResult {
+    // DataForSEO SERP Live Advanced response shape (relevant subset):
+    //   tasks[0].result[0].items[]   — top-level SERP features. Each PAA box
+    //   appears here with type:'people_also_ask' and a NESTED items[] of
+    //   people_also_ask_element rows. Each element has `title` (question) and
+    //   `expanded_element[]` whose first entry carries description (answer),
+    //   url + domain (source). See docs.dataforseo.com/v3/serp/google/organic.
+    //
+    // AI Overview behaves similarly: a top-level item with type:'ai_overview'
+    // can carry either a nested `items[]` of element rows OR an inline
+    // `ai_overview` payload, depending on response variant. Handle both.
+    interface PaaExpandedElement {
+      description?: string
+      title?: string
+      url?: string
+      domain?: string
+    }
+    interface PaaElement {
+      type?: string
+      title?: string
+      expanded_element?: PaaExpandedElement[]
+    }
+    interface AiOverviewElement {
+      text?: string
+      links?: Array<{ title?: string; url?: string }>
+      expand_questions?: string[]
+    }
+    interface SerpItem {
+      type?: string
+      rank_group?: number
+      title?: string
+      url?: string
+      description?: string
+      snippet?: string
+      link?: string
+      // PAA + AI-overview elements live in nested items[]
+      items?: Array<PaaElement | AiOverviewElement>
+      // Inline-variant AI overview payload
+      ai_overview?: AiOverviewElement[]
+      text?: string
+      links?: Array<{ title?: string; url?: string }>
+      expand_questions?: string[]
+    }
+
     const response = data as {
       tasks?: Array<{
         result?: Array<{
           se_type?: string
-          items?: Array<{
-            type?: string
-            rank_group?: number
-            title?: string
-            url?: string
-            description?: string
-            snippet?: string
-            link?: string
-            ai_overview?: Array<{
-              text?: string
-              links?: Array<{ title?: string; url?: string }>
-              expand_questions?: string[]
-            }>
-            answer_box?: {
-              title?: string
-              description?: string
-              links?: Array<{ title?: string; url?: string }>
-            }
-            people_also_ask?: Array<{
-              title?: string
-              description?: string
-              links?: Array<{ title?: string; url?: string }>
-            }>
-          }>
+          items?: SerpItem[]
         }>
       }>
       status_code?: number
@@ -136,33 +156,62 @@ export class DataForSEOProvider extends BaseProvider {
     let searchResultCount = 0
 
     for (const item of items) {
-      if (item.type === 'ai_overview' || item.ai_overview) {
-        const overview = item.ai_overview?.[0]
-        if (overview) {
+      // ─── AI Overview ───────────────────────────────────────────────────
+      if (item.type === 'ai_overview') {
+        // Variant A: inline `ai_overview[]` payload on the item itself.
+        const inline = item.ai_overview?.[0]
+        if (inline) {
           aiOverviews.push({
-            text: overview.text || '',
-            links: (overview.links || []).map((l) => ({
+            text: inline.text || '',
+            links: (inline.links || []).map((l) => ({
               title: l.title || '',
               url: l.url || '',
             })),
-            expand_questions: overview.expand_questions,
+            expand_questions: inline.expand_questions,
           })
+        }
+        // Variant B: nested items[] of ai_overview_element rows aggregated
+        // into a single overview (DFS sometimes splits long overviews into
+        // multiple element rows).
+        const nested = (item.items || []) as AiOverviewElement[]
+        if (!inline && nested.length > 0) {
+          const text = nested
+            .map((e) => (e.text || '').trim())
+            .filter((t) => t.length > 0)
+            .join('\n')
+          const links = nested
+            .flatMap((e) => e.links || [])
+            .map((l) => ({ title: l.title || '', url: l.url || '' }))
+          if (text || links.length > 0) {
+            aiOverviews.push({
+              text,
+              links,
+              expand_questions: nested.flatMap((e) => e.expand_questions || []),
+            })
+          }
         }
       }
 
-      if (item.type === 'people_also_ask' || item.people_also_ask) {
-        for (const qa of item.people_also_ask || []) {
-          peopleAlsoAsk.push({
-            question: qa.title || '',
-            answer: qa.description || '',
-            links: (qa.links || []).map((l) => ({
-              title: l.title || '',
-              url: l.url || '',
-            })),
-          })
+      // ─── People Also Ask ───────────────────────────────────────────────
+      if (item.type === 'people_also_ask') {
+        const paaElements = (item.items || []) as PaaElement[]
+        for (const el of paaElements) {
+          const question = (el.title || '').trim()
+          if (question.length === 0) continue
+          const expanded = el.expanded_element?.[0]
+          const answer = (expanded?.description || '').trim()
+          const links: Array<{ title: string; url: string }> = []
+          if (expanded?.url) {
+            links.push({
+              title: expanded.title || expanded.domain || expanded.url,
+              url: expanded.url,
+            })
+          }
+          peopleAlsoAsk.push({ question, answer, links })
         }
       }
 
+      // ─── Organic ───────────────────────────────────────────────────────
       if (item.type === 'organic' && item.url) {
         searchResultCount++
         organicResults.push({

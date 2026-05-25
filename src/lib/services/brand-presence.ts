@@ -48,6 +48,13 @@ export interface PlatformPresence {
 export interface BrandPresence {
   wikipedia: PlatformPresence
   reddit: PlatformPresence
+  youtube: PlatformPresence
+  quora: PlatformPresence
+  /** Aggregate "UGC presence score" 0-100: weighted across Reddit, YouTube,
+   *  Quora. Closes the gap from the Semrush AI Mode study: UGC platforms
+   *  appear in 68%+ of AI Mode results — being absent on all three is the
+   *  biggest single AEO blind spot for brands. */
+  ugcScore?: number
 }
 
 // ─── Wikipedia ─────────────────────────────────────────────────────────────
@@ -223,22 +230,122 @@ async function checkReddit(brandName: string, language?: string | null): Promise
   }
 }
 
+// ─── YouTube / Quora ──────────────────────────────────────────────────────
+//
+// Same pattern as Reddit: `site:youtube.com <brand>` and
+// `site:quora.com <brand>` via Brave. UGC platforms dominate AI Mode
+// sidebars per the Semrush study, so tracking presence on Reddit +
+// YouTube + Quora gives the operator a single "are we in the UGC
+// sidebar club?" view.
+
+async function checkUgcSite(
+  brandName: string,
+  hostname: string,
+  hostRegex: RegExp,
+  language?: string | null,
+): Promise<PlatformPresence> {
+  if (!isBraveSearchAvailable()) {
+    return {
+      found: false,
+      url: null,
+      title: null,
+      matchCount: 0,
+      note: `Brave Search not configured — ${hostname} presence check skipped`,
+    }
+  }
+  try {
+    const result = await searchBrandRanking(
+      `site:${hostname} ${brandName}`,
+      hostname,
+      language ?? undefined,
+    )
+    const urls = result.organicResults.filter((r) => hostRegex.test(r.url)).map((r) => r.url)
+
+    if (urls.length === 0) {
+      return {
+        found: false,
+        url: null,
+        title: null,
+        matchCount: 0,
+        note: `No ${hostname} pages found via Brave site:${hostname} search`,
+      }
+    }
+    return {
+      found: urls.length >= 2, // Lower threshold than Reddit — YouTube/Quora
+      // are harder to land on, so even 2 hits is a real signal.
+      url: urls[0] ?? null,
+      title: result.organicResults[0]?.title ?? null,
+      matchCount: urls.length,
+      note: `${urls.length} ${hostname} URL${urls.length === 1 ? '' : 's'} returned for site:${hostname} ${brandName}`,
+    }
+  } catch (err) {
+    logger.warn(`brand-presence: ${hostname} check failed`, {
+      service: 'brand-presence',
+      brand: brandName,
+      err: err instanceof Error ? err.message : String(err),
+    })
+    return {
+      found: false,
+      url: null,
+      title: null,
+      matchCount: 0,
+      note: `${hostname} check failed: ${err instanceof Error ? err.message : String(err)}`,
+    }
+  }
+}
+
+async function checkYoutube(
+  brandName: string,
+  language?: string | null,
+): Promise<PlatformPresence> {
+  return checkUgcSite(brandName, 'youtube.com', /(^|\.)youtube\.com\//i, language)
+}
+
+async function checkQuora(brandName: string, language?: string | null): Promise<PlatformPresence> {
+  return checkUgcSite(brandName, 'quora.com', /(^|\.)quora\.com\//i, language)
+}
+
+/** Aggregate "UGC presence score" 0-100 from Reddit + YouTube + Quora.
+ *  Weighted to reflect each platform's AI-citation weight:
+ *  Reddit 0.5 (dominant per Semrush study), YouTube 0.3, Quora 0.2.
+ *  A platform contributes max 100 / weight * (count >= 5 ? 1 : count/5). */
+function computeUgcScore(
+  reddit: PlatformPresence,
+  youtube: PlatformPresence,
+  quora: PlatformPresence,
+): number {
+  const factor = (p: PlatformPresence) => {
+    const c = p.matchCount ?? (p.found ? 3 : 0)
+    return Math.min(1, c / 5)
+  }
+  const score = factor(reddit) * 50 + factor(youtube) * 30 + factor(quora) * 20
+  return Math.round(score * 10) / 10
+}
+
 // ─── Composer ──────────────────────────────────────────────────────────────
 
 /**
- * Check both Wikipedia and Reddit presence for a brand. Runs in parallel.
- * Returns a structured BrandPresence with `found` flags + diagnostic notes.
- * Soft-fails on errors (returns found: false with a note) — the caller
- * doesn't get crashes from network blips.
+ * Check Wikipedia + Reddit + YouTube + Quora presence for a brand. All
+ * checks run in parallel. Returns a structured BrandPresence with `found`
+ * flags + per-platform diagnostic notes + an aggregate UGC score across
+ * Reddit / YouTube / Quora. Soft-fails on errors — the caller doesn't
+ * get crashes from network blips.
+ *
+ * The UGC additions close the gap from the Semrush AI Mode study:
+ * UGC platforms appear in 68%+ of AI Mode sidebars and dominate the
+ * citation pool, so brand absence on all three is the biggest AEO gap.
  */
 export async function checkBrandPresence(
   brandName: string,
   aliases: string[] = [],
   language: string | null = null,
 ): Promise<BrandPresence> {
-  const [wikipedia, reddit] = await Promise.all([
+  const [wikipedia, reddit, youtube, quora] = await Promise.all([
     checkWikipedia(brandName, aliases, language),
     checkReddit(brandName, language),
+    checkYoutube(brandName, language),
+    checkQuora(brandName, language),
   ])
-  return { wikipedia, reddit }
+  const ugcScore = computeUgcScore(reddit, youtube, quora)
+  return { wikipedia, reddit, youtube, quora, ugcScore }
 }

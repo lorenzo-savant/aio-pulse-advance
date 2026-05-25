@@ -335,6 +335,98 @@ describe('runTechnicalAudit', () => {
     expect(check?.message).toMatch(/Stale|refresh/)
   })
 
+  // ─── content-answer-first (AEO structure) ───────────────────────────────
+
+  it('content-answer-first: passes when ≥70% of H2/H3 lead with a direct answer', async () => {
+    const HTML_ANSWER_FIRST = `<!doctype html><html><body>
+      <h1>Guide</h1>
+      <h2>What is AEO?</h2>
+      <p>AEO is the practice of optimizing content so AI engines cite it in their generated answers, alongside or instead of traditional SERPs.</p>
+      <h2>How does it differ from SEO?</h2>
+      <p>SEO targets ranked links in search engine results pages, while AEO targets the AI-generated answer itself across ChatGPT, Perplexity, and Gemini.</p>
+      <h3>Does it require new tools?</h3>
+      <p>No, most AEO work is done with existing CMS and analytics tools — only the metrics and content patterns change.</p>
+    </body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_ANSWER_FIRST)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://answer.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-answer-first',
+    )
+    expect(check?.status).toBe('pass')
+    expect(check?.message).toMatch(/answer/i)
+  })
+
+  it('content-answer-first: fails when most sections start with weak openers (preambles)', async () => {
+    const HTML_PREAMBLES = `<!doctype html><html><body>
+      <h1>Guide</h1>
+      <h2>What is AEO?</h2>
+      <p>In this article we will discuss the practice of AEO and its modern applications across the digital landscape.</p>
+      <h2>How does it differ from SEO?</h2>
+      <p>In this section we will explore how SEO and AEO compare across several common dimensions and workflows.</p>
+      <h3>Does it require new tools?</h3>
+      <p>Let's explore the tooling landscape that practitioners are using in 2026 to ship answer-engine work.</p>
+    </body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_PREAMBLES)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://preamble.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-answer-first',
+    )
+    expect(check?.status).toBe('fail')
+    expect(check?.message).toMatch(/preamble|filler|Weak openers/i)
+  })
+
+  it('content-answer-first: returns info when the page has no H2/H3', async () => {
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_RICH) // HTML_RICH has only an H1
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://h1only.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-answer-first',
+    )
+    expect(check?.status).toBe('info')
+  })
+
+  it('content-answer-first: detects Italian and Swedish weak openers', async () => {
+    const HTML_ML = `<!doctype html><html><body>
+      <h1>Guida</h1>
+      <h2>Cos'è l'AEO?</h2>
+      <p>In questo articolo parleremo del concetto di AEO e di come si confronta con il SEO classico.</p>
+      <h2>Vad är AEO?</h2>
+      <p>I den här artikeln kommer vi att gå igenom vad AEO är och hur det skiljer sig från SEO.</p>
+    </body></html>`
+
+    global.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/robots.txt')) return mockResponse(ROBOTS_ALLOW_ALL)
+      if (url.endsWith('/llms.txt')) return new Response('', { status: 404 })
+      return mockResponse(HTML_ML)
+    }) as typeof fetch
+
+    const result = await runTechnicalAudit('https://ml.example')
+    const check = result.categories.contentStructure.checks.find(
+      (c) => c.id === 'content-answer-first',
+    )
+    expect(check?.status).toBe('fail')
+  })
+
   it('contentStructure: passes valid hreflang and skips mixed-content on http://', async () => {
     const HTML_HREFLANG = `<!doctype html><html><head>
       <title>Y</title>

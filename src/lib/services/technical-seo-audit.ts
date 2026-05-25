@@ -809,6 +809,144 @@ function checkContentStructure(html: string, url: string): AuditCategory {
     if (Number.isFinite(t)) dateCandidates.push(t)
   }
 
+  // 9) Answer-first structure — for every H2/H3, look at the first
+  // paragraph that follows and check whether it starts with a direct
+  // answer (not a preamble like "In this article we will discuss…").
+  // Semrush AEO guidance: "Use the question in a subheading and
+  // immediately provide a clear answer." AI engines preferentially
+  // cite sections that lead with the answer.
+  const WEAK_OPENERS = [
+    'in this article',
+    'in this section',
+    'in this guide',
+    'in this post',
+    'in this blog',
+    'in this chapter',
+    "in today's",
+    'in the following',
+    'we will discuss',
+    'we will explore',
+    'we will look at',
+    'we will see',
+    'we will cover',
+    "let's explore",
+    "let's look at",
+    "let's discuss",
+    "let's see",
+    'this article',
+    'this section',
+    'this guide',
+    'this post',
+    'this chapter',
+    'this blog',
+    'read on to',
+    'read more about',
+    'keep reading',
+    'discover how',
+    'find out',
+    'learn how',
+    'learn more',
+    'first,',
+    'firstly,',
+    'to begin with',
+    'before we',
+    // Italian
+    'in questo articolo',
+    'in questa sezione',
+    'in questa guida',
+    'in questo post',
+    'in questa pagina',
+    'vedremo',
+    'parleremo',
+    'scopriamo',
+    'analizzeremo',
+    'esploreremo',
+    // Swedish
+    'i den här artikeln',
+    'i denna artikel',
+    'i det här avsnittet',
+    'i denna sektion',
+    'i denna guide',
+    'vi kommer',
+    'vi ska',
+    'läs mer om',
+    'fortsätt läsa',
+  ]
+  const subheadings = [
+    ...html.matchAll(/<h[23]\b[^>]*>([\s\S]*?)<\/h[23]>([\s\S]*?)(?=<h[1-6]\b|$)/gi),
+  ]
+  function stripTags(s: string): string {
+    return s
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+  function firstSentence(text: string): string {
+    // Don't break on common abbreviations (e.g. "U.S." or "vs.") — we
+    // accept the imperfection and prefer recall.
+    const m = text.match(/^[^.!?]{6,400}[.!?]/)
+    return (m?.[0] ?? text.slice(0, 200)).trim()
+  }
+  let answerFirstHits = 0
+  const offenders: string[] = []
+  for (const sh of subheadings) {
+    const body = stripTags(sh[2] ?? '')
+    if (body.length === 0) continue
+    const sent = firstSentence(body)
+    const words = sent.split(/\s+/).filter((w) => w.length > 0)
+    const sentLower = sent.toLowerCase()
+    const startsWeak = WEAK_OPENERS.some((opener) => sentLower.startsWith(opener))
+    if (!startsWeak && words.length >= 6) {
+      answerFirstHits++
+    } else if (offenders.length < 3) {
+      const headingText = stripTags(sh[1] ?? '').slice(0, 60)
+      if (headingText) offenders.push(headingText)
+    }
+  }
+  if (subheadings.length === 0) {
+    checks.push({
+      id: 'content-answer-first',
+      name: 'Answer-first sections',
+      status: 'info',
+      message: 'No H2/H3 subheadings on this page — answer-first analysis n/a',
+    })
+  } else {
+    const rate = Math.round((answerFirstHits / subheadings.length) * 100)
+    const detail =
+      offenders.length > 0
+        ? ` Weak openers under: ${offenders.map((o) => `"${o}"`).join(', ')}`
+        : ''
+    if (rate >= 70) {
+      checks.push({
+        id: 'content-answer-first',
+        name: 'Answer-first sections',
+        status: 'pass',
+        message: `${rate}% of ${subheadings.length} subheadings lead with a direct answer — AI engines cite this pattern.`,
+      })
+    } else if (rate >= 40) {
+      checks.push({
+        id: 'content-answer-first',
+        name: 'Answer-first sections',
+        status: 'warning',
+        message: `Only ${rate}% of subheadings lead with a direct answer; many start with filler.${detail}`,
+      })
+    } else {
+      checks.push({
+        id: 'content-answer-first',
+        name: 'Answer-first sections',
+        status: 'fail',
+        message: `${rate}% answer-first; sections start with preambles instead of answers — AI engines often skip these.${detail}`,
+      })
+    }
+  }
+
+  // 10) Last-updated check (existing — left intact below).
   if (dateCandidates.length === 0) {
     checks.push({
       id: 'content-last-updated',

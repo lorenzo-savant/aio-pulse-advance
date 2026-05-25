@@ -27,6 +27,10 @@ interface SovEntity {
   share: number
   mentionRate: number
   avgPosition: number | null
+  /** Per-bucket share stddev — surfaces day-to-day fluctuation on
+   *  non-deterministic LLM engines (Semrush AEO playbook). */
+  volatility?: number
+  range?: { min: number; max: number; bucketsObserved: number }
 }
 
 interface SovEngineBreakdown {
@@ -192,6 +196,16 @@ export function ShareOfVoiceByEnginePanel({ brandId: brandIdProp }: { brandId?: 
                   </p>
                   <p className="text-lg font-black text-foreground">
                     {(brand?.share ?? 0).toFixed(1)}%
+                    {brand &&
+                      (brand.volatility ?? 0) > 0 &&
+                      (brand.range?.bucketsObserved ?? 0) >= 2 && (
+                        <span
+                          className="ml-1.5 align-baseline text-[10px] font-medium text-muted-foreground"
+                          title={`Range ${brand.range!.min.toFixed(1)}%–${brand.range!.max.toFixed(1)}% across ${brand.range!.bucketsObserved} buckets`}
+                        >
+                          ±{brand.volatility!.toFixed(1)}%
+                        </span>
+                      )}
                   </p>
                   {rank != null && (
                     <p className="text-[10px] text-muted-foreground">

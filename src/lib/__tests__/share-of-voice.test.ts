@@ -19,7 +19,16 @@ describe('computeShareOfVoice', () => {
     const sov = computeShareOfVoice([], 'Acme')
     expect(sov.totalResponses).toBe(0)
     expect(sov.entities).toEqual([
-      { name: 'Acme', isBrand: true, mentions: 0, share: 0, mentionRate: 0, avgPosition: null },
+      {
+        name: 'Acme',
+        isBrand: true,
+        mentions: 0,
+        share: 0,
+        mentionRate: 0,
+        avgPosition: null,
+        volatility: 0,
+        range: { min: 0, max: 0, bucketsObserved: 0 },
+      },
     ])
     expect(sov.timeline).toEqual([])
   })
@@ -162,6 +171,61 @@ describe('computeShareOfVoice', () => {
     expect(sov.byEngine).toHaveLength(1)
     expect(sov.byEngine[0]!.engine).toBe('unknown')
     expect(sov.byEngine[0]!.totalResponses).toBe(2)
+  })
+
+  it('reports zero volatility when an entity appears in a single bucket', () => {
+    const rows: SovInputRow[] = [
+      row({
+        created_at: '2026-05-20T09:00:00Z',
+        brand_mentioned: true,
+        mention_count: 1,
+        competitor_mentions: [{ name: 'Rival', position: 1, count: 1 }],
+      }),
+    ]
+    const sov = computeShareOfVoice(rows, 'Acme')
+    const brand = sov.entities.find((e) => e.isBrand)!
+    // Only one day → share is the only observation, volatility 0, min=max=50.
+    expect(brand.volatility).toBe(0)
+    expect(brand.range).toEqual({ min: 50, max: 50, bucketsObserved: 1 })
+  })
+
+  it('computes per-entity volatility, min, and max across buckets', () => {
+    // Day 1: brand 100% (2 brand mentions, 0 rival)
+    // Day 2: brand   0% (0 brand, 2 rival)
+    // Day 3: brand  50% (1 brand, 1 rival)
+    // Series for brand = [100, 0, 50]; mean=50, variance=1666.67, stddev≈40.8.
+    const rows: SovInputRow[] = [
+      row({ created_at: '2026-05-20T09:00:00Z', brand_mentioned: true, mention_count: 2 }),
+      row({
+        created_at: '2026-05-21T09:00:00Z',
+        competitor_mentions: [{ name: 'Rival', position: 1, count: 2 }],
+      }),
+      row({
+        created_at: '2026-05-22T09:00:00Z',
+        brand_mentioned: true,
+        mention_count: 1,
+        competitor_mentions: [{ name: 'Rival', position: 1, count: 1 }],
+      }),
+    ]
+    const sov = computeShareOfVoice(rows, 'Acme')
+    const brand = sov.entities.find((e) => e.isBrand)!
+    expect(brand.range.bucketsObserved).toBe(3)
+    expect(brand.range.min).toBe(0)
+    expect(brand.range.max).toBe(100)
+    expect(brand.volatility).toBeGreaterThan(40)
+    expect(brand.volatility).toBeLessThan(42)
+  })
+
+  it('volatility ignores buckets where the entity never appeared (no zero-stuffing)', () => {
+    // Brand-only days, two buckets — brand share is 100% on both, volatility 0.
+    const rows: SovInputRow[] = [
+      row({ created_at: '2026-05-20T09:00:00Z', brand_mentioned: true, mention_count: 1 }),
+      row({ created_at: '2026-05-21T09:00:00Z', brand_mentioned: true, mention_count: 1 }),
+    ]
+    const sov = computeShareOfVoice(rows, 'Acme')
+    const brand = sov.entities.find((e) => e.isBrand)!
+    expect(brand.volatility).toBe(0)
+    expect(brand.range).toEqual({ min: 100, max: 100, bucketsObserved: 2 })
   })
 
   it('caps the timeline series to brand + top N competitors', () => {

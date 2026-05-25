@@ -31,6 +31,12 @@ export interface SovEntity {
   mentionRate: number
   /** Average answer position when mentioned (lower = better); null if never positioned. */
   avgPosition: number | null
+  /** Population stddev of per-bucket share% across the timeline (0 when ≤1 bucket).
+   *  Surfaces the "30% ± 10%" volatility Semrush flags: LLMs are non-deterministic,
+   *  so a point estimate hides whether the brand actually holds its share day to day. */
+  volatility: number
+  /** Min/max per-bucket share% observed, plus how many buckets had any responses. */
+  range: { min: number; max: number; bucketsObserved: number }
 }
 
 export interface SovTimePoint {
@@ -74,6 +80,38 @@ export interface SovOptions {
   maxSeries?: number
   /** Time bucket for the historical series. Default 'day'. */
   bucket?: 'day' | 'week'
+}
+
+/** Per-entity share volatility across the timeline. Pure aggregation over the
+ *  same byDate map the timeline is built from, so every entity gets a stat
+ *  (not just the ones inside the capped `series` list). */
+function entityShareStats(
+  byDate: Map<string, Map<string, number>>,
+  key: string,
+): { volatility: number; min: number; max: number; bucketsObserved: number } {
+  const series: number[] = []
+  for (const dayMap of byDate.values()) {
+    let dayTotal = 0
+    for (const v of dayMap.values()) dayTotal += v
+    if (dayTotal <= 0) continue
+    const m = dayMap.get(key) ?? 0
+    series.push((m / dayTotal) * 100)
+  }
+  if (series.length === 0) {
+    return { volatility: 0, min: 0, max: 0, bucketsObserved: 0 }
+  }
+  if (series.length === 1) {
+    const only = round1(series[0]!)
+    return { volatility: 0, min: only, max: only, bucketsObserved: 1 }
+  }
+  const mean = series.reduce((s, n) => s + n, 0) / series.length
+  const variance = series.reduce((s, n) => s + (n - mean) ** 2, 0) / series.length
+  return {
+    volatility: round1(Math.sqrt(variance)),
+    min: round1(Math.min(...series)),
+    max: round1(Math.max(...series)),
+    bucketsObserved: series.length,
+  }
 }
 
 function bucketKey(iso: string, bucket: 'day' | 'week'): string {
@@ -148,14 +186,19 @@ export function computeShareOfVoice(
   const totalMentions = all.reduce((s, t) => s + t.mentions, 0)
 
   const entities: SovEntity[] = all
-    .map((t) => ({
-      name: t.name,
-      isBrand: t.isBrand,
-      mentions: t.mentions,
-      share: totalMentions > 0 ? round1((t.mentions / totalMentions) * 100) : 0,
-      mentionRate: totalResponses > 0 ? round1((t.responses / totalResponses) * 100) : 0,
-      avgPosition: t.posCount > 0 ? round1(t.posSum / t.posCount) : null,
-    }))
+    .map((t) => {
+      const stats = entityShareStats(byDate, t.name.toLowerCase())
+      return {
+        name: t.name,
+        isBrand: t.isBrand,
+        mentions: t.mentions,
+        share: totalMentions > 0 ? round1((t.mentions / totalMentions) * 100) : 0,
+        mentionRate: totalResponses > 0 ? round1((t.responses / totalResponses) * 100) : 0,
+        avgPosition: t.posCount > 0 ? round1(t.posSum / t.posCount) : null,
+        volatility: stats.volatility,
+        range: { min: stats.min, max: stats.max, bucketsObserved: stats.bucketsObserved },
+      }
+    })
     // Brand first, then competitors by descending share.
     .sort((a, b) => (a.isBrand === b.isBrand ? b.mentions - a.mentions : a.isBrand ? -1 : 1))
 

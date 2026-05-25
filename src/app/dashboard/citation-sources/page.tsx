@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
 import { CitationFreshnessPanel } from '@/components/CitationFreshnessPanel'
+import { EngineFormatAffinityPanel } from '@/components/EngineFormatAffinityPanel'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -484,6 +485,9 @@ export default function CitationSourcesPage() {
 
           {/* Citation freshness — correlation between age and citation count */}
           <CitationFreshnessPanel brandId={selectedBrand?.id ?? undefined} />
+
+          {/* Engine × content-format affinity — which engine prefers which kind */}
+          <EngineFormatAffinityPanel brandId={selectedBrand?.id ?? undefined} />
 
           {/* Top domains */}
           <Card className="p-6">

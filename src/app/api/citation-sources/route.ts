@@ -11,6 +11,7 @@ import {
   emptyDepthBreakdown,
   deepPageRate,
 } from '@/lib/utils/citation-depth'
+import { computeSidebarDominance, type SidebarRowInput } from '@/lib/utils/sidebar-dominance'
 import {
   classifyDomainAuthority,
   computeAiTrustScore,
@@ -315,6 +316,18 @@ export async function GET(req: NextRequest) {
           // deep subpages over homepage URLs even when ranking the latter.
           citationDepthBreakdown,
           deepPageRate: deepPageRate(citationDepthBreakdown),
+          // Sidebar dominance — UGC / authority / owned / other breakdown
+          // + sidebarScore (% of responses where the brand was cited).
+          // Closes the gap from the Semrush AI Mode study: "Reddit
+          // dominated across all LLMs; UGC platforms appeared in 68%+
+          // of AI Mode results."
+          sidebarDominance: computeSidebarDominance(
+            rows.map<SidebarRowInput>((r, i) => ({
+              id: String(i),
+              cited_urls: Array.isArray(r.cited_urls) ? r.cited_urls : null,
+            })),
+            ownedDomain,
+          ),
         },
         domains: topDomains,
         /**

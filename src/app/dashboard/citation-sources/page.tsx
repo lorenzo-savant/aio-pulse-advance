@@ -71,6 +71,23 @@ interface DomainRow {
   lastSeen: string
 }
 
+interface SidebarBreakdown {
+  ugc: number
+  authority: number
+  owned: number
+  other: number
+}
+
+interface SidebarDominance {
+  totalCitations: number
+  totalResponses: number
+  citations: SidebarBreakdown
+  citationShare: SidebarBreakdown
+  responseCoverage: SidebarBreakdown
+  responseCoverageShare: SidebarBreakdown
+  sidebarScore: number
+}
+
 interface Summary {
   totalResponses: number
   responsesWithSources: number
@@ -84,6 +101,7 @@ interface Summary {
   citationTypeBreakdown: TypeBreakdown
   citationDepthBreakdown: DepthBreakdown
   deepPageRate: number
+  sidebarDominance?: SidebarDominance
 }
 
 interface OwnedPageRow {
@@ -482,6 +500,104 @@ export default function CitationSourcesPage() {
               </Card>
             )
           })()}
+
+          {/* Sidebar dominance — UGC vs Authority vs Owned mix + score */}
+          {summary.sidebarDominance &&
+            summary.sidebarDominance.totalCitations > 0 &&
+            (() => {
+              const sd = summary.sidebarDominance
+              const pct = (n: number) => (sd.totalCitations > 0 ? (n / sd.totalCitations) * 100 : 0)
+              const scoreAccent =
+                sd.sidebarScore >= 50
+                  ? 'text-emerald-400'
+                  : sd.sidebarScore >= 20
+                    ? 'text-amber-400'
+                    : 'text-rose-400'
+              return (
+                <Card className="p-6">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-5 w-5 text-muted-foreground" />
+                      <h2 className="text-lg font-bold text-foreground">Sidebar Dominance</h2>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Sidebar score
+                      </p>
+                      <p className={cn('text-2xl font-black leading-none', scoreAccent)}>
+                        {sd.sidebarScore.toFixed(1)}%
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        of {sd.totalResponses} responses cite you
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    AI engines lean heavily on a few <strong>UGC</strong> (Reddit/Quora/YouTube) and{' '}
+                    <strong>authority</strong> (Wikipedia, major media, .edu/.gov) sources per the
+                    Semrush AI Mode study. This view shows how citations split between UGC,
+                    authoritative sources, your own pages, and other sites.
+                  </p>
+                  <div className="flex h-4 w-full overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className="h-full bg-emerald-500/80 transition-all duration-700"
+                      style={{ width: `${pct(sd.citations.owned)}%` }}
+                      title={`${sd.citations.owned} owned`}
+                    />
+                    <div
+                      className="h-full bg-sky-500/80 transition-all duration-700"
+                      style={{ width: `${pct(sd.citations.authority)}%` }}
+                      title={`${sd.citations.authority} authority`}
+                    />
+                    <div
+                      className="h-full bg-violet-500/80 transition-all duration-700"
+                      style={{ width: `${pct(sd.citations.ugc)}%` }}
+                      title={`${sd.citations.ugc} UGC`}
+                    />
+                    <div
+                      className="bg-muted-foreground/40 h-full transition-all duration-700"
+                      style={{ width: `${pct(sd.citations.other)}%` }}
+                      title={`${sd.citations.other} other`}
+                    />
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                    <div>
+                      <p className="text-emerald-400">
+                        <span className="font-bold">{sd.citations.owned}</span> owned
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {sd.citationShare.owned.toFixed(1)}% citations · in{' '}
+                        {sd.responseCoverageShare.owned.toFixed(1)}% of responses
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sky-400">
+                        <span className="font-bold">{sd.citations.authority}</span> authority
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {sd.citationShare.authority.toFixed(1)}% citations
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-violet-400">
+                        <span className="font-bold">{sd.citations.ugc}</span> UGC
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Reddit/Quora/YouTube · {sd.citationShare.ugc.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">
+                        <span className="font-bold">{sd.citations.other}</span> other
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {sd.citationShare.other.toFixed(1)}% citations
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )
+            })()}
 
           {/* Citation freshness — correlation between age and citation count */}
           <CitationFreshnessPanel brandId={selectedBrand?.id ?? undefined} />

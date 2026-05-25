@@ -9,6 +9,7 @@ import { HorizonChart } from '@/components/ui/Chart'
 import { PageTransition, StaggerGrid, StaggerItem } from '@/components/ui/Motion'
 import { StrikingDistancePanel } from '@/components/StrikingDistancePanel'
 import { BrandedSearchPanel } from '@/components/BrandedSearchPanel'
+import { CannibalizationPanel } from '@/components/CannibalizationPanel'
 import { useRealtime } from '@/lib/hooks/use-realtime'
 import {
   TrendingUp,
@@ -563,6 +564,7 @@ export default function BrandOverviewPage() {
 
         <StrikingDistancePanel />
         <BrandedSearchPanel />
+        <CannibalizationPanel />
 
         {/* AI Agent Chat with Team Collaboration */}
         <Card>

@@ -34,6 +34,7 @@ import { CompetitorPositioningPanel } from '@/components/CompetitorPositioningPa
 import { CompetitorSentimentPanel } from '@/components/CompetitorSentimentPanel'
 import { SourceOpportunitiesPanel } from '@/components/SourceOpportunitiesPanel'
 import { ShareOfVoiceByEnginePanel } from '@/components/ShareOfVoiceByEnginePanel'
+import { BusinessDriversPanel } from '@/components/BusinessDriversPanel'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { exportToJson } from '@/lib/export'
@@ -788,6 +789,8 @@ export default function CompetitorPage() {
       <CompetitorSentimentPanel />
 
       <ShareOfVoiceByEnginePanel />
+
+      <BusinessDriversPanel />
 
       <SourceOpportunitiesPanel />
 

@@ -43,6 +43,13 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
+// Postgres "undefined_table" — the migration for this feature hasn't been
+// applied on this deployment. Treated as a soft-fail at GET (return empty
+// list + flag) and a clearer error at POST.
+function isUndefinedTable(e: unknown): boolean {
+  return Boolean(e && typeof e === 'object' && (e as { code?: string }).code === '42P01')
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req)
   if (auth instanceof NextResponse) return auth
@@ -72,13 +79,23 @@ export async function GET(req: NextRequest) {
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (error) {
+    if (isUndefinedTable(error)) {
+      logger.warn('/api/annotations GET — brand_annotations table missing, soft-failing', {
+        err: String(error),
+      })
+      return NextResponse.json({
+        success: true,
+        data: { annotations: [], filters: { days }, tableAvailable: false },
+        timestamp: Date.now(),
+      })
+    }
     logger.error('/api/annotations GET failed', { err: String(error) })
     return err('Failed to load annotations')
   }
 
   return NextResponse.json({
     success: true,
-    data: { annotations: data ?? [], filters: { days } },
+    data: { annotations: data ?? [], filters: { days }, tableAvailable: true },
     timestamp: Date.now(),
   })
 }
@@ -120,6 +137,15 @@ export async function POST(req: NextRequest) {
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (error) {
+    if (isUndefinedTable(error)) {
+      logger.error('/api/annotations POST — brand_annotations table missing', {
+        err: String(error),
+      })
+      return err(
+        'Timeline annotations are not yet available on this deployment — the brand_annotations migration has not been applied.',
+        503,
+      )
+    }
     logger.error('/api/annotations POST failed', { err: String(error) })
     return err('Failed to create annotation')
   }

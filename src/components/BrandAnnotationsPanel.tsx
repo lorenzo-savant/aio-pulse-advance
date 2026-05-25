@@ -74,6 +74,10 @@ export function BrandAnnotationsPanel({ brandId: brandIdProp }: { brandId?: stri
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // null = unknown (initial load), true = table exists, false = migration
+  // not applied on this deployment. When false we suppress both the empty
+  // state and the Add button and show a single explanatory hint.
+  const [tableAvailable, setTableAvailable] = useState<boolean | null>(null)
 
   // Create form
   const [adding, setAdding] = useState(false)
@@ -109,6 +113,7 @@ export function BrandAnnotationsPanel({ brandId: brandIdProp }: { brandId?: stri
       const j = await res.json()
       if (!j.success) throw new Error(j.message || 'Failed to load')
       setAnnotations((j.data?.annotations ?? []) as Annotation[])
+      setTableAvailable(j.data?.tableAvailable !== false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
@@ -193,7 +198,7 @@ export function BrandAnnotationsPanel({ brandId: brandIdProp }: { brandId?: stri
               ))}
             </select>
           )}
-          {!adding && activeBrandId && (
+          {!adding && activeBrandId && tableAvailable !== false && (
             <button
               onClick={() => setAdding(true)}
               className="hover:bg-brand/90 inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground transition-colors"
@@ -275,7 +280,15 @@ export function BrandAnnotationsPanel({ brandId: brandIdProp }: { brandId?: stri
         </div>
       )}
 
-      {annotations.length === 0 ? (
+      {tableAvailable === false ? (
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+          Timeline annotations table not yet applied on this deployment — apply migration{' '}
+          <code className="rounded bg-amber-500/20 px-1">
+            20260525000000_add_brand_annotations.sql
+          </code>{' '}
+          to enable. Until then the panel is read-only and empty.
+        </div>
+      ) : annotations.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No annotations yet. Add one to give your visibility charts context — content publishes,
           launches, competitor moves, campaigns, algorithm updates.

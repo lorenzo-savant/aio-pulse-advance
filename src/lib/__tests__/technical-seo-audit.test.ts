@@ -25,7 +25,7 @@ vi.mock('@/lib/utils/safe-fetch', () => ({
 const HTML_RICH = `<!doctype html>
 <html>
 <head>
-  <title>Acme — Workflow Automation</title>
+  <title>Acme — Best Workflow Automation Platform Review</title>
   <meta name="description" content="B2B automation platform for teams.">
   <meta name="author" content="Jane Doe">
   <link rel="canonical" href="https://acme.com/">

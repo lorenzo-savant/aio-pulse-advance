@@ -1,5 +1,6 @@
 import { safeFetch } from '@/lib/utils/safe-fetch'
 import { analyseZeroClickVulnerability } from '@/lib/utils/zero-click-vulnerability'
+import { analyseIntentLength } from '@/lib/utils/intent-length'
 
 export interface AuditCheck {
   id: string
@@ -1049,7 +1050,29 @@ function checkContentStructure(html: string, url: string): AuditCategory {
           : `Vulnerable (score ${zeroClick.score}/100) — AI can replace this page with a summary. ${zcReason}`,
   })
 
-  // 12) Last-updated check (existing — left intact below).
+  // 12) Intent × length fit — does this page's depth match what AI
+  // engines expect for the query intent? Semrush AI Mode study:
+  //   "commercial and transactional queries triggered the longest and
+  //    most detailed responses — often double informational length…
+  //    informational? clarity and conciseness. commercial? expand."
+  const intentLength = analyseIntentLength(html)
+  const ilStatus: 'pass' | 'warning' | 'fail' =
+    intentLength.fit === 'right_size'
+      ? 'pass'
+      : intentLength.fit === 'too_short'
+        ? 'fail'
+        : 'warning'
+  checks.push({
+    id: 'content-intent-length',
+    name: 'Intent × length fit',
+    status: ilStatus,
+    message:
+      intentLength.fit === 'right_size'
+        ? `${intentLength.wordCount} words is within the AI-friendly band for ${intentLength.intent} pages (${intentLength.band.min}–${intentLength.band.max}).`
+        : intentLength.recommendation,
+  })
+
+  // 13) Last-updated check (existing — left intact below).
   if (dateCandidates.length === 0) {
     checks.push({
       id: 'content-last-updated',

@@ -20,7 +20,7 @@
 // is mostly composition.
 
 import { useEffect, useState } from 'react'
-import { Filter, ChevronDown } from 'lucide-react'
+import { Filter, ChevronDown, Download } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { ShareOfVoiceByEnginePanel } from '@/components/ShareOfVoiceByEnginePanel'
 import { VisualProofPanel } from '@/components/VisualProofPanel'
@@ -88,31 +88,43 @@ export default function AiFunnelPage() {
             a screenshot away from a deck.
           </p>
         </div>
-        {brands.length > 1 && (
-          <div className="flex shrink-0 items-center gap-2">
-            <label
-              htmlFor="brand-select"
-              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
-            >
-              Brand
-            </label>
-            <div className="relative">
-              <select
-                id="brand-select"
-                value={activeBrandId}
-                onChange={(e) => setActiveBrandId(e.target.value)}
-                className="appearance-none rounded-md border border-border bg-background px-3 py-2 pr-8 text-sm text-foreground focus:border-primary focus:outline-none"
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {brands.length > 1 && (
+            <>
+              <label
+                htmlFor="brand-select"
+                className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
               >
-                {brands.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </div>
-        )}
+                Brand
+              </label>
+              <div className="relative">
+                <select
+                  id="brand-select"
+                  value={activeBrandId}
+                  onChange={(e) => setActiveBrandId(e.target.value)}
+                  className="appearance-none rounded-md border border-border bg-background px-3 py-2 pr-8 text-sm text-foreground focus:border-primary focus:outline-none"
+                >
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </>
+          )}
+          {activeBrandId && (
+            <a
+              href={`/api/reports/exec-summary?brand_id=${activeBrandId}&days=30&format=md`}
+              className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
+              title="Download the executive 4-question summary as Markdown"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export exec summary
+            </a>
+          )}
+        </div>
       </div>
 
       {/* ── 1. Top of funnel — visibility ──────────────────────────────── */}

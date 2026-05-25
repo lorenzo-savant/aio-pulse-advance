@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/index'
 import { HorizonChart } from '@/components/ui/Chart'
 import { PageTransition, StaggerGrid, StaggerItem } from '@/components/ui/Motion'
 import { StrikingDistancePanel } from '@/components/StrikingDistancePanel'
+import { BrandedSearchPanel } from '@/components/BrandedSearchPanel'
 import { useRealtime } from '@/lib/hooks/use-realtime'
 import {
   TrendingUp,
@@ -561,6 +562,7 @@ export default function BrandOverviewPage() {
         </div>
 
         <StrikingDistancePanel />
+        <BrandedSearchPanel />
 
         {/* AI Agent Chat with Team Collaboration */}
         <Card>

@@ -34,6 +34,7 @@ import {
   Link2,
   Target,
   TrendingUp,
+  Filter,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
@@ -173,6 +174,12 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Tag,
         labelKey: 'sidebar.items.keywords',
         lockedUntil: (s) => !s.hasData,
+      },
+      // ── Unified reports ───────────────────────────────────────────────
+      {
+        href: '/dashboard/ai-funnel',
+        icon: Filter,
+        labelKey: 'sidebar.items.ai_funnel',
       },
       // ── Comparative + historical ──────────────────────────────────────
       { href: '/dashboard/competitor', icon: GitCompare, labelKey: 'sidebar.items.competitor' },

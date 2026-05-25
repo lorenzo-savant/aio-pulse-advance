@@ -27,7 +27,18 @@ export default [
   ...nextTypeScript,
   {
     rules: {
-      '@typescript-eslint/no-unused-vars': 'warn',
+      // Standard pattern: _-prefixed names are intentional "I needed the
+      // position but not the value" (destructuring, callback params, …).
+      // Without this both eslint reports them as "unused" — false noise.
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
       '@typescript-eslint/consistent-type-imports': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       'react/self-closing-comp': 'warn',

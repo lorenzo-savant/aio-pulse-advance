@@ -13,7 +13,7 @@ import {
   Moon,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
+import { useMounted } from '@/lib/hooks/use-mounted'
 import { APP_NAME } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { AnimatedStats } from '@/components/AnimatedStats'
@@ -60,11 +60,7 @@ const features = [
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useMounted()
 
   const isDark = theme === 'dark'
 

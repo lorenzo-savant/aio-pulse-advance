@@ -28,6 +28,11 @@ import { SourceOpportunitiesPanel } from '@/components/SourceOpportunitiesPanel'
 import { BrandedSearchPanel } from '@/components/BrandedSearchPanel'
 import { CitationFreshnessPanel } from '@/components/CitationFreshnessPanel'
 import { BrandAnnotationsPanel } from '@/components/BrandAnnotationsPanel'
+import { AISeoReadinessPanel } from '@/components/AISeoReadinessPanel'
+import { ClaimDivergencePanel } from '@/components/ClaimDivergencePanel'
+import { BrandFactsPanel } from '@/components/BrandFactsPanel'
+import { AIReferralFiltersPanel } from '@/components/AIReferralFiltersPanel'
+import { AIBotLogsPanel } from '@/components/AIBotLogsPanel'
 
 interface BrandLite {
   id: string
@@ -128,6 +133,11 @@ export default function AiFunnelPage() {
         </div>
       </div>
 
+      {/* AI SEO 2026 readiness hero — aggregates every other signal below
+          into a single A-F grade so the operator can lead the deck with
+          "where do we stand?" before walking through the funnel. */}
+      <AISeoReadinessPanel brandId={activeBrandId || undefined} />
+
       {/* ── 1. Top of funnel — visibility ──────────────────────────────── */}
       <section>
         <SectionHeading
@@ -148,7 +158,11 @@ export default function AiFunnelPage() {
           title="Visual proof — Real AI responses"
           subtitle="The latest answers where your brand is named, with the response text highlighted. Drop these into the deck — they make abstract metrics concrete."
         />
-        <VisualProofPanel brandId={activeBrandId || undefined} />
+        <div className="space-y-6">
+          <VisualProofPanel brandId={activeBrandId || undefined} />
+          <BrandFactsPanel brandId={activeBrandId || undefined} />
+          <ClaimDivergencePanel brandId={activeBrandId || undefined} />
+        </div>
       </section>
 
       {/* ── 3. Bottom of funnel — downstream behaviour ─────────────────── */}
@@ -161,6 +175,8 @@ export default function AiFunnelPage() {
         <div className="space-y-6">
           <BrandedSearchPanel brandId={activeBrandId || undefined} />
           <CitationFreshnessPanel brandId={activeBrandId || undefined} />
+          <AIReferralFiltersPanel />
+          <AIBotLogsPanel />
         </div>
       </section>
 

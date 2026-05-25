@@ -27,6 +27,7 @@ import { VisualProofPanel } from '@/components/VisualProofPanel'
 import { SourceOpportunitiesPanel } from '@/components/SourceOpportunitiesPanel'
 import { BrandedSearchPanel } from '@/components/BrandedSearchPanel'
 import { CitationFreshnessPanel } from '@/components/CitationFreshnessPanel'
+import { BrandAnnotationsPanel } from '@/components/BrandAnnotationsPanel'
 
 interface BrandLite {
   id: string
@@ -162,6 +163,11 @@ export default function AiFunnelPage() {
           <CitationFreshnessPanel brandId={activeBrandId || undefined} />
         </div>
       </section>
+
+      {/* Annotations live below the funnel so they apply to every section
+          above. The exec summary export already includes the data the
+          annotations help contextualise. */}
+      <BrandAnnotationsPanel brandId={activeBrandId || undefined} />
 
       <Card className="p-4 text-xs text-muted-foreground">
         Want a different section order or extra widgets in the report? This page is composed of

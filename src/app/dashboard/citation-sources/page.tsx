@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
 import { CitationFreshnessPanel } from '@/components/CitationFreshnessPanel'
 import { EngineFormatAffinityPanel } from '@/components/EngineFormatAffinityPanel'
+import { CitedVsRankingPanel } from '@/components/CitedVsRankingPanel'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -604,6 +605,9 @@ export default function CitationSourcesPage() {
 
           {/* Engine × content-format affinity — which engine prefers which kind */}
           <EngineFormatAffinityPanel brandId={selectedBrand?.id ?? undefined} />
+
+          {/* Cited × Ranking — AI cites this URL, Google ranks it where? */}
+          <CitedVsRankingPanel brandId={selectedBrand?.id ?? undefined} />
 
           {/* Top domains */}
           <Card className="p-6">

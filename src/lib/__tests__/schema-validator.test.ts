@@ -8,6 +8,7 @@ import {
   getFixSuggestions,
   determineOverallStatus,
   validateHtml,
+  auditSoftwareApplication,
 } from '../services/schema-validator'
 
 const HTML_WITH_ALL_SCHEMAS = `<!doctype html>
@@ -222,5 +223,118 @@ describe('validateHtml', () => {
     const result = await validateHtml(HTML_PARTIAL_SCHEMA)
 
     expect(result.overall).toBe('fail')
+  })
+
+  it('returns null softwareApplication when no SoftwareApplication schema is present', async () => {
+    const result = await validateHtml(HTML_WITH_ALL_SCHEMAS)
+    expect(result.softwareApplication).toBeNull()
+  })
+})
+
+describe('auditSoftwareApplication', () => {
+  const NOW = Date.parse('2026-05-25T00:00:00Z')
+
+  it('returns null when no SoftwareApplication-family schema exists', () => {
+    const schemas = extractAllSchemas(HTML_NO_SCHEMA)
+    expect(auditSoftwareApplication(schemas, NOW)).toBeNull()
+  })
+
+  it('passes on a complete SoftwareApplication with fresh validity window', () => {
+    const html = `<html><head>
+      <script type="application/ld+json">${JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Acme CRM',
+        applicationCategory: 'BusinessApplication',
+        featureList: ['Pipeline', 'Reporting', 'Slack integration'],
+        offers: {
+          '@type': 'Offer',
+          price: '29',
+          priceCurrency: 'USD',
+          priceValidUntil: '2026-12-31',
+        },
+      })}</script>
+    </head></html>`
+    const schemas = extractAllSchemas(html)
+    const audit = auditSoftwareApplication(schemas, NOW)
+    expect(audit).not.toBeNull()
+    expect(audit!.status).toBe('pass')
+  })
+
+  it('fails when offers block is missing', () => {
+    const html = `<html><head>
+      <script type="application/ld+json">${JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Acme CRM',
+        applicationCategory: 'BusinessApplication',
+      })}</script>
+    </head></html>`
+    const schemas = extractAllSchemas(html)
+    const audit = auditSoftwareApplication(schemas, NOW)
+    expect(audit?.status).toBe('fail')
+    expect(audit?.checks.some((c) => c.id === 'offers-present' && c.severity === 'critical')).toBe(
+      true,
+    )
+  })
+
+  it('warns when offers exist but priceCurrency is missing', () => {
+    const html = `<html><head>
+      <script type="application/ld+json">${JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        applicationCategory: 'BusinessApplication',
+        offers: { '@type': 'Offer', price: '29' },
+      })}</script>
+    </head></html>`
+    const audit = auditSoftwareApplication(extractAllSchemas(html), NOW)
+    expect(audit?.status).toBe('warning')
+    expect(
+      audit?.checks.some((c) => c.id === 'price-currency-present' && c.severity === 'warning'),
+    ).toBe(true)
+  })
+
+  it('flags a stale priceValidUntil as critical', () => {
+    const html = `<html><head>
+      <script type="application/ld+json">${JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        applicationCategory: 'BusinessApplication',
+        offers: {
+          '@type': 'Offer',
+          price: '29',
+          priceCurrency: 'USD',
+          priceValidUntil: '2024-12-31',
+        },
+      })}</script>
+    </head></html>`
+    const audit = auditSoftwareApplication(extractAllSchemas(html), NOW)
+    expect(audit?.status).toBe('fail')
+    expect(
+      audit?.checks.some((c) => c.id === 'price-validity-stale' && c.severity === 'critical'),
+    ).toBe(true)
+  })
+
+  it('drills into @graph to find a SaaSApplication node', () => {
+    const html = `<html><head>
+      <script type="application/ld+json">${JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          { '@type': 'Organization', name: 'Acme' },
+          {
+            '@type': 'SaaSApplication',
+            applicationCategory: 'BusinessApplication',
+            offers: {
+              '@type': 'Offer',
+              price: '49',
+              priceCurrency: 'USD',
+              priceValidUntil: '2027-01-01',
+            },
+          },
+        ],
+      })}</script>
+    </head></html>`
+    const audit = auditSoftwareApplication(extractAllSchemas(html), NOW)
+    expect(audit?.status).toBe('pass')
   })
 })

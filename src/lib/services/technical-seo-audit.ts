@@ -1,6 +1,7 @@
 import { safeFetch } from '@/lib/utils/safe-fetch'
 import { analyseZeroClickVulnerability } from '@/lib/utils/zero-click-vulnerability'
 import { analyseIntentLength } from '@/lib/utils/intent-length'
+import { checkComparisonTable } from '@/lib/utils/comparison-table-check'
 
 export interface AuditCheck {
   id: string
@@ -1072,7 +1073,39 @@ function checkContentStructure(html: string, url: string): AuditCategory {
         : intentLength.recommendation,
   })
 
-  // 13) Last-updated check (existing — left intact below).
+  // 13) Image-based comparison/pricing table detector — Semrush SaaS-AI
+  // pitfall #5: "tables saved as screenshots are invisible to AI
+  // extraction". Only fires when the URL signals a pricing or comparison
+  // page; on every other URL the check is `info` so it doesn't penalize.
+  const cmp = checkComparisonTable(html, url)
+  if (cmp.verdict === 'skipped') {
+    checks.push({
+      id: 'content-comparison-table',
+      name: 'Comparison table extractability',
+      status: 'info',
+      message: 'Not a pricing/comparison page — check skipped',
+    })
+  } else if (cmp.verdict === 'ok') {
+    checks.push({
+      id: 'content-comparison-table',
+      name: 'Comparison table extractability',
+      status: 'pass',
+      message: cmp.reason,
+    })
+  } else {
+    checks.push({
+      id: 'content-comparison-table',
+      name: 'Comparison table extractability',
+      status: 'fail',
+      message: cmp.reason,
+      details:
+        cmp.flaggedImages.length > 0
+          ? `Image assets: ${cmp.flaggedImages.slice(0, 3).join(', ')}`
+          : undefined,
+    })
+  }
+
+  // 14) Last-updated check (existing — left intact below).
   if (dateCandidates.length === 0) {
     checks.push({
       id: 'content-last-updated',

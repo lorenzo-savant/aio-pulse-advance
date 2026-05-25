@@ -27,9 +27,20 @@ interface PortfolioBucket {
   averageBrandVisibility: number | null
 }
 
+type BrandedMixVerdict = 'over_indexed' | 'balanced' | 'category_led'
+
+interface BrandedMix {
+  brandedCount: number
+  categoryCount: number
+  brandedRatio: number
+  verdict: BrandedMixVerdict
+  message: string
+}
+
 interface PortfolioReport {
   rows: PortfolioRow[]
   buckets: PortfolioBucket[]
+  brandedMix?: BrandedMix
 }
 
 interface ResponseData {
@@ -165,11 +176,37 @@ export function PromptPortfolioPanel({ brandId: brandIdProp }: { brandId?: strin
         )}
       </div>
 
-      <p className="mb-4 text-sm text-muted-foreground">
+      <p className="mb-3 text-sm text-muted-foreground">
         Your {report.rows.length} tracked prompts classified by business impact (per Semrush Prompt
         Tracking framework). The visibility % shows how often your brand was named in the engine
         responses for the prompts in each bucket.
       </p>
+
+      {report.brandedMix && (
+        <div
+          className={`mb-4 flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-xs ${
+            report.brandedMix.verdict === 'over_indexed'
+              ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+              : report.brandedMix.verdict === 'category_led'
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                : 'bg-input/40 border-border text-muted-foreground'
+          }`}
+          title={report.brandedMix.message}
+        >
+          <span className="font-bold uppercase tracking-wider">
+            {report.brandedMix.verdict === 'over_indexed'
+              ? 'Branded-heavy'
+              : report.brandedMix.verdict === 'category_led'
+                ? 'Category-led'
+                : 'Balanced mix'}
+          </span>
+          <span>
+            {report.brandedMix.brandedCount} branded · {report.brandedMix.categoryCount} category (
+            {report.brandedMix.brandedRatio}% branded)
+          </span>
+          <span className="text-[11px] opacity-80">{report.brandedMix.message}</span>
+        </div>
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
         {ORDER.map((t) => {

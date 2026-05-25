@@ -27,6 +27,30 @@ export interface SchemaValidationResponse {
   validations: ValidationResult[]
   suggestions: FixSuggestion[]
   overall: 'pass' | 'fail' | 'warning'
+  /** SaaS-specific SoftwareApplication audit — only populated when a
+   *  SoftwareApplication / SaaSApplication / WebApplication schema is
+   *  present on the page. Targets Semrush SaaS-AI step #6 + pitfall #2
+   *  ("schema lag behind UI changes"). */
+  softwareApplication?: SoftwareApplicationAudit | null
+}
+
+export interface SoftwareApplicationAudit {
+  /** Pricing schema findings, severity-ordered. */
+  checks: SoftwareApplicationCheck[]
+  status: 'pass' | 'fail' | 'warning'
+}
+
+export interface SoftwareApplicationCheck {
+  id:
+    | 'offers-present'
+    | 'price-present'
+    | 'price-currency-present'
+    | 'price-validity-window'
+    | 'price-validity-stale'
+    | 'application-category'
+    | 'feature-list'
+  severity: Severity
+  message: string
 }
 
 function extractScripts(html: string): string[] {
@@ -289,6 +313,198 @@ export function getFixSuggestions(results: ValidationResult[]): FixSuggestion[] 
   })
 }
 
+// ─── SoftwareApplication audit ───────────────────────────────────────────────
+//
+// Semrush "SaaS AI search optimization" step #6 + pitfall #2: SaaS pricing
+// schema is a top citation surface for AI engines, but goes stale fast. We
+// drill into the actual JSON-LD payload to validate `offers.price`,
+// `offers.priceCurrency`, `priceValidUntil`/`priceValidFrom` (and warn when
+// the validity window has expired), `applicationCategory`, and
+// `featureList`. Only runs when a SoftwareApplication-family type is on the
+// page; null otherwise.
+
+const SOFTWARE_APPLICATION_TYPES = new Set([
+  'SoftwareApplication',
+  'SaaSApplication',
+  'WebApplication',
+  'MobileApplication',
+])
+
+function typesOf(node: Record<string, unknown>): string[] {
+  const t = node['@type']
+  if (typeof t === 'string') return [t]
+  if (Array.isArray(t)) return t.filter((x): x is string => typeof x === 'string')
+  return []
+}
+
+function findSoftwareApplicationNode(schemas: ExtractedSchema[]): Record<string, unknown> | null {
+  const seen = new Set<Record<string, unknown>>()
+  for (const s of schemas) {
+    if (s.source !== 'json-ld') continue
+    const stack: unknown[] = [s.data]
+    while (stack.length > 0) {
+      const cur = stack.pop()
+      if (!cur || typeof cur !== 'object') continue
+      const obj = cur as Record<string, unknown>
+      if (seen.has(obj)) continue
+      seen.add(obj)
+      if (typesOf(obj).some((t) => SOFTWARE_APPLICATION_TYPES.has(t))) return obj
+      for (const v of Object.values(obj)) {
+        if (Array.isArray(v)) stack.push(...v)
+        else if (v && typeof v === 'object') stack.push(v)
+      }
+    }
+  }
+  return null
+}
+
+function asOfferList(node: Record<string, unknown>): Array<Record<string, unknown>> {
+  const offers = node['offers']
+  if (!offers) return []
+  if (Array.isArray(offers)) {
+    return offers.filter((o): o is Record<string, unknown> => !!o && typeof o === 'object')
+  }
+  if (typeof offers === 'object') return [offers as Record<string, unknown>]
+  return []
+}
+
+function parseIsoDate(v: unknown): number | null {
+  if (typeof v !== 'string') return null
+  const t = Date.parse(v)
+  return Number.isFinite(t) ? t : null
+}
+
+export function auditSoftwareApplication(
+  schemas: ExtractedSchema[],
+  now: number = Date.now(),
+): SoftwareApplicationAudit | null {
+  const node = findSoftwareApplicationNode(schemas)
+  if (!node) return null
+
+  const checks: SoftwareApplicationCheck[] = []
+  const offers = asOfferList(node)
+
+  if (offers.length === 0) {
+    checks.push({
+      id: 'offers-present',
+      severity: 'critical',
+      message:
+        'SoftwareApplication schema has no `offers` block — AI engines cannot extract pricing',
+    })
+  } else {
+    checks.push({
+      id: 'offers-present',
+      severity: 'info',
+      message: `${offers.length} offer block(s) present`,
+    })
+
+    const offerWithoutPrice = offers.filter((o) => {
+      const p = o['price']
+      const lowPrice = o['lowPrice']
+      return !(typeof p === 'string' || typeof p === 'number') && lowPrice === undefined
+    })
+    if (offerWithoutPrice.length > 0) {
+      checks.push({
+        id: 'price-present',
+        severity: 'critical',
+        message: `${offerWithoutPrice.length}/${offers.length} offer block(s) missing a price value`,
+      })
+    } else {
+      checks.push({
+        id: 'price-present',
+        severity: 'info',
+        message: 'All offer blocks declare a price',
+      })
+    }
+
+    const offerWithoutCurrency = offers.filter((o) => typeof o['priceCurrency'] !== 'string')
+    if (offerWithoutCurrency.length > 0) {
+      checks.push({
+        id: 'price-currency-present',
+        severity: 'warning',
+        message: `${offerWithoutCurrency.length}/${offers.length} offer block(s) missing priceCurrency — AI may guess the wrong currency`,
+      })
+    } else {
+      checks.push({
+        id: 'price-currency-present',
+        severity: 'info',
+        message: 'All offer blocks declare priceCurrency',
+      })
+    }
+
+    const validityDates = offers
+      .map((o) => parseIsoDate(o['priceValidUntil']) ?? parseIsoDate(o['priceValidFrom']))
+      .filter((d): d is number => d !== null)
+    if (validityDates.length === 0) {
+      checks.push({
+        id: 'price-validity-window',
+        severity: 'warning',
+        message:
+          'No priceValidUntil / priceValidFrom on any offer — add one so AI engines can detect when the price went stale',
+      })
+    } else {
+      const newest = Math.max(...validityDates)
+      if (newest < now) {
+        const daysOld = Math.floor((now - newest) / 86_400_000)
+        checks.push({
+          id: 'price-validity-stale',
+          severity: 'critical',
+          message: `Newest priceValid date is ${daysOld} days in the past — AI summaries may quote outdated pricing`,
+        })
+      } else {
+        const daysAhead = Math.floor((newest - now) / 86_400_000)
+        checks.push({
+          id: 'price-validity-window',
+          severity: 'info',
+          message: `Pricing valid for another ${daysAhead} day(s)`,
+        })
+      }
+    }
+  }
+
+  const appCategory = node['applicationCategory']
+  if (typeof appCategory !== 'string' || appCategory.trim().length === 0) {
+    checks.push({
+      id: 'application-category',
+      severity: 'warning',
+      message:
+        'applicationCategory missing — AI engines use it to slot your product into a SaaS sub-category',
+    })
+  } else {
+    checks.push({
+      id: 'application-category',
+      severity: 'info',
+      message: `applicationCategory: ${appCategory}`,
+    })
+  }
+
+  const featureList = node['featureList']
+  const featureCount = Array.isArray(featureList)
+    ? featureList.length
+    : typeof featureList === 'string' && featureList.trim().length > 0
+      ? featureList.split(/[,;\n]/).filter((s) => s.trim().length > 0).length
+      : 0
+  if (featureCount === 0) {
+    checks.push({
+      id: 'feature-list',
+      severity: 'info',
+      message: 'No featureList declared — optional but helps AI engines name your differentiators',
+    })
+  } else {
+    checks.push({
+      id: 'feature-list',
+      severity: 'info',
+      message: `featureList declares ${featureCount} capabilit${featureCount === 1 ? 'y' : 'ies'}`,
+    })
+  }
+
+  const hasCritical = checks.some((c) => c.severity === 'critical')
+  const hasWarning = checks.some((c) => c.severity === 'warning')
+  const status: 'pass' | 'fail' | 'warning' = hasCritical ? 'fail' : hasWarning ? 'warning' : 'pass'
+
+  return { checks, status }
+}
+
 export function determineOverallStatus(results: ValidationResult[]): 'pass' | 'fail' | 'warning' {
   const hasCritical = results.some((r) => r.severity === 'critical' && !r.found)
   const hasWarning = results.some((r) => r.severity === 'warning' && !r.found)
@@ -307,6 +523,7 @@ export async function validateHtml(
   const validations = validateTypes(extracted, requiredTypes)
   const suggestions = getFixSuggestions(validations)
   const overall = determineOverallStatus(validations)
+  const softwareApplication = auditSoftwareApplication(extracted)
 
   return {
     url,
@@ -314,5 +531,6 @@ export async function validateHtml(
     validations,
     suggestions,
     overall,
+    softwareApplication,
   }
 }

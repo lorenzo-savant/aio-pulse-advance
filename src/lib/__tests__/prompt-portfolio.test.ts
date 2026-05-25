@@ -154,3 +154,63 @@ describe('classifyPromptList', () => {
     expect(report.rows.map((r) => r.promptId)).toEqual(['B', 'A'])
   })
 })
+
+describe('classifyPromptList — brandedMix', () => {
+  it('flags an over-indexed portfolio when ≥70% of prompts name the brand', () => {
+    const report = classifyPromptList(
+      [
+        { promptId: '1', prompt: 'Acme pricing' },
+        { promptId: '2', prompt: 'Acme vs Rivalry' },
+        { promptId: '3', prompt: 'Acme reviews' },
+        { promptId: '4', prompt: 'is Acme worth it' },
+        { promptId: '5', prompt: 'best CRM for startups' },
+      ],
+      ACME,
+    )
+    expect(report.brandedMix.brandedCount).toBe(4)
+    expect(report.brandedMix.categoryCount).toBe(1)
+    expect(report.brandedMix.brandedRatio).toBe(80)
+    expect(report.brandedMix.verdict).toBe('over_indexed')
+  })
+
+  it('flags a category-led portfolio when ≤40% of prompts name the brand', () => {
+    const report = classifyPromptList(
+      [
+        { promptId: '1', prompt: 'Acme pricing' },
+        { promptId: '2', prompt: 'best CRM for SaaS' },
+        { promptId: '3', prompt: 'top sales tools 2026' },
+        { promptId: '4', prompt: 'recommended CRM for startups' },
+        { promptId: '5', prompt: 'CRM with Slack integration' },
+      ],
+      ACME,
+    )
+    expect(report.brandedMix.brandedRatio).toBe(20)
+    expect(report.brandedMix.verdict).toBe('category_led')
+  })
+
+  it('reports balanced for ratios between the two thresholds', () => {
+    const report = classifyPromptList(
+      [
+        { promptId: '1', prompt: 'Acme pricing' },
+        { promptId: '2', prompt: 'Acme vs Rivalry' },
+        { promptId: '3', prompt: 'best CRM for SaaS' },
+        { promptId: '4', prompt: 'recommended CRM for startups' },
+      ],
+      ACME,
+    )
+    expect(report.brandedMix.brandedRatio).toBe(50)
+    expect(report.brandedMix.verdict).toBe('balanced')
+  })
+
+  it('returns "balanced" with a small-sample message when fewer than 3 non-empty prompts', () => {
+    const report = classifyPromptList(
+      [
+        { promptId: '1', prompt: 'Acme pricing' },
+        { promptId: '2', prompt: '' },
+      ],
+      ACME,
+    )
+    expect(report.brandedMix.verdict).toBe('balanced')
+    expect(report.brandedMix.message).toMatch(/not enough prompts/i)
+  })
+})

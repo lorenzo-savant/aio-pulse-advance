@@ -202,6 +202,24 @@ export interface PortfolioBucketSummary {
   averageBrandVisibility: number | null
 }
 
+/** Branded-vs-category mix verdict — Semrush SaaS-AI pitfall #1: testing
+ *  only branded prompts ("what is X?") gives an inflated SoV read because
+ *  the brand is already in the question. A healthy portfolio leans on
+ *  category-level prompts that reflect how unaware buyers actually search. */
+export type BrandedMixVerdict = 'over_indexed' | 'balanced' | 'category_led'
+
+export interface BrandedMix {
+  /** Number of prompts whose text mentions the brand. */
+  brandedCount: number
+  /** Number of prompts whose text does NOT mention the brand. */
+  categoryCount: number
+  /** Branded prompts as % of the (branded + category) total. 0 when total=0. */
+  brandedRatio: number
+  verdict: BrandedMixVerdict
+  /** Human-readable explanation for the panel tooltip. */
+  message: string
+}
+
 export interface PortfolioReport {
   /** Per-prompt classification, in input order. */
   rows: Array<{
@@ -212,11 +230,47 @@ export interface PortfolioReport {
   }>
   /** Aggregate counts + visibility per bucket (always all 5 types). */
   buckets: PortfolioBucketSummary[]
+  /** Branded-vs-category prompt mix across the whole portfolio. */
+  brandedMix: BrandedMix
+}
+
+function computeBrandedMix(
+  prompts: PortfolioRowInput[],
+  ctx: Omit<PortfolioInput, 'prompt'>,
+): BrandedMix {
+  const brandAliases = [ctx.brandName, ...(ctx.brandAliases ?? [])]
+  let brandedCount = 0
+  let categoryCount = 0
+  for (const p of prompts) {
+    const haystack = fold(p.prompt || '')
+    if (haystack.length === 0) continue
+    if (mentionsAny(haystack, brandAliases)) brandedCount++
+    else categoryCount++
+  }
+  const total = brandedCount + categoryCount
+  const brandedRatio = total === 0 ? 0 : Math.round((brandedCount / total) * 1000) / 10
+  let verdict: BrandedMixVerdict
+  let message: string
+  if (total < 3) {
+    verdict = 'balanced'
+    message = 'Not enough prompts to judge branded vs category mix (need ≥3).'
+  } else if (brandedRatio >= 70) {
+    verdict = 'over_indexed'
+    message = `${brandedRatio}% of prompts name your brand — AI will mention you because you’re in the question. Add category prompts to see real visibility.`
+  } else if (brandedRatio <= 40) {
+    verdict = 'category_led'
+    message = `${brandedRatio}% branded — portfolio leans on category prompts that reflect how unaware buyers search.`
+  } else {
+    verdict = 'balanced'
+    message = `${brandedRatio}% branded — healthy mix of branded checks and category-level discovery.`
+  }
+  return { brandedCount, categoryCount, brandedRatio, verdict, message }
 }
 
 /**
  * Classify a list of prompts and produce both the per-row classification
- * + per-bucket aggregate (count + average brand visibility).
+ * + per-bucket aggregate (count + average brand visibility) + the
+ * branded-vs-category mix verdict.
  */
 export function classifyPromptList(
   prompts: PortfolioRowInput[],
@@ -245,5 +299,7 @@ export function classifyPromptList(
     return { type: t, count: matching.length, averageBrandVisibility: avg }
   })
 
-  return { rows, buckets }
+  const brandedMix = computeBrandedMix(prompts, ctx)
+
+  return { rows, buckets, brandedMix }
 }

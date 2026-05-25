@@ -128,6 +128,79 @@ export function extractContentSections(html: string): Array<{
  *
  * Verdict bands: ≥70% strong, ≥40% partial, <40% weak.
  */
+/**
+ * Emit the UNCOVERED sub-questions as a ready-to-paste FAQ block.
+ *
+ * The Semrush "We Tested Query Fan-Out Optimization" experiment more than
+ * doubled AI citations (2 → 5, briefly peaking at 9) by editing each
+ * article to address the missed fan-out queries — and explicitly used a
+ * dedicated FAQ section when integration into the prose was awkward.
+ * This helper turns the coverage report into that exact artifact:
+ *
+ *   - `markdown`: an H2 FAQ block with one H3 + answer per uncovered query
+ *   - `jsonLd`: a schema.org FAQPage object the operator can drop in
+ *
+ * If the caller passes an `answers` map, those become the FAQ bodies.
+ * Otherwise each item gets a `TODO` placeholder — the experiment proved
+ * that even semantic matches count, so the operator can rewrite freely.
+ */
+export interface FanoutFAQExport {
+  /** How many uncovered questions ended up in the FAQ block. */
+  itemCount: number
+  /** H2 FAQ + H3-per-question markdown, empty string when nothing to add. */
+  markdown: string
+  /** schema.org FAQPage JSON-LD (null when itemCount === 0). */
+  jsonLd: {
+    '@context': 'https://schema.org'
+    '@type': 'FAQPage'
+    mainEntity: Array<{
+      '@type': 'Question'
+      name: string
+      acceptedAnswer: { '@type': 'Answer'; text: string }
+    }>
+  } | null
+}
+
+export function exportFanoutAsFAQ(
+  report: FanoutCoverageResult,
+  options: {
+    /** Optional question→answer map. Unmapped questions get TODO bodies. */
+    answers?: Record<string, string>
+    /** Heading text for the markdown FAQ section. Default: "FAQ". */
+    heading?: string
+    /** Placeholder text when no answer is supplied. Default: TODO line. */
+    placeholder?: string
+  } = {},
+): FanoutFAQExport {
+  const uncovered = report.matches.filter((m) => !m.covered).map((m) => m.question)
+  if (uncovered.length === 0) {
+    return { itemCount: 0, markdown: '', jsonLd: null }
+  }
+  const heading = (options.heading ?? 'FAQ').trim() || 'FAQ'
+  const placeholder = options.placeholder ?? 'TODO: write a 2-3 sentence answer.'
+  const items = uncovered.map((q) => {
+    const supplied = options.answers?.[q]?.trim()
+    return { question: q, answer: supplied && supplied.length > 0 ? supplied : placeholder }
+  })
+  const markdown = [
+    `## ${heading}`,
+    '',
+    ...items.flatMap((it) => [`### ${it.question}`, '', it.answer, '']),
+  ]
+    .join('\n')
+    .trimEnd()
+  const jsonLd: FanoutFAQExport['jsonLd'] = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((it) => ({
+      '@type': 'Question',
+      name: it.question,
+      acceptedAnswer: { '@type': 'Answer', text: it.answer },
+    })),
+  }
+  return { itemCount: items.length, markdown, jsonLd }
+}
+
 export function scoreFanoutCoverage(html: string, subQuestions: string[]): FanoutCoverageResult {
   const sections = extractContentSections(html).map((s) => ({
     heading: s.heading,

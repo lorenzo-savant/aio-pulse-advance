@@ -34,6 +34,7 @@ import { BrandFactsPanel } from '@/components/BrandFactsPanel'
 import { AIReferralFiltersPanel } from '@/components/AIReferralFiltersPanel'
 import { AIBotLogsPanel } from '@/components/AIBotLogsPanel'
 import { CitationSourceCategoriesPanel } from '@/components/CitationSourceCategoriesPanel'
+import { EditorialOutletsPanel } from '@/components/EditorialOutletsPanel'
 import { FirstPartyCitationsPanel } from '@/components/FirstPartyCitationsPanel'
 import { AudienceDeclarationPanel } from '@/components/AudienceDeclarationPanel'
 
@@ -170,6 +171,7 @@ export default function AiFunnelPage() {
           <ShareOfVoiceByEnginePanel brandId={activeBrandId || undefined} />
           <SourceOpportunitiesPanel brandId={activeBrandId || undefined} />
           <CitationSourceCategoriesPanel brandId={activeBrandId || undefined} />
+          <EditorialOutletsPanel brandId={activeBrandId || undefined} />
           <FirstPartyCitationsPanel brandId={activeBrandId || undefined} />
           <AudienceDeclarationPanel brandId={activeBrandId || undefined} />
         </div>

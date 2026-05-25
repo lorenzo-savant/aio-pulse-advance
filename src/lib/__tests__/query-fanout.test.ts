@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { extractContentSections, scoreFanoutCoverage } from '@/lib/utils/query-fanout'
+import {
+  extractContentSections,
+  exportFanoutAsFAQ,
+  scoreFanoutCoverage,
+} from '@/lib/utils/query-fanout'
 
 const HTML = `<html><body>
   <h1>Casting Platform Guide</h1>
@@ -83,5 +87,65 @@ describe('scoreFanoutCoverage', () => {
     // heading.
     const r = scoreFanoutCoverage(html, ['Hur är qualitet och tillförlitlighet?'])
     expect(r.matches[0]!.covered).toBe(true)
+  })
+})
+
+describe('exportFanoutAsFAQ', () => {
+  it('emits an empty export when every sub-question is covered', () => {
+    const report = scoreFanoutCoverage(HTML, ['What is a casting platform?'])
+    const out = exportFanoutAsFAQ(report)
+    expect(out.itemCount).toBe(0)
+    expect(out.markdown).toBe('')
+    expect(out.jsonLd).toBeNull()
+  })
+
+  it('lists each uncovered sub-question as an H3 with a placeholder body', () => {
+    const report = scoreFanoutCoverage(HTML, [
+      'What is a casting platform?', // covered
+      'How do background checks work for actors?', // miss
+      'How much do casting agents take in commissions?', // miss
+    ])
+    const out = exportFanoutAsFAQ(report)
+    expect(out.itemCount).toBe(2)
+    expect(out.markdown).toMatch(/^## FAQ\n/)
+    expect(out.markdown).toMatch(/### How do background checks work for actors\?/)
+    expect(out.markdown).toMatch(/### How much do casting agents take in commissions\?/)
+    expect(out.markdown).toMatch(/TODO: write a 2-3 sentence answer\./)
+    // Two TODO bodies (one per uncovered question).
+    const todoMatches = out.markdown.match(/TODO: write a 2-3 sentence answer\./g) ?? []
+    expect(todoMatches).toHaveLength(2)
+  })
+
+  it('uses the supplied answer when one is mapped for a question', () => {
+    const report = scoreFanoutCoverage(HTML, ['How do background checks work for actors?'])
+    const out = exportFanoutAsFAQ(report, {
+      answers: { 'How do background checks work for actors?': 'Most platforms run name + ID.' },
+    })
+    expect(out.markdown).toMatch(/Most platforms run name \+ ID\./)
+    expect(out.markdown).not.toMatch(/TODO/)
+    expect(out.jsonLd?.mainEntity[0]?.acceptedAnswer.text).toBe('Most platforms run name + ID.')
+  })
+
+  it('emits FAQPage JSON-LD matching the markdown items', () => {
+    const report = scoreFanoutCoverage(HTML, [
+      'What is a casting platform?', // covered → excluded
+      'How do background checks work for actors?', // miss
+    ])
+    const out = exportFanoutAsFAQ(report)
+    expect(out.jsonLd?.['@type']).toBe('FAQPage')
+    expect(out.jsonLd?.mainEntity).toHaveLength(1)
+    expect(out.jsonLd?.mainEntity[0]?.name).toBe('How do background checks work for actors?')
+    expect(out.jsonLd?.mainEntity[0]?.['@type']).toBe('Question')
+    expect(out.jsonLd?.mainEntity[0]?.acceptedAnswer['@type']).toBe('Answer')
+  })
+
+  it('honours custom heading and placeholder text', () => {
+    const report = scoreFanoutCoverage(HTML, ['How do background checks work for actors?'])
+    const out = exportFanoutAsFAQ(report, {
+      heading: 'Common questions',
+      placeholder: 'Draft pending.',
+    })
+    expect(out.markdown).toMatch(/^## Common questions\n/)
+    expect(out.markdown).toMatch(/Draft pending\./)
   })
 })

@@ -15,7 +15,7 @@ import { requireUser } from '@/lib/api-auth'
 import { isPerplexityAvailable } from '@/lib/services/perplexity'
 import { simulateEngineResponse } from '@/lib/services/ai-router'
 import { safeFetch } from '@/lib/utils/safe-fetch'
-import { scoreFanoutCoverage } from '@/lib/utils/query-fanout'
+import { scoreFanoutCoverage, exportFanoutAsFAQ } from '@/lib/utils/query-fanout'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -112,9 +112,15 @@ export async function POST(req: NextRequest) {
   // 4) Score coverage against the page's H2/H3 sections.
   const report = scoreFanoutCoverage(html, subQuestions)
 
+  // 5) Turn the missed sub-questions into a ready-to-paste FAQ block
+  //    (markdown + FAQPage JSON-LD). The Semrush fan-out experiment
+  //    more-than-doubled AI citations by editing articles to address
+  //    the gaps — this is the actionable artifact for that workflow.
+  const faqExport = exportFanoutAsFAQ(report)
+
   return NextResponse.json({
     success: true,
-    data: { url, topic, report },
+    data: { url, topic, report, faqExport },
     timestamp: Date.now(),
   })
 }

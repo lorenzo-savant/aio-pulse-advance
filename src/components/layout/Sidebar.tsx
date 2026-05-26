@@ -35,6 +35,7 @@ import {
   Target,
   TrendingUp,
   Filter,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
@@ -222,6 +223,14 @@ export const NAV_SECTIONS: NavSection[] = [
         href: '/dashboard/optimizer',
         icon: FileSearch,
         labelKey: 'sidebar.items.content_optimizer',
+      },
+      // Site Audit Hub — consolidates the AI-readiness checks
+      // (foundations / crawler access / citation capture / quality)
+      // that otherwise live scattered across the Insights surfaces.
+      {
+        href: '/dashboard/site-audit',
+        icon: ShieldCheck,
+        labelKey: 'sidebar.items.site_audit',
       },
       { href: '/dashboard/monitor', icon: Globe, labelKey: 'sidebar.items.engine_info' },
     ],

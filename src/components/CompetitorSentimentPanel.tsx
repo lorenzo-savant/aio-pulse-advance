@@ -80,6 +80,11 @@ export function CompetitorSentimentPanel({ brandId: brandIdProp }: { brandId?: s
   const [sortByDelta, setSortByDelta] = useState(false)
 
   // Fetch the user's brands once (or skip if brandId came from a prop).
+  // Sync internal state when parent changes the brand prop.
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

@@ -87,6 +87,11 @@ export function BrandAnnotationsPanel({ brandId: brandIdProp }: { brandId?: stri
   const [formUrl, setFormUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  // Sync internal state when parent changes the brand prop.
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

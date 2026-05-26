@@ -97,6 +97,11 @@ export function AISeoReadinessPanel({ brandId: brandIdProp }: { brandId?: string
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
 
+  // Sync internal state when parent changes the brand prop.
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

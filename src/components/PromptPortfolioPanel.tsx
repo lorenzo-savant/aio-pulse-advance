@@ -99,6 +99,11 @@ export function PromptPortfolioPanel({ brandId: brandIdProp }: { brandId?: strin
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<PortfolioType | 'all'>('all')
 
+  // Sync internal state when parent changes the brand prop.
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

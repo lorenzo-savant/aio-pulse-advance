@@ -94,6 +94,14 @@ export function BrandFactsPanel({ brandId: brandIdProp }: { brandId?: string } =
   const [formNotes, setFormNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  // Keep internal state in sync when the parent flips the brand prop —
+  // the useState initialiser only runs once on mount, so without this
+  // sync effect the panel keeps querying the brand it had at first
+  // render (visible bug on /dashboard/ai-funnel when switching brands).
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

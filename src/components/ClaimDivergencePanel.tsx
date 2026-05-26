@@ -65,6 +65,11 @@ export function ClaimDivergencePanel({ brandId: brandIdProp }: { brandId?: strin
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
+  // Sync internal state when parent changes the brand prop.
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

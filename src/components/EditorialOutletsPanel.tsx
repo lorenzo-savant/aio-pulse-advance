@@ -37,6 +37,11 @@ export function EditorialOutletsPanel({ brandId: brandIdProp }: { brandId?: stri
   const [data, setData] = useState<Leaderboard | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // Sync internal state when parent changes the brand prop.
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

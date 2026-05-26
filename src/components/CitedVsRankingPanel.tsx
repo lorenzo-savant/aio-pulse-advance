@@ -102,6 +102,11 @@ export function CitedVsRankingPanel({ brandId: brandIdProp }: { brandId?: string
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<Opportunity>('seo_gap')
 
+  // Sync internal state when parent changes the brand prop.
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

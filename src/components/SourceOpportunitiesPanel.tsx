@@ -66,6 +66,11 @@ export function SourceOpportunitiesPanel({ brandId: brandIdProp }: { brandId?: s
   const [view, setView] = useState<View>('by_prompt')
 
   // Brand list (skip if prop).
+  // Sync internal state when parent changes the brand prop.
+  useEffect(() => {
+    if (brandIdProp) setActiveBrandId(brandIdProp)
+  }, [brandIdProp])
+
   useEffect(() => {
     if (brandIdProp) return
     let cancelled = false

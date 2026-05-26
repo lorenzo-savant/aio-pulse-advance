@@ -15,16 +15,7 @@ import {
   Bar,
   Cell,
 } from 'recharts'
-import {
-  Camera,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  AlertCircle,
-  Download,
-  Filter,
-} from 'lucide-react'
+import { Camera, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'

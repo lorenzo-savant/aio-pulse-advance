@@ -10,14 +10,12 @@ import {
   TrendingUp,
   TrendingDown,
   RefreshCw,
-  CheckCircle,
   AlertCircle,
   Zap,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
 
 interface CreditPackage {

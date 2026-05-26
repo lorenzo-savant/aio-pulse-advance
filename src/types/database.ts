@@ -796,6 +796,7 @@ export type Database = {
       }
       brand_invitations: {
         Row: {
+          accepted_at: string | null
           brand_id: string
           created_at: string | null
           email: string
@@ -803,9 +804,11 @@ export type Database = {
           id: string
           invited_by: string
           role: string
+          status: string
           token: string
         }
         Insert: {
+          accepted_at?: string | null
           brand_id: string
           created_at?: string | null
           email: string
@@ -813,9 +816,11 @@ export type Database = {
           id?: string
           invited_by: string
           role?: string
+          status?: string
           token?: string
         }
         Update: {
+          accepted_at?: string | null
           brand_id?: string
           created_at?: string | null
           email?: string
@@ -823,6 +828,7 @@ export type Database = {
           id?: string
           invited_by?: string
           role?: string
+          status?: string
           token?: string
         }
         Relationships: [

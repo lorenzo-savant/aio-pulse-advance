@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Key, Plus, Trash2, Copy, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { Card, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 
 interface ApiKey {

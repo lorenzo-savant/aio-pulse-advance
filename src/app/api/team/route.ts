@@ -5,7 +5,7 @@ import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { z } from 'zod'
 import { sendInvitationEmail } from '@/lib/services/email'
 import { logger } from '@/lib/logger'
-import { parsePaginationParams, paginatedResponse } from '@/lib/api-utils'
+import { parsePaginationParams } from '@/lib/api-utils'
 import { randomBytes } from 'crypto'
 
 function err(message: string, status = 500) {

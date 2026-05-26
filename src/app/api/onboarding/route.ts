@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { createServerClient, getCurrentUserId } from '@/lib/supabase'
 import { slugify } from '@/lib/utils'
 import { formatValidationError } from '@/lib/format-validation-error'
 import { getTemplatesByCategories, hydratePrompt, type PromptLang } from '@/lib/prompt-library'

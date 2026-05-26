@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { checkCrawlability, AI_BOTS, type BotName } from '@/lib/services/crawlability'
+import { checkCrawlability } from '@/lib/services/crawlability'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 // Public no-auth endpoint — useful as a free pre-signup "check your AI crawlability"

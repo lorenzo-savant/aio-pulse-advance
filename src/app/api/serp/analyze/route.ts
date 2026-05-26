@@ -1,14 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { DataForSEOProvider } from '@/lib/providers/dataforseo-provider'
-import {
-  analyzeBrandPresence,
-  detectBrandInAiOverview,
-  detectBrandInPaa,
-  detectBrandInOrganic,
-  calculateOpportunityScore,
-  type OpportunityResult,
-} from '@/lib/services/ai-overview-detector'
+import { analyzeBrandPresence } from '@/lib/services/ai-overview-detector'
 import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {

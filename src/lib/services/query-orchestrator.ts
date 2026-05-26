@@ -9,7 +9,6 @@
 // - Result aggregation from all providers
 
 import type { Brand, MonitoringEngine } from '@/types'
-import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
 interface QueryResponse {

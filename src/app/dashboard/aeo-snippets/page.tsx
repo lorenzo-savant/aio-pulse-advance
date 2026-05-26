@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Sparkles,
   Loader2,
-  RefreshCw,
   Copy,
   Check,
   ExternalLink,

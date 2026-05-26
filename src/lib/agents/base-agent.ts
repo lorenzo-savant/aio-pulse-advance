@@ -1,4 +1,4 @@
-import type { AIProviderId, AIProviderRequest, AIProviderResult } from '@/lib/providers/types'
+import type { AIProviderId } from '@/lib/providers/types'
 import type { Brand } from '@/types'
 
 export interface AgentContext {

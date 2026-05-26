@@ -2,7 +2,6 @@
 // Cost Aggregator — Aggregate costs by provider and brand
 
 import { createServerClient } from '@/lib/supabase'
-import { getProviderFromModel } from './credit-calculator'
 
 export interface ProviderCost {
   provider: string

@@ -1,4 +1,4 @@
-import type { AuditCheck, SiteAuditResult, GeoCitationMetrics, FreshnessResult } from './types'
+import type { AuditCheck, SiteAuditResult } from './types'
 import { safeFetchText } from '@/lib/utils/safe-fetch'
 
 export async function auditSite(url: string): Promise<SiteAuditResult> {

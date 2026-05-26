@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export function apiError(message: string, status = 500): NextResponse {
   return NextResponse.json({ success: false, message }, { status })

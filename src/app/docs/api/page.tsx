@@ -4,19 +4,7 @@ import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
-import {
-  BookOpen,
-  ChevronRight,
-  Code,
-  Copy,
-  Check,
-  Lock,
-  Globe,
-  Search,
-  AlertCircle,
-  List,
-  Clock,
-} from 'lucide-react'
+import { ChevronRight, Copy, Check, Lock, AlertCircle, List, Clock } from 'lucide-react'
 
 interface ApiEndpoint {
   method: string

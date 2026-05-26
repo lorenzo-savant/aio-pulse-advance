@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { asUntyped } from '@/lib/supabase-untyped'
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
@@ -65,11 +64,7 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  // SCHEMA DRIFT (TODO): brand_invitations is missing `status` and
-  // `accepted_at` columns in the generated DB schema, but the route relies
-  // on them for the pending→accepted atomic claim. asUntyped() unblocks TS;
-  // runtime works IF the columns were added manually to the DB.
-  const { data: invitation, error: inviteError } = await asUntyped(db)
+  const { data: invitation, error: inviteError } = await db
     .from('brand_invitations')
     .select('*')
     .eq('token', token)
@@ -121,7 +116,7 @@ export async function POST(req: NextRequest) {
 
   // Atomically claim the invitation: only one concurrent request can flip
   // pending→accepted. If no row comes back, the token was already consumed.
-  const { data: claimed, error: claimError } = await asUntyped(db)
+  const { data: claimed, error: claimError } = await db
     .from('brand_invitations')
     .update({ status: 'accepted', accepted_at: new Date().toISOString() })
     .eq('id', invitation.id)
@@ -151,7 +146,7 @@ export async function POST(req: NextRequest) {
 
   if (memberError) {
     // Roll back the claim so the (valid) invitation can be retried.
-    await asUntyped(db)
+    await db
       .from('brand_invitations')
       .update({ status: 'pending', accepted_at: null })
       .eq('id', invitation.id)

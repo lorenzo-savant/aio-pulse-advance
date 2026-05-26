@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowLeft, FileText, Download, Shield, CheckCircle } from 'lucide-react'
+import { ArrowLeft, FileText, Download, CheckCircle } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Data Processing Agreement — AIO Pulse Trust Center',
@@ -9,38 +9,42 @@ export const metadata: Metadata = {
 
 export default function DpaPage() {
   return (
-    <div className='min-h-screen bg-background'>
-      <section className='border-b border-border bg-card'>
-        <div className='mx-auto max-w-5xl px-6 py-12'>
-          <Link href='/trust' className='inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6'>
-            <ArrowLeft className='h-4 w-4' />
+    <div className="min-h-screen bg-background">
+      <section className="border-b border-border bg-card">
+        <div className="mx-auto max-w-5xl px-6 py-12">
+          <Link
+            href="/trust"
+            className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
             Back to Trust Center
           </Link>
-          <h1 className='text-3xl font-bold'>Data Processing Agreement</h1>
-          <p className='mt-3 text-muted-foreground max-w-2xl'>
-            This Data Processing Agreement (DPA) governs the processing of personal data by AIO Pulse
-            on behalf of its customers, in compliance with the EU General Data Protection Regulation (GDPR).
+          <h1 className="text-3xl font-bold">Data Processing Agreement</h1>
+          <p className="mt-3 max-w-2xl text-muted-foreground">
+            This Data Processing Agreement (DPA) governs the processing of personal data by AIO
+            Pulse on behalf of its customers, in compliance with the EU General Data Protection
+            Regulation (GDPR).
           </p>
         </div>
       </section>
 
-      <div className='mx-auto max-w-5xl px-6 py-12 space-y-8'>
+      <div className="mx-auto max-w-5xl space-y-8 px-6 py-12">
         {/* Download */}
-        <section className='rounded-xl border border-border bg-card p-6'>
-          <div className='flex items-center gap-4 mb-4'>
-            <div className='p-3 bg-primary/10 rounded-lg'>
-              <FileText className='h-6 w-6 text-primary' />
+        <section className="rounded-xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-4">
+            <div className="bg-primary/10 rounded-lg p-3">
+              <FileText className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h2 className='text-lg font-semibold'>DPA Template</h2>
-              <p className='text-sm text-muted-foreground'>
+              <h2 className="text-lg font-semibold">DPA Template</h2>
+              <p className="text-sm text-muted-foreground">
                 Based on EU Standard Contractual Clauses (SCCs)
               </p>
             </div>
           </div>
-          <div className='flex gap-3'>
-            <button className='inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90'>
-              <Download className='h-4 w-4' />
+          <div className="flex gap-3">
+            <button className="hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+              <Download className="h-4 w-4" />
               Download PDF
             </button>
           </div>
@@ -48,8 +52,8 @@ export default function DpaPage() {
 
         {/* DPA Summary */}
         <section>
-          <h2 className='text-xl font-bold mb-4'>DPA Summary</h2>
-          <div className='space-y-4'>
+          <h2 className="mb-4 text-xl font-bold">DPA Summary</h2>
+          <div className="space-y-4">
             {[
               {
                 title: 'Parties',
@@ -102,18 +106,18 @@ export default function DpaPage() {
                   'Customers may request audit reports annually. AIO Pulse will provide relevant security certifications and audit results upon request.',
               },
             ].map((item) => (
-              <div key={item.title} className='rounded-xl border border-border bg-card p-5'>
-                <h3 className='font-semibold mb-1'>{item.title}</h3>
-                <p className='text-sm text-muted-foreground'>{item.content}</p>
+              <div key={item.title} className="rounded-xl border border-border bg-card p-5">
+                <h3 className="mb-1 font-semibold">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.content}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Compliance Badges */}
-        <section className='rounded-xl border border-border bg-card p-6'>
-          <h2 className='text-lg font-semibold mb-4'>Compliance Framework</h2>
-          <div className='flex flex-wrap gap-3'>
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold">Compliance Framework</h2>
+          <div className="flex flex-wrap gap-3">
             {[
               'GDPR Compliant',
               'EU SCCs',
@@ -123,9 +127,9 @@ export default function DpaPage() {
             ].map((badge) => (
               <span
                 key={badge}
-                className='inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400"
               >
-                <CheckCircle className='h-3 w-3' />
+                <CheckCircle className="h-3 w-3" />
                 {badge}
               </span>
             ))}

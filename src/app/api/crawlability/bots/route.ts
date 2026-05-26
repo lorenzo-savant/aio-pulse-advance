@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { checkCrawlability, AI_BOTS, type BotName } from '@/lib/services/crawlability'
+import { checkCrawlability } from '@/lib/services/crawlability'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

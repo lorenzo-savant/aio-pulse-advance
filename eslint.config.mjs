@@ -5,6 +5,7 @@
 
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
 import nextTypeScript from 'eslint-config-next/typescript'
+import unusedImports from 'eslint-plugin-unused-imports'
 
 export default [
   // Global ignores — generated/build output must NOT be linted (Turbopack
@@ -26,7 +27,13 @@ export default [
   ...nextCoreWebVitals,
   ...nextTypeScript,
   {
+    plugins: {
+      'unused-imports': unusedImports,
+    },
     rules: {
+      // Autofixable unused-imports — defer to its detector and keep
+      // @typescript-eslint/no-unused-vars for non-import locals.
+      'unused-imports/no-unused-imports': 'warn',
       // Standard pattern: _-prefixed names are intentional "I needed the
       // position but not the value" (destructuring, callback params, …).
       // caughtErrors: 'none' — catch(e) where `e` is intentionally ignored

@@ -2,17 +2,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import {
-  CreditCard,
-  Check,
-  Zap,
-  Building2,
-  Crown,
-  ExternalLink,
-  AlertCircle,
-  Loader2,
-  Sparkles,
-} from 'lucide-react'
+import { CreditCard, Check, Zap, Crown, ExternalLink, Loader2, Sparkles } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'

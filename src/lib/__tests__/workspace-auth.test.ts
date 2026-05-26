@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   getRolePermissions,
   hasPermission,
@@ -10,7 +10,6 @@ import {
   canEditBrand,
   canViewBrand,
   canViewAudit,
-  type Permission,
   type Role,
 } from '@/lib/services/workspace-auth'
 

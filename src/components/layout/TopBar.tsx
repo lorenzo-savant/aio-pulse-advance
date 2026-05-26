@@ -1,7 +1,7 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Bell, User, Search, Menu, Loader2, X } from 'lucide-react'
+import { Bell, User, Search, Menu, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAppStore } from '@/lib/store'

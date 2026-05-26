@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Shield, Loader2, CheckCircle2, XCircle } from 'lucide-react'
-import { APP_NAME } from '@/lib/constants'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 
 function AuthCallbackContent() {

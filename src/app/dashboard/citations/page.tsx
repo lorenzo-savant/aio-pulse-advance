@@ -25,7 +25,6 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/index'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'

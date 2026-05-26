@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Shield, Filter, RefreshCw, Search, Calendar, User, Key } from 'lucide-react'
+import { Shield, Filter, RefreshCw, User, Key } from 'lucide-react'
 
 interface AuditLog {
   id: string

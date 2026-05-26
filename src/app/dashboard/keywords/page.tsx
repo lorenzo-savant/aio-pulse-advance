@@ -1,16 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-  Search,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Tag,
-  BarChart3,
-  Loader2,
-} from 'lucide-react'
+import { Search, RefreshCw, TrendingUp, TrendingDown, Minus, Tag, Loader2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'

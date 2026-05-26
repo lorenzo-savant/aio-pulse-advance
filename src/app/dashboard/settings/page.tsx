@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useLocale, useTranslations } from 'next-intl'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { locales, localeLabels, type Locale } from '@/i18n/config'
+import { localeLabels, type Locale } from '@/i18n/config'
 
 type Provider = 'openai' | 'gemini' | 'perplexity' | 'anthropic'
 

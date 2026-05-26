@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Send, Loader2, CheckCircle2, XCircle, Zap, Clock } from 'lucide-react'
+import { Send, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { useAeoRunStatus, type AeoRunState, resetAeoRunState } from '@/hooks/useAeoRunStatus'

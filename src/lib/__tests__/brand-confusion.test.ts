@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import type { Brand, MonitoringEngine } from '@/types'
+import type { Brand } from '@/types'
 import { buildBrandContext, enrichPromptWithBrandContext } from '../brand-enrichment'
-import {
-  buildAnalysisPrompt as buildMonitoringAnalysisPrompt,
-  detectHallucinations,
-} from '../services/monitoring'
+import { buildAnalysisPrompt as buildMonitoringAnalysisPrompt } from '../services/monitoring'
 import { buildAnalysisPrompt as buildGeminiAnalysisPrompt } from '../services/gemini'
 
 // ─── Mock brand: Acasting ──────────────────────────────────────────────────

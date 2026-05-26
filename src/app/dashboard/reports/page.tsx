@@ -2,19 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-  FileText,
-  Download,
-  Palette,
-  Image,
-  Save,
-  Eye,
-  AlertCircle,
-  Loader2,
-  Check,
-  Zap,
-  Clock,
-} from 'lucide-react'
+import { FileText, Download, Palette, Save, Check, Zap, Clock } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'

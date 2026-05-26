@@ -6,7 +6,6 @@ import {
   detectBrandInTop3,
   calculateOpportunityScore,
   analyzeBrandPresence,
-  type OpportunityResult,
 } from '../services/ai-overview-detector'
 
 describe('detectBrandInAiOverview', () => {

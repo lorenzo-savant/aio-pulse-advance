@@ -38,7 +38,7 @@ import { useToggle, useClipboard, useKeywordAnalysis } from '@/hooks'
 import { exportAnalysisToCsv } from '@/lib/export'
 import { cn } from '@/lib/utils'
 import { ENGINES, ANALYSIS_MODELS, AI_PROVIDERS } from '@/lib/constants'
-import { ENGINE_SIGNALS, getEngineSignals } from '@/lib/engine-signals'
+import { getEngineSignals } from '@/lib/engine-signals'
 import type { AnalysisResult, AIOScore, EngineId, ModelId, AIProvider } from '@/types'
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────

@@ -50,7 +50,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ExportButton } from '@/components/ExportButton'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import type { Brand, MonitoringResult, BrandLanguage } from '@/types'
+import type { Brand, MonitoringResult } from '@/types'
 import { useChartTheme } from '@/hooks/useChartTheme'
 
 const ENGINE_COLORS: Record<string, string> = {

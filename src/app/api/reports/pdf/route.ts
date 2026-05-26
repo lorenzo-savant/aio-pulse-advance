@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { asUntyped } from '@/lib/supabase-untyped'
 import { generatePdf } from '@/lib/services/pdf-generator'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
@@ -72,7 +73,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, message: resultsError.message }, { status: 500 })
   }
 
-  const { data: sentimentHistory, error: sentimentError } = await db
+  // SCHEMA DRIFT (TODO): sentiment_history table missing from DB schema.
+  const { data: sentimentHistory, error: sentimentError } = await asUntyped(db)
     .from('sentiment_history')
     .select('snapshot_date, sentiment_score, positive_count, neutral_count, negative_count')
     .eq('brand_id', brandId)

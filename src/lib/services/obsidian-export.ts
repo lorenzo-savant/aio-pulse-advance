@@ -503,23 +503,25 @@ export async function generateObsidianExport(
         }
       }
 
-      const totalPrompts = latest.citation_count + (latest.mention_count - latest.citation_count)
-      const mentionRate = totalPrompts > 0 ? (latest.mention_count / totalPrompts) * 100 : 0
-      const citationRate =
-        latest.mention_count > 0 ? (latest.citation_count / latest.mention_count) * 100 : 0
+      // Nullable columns in health_snapshots row — guard with ?? 0 fallbacks.
+      const citationCount = latest.citation_count ?? 0
+      const mentionCount = latest.mention_count ?? 0
+      const totalPrompts = citationCount + (mentionCount - citationCount)
+      const mentionRate = totalPrompts > 0 ? (mentionCount / totalPrompts) * 100 : 0
+      const citationRate = mentionCount > 0 ? (citationCount / mentionCount) * 100 : 0
 
       notes.push(
         generateSnapshotNote({
           brandName,
           date: latest.date,
-          healthScore: latest.health_score,
-          citationCount: latest.citation_count,
+          healthScore: latest.health_score ?? 0,
+          citationCount,
           citationRate: Math.round(citationRate * 100) / 100,
-          mentionCount: latest.mention_count,
+          mentionCount,
           mentionRate: Math.round(mentionRate * 100) / 100,
-          sentimentScore: latest.sentiment_score,
-          hallucinationRate: latest.hallucination_rate,
-          visibilityScore: latest.visibility_score,
+          sentimentScore: latest.sentiment_score ?? 0,
+          hallucinationRate: latest.hallucination_rate ?? 0,
+          visibilityScore: latest.visibility_score ?? 0,
           hallucinationCount: 0,
           shareOfVoice: citationRate,
           positionAvg: null,
@@ -562,7 +564,7 @@ export async function generateObsidianExport(
                 category: flag.type,
                 claimMade: flag.text,
                 reality: 'Verification needed',
-                promptUsed: result.prompt_text || result.query_text || '',
+                promptUsed: result.prompt_text || '',
                 corrected: false,
               }),
             )

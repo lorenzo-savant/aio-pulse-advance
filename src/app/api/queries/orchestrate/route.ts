@@ -3,6 +3,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { asUntyped } from '@/lib/supabase-untyped'
 import { queryOrchestrator } from '@/lib/services/query-orchestrator'
 import { calculateOrchestratedCost } from '@/lib/services/cost-calculator'
 import { verifyBrandAccess } from '@/lib/authorize'
@@ -84,7 +85,12 @@ export async function POST(req: NextRequest) {
   // Save to database if brand_id provided
   let savedResult = null
   if (brand_id) {
-    const { data, error } = await db
+    // SCHEMA DRIFT (TODO): the generated Database type marks prompt_id as
+    // NOT NULL but this route inserts null for "direct queries with no
+    // linked prompt". Either the DB column allows NULL (codegen lying) or
+    // there's a missing migration. asUntyped() unblocks TS — runtime
+    // behaviour preserved.
+    const { data, error } = await asUntyped(db)
       .from('monitoring_results')
       .insert({
         prompt_id: null, // No linked prompt for direct queries

@@ -231,7 +231,7 @@ export async function POST(req: NextRequest) {
       .limit(1)
       .single()
 
-    if (latest) version = latest.version + 1
+    if (latest?.version != null) version = latest.version + 1
 
     await db.from('llms_txt_versions').insert({
       brand_id: brandId,

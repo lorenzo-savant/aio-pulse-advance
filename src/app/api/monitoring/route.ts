@@ -364,7 +364,7 @@ export async function POST(req: NextRequest) {
       {
         brand_id: brand.id,
         user_id: userId,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0]!,
         visibility_score: components.mentionFrequency,
         sentiment_score: components.sentimentScore,
         hallucination_rate: components.hallucinationIndex / 100,

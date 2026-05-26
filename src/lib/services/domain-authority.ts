@@ -207,7 +207,7 @@ async function storeScore(
   score: number,
   metrics: BrandMetrics,
 ): Promise<void> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().split('T')[0]!
 
   await db.from('brand_health_scores').upsert(
     {

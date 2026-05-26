@@ -54,8 +54,9 @@ describe('organization-schema', () => {
     expect(json.address).toBeUndefined()
   })
 
-  it('emits a brand knowledge graph with Organization + WebSite', () => {
-    const graph = emitBrandKnowledgeGraph(acme)
+  it('emits a brand knowledge graph with Organization + WebSite (no FAQs / no description-Article)', () => {
+    const minimal = { brandName: 'Bare', domain: 'bare.io' } as LlmsInput
+    const graph = emitBrandKnowledgeGraph(minimal)
     expect(graph['@context']).toBe('https://schema.org')
     const items = graph['@graph'] as Array<{ '@type': string }>
     expect(items.map((n) => n['@type'])).toEqual(['Organization', 'WebSite'])
@@ -65,5 +66,50 @@ describe('organization-schema', () => {
     const graph = emitBrandKnowledgeGraph(acme)
     const items = graph['@graph'] as Array<Record<string, unknown>>
     expect(items[0]!['@context']).toBeUndefined()
+  })
+
+  it('adds an Article node when description is non-trivial', () => {
+    // `acme` has description "Workflow automation SaaS" — only 23 chars,
+    // BELOW the 40-char threshold, so it should NOT trigger an Article.
+    const noArticle = emitBrandKnowledgeGraph(acme)
+    const items = noArticle['@graph'] as Array<{ '@type': string }>
+    expect(items.find((n) => n['@type'] === 'Article')).toBeUndefined()
+
+    // Longer description crosses the threshold → Article appears.
+    const withArticle = emitBrandKnowledgeGraph({
+      ...acme,
+      description:
+        'Acme Corp builds workflow automation software for mid-market product teams that have outgrown Zapier.',
+    })
+    const itemsW = withArticle['@graph'] as Array<{ '@type': string }>
+    const article = itemsW.find((n) => n['@type'] === 'Article') as Record<string, unknown>
+    expect(article).toBeDefined()
+    expect(article['headline']).toBe('Acme Corp')
+    expect(article['mainEntityOfPage']).toBe('https://acme.com')
+  })
+
+  it('adds a FAQPage node when faqs are provided', () => {
+    const graph = emitBrandKnowledgeGraph({
+      ...acme,
+      faqs: [
+        { question: 'What is Acme Corp?', answer: 'Workflow automation for teams.' },
+        { question: 'Pricing?', answer: 'Free tier + paid plans.' },
+      ],
+    })
+    const items = graph['@graph'] as Array<Record<string, unknown>>
+    const faq = items.find((n) => n['@type'] === 'FAQPage')
+    expect(faq).toBeDefined()
+    const mainEntity = faq!['mainEntity'] as Array<Record<string, unknown>>
+    expect(mainEntity).toHaveLength(2)
+    expect(mainEntity[0]?.['@type']).toBe('Question')
+    expect((mainEntity[0]?.['acceptedAnswer'] as Record<string, unknown>)['text']).toBe(
+      'Workflow automation for teams.',
+    )
+  })
+
+  it('does NOT emit empty FAQPage when faqs is empty array', () => {
+    const graph = emitBrandKnowledgeGraph({ ...acme, faqs: [] })
+    const items = graph['@graph'] as Array<{ '@type': string }>
+    expect(items.find((n) => n['@type'] === 'FAQPage')).toBeUndefined()
   })
 })

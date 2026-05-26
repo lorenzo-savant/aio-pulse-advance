@@ -39,6 +39,7 @@ import { exportAnalysisToCsv } from '@/lib/export'
 import { cn } from '@/lib/utils'
 import { ENGINES, ANALYSIS_MODELS, AI_PROVIDERS } from '@/lib/constants'
 import { getEngineSignals } from '@/lib/engine-signals'
+import { CitationQualityCard } from '@/components/CitationQualityCard'
 import type { AnalysisResult, AIOScore, EngineId, ModelId, AIProvider } from '@/types'
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
@@ -745,6 +746,12 @@ export default function OptimizerPage() {
           </div>
         )}
       </Card>
+
+      {/* Citation Quality — Semrush AI-citation signal score. Sits BETWEEN
+          the form and the legacy AnalysisResult so it's visible whether
+          or not the user runs the heavier /api/analyze flow. Opt-in via
+          a button inside the card so it never fires silently. */}
+      {input.trim().length > 0 && <CitationQualityCard input={input} mode={mode} />}
 
       {/* Results */}
       {result && (

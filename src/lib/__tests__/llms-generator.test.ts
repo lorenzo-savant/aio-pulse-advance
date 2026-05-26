@@ -3,6 +3,7 @@ import {
   generateLlmsTxt,
   generateLlmsFullTxt,
   buildOrganizationJsonLd,
+  buildKeyTakeaways,
   type LlmsInput,
 } from '../services/llms-generator'
 
@@ -254,6 +255,56 @@ describe('buildOrganizationJsonLd', () => {
     })
     expect(payload.taxID).toBe('12345')
     expect(payload.vatID).toBeUndefined()
+  })
+})
+
+describe('buildKeyTakeaways', () => {
+  it('synthesises 3-5 bullets from the input', () => {
+    const bullets = buildKeyTakeaways(baseInput)
+    expect(bullets.length).toBeGreaterThanOrEqual(3)
+    expect(bullets.length).toBeLessThanOrEqual(5)
+  })
+
+  it('includes industry when set', () => {
+    const bullets = buildKeyTakeaways(baseInput)
+    expect(bullets.some((b) => b.includes('Software'))).toBe(true)
+  })
+
+  it('includes HQ and founded together when both set', () => {
+    const bullets = buildKeyTakeaways(baseInput)
+    expect(bullets.some((b) => b.includes('Stockholm') && b.includes('2015'))).toBe(true)
+  })
+
+  it('returns empty array when input has no enriched data', () => {
+    const bullets = buildKeyTakeaways({ brandName: 'Bare', domain: 'bare.io' })
+    expect(bullets).toEqual([])
+  })
+
+  it('respects the 5-bullet cap', () => {
+    const verbose: LlmsInput = {
+      ...baseInput,
+      legalId: 'IT12345678901',
+      locale: 'it-IT',
+    }
+    const bullets = buildKeyTakeaways(verbose)
+    expect(bullets.length).toBeLessThanOrEqual(5)
+  })
+})
+
+describe('generateLlmsFullTxt — Key Takeaways section', () => {
+  it('emits a "## Key Takeaways" section when input has enrichment', () => {
+    const out = generateLlmsFullTxt(baseInput)
+    expect(out).toContain('## Key Takeaways')
+  })
+
+  it('places Key Takeaways before About', () => {
+    const out = generateLlmsFullTxt(baseInput)
+    expect(out.indexOf('## Key Takeaways')).toBeLessThan(out.indexOf('## About'))
+  })
+
+  it('omits the section for minimal input with no enrichable fields', () => {
+    const out = generateLlmsFullTxt({ brandName: 'Bare', domain: 'bare.io' })
+    expect(out).not.toContain('## Key Takeaways')
   })
 })
 

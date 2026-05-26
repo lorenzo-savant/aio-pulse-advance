@@ -50,6 +50,49 @@ const LEGAL_ID_LABEL: Record<NonNullable<LlmsInput['legalIdType']>, string> = {
 }
 
 /**
+ * Synthesise 3-5 "Key Takeaways" bullets from the LlmsInput we already
+ * have. Powers the `## Key Takeaways` section at the top of llms-full.txt
+ * — Semrush's AI-citation study identified "Clarity & summarization" as
+ * the strongest positive signal (+33% citation lift), and the canonical
+ * pattern is a tight bullet summary BEFORE the long-form content.
+ *
+ * Exported for tests; produced deterministically (no LLM call, no I/O)
+ * so the file stays reproducible across regenerations.
+ */
+export function buildKeyTakeaways(input: LlmsInput): string[] {
+  const bullets: string[] = []
+  const { brandName, domain, industry, aliases, keyFacts, competitors, locale, legalId } = input
+
+  if (industry) {
+    bullets.push(`${brandName} operates in the **${industry}** category.`)
+  }
+  if (keyFacts?.headquarters) {
+    const founded = keyFacts.founded ? `, founded ${keyFacts.founded}` : ''
+    bullets.push(`Headquartered in ${keyFacts.headquarters}${founded}.`)
+  } else if (keyFacts?.founded) {
+    bullets.push(`Founded ${keyFacts.founded}.`)
+  }
+  if (keyFacts?.specialties && keyFacts.specialties.length > 0) {
+    bullets.push(`Core specialties: ${keyFacts.specialties.slice(0, 4).join(', ')}.`)
+  }
+  if (aliases && aliases.length > 0) {
+    bullets.push(`Also known as: ${aliases.join(', ')}.`)
+  }
+  if (competitors && competitors.length > 0) {
+    bullets.push(`Primary competitors: ${competitors.slice(0, 4).join(', ')}.`)
+  }
+  if (legalId) {
+    bullets.push(`Verified legal entity (${legalId}) — registered with public business registry.`)
+  }
+  if (locale && bullets.length < 5) {
+    bullets.push(`Primary market locale: \`${locale}\`. Canonical URL: \`https://${domain}\`.`)
+  }
+  // Cap at 5 — the "Key Takeaway" pattern works because it's tight; a
+  // longer list dilutes the signal AI engines reward.
+  return bullets.slice(0, 5)
+}
+
+/**
  * Generates a spec-compliant `llms.txt` per the Answer.AI standard
  * (https://llmstxt.org): a CONCISE, navigation-first index, not a content
  * dump. Structure:
@@ -161,6 +204,20 @@ export function generateLlmsFullTxt(input: LlmsInput): string {
     description?.trim() || (industry ? `${brandName} — ${industry}.` : `${brandName}.`)
   lines.push(`> ${summary}`)
   lines.push('')
+
+  // ── Key Takeaways ─────────────────────────────────────────────────────
+  // Semrush's Aug-2025 AI-citation study found "Clarity & summarization"
+  // to be the strongest positive signal (+33% citation lift). Pages that
+  // lead with a tight bullet summary get cited disproportionately. We
+  // synthesise 3-5 takeaways from the data we already have (industry,
+  // aliases, keyFacts, competitors, locale) — operators don't have to
+  // write them by hand, and the file opens with the answer.
+  const takeaways = buildKeyTakeaways(input)
+  if (takeaways.length > 0) {
+    lines.push('## Key Takeaways')
+    for (const t of takeaways) lines.push(`- ${t}`)
+    lines.push('')
+  }
 
   if (description) {
     lines.push('## About')

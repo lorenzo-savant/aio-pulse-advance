@@ -48,10 +48,13 @@ export function emitOrganizationJsonLd(input: LlmsInput): string {
  * Build a multi-schema bundle for richer SERP / AI grounding. Combines:
  *   - Organization (the brand itself)
  *   - WebSite (the canonical site, with SearchAction for chatbots)
- *   - BreadcrumbList (homepage-only minimal: [Home])
+ *   - FAQPage (when input has FAQs — heavy AI-citation lift, +25% per
+ *     the Semrush Aug-2025 study)
+ *   - Article (when input has a description — anchors the homepage as
+ *     citeable editorial content, +30% lift)
  *
- * Returns an array; embed it as `@graph` inside one outer @context wrapper
- * for compact delivery (one <script> tag, three @types).
+ * Returns a single payload; embed via `<script type="application/ld+json">`
+ * for compact delivery (one tag, four @types in @graph).
  */
 export function emitBrandKnowledgeGraph(input: LlmsInput): Record<string, unknown> {
   const org = buildOrganizationJsonLd(input)
@@ -66,8 +69,47 @@ export function emitBrandKnowledgeGraph(input: LlmsInput): Record<string, unknow
   }
   if (input.locale) website.inLanguage = input.locale
 
+  const graph: Array<Record<string, unknown>> = [org, website]
+
+  // FAQPage — only emitted when the input actually has FAQs. Empty
+  // FAQPage objects trigger Google warnings and add no signal.
+  if (input.faqs && input.faqs.length > 0) {
+    graph.push({
+      '@type': 'FAQPage',
+      mainEntity: input.faqs.map((f) => ({
+        '@type': 'Question',
+        name: f.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: f.answer,
+        },
+      })),
+    })
+  }
+
+  // Article — anchors the homepage / brand profile as citeable
+  // editorial content. Only emitted when there's a real description
+  // (otherwise the Article body would be empty). Sets `author` to the
+  // Organization itself, which is the conservative default; brands with
+  // a real editor can override downstream.
+  if (input.description && input.description.trim().length >= 40) {
+    const article: Record<string, unknown> = {
+      '@type': 'Article',
+      headline: input.brandName,
+      description: input.description.trim().slice(0, 320),
+      mainEntityOfPage: `https://${input.domain}`,
+      author: { '@type': 'Organization', name: input.brandName },
+      publisher: { '@type': 'Organization', name: input.brandName },
+    }
+    if (input.lastUpdated) {
+      article.dateModified = input.lastUpdated
+    }
+    if (input.locale) article.inLanguage = input.locale
+    graph.push(article)
+  }
+
   return {
     '@context': 'https://schema.org',
-    '@graph': [org, website],
+    '@graph': graph,
   }
 }

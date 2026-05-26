@@ -844,10 +844,12 @@ export type Database = {
       brands: {
         Row: {
           aliases: string[] | null
+          citation_format: string | null
           color: string | null
           competitors: string[] | null
           created_at: string | null
           description: string | null
+          disambiguation: string | null
           domain: string | null
           domains: string[] | null
           id: string
@@ -861,6 +863,7 @@ export type Database = {
           report_brand_name: string | null
           report_logo_url: string | null
           report_primary_color: string | null
+          same_as: string[]
           slug: string
           updated_at: string | null
           user_id: string
@@ -868,10 +871,12 @@ export type Database = {
         }
         Insert: {
           aliases?: string[] | null
+          citation_format?: string | null
           color?: string | null
           competitors?: string[] | null
           created_at?: string | null
           description?: string | null
+          disambiguation?: string | null
           domain?: string | null
           domains?: string[] | null
           id?: string
@@ -885,6 +890,7 @@ export type Database = {
           report_brand_name?: string | null
           report_logo_url?: string | null
           report_primary_color?: string | null
+          same_as?: string[]
           slug: string
           updated_at?: string | null
           user_id: string
@@ -892,10 +898,12 @@ export type Database = {
         }
         Update: {
           aliases?: string[] | null
+          citation_format?: string | null
           color?: string | null
           competitors?: string[] | null
           created_at?: string | null
           description?: string | null
+          disambiguation?: string | null
           domain?: string | null
           domains?: string[] | null
           id?: string
@@ -909,6 +917,7 @@ export type Database = {
           report_brand_name?: string | null
           report_logo_url?: string | null
           report_primary_color?: string | null
+          same_as?: string[]
           slug?: string
           updated_at?: string | null
           user_id?: string

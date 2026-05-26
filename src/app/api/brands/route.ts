@@ -33,6 +33,11 @@ const brandSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color')
     .optional()
     .default('#6366f1'),
+  // LLMO identity (Schema.org Organization payload + llms-full.txt
+  // sections). All three are optional; brands that skip them still work.
+  sameAs: z.array(z.string().url()).max(20).optional().default([]),
+  disambiguation: z.string().max(2000).optional(),
+  citationFormat: z.string().max(200).optional(),
 })
 
 // Safe columns that always exist — include workspace/org scoping
@@ -192,13 +197,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Map the validated camelCase fields onto the Supabase columns
+  // (snake_case for the LLMO trio + workspace/org scoping).
+  const { sameAs, disambiguation, citationFormat, ...restData } = parsed.data
   const insertData: Record<string, unknown> = {
-    ...parsed.data,
-    // Auto-add the legal-suffix-stripped name as an alias (e.g. "Savant Media
-    // AB" → "Savant Media") so exact-match brand detection works out of the box.
+    ...restData,
     aliases: withDerivedAliases(parsed.data.name, parsed.data.aliases),
     user_id: userId,
     slug,
+    same_as: sameAs,
+    disambiguation: disambiguation ?? null,
+    citation_format: citationFormat ?? null,
   }
 
   if (workspaceId) insertData.workspace_id = workspaceId

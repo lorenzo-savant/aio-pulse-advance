@@ -11,6 +11,11 @@
 
 import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
+import {
+  computeCitationWorthinessScore,
+  type CitationWorthinessScoreResult,
+  type CitationWorthinessSignals,
+} from '@/lib/utils/citation-worthiness-score'
 
 export type CheckStatus = 'pass' | 'warn' | 'fail' | 'unknown'
 
@@ -31,6 +36,10 @@ export interface ReadinessReport {
   total: number
   checks: ReadinessCheck[]
   computedAt: string
+  /** Brand-level Citation Worthiness Score — aggregates the monitoring
+   *  signals into a single 0-100 number with top-3 next-best-actions.
+   *  Complements the per-check readiness above. */
+  citationWorthiness: CitationWorthinessScoreResult
 }
 
 const ENGINES = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
@@ -61,6 +70,18 @@ export async function computeReadinessReport(brandId: string): Promise<Readiness
       total: 0,
       checks: [],
       computedAt,
+      citationWorthiness: computeCitationWorthinessScore({
+        schemaValid: false,
+        schemaTypeCount: 0,
+        aiCrawlersAllowed: false,
+        daysSinceUpdate: 999,
+        aiCitationCount: 0,
+        aiEnginesCiting: 0,
+        brandMentioned: false,
+        hallucinationFlagged: false,
+        wordCount: 0,
+        inboundInternalLinks: 0,
+      }),
     }
   }
 
@@ -300,6 +321,40 @@ export async function computeReadinessReport(brandId: string): Promise<Readiness
   // pass = 1, warn = 0.5, fail = 0; unknown drops out of denominator.
   const score = total > 0 ? Math.round(((passed + partial * 0.5) / total) * 100) : 0
 
+  // ── Citation Worthiness Score ──────────────────────────────────────────
+  // Brand-level aggregation of the operational LLMO signals we just
+  // queried. Some inputs are weaker than they would be for a per-page
+  // score (no homepage HTML fetch for word count / inbound links /
+  // Last-Modified header) — sensible defaults keep the signal useful,
+  // gaps are documented inline. `totalCitedUrls` is already computed
+  // above for the cited_urls breakdown — reuse it instead of recounting.
+  // Days since most-recent monitoring run as a freshness proxy. If we
+  // can't tell, assume 999 (worst case) — better than over-rating stale
+  // brands.
+  const lastRunAt = monitoringRes.data?.[0]?.created_at ?? null
+  const daysSinceUpdate = lastRunAt
+    ? Math.max(0, Math.floor((Date.now() - new Date(lastRunAt).getTime()) / (1000 * 60 * 60 * 24)))
+    : 999
+  const signals: CitationWorthinessSignals = {
+    // Schema validity proxied by aeo_snippets presence (each snippet ships
+    // a FAQPage JSON-LD fragment). Better than nothing; the dedicated
+    // technical-seo-audit service can override this when wired in.
+    schemaValid: aeoSnippets.length > 0,
+    schemaTypeCount: aeoSnippets.length > 0 ? 1 : 0,
+    // Crawlability proxied by llms.txt presence — without the file the
+    // brand has implicitly opted out of LLM grounding. The dedicated
+    // crawlability service can override this for a tighter signal.
+    aiCrawlersAllowed: llmsTxt.length > 0,
+    daysSinceUpdate,
+    aiCitationCount: totalCitedUrls,
+    aiEnginesCiting: enginesWithMention.size,
+    brandMentioned: mentioned > 0,
+    hallucinationFlagged: false, // No per-row hallucination flag aggregated here yet.
+    wordCount: 1000, // Brand-level default; per-page audit replaces this.
+    inboundInternalLinks: 0, // Same — per-page audit replaces.
+  }
+  const citationWorthiness = computeCitationWorthinessScore(signals)
+
   return {
     brandId,
     score,
@@ -308,5 +363,6 @@ export async function computeReadinessReport(brandId: string): Promise<Readiness
     total,
     checks,
     computedAt,
+    citationWorthiness,
   }
 }

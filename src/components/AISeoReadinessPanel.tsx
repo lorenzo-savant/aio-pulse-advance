@@ -8,7 +8,15 @@
 
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'
-import { CheckCircle2, XCircle, AlertCircle, HelpCircle, Loader2, Gauge } from 'lucide-react'
+import {
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  HelpCircle,
+  Loader2,
+  Gauge,
+  Sparkles,
+} from 'lucide-react'
 
 type CheckStatus = 'pass' | 'warn' | 'fail' | 'unknown'
 
@@ -20,6 +28,22 @@ interface ReadinessCheck {
   remedy: string
 }
 
+type WorthinessBand = 'excellent' | 'strong' | 'moderate' | 'weak' | 'poor'
+
+interface CitationWorthinessScore {
+  score: number
+  band: WorthinessBand
+  components: {
+    schema: number
+    crawlability: number
+    freshness: number
+    citations: number
+    brand: number
+    quality: number
+  }
+  recommendations: Array<{ action: string; impact: number; pillar: string }>
+}
+
 interface ReadinessReport {
   brandId: string
   score: number
@@ -27,6 +51,7 @@ interface ReadinessReport {
   passed: number
   total: number
   checks: ReadinessCheck[]
+  citationWorthiness?: CitationWorthinessScore
 }
 
 interface BrandLite {
@@ -54,6 +79,14 @@ const GRADE_TONE: Record<ReadinessReport['grade'], string> = {
   C: 'text-amber-300 bg-amber-500/15',
   D: 'text-orange-300 bg-orange-500/15',
   F: 'text-rose-300 bg-rose-500/15',
+}
+
+const BAND_TONE: Record<WorthinessBand, string> = {
+  excellent: 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30',
+  strong: 'text-sky-300 bg-sky-500/15 border-sky-500/30',
+  moderate: 'text-amber-300 bg-amber-500/15 border-amber-500/30',
+  weak: 'text-orange-300 bg-orange-500/15 border-orange-500/30',
+  poor: 'text-rose-300 bg-rose-500/15 border-rose-500/30',
 }
 
 export function AISeoReadinessPanel({ brandId: brandIdProp }: { brandId?: string } = {}) {
@@ -159,6 +192,83 @@ export function AISeoReadinessPanel({ brandId: brandIdProp }: { brandId?: string
           </p>
         </div>
       </div>
+
+      {/* Citation Worthiness Score — single 0-100 number aggregating the
+          LLMO signals into one actionable view. Sits ABOVE the per-check
+          list because operators want "what's the score? what should I fix
+          first?" answered before they scroll the punch list. */}
+      {report.citationWorthiness && (
+        <div className={`mb-5 rounded-xl border p-4 ${BAND_TONE[report.citationWorthiness.band]}`}>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">
+                Citation Worthiness
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black">{report.citationWorthiness.score}</span>
+              <span className="text-xs opacity-70">/100</span>
+              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider opacity-80">
+                {report.citationWorthiness.band}
+              </span>
+            </div>
+          </div>
+
+          {/* Pillar breakdown — 6 thin bars so operators see which pillar
+              cost them points at a glance. */}
+          <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {(
+              [
+                ['schema', 20],
+                ['crawlability', 15],
+                ['freshness', 15],
+                ['citations', 25],
+                ['brand', 10],
+                ['quality', 15],
+              ] as const
+            ).map(([key, max]) => {
+              const pts = report.citationWorthiness!.components[key]
+              const pct = (pts / max) * 100
+              return (
+                <div key={key} className="text-[10px]">
+                  <div className="mb-0.5 flex items-baseline justify-between gap-1">
+                    <span className="capitalize opacity-70">{key}</span>
+                    <span className="font-bold">
+                      {pts}/{max}
+                    </span>
+                  </div>
+                  <div className="h-1 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full bg-current opacity-80" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Top 3 next-best-actions, sorted by point impact. */}
+          {report.citationWorthiness.recommendations.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">
+                Next-best actions
+              </p>
+              {report.citationWorthiness.recommendations.map((r, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs">
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/15 text-[10px] font-black">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground">{r.action}</p>
+                    <p className="mt-0.5 text-[10px] opacity-70">
+                      +{r.impact} pts · {r.pillar}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-1.5">
         {report.checks.map((c) => {

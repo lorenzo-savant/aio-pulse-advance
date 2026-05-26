@@ -127,6 +127,11 @@ export default function NewBrandWizard() {
     primaryLanguage: 'en' as string,
     languages: ['en', 'sv'] as string[],
     markets: ['SE-Stockholm', 'SE', 'International'] as string[],
+    // ── LLMO identity fields (Schema.org sameAs / disambiguation) ────────
+    sameAsInput: '',
+    sameAs: [] as string[],
+    disambiguation: '',
+    citationFormat: '',
   })
 
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -155,6 +160,14 @@ export default function NewBrandWizard() {
     const v = form.competitorInput.trim()
     if (v && !form.competitors.includes(v)) {
       setForm((f) => ({ ...f, competitors: [...f.competitors, v], competitorInput: '' }))
+    }
+  }
+
+  const addSameAs = () => {
+    const v = form.sameAsInput.trim()
+    // Only accept absolute http(s) URLs — sameAs is a JSON-LD URL field.
+    if (v && /^https?:\/\//i.test(v) && !form.sameAs.includes(v)) {
+      setForm((f) => ({ ...f, sameAs: [...f.sameAs, v], sameAsInput: '' }))
     }
   }
 
@@ -296,6 +309,12 @@ export default function NewBrandWizard() {
           aliases: form.aliases,
           competitors: form.competitors,
           language: form.primaryLanguage,
+          // LLMO identity — Schema.org sameAs / disambiguatingDescription
+          // / citation format. Server falls back to `null` when empty so
+          // brands that skip the optional fields keep working.
+          sameAs: form.sameAs,
+          disambiguation: form.disambiguation.trim() || undefined,
+          citationFormat: form.citationFormat.trim() || undefined,
         }),
       })
 
@@ -561,6 +580,98 @@ export default function NewBrandWizard() {
                   </button>
                 </span>
               ))}
+            </div>
+          </div>
+
+          {/* ── LLMO identity ──────────────────────────────────────────
+              Optional but highly recommended. These three fields drive the
+              Schema.org Organization payload + the llms-full.txt sections
+              that have the biggest impact on AI entity resolution. */}
+          <div className="bg-secondary/30 rounded-2xl border border-dashed border-border p-4">
+            <h3 className="mb-1 text-sm font-black uppercase tracking-widest text-muted-foreground">
+              LLM Optimization (optional)
+            </h3>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Tells AI engines where else this brand exists and how to distinguish it from
+              look-alikes. The single highest-leverage LLMO signal.
+            </p>
+
+            {/* sameAs URLs */}
+            <div className="mb-4">
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Verified Identities (sameAs)
+              </label>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                Wikipedia / Wikidata / Crunchbase / LinkedIn / G2 / Trustpilot URLs that point to
+                THIS brand. Must be absolute https URLs.
+              </p>
+              <div className="mb-2 flex gap-2">
+                <input
+                  className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+                  placeholder="https://en.wikipedia.org/wiki/..."
+                  value={form.sameAsInput}
+                  onChange={(e) => set('sameAsInput', e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addSameAs()}
+                />
+                <Button size="sm" variant="outline" onClick={addSameAs}>
+                  <Plus className="h-4 w-4" /> Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {form.sameAs.map((u) => (
+                  <span
+                    key={u}
+                    className="bg-secondary/50 flex max-w-full items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs text-muted-foreground"
+                  >
+                    <span className="max-w-[260px] truncate">{u}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({ ...f, sameAs: f.sameAs.filter((x) => x !== u) }))
+                      }
+                    >
+                      <X className="h-3 w-3 text-muted-foreground hover:text-red-400" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Disambiguation */}
+            <div className="mb-4">
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Disambiguation
+              </label>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                Use if the brand shares a name with another company. Becomes Schema.org
+                disambiguatingDescription + a dedicated section in llms-full.txt.
+              </p>
+              <textarea
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+                rows={3}
+                placeholder='e.g. "Acasting is a Swedish casting platform — NOT to be confused with Acast, the podcast hosting service."'
+                value={form.disambiguation}
+                onChange={(e) => set('disambiguation', e.target.value)}
+                maxLength={2000}
+              />
+            </div>
+
+            {/* Citation format */}
+            <div>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Suggested Citation Format
+              </label>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                How AI engines should credit the brand when quoting. Surfaces in llms-full.txt under
+                the &ldquo;## Citation&rdquo; heading.
+              </p>
+              <input
+                className="w-full rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+                placeholder="e.g. AcmeCorp [acme.com], 2026"
+                value={form.citationFormat}
+                onChange={(e) => set('citationFormat', e.target.value)}
+                maxLength={200}
+              />
             </div>
           </div>
 

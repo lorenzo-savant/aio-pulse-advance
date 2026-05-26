@@ -42,17 +42,35 @@ export async function GET(req: NextRequest) {
   since.setDate(since.getDate() - days)
 
   try {
-    const { data, error } = await (
-      db as unknown as ReturnType<typeof createServerClient> & { from: (t: string) => any }
-    )
-      .from('monitoring_results')
-      .select(
-        'brand_mentioned, mention_count, mention_position, competitor_mentions, sentiment_score, created_at, engine',
-      )
-      .eq('brand_id', brandId)
-      .gte('created_at', since.toISOString())
-      .order('created_at', { ascending: true })
-      .limit(5000)
+    // Filter out homonym-confusion rows (audit verdict: this mention wasn't
+    // actually about THIS brand). If the column isn't present yet (migration
+    // pending), fall back to the unfiltered query so the panel keeps working.
+    const dbAny = db as unknown as ReturnType<typeof createServerClient> & {
+      from: (t: string) => any
+    }
+    const baseSelect =
+      'brand_mentioned, mention_count, mention_position, competitor_mentions, sentiment_score, created_at, engine'
+
+    // Narrow brandId for the closure — TS loses the early-return guarantee
+    // when crossing into the inner function.
+    const brandIdNonNull: string = brandId
+    async function fetchRows(applyConfusionFilter: boolean) {
+      let q = dbAny
+        .from('monitoring_results')
+        .select(baseSelect)
+        .eq('brand_id', brandIdNonNull)
+        .gte('created_at', since.toISOString())
+        .order('created_at', { ascending: true })
+        .limit(5000)
+      if (applyConfusionFilter) q = q.neq('confusion_flag', true)
+      return q
+    }
+
+    let res = await fetchRows(true)
+    if (res.error && /confusion_flag/i.test(res.error.message || '')) {
+      res = await fetchRows(false)
+    }
+    const { data, error } = res
 
     if (error) {
       logger.error('/api/share-of-voice query failed', { err: error })

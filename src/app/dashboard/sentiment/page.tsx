@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand } from '@/types'
 import { SentimentDriversPanel } from '@/components/SentimentDriversPanel'
+import { HomonymAuditPanel } from '@/components/HomonymAuditPanel'
 
 interface AspectBreakdown {
   aspect: string
@@ -945,6 +946,12 @@ export default function SentimentPage() {
               negative AI portrayal of the brand. Mined from monitoring_results
               with the lexical sentiment engine — see service/sentiment-drivers.ts */}
           {selectedBrand && <SentimentDriversPanel brandId={selectedBrand} />}
+
+          {/* Homonym audit — flags mentions where the AI confused this brand
+              with a same-named entity (Acasting ↔ Acast podcast, etc). Flagged
+              rows are excluded from the SoV + sentiment metrics so the numbers
+              above reflect only real brand mentions. */}
+          {selectedBrand && <HomonymAuditPanel brandId={selectedBrand} />}
         </>
       ) : null}
 

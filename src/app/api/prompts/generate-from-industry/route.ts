@@ -43,8 +43,18 @@ export async function POST(req: NextRequest) {
 
   // 1. Static template engine — always runs. Deterministic, free.
   //    Pass the brand's real competitors so "vs <competitor>" prompts use
-  //    them instead of the preset's generic placeholders.
-  const prompts = generatePrompts(brand, industryId, locale as Locale, location, competitors)
+  //    them instead of the preset's generic placeholders. brandDomain
+  //    enables the homonym anchor — short single-word brands get rendered
+  //    as "Brand (domain.tld)" inside templates so AI engines lock onto
+  //    THIS entity instead of guessing between same-named alternatives.
+  const prompts = generatePrompts(
+    brand,
+    industryId,
+    locale as Locale,
+    location,
+    competitors,
+    brandDomain,
+  )
 
   if (prompts.length === 0) {
     return NextResponse.json(

@@ -53,6 +53,52 @@ const LLM_TARGETS = ['chatgpt', 'claude', 'perplexity', 'gemini'] as const
 
 export type Locale = 'en' | 'it' | 'sv'
 
+/**
+ * Strip protocol + trailing slash + path from a raw domain string so it
+ * renders cleanly inside a prompt ("acasting.se" not "https://acasting.se/").
+ * Exported so unit tests can pin the normalisation behavior.
+ */
+export function normaliseDomainForPrompt(raw: string | null | undefined): string {
+  if (!raw) return ''
+  return raw
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/.*$/, '')
+    .replace(/\/$/, '')
+}
+
+/**
+ * Decide whether a brand name needs a domain anchor in generated prompts
+ * to avoid homonym confusion (e.g. "Acasting" → "Acasting (acasting.se)").
+ *
+ * Heuristic: single-word names ≤14 chars. Multi-word names are usually
+ * self-disambiguating ("Savant Media AB" doesn't get confused with the
+ * word "savant"); long single-word names are typically distinctive
+ * enough on their own. The exact bounds err on the side of MORE
+ * anchoring — extra context never hurts AI grounding.
+ */
+export function shouldAnchorBrandDomain(brand: string): boolean {
+  const trimmed = brand.trim()
+  if (trimmed.length === 0) return false
+  if (trimmed.length > 14) return false
+  if (/\s/.test(trimmed)) return false
+  return true
+}
+
+/**
+ * Build the brand label that gets substituted into `{brand}` placeholders.
+ * When `shouldAnchorBrandDomain` agrees AND a domain is set, returns the
+ * anchored form `"<Brand> (<domain>)"`. Otherwise the bare brand. The
+ * anchored form forces AI engines to lock onto THIS entity at query
+ * time instead of guessing between same-named alternatives.
+ */
+export function anchorBrand(brand: string, domain?: string | null): string {
+  const cleanDomain = normaliseDomainForPrompt(domain)
+  if (!cleanDomain) return brand
+  if (!shouldAnchorBrandDomain(brand)) return brand
+  return `${brand} (${cleanDomain})`
+}
+
 export const INDUSTRY_PRESETS: IndustryPreset[] = [
   {
     id: 'casting-talent',
@@ -1667,6 +1713,7 @@ export function expandKeywords(
   locale: Locale,
   location?: string,
   competitors?: string[],
+  brandDomain?: string | null,
 ): ExpandedQuery[] {
   const preset = INDUSTRY_PRESETS.find((p) => p.id === industryId)
   if (!preset) return []
@@ -1674,8 +1721,12 @@ export function expandKeywords(
   const queries: ExpandedQuery[] = []
   const year = getYear()
   const loc = location || preset.seedKeywords[locale][0] || ''
+  // Anchor the brand with its domain when the name is at risk of homonym
+  // confusion ("Acasting" → "Acasting (acasting.se)"). Drops in
+  // transparently because the {brand} placeholder is hydrated from this
+  // map — every template benefits without per-template editing.
   const variables: Record<string, string> = {
-    brand,
+    brand: anchorBrand(brand, brandDomain),
     location: loc,
     year,
   }
@@ -1718,11 +1769,19 @@ export function generatePrompts(
   locale: Locale,
   location?: string,
   competitors?: string[],
+  brandDomain?: string | null,
 ): GeneratedPrompt[] {
   const preset = INDUSTRY_PRESETS.find((p) => p.id === industryId)
   if (!preset) return []
 
-  const expandedQueries = expandKeywords(brand, industryId, locale, location, competitors)
+  const expandedQueries = expandKeywords(
+    brand,
+    industryId,
+    locale,
+    location,
+    competitors,
+    brandDomain,
+  )
   const systemPrompt = buildSystemPrompt(preset, locale)
   const expectedOutput = buildExpectedOutput(locale)
 

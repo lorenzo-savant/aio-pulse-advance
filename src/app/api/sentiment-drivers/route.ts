@@ -43,18 +43,31 @@ export async function GET(req: NextRequest) {
 
   try {
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    const { data, error } = await (
-      db as unknown as ReturnType<typeof createServerClient> & {
-        from: (t: string) => any
-      }
-    )
-      .from('monitoring_results')
-      .select('id, brand_mentioned, response_text, sentiment_score, created_at')
-      .eq('brand_id', brandId)
-      .eq('brand_mentioned', true)
-      .gte('created_at', since.toISOString())
-      .order('created_at', { ascending: false })
-      .limit(2000)
+    const dbAny = db as unknown as ReturnType<typeof createServerClient> & {
+      from: (t: string) => any
+    }
+    // Filter out homonym-confusion rows (audit verdict: not actually about
+    // THIS brand). Falls back to unfiltered when the column isn't present
+    // yet — keeps the panel working before the migration is applied.
+    const brandIdNonNull: string = brandId
+    async function fetchRows(applyConfusionFilter: boolean) {
+      let q = dbAny
+        .from('monitoring_results')
+        .select('id, brand_mentioned, response_text, sentiment_score, created_at')
+        .eq('brand_id', brandIdNonNull)
+        .eq('brand_mentioned', true)
+        .gte('created_at', since.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(2000)
+      if (applyConfusionFilter) q = q.neq('confusion_flag', true)
+      return q
+    }
+
+    let res = await fetchRows(true)
+    if (res.error && /confusion_flag/i.test(res.error.message || '')) {
+      res = await fetchRows(false)
+    }
+    const { data, error } = res
     /* eslint-enable @typescript-eslint/no-explicit-any */
 
     if (error) {

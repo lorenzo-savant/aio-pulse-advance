@@ -1453,6 +1453,9 @@ export type Database = {
           brand_mentioned: boolean | null
           cited_urls: string[] | null
           competitor_mentions: Json | null
+          confusion_audited_at: string | null
+          confusion_flag: boolean
+          confusion_reason: string | null
           cost_credits: number | null
           created_at: string | null
           engine: string
@@ -1482,6 +1485,9 @@ export type Database = {
           brand_mentioned?: boolean | null
           cited_urls?: string[] | null
           competitor_mentions?: Json | null
+          confusion_audited_at?: string | null
+          confusion_flag?: boolean
+          confusion_reason?: string | null
           cost_credits?: number | null
           created_at?: string | null
           engine: string
@@ -1511,6 +1517,9 @@ export type Database = {
           brand_mentioned?: boolean | null
           cited_urls?: string[] | null
           competitor_mentions?: Json | null
+          confusion_audited_at?: string | null
+          confusion_flag?: boolean
+          confusion_reason?: string | null
           cost_credits?: number | null
           created_at?: string | null
           engine?: string

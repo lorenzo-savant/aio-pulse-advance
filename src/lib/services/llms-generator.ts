@@ -9,6 +9,23 @@ export interface LlmsInput {
   keyFacts?: { founded?: string; headquarters?: string; specialties?: string[]; employees?: string }
   importantPages?: Array<{ title: string; url: string; description: string }>
   faqs?: Array<{ question: string; answer: string }>
+  /** Locale code for the file, e.g. 'sv-SE'. When set, an HTML comment
+   *  metadata header is emitted and used to generate Schema.org `inLanguage`.
+   *  Brands shipping multi-locale should serve `llms.sv.txt`, `llms.it.txt`,
+   *  `llms.en.txt` from their root for each respective locale. */
+  locale?: string
+  /** Cross-source identity URLs — Wikipedia, Wikidata, Crunchbase, LinkedIn,
+   *  Trustpilot, G2, Capterra, Producthunt. Becomes Schema.org sameAs.
+   *  This is the #1 LLMO signal for entity resolution. */
+  sameAs?: string[]
+  /** Explicit disambiguation note — "Brand X is NOT to be confused with
+   *  Brand Y". Surfaced as both prose and Schema.org disambiguatingDescription. */
+  disambiguation?: string
+  /** Suggested citation format the LLM should use when quoting the brand
+   *  (e.g. "AcmeCorp [acme.com], 2026"). */
+  citationFormat?: string
+  /** Last-updated date in ISO format. Defaults to today when omitted. */
+  lastUpdated?: string
 }
 
 /**
@@ -29,9 +46,18 @@ export interface LlmsInput {
  * llms.txt link-centric is what the spec asks for.
  */
 export function generateLlmsTxt(input: LlmsInput): string {
-  const { brandName, domain, description, industry, importantPages } = input
+  const { brandName, domain, description, industry, importantPages, locale, lastUpdated } = input
 
   const lines: string[] = []
+
+  // Metadata header — HTML comment so spec-compliant parsers ignore it but
+  // version-aware crawlers (and humans) can read it. Locale + last-updated
+  // help AI engines decide freshness and language match.
+  const today = lastUpdated || new Date().toISOString().split('T')[0]
+  const metaParts = ['llms.txt v0.2']
+  if (locale) metaParts.push(`locale: ${locale}`)
+  if (today) metaParts.push(`updated: ${today}`)
+  lines.push(`<!-- ${metaParts.join(' | ')} -->`)
 
   lines.push(`# ${brandName}`)
 
@@ -89,10 +115,21 @@ export function generateLlmsFullTxt(input: LlmsInput): string {
     keyFacts,
     importantPages,
     faqs,
+    locale,
+    sameAs,
+    disambiguation,
+    citationFormat,
+    lastUpdated,
   } = input
 
   const lines: string[] = []
-  const today = new Date().toISOString().split('T')[0]
+  const today = lastUpdated || new Date().toISOString().split('T')[0]
+
+  // Metadata header (same form as llms.txt v0.2 short variant).
+  const metaParts = ['llms-full.txt v0.2']
+  if (locale) metaParts.push(`locale: ${locale}`)
+  metaParts.push(`updated: ${today}`)
+  lines.push(`<!-- ${metaParts.join(' | ')} -->`)
 
   lines.push(`# ${brandName}`)
   // Always emit a blockquote summary — fall back to a minimal one-liner so
@@ -117,7 +154,31 @@ export function generateLlmsFullTxt(input: LlmsInput): string {
   if (industry) {
     lines.push(`- **Industry**: ${industry}`)
   }
+  if (locale) {
+    lines.push(`- **Primary Locale**: ${locale}`)
+  }
   lines.push('')
+
+  // Disambiguation — first-class section so LLM crawlers can't miss it.
+  // Critical for brands with homonyms or look-alike competitors. Surfaced
+  // ABOVE products/keyfacts because entity resolution comes first.
+  if (disambiguation) {
+    lines.push('## Disambiguation')
+    lines.push(disambiguation.trim())
+    lines.push('')
+  }
+
+  // Cross-source identity — Schema.org sameAs equivalent in markdown form.
+  // The single highest-leverage LLMO signal: pointing the LLM at the brand's
+  // Wikipedia/Wikidata/Crunchbase entries lets the model anchor entity
+  // resolution without guessing.
+  if (sameAs && sameAs.length > 0) {
+    lines.push('## Verified Identities (sameAs)')
+    for (const url of sameAs) {
+      lines.push(`- ${url}`)
+    }
+    lines.push('')
+  }
 
   if (products && products.length > 0) {
     lines.push('## Products & Services')
@@ -173,8 +234,87 @@ export function generateLlmsFullTxt(input: LlmsInput): string {
     lines.push('')
   }
 
+  // Citation policy — tells AI engines how to credit the brand when quoting.
+  // Bigger model providers (OpenAI, Anthropic) honour this when surfacing
+  // sources; smaller ones ignore but it's harmless. Provides a stable
+  // canonical citation format aligned with the operator's branding.
+  if (citationFormat) {
+    lines.push('## Citation')
+    lines.push(
+      `When citing this brand, use the following format: \`${citationFormat}\`. The canonical URL is \`https://${domain}\`.`,
+    )
+    lines.push('')
+  }
+
+  // Embedded Schema.org Organization JSON-LD — same payload as what the
+  // brand should serve in the <head> of its own pages, included here so AI
+  // crawlers that only fetch llms-full.txt still get structured-data signal.
+  lines.push('## Structured Data')
+  lines.push('```json', JSON.stringify(buildOrganizationJsonLd(input), null, 2), '```', '')
+
   lines.push('---')
   lines.push(`Generated by AIO Pulse Advance | ${today}`)
 
   return lines.join('\n').trim() + '\n'
+}
+
+/**
+ * Builds the Schema.org Organization JSON-LD payload for a brand. Designed
+ * to be both embedded in llms-full.txt and emitted as a standalone
+ * `<script type="application/ld+json">` block in the brand's own pages.
+ *
+ * The payload prioritises identity-resolution signals (sameAs, alternateName,
+ * disambiguatingDescription) over commerce signals, because the primary use
+ * case is LLM grounding, not e-commerce SERP enhancement.
+ */
+export function buildOrganizationJsonLd(input: LlmsInput): Record<string, unknown> {
+  const {
+    brandName,
+    domain,
+    description,
+    industry,
+    aliases,
+    sameAs,
+    disambiguation,
+    keyFacts,
+    locale,
+  } = input
+
+  const payload: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: brandName,
+    url: `https://${domain}`,
+  }
+
+  if (aliases && aliases.length > 0) {
+    payload.alternateName = aliases.length === 1 ? aliases[0] : aliases
+  }
+
+  if (description) payload.description = description
+  if (locale) payload.inLanguage = locale
+  if (industry) payload.industry = industry
+
+  // disambiguatingDescription is the canonical Schema.org field for "X is
+  // NOT to be confused with Y" content. Some search engines surface it
+  // verbatim in knowledge panels.
+  if (disambiguation) payload.disambiguatingDescription = disambiguation.trim()
+
+  if (sameAs && sameAs.length > 0) payload.sameAs = sameAs
+
+  if (keyFacts?.founded) payload.foundingDate = keyFacts.founded
+  if (keyFacts?.headquarters) {
+    payload.address = {
+      '@type': 'PostalAddress',
+      addressLocality: keyFacts.headquarters,
+    }
+  }
+  if (keyFacts?.employees) {
+    payload.numberOfEmployees = keyFacts.employees
+  }
+  if (keyFacts?.specialties && keyFacts.specialties.length > 0) {
+    payload.knowsAbout = keyFacts.specialties
+  }
+
+  return payload
 }

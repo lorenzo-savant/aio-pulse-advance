@@ -416,7 +416,7 @@ export default function OnboardingPage() {
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
                 i < step
-                  ? 'bg-primary text-foreground'
+                  ? 'bg-brand-hover text-brand-foreground'
                   : i === step
                     ? 'bg-primary/20 ring-brand-500 text-primary ring-2'
                     : 'bg-secondary text-muted-foreground',

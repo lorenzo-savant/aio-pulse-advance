@@ -414,9 +414,9 @@ export default function NewBrandWizard() {
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all',
                 step === s.id
-                  ? 'bg-primary text-foreground'
+                  ? 'bg-brand-hover text-brand-foreground'
                   : step > s.id
-                    ? 'bg-emerald-600 text-foreground'
+                    ? 'bg-emerald-600 text-white'
                     : 'bg-secondary text-muted-foreground',
               )}
             >

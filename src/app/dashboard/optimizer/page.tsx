@@ -210,7 +210,7 @@ function IntentMapping({
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-all',
                   isActive
-                    ? 'bg-primary text-foreground'
+                    ? 'bg-brand-hover text-brand-foreground'
                     : isPast
                       ? 'text-muted-foreground'
                       : 'bg-secondary text-muted-foreground',
@@ -612,7 +612,7 @@ export default function OptimizerPage() {
               className={cn(
                 'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all',
                 mode === m
-                  ? 'shadow-brand-600/25 bg-primary text-foreground shadow-lg'
+                  ? 'shadow-brand-600/25 bg-brand-hover text-brand-foreground shadow-lg'
                   : 'text-text-secondary-ui hover:bg-secondaryhover border border-input',
               )}
               onClick={() => setMode(m)}

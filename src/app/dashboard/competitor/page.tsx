@@ -251,8 +251,11 @@ function HistoricalSection() {
                 key={range.days}
                 className={cn(
                   'rounded px-3 py-1 text-xs font-medium transition-colors',
+                  // Lighter brand-hover purple + guaranteed white text via
+                  // brand-foreground. The previous `bg-primary text-foreground`
+                  // resolved to dark-blue-on-dark-text in light mode → unreadable.
                   days === range.days
-                    ? 'bg-primary text-foreground'
+                    ? 'bg-brand-hover text-brand-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
                 onClick={() => setDays(range.days)}

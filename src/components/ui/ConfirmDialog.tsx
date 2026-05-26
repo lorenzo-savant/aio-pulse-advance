@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useCallback, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import { Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from './Modal'
+import { Modal, ModalFooter } from './Modal'
 import { Button } from './Button'
 
 interface ConfirmDialogProps {
@@ -27,25 +27,46 @@ export function ConfirmDialog({
   onConfirm,
   destructive = false,
 }: ConfirmDialogProps) {
+  // Visual hierarchy redesigned:
+  //  - Prominent icon-on-tinted-circle at the top so the destructive
+  //    action is recognisable at a glance (was missing entirely).
+  //  - Centred title + description for readability.
+  //  - Footer is a 50/50 grid (Cancel | Confirm) so both buttons are
+  //    equal-weight and visible as buttons — the previous Delete used
+  //    a pale outline variant that read as "secondary" and competed
+  //    badly with the white Cancel ghost.
+  //  - Destructive confirm now uses Button variant="danger" → solid
+  //    red background + white text. Unambiguously destructive.
   return (
-    <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalHeader>
-        <ModalTitle>{title}</ModalTitle>
-      </ModalHeader>
-      {description && <ModalBody>{description}</ModalBody>}
-      <ModalFooter>
-        <Button variant="ghost" onClick={() => onOpenChange(false)}>
+    <Modal open={open} onOpenChange={onOpenChange} className="max-w-md">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div
+          className={
+            destructive
+              ? 'bg-error/10 flex h-14 w-14 items-center justify-center rounded-full'
+              : 'bg-accent/10 flex h-14 w-14 items-center justify-center rounded-full'
+          }
+        >
+          <AlertTriangle className={destructive ? 'h-7 w-7 text-error' : 'h-7 w-7 text-accent'} />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">{title}</h2>
+        {description && (
+          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+        )}
+      </div>
+
+      <ModalFooter className="mt-6 grid grid-cols-2 gap-3">
+        <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full">
           {cancelLabel}
         </Button>
         <Button
-          variant={destructive ? 'outline' : 'primary'}
+          variant={destructive ? 'danger' : 'primary'}
           onClick={() => {
             onConfirm()
             onOpenChange(false)
           }}
-          className={destructive ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : ''}
+          className="w-full"
         >
-          {destructive && <AlertTriangle className="mr-2 h-4 w-4" />}
           {confirmLabel}
         </Button>
       </ModalFooter>

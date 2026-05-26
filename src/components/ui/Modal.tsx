@@ -16,10 +16,11 @@ export function Modal({ open, onOpenChange, children, className }: ModalProps) {
     <>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => onOpenChange(false)}
-          />
+          {/* Invisible click-outside catcher. Previously
+              bg-black/60 + backdrop-blur — read as a heavy gray veil
+              over the page on light mode. Kept clickable so
+              click-outside-to-close still works. */}
+          <div className="absolute inset-0 bg-transparent" onClick={() => onOpenChange(false)} />
           <div
             className={cn(
               'animate-in zoom-in-95 border-surface-input-border relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border bg-card shadow-2xl',

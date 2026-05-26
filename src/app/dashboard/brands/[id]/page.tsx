@@ -176,7 +176,7 @@ export default function BrandDetailPage() {
   const params = useParams()
   const brandId = params.id as string
   const { confirm, ConfirmDialog } = useConfirmDialog()
-  const { tooltipStyle } = useChartTheme()
+  const { tooltipStyle, gridColor, axisColor } = useChartTheme()
 
   const [brand, setBrand] = useState<Brand | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
@@ -743,7 +743,7 @@ export default function BrandDetailPage() {
           {snapshots.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={snapshots}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                 <XAxis
                   dataKey="scan_date"
                   stroke="#6b7280"
@@ -777,7 +777,7 @@ export default function BrandDetailPage() {
           {engineBreakdown.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={engineBreakdown} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                 <XAxis type="number" stroke="#6b7280" fontSize={12} domain={[0, 100]} />
                 <YAxis type="category" dataKey="engine" stroke="#6b7280" fontSize={12} width={80} />
                 <Tooltip {...tooltipStyle} />

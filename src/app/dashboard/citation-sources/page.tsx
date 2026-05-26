@@ -164,7 +164,7 @@ function StatCard({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function CitationSourcesPage() {
-  const { tooltipStyle } = useChartTheme()
+  const { tooltipStyle, gridColor, axisColor } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [engine, setEngine] = useState('all')
@@ -761,9 +761,9 @@ export default function CitationSourcesPage() {
               {timelineData.length > 1 ? (
                 <ResponsiveContainer height={240} width="100%">
                   <LineChart data={timelineData}>
-                    <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                    <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: axisColor }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: axisColor }} />
                     <Tooltip {...tooltipStyle} />
                     <Line
                       type="monotone"

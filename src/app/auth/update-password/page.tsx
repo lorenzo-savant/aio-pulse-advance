@@ -78,7 +78,7 @@ export default function UpdatePasswordPage() {
   return (
     <div className="relative flex min-h-screen flex-col">
       <div className="absolute inset-0 bg-background">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-[0.05]" />
+        <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40" />
         <div className="bg-accent/20 absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full blur-[120px]" />
         <div className="bg-accent/10 absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]" />
       </div>

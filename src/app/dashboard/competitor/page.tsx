@@ -88,7 +88,7 @@ const DATE_RANGES = [
 ]
 
 function HistoricalSection() {
-  const { tooltipStyle } = useChartTheme()
+  const { tooltipStyle, gridColor, axisColor } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
@@ -360,9 +360,9 @@ function HistoricalSection() {
                     ...t.shares,
                   }))}
                 >
-                  <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[0, 100]} unit="%" />
+                  <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: axisColor }} />
+                  <YAxis tick={{ fontSize: 11, fill: axisColor }} domain={[0, 100]} unit="%" />
                   <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)}%`]} />
                   <Legend />
                   {sov.series.map((name, idx) => (
@@ -404,9 +404,9 @@ function HistoricalSection() {
             <h3 className="mb-6 text-lg font-bold text-foreground">Citation Rate Trend</h3>
             <ResponsiveContainer height={320} width="100%">
               <LineChart data={chartData}>
-                <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[0, 100]} unit="%" />
+                <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: axisColor }} />
+                <YAxis tick={{ fontSize: 11, fill: axisColor }} domain={[0, 100]} unit="%" />
                 <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)}%`]} />
                 <Legend />
                 <Line
@@ -674,6 +674,7 @@ function ResultCard({
 }
 
 export default function CompetitorPage() {
+  const { gridColor } = useChartTheme()
   const [primaryUrl, setPrimaryUrl] = useState('')
   const [competitorUrls, setCompetitorUrls] = useState([''])
   const [loading, setLoading] = useState(false)
@@ -940,8 +941,8 @@ export default function CompetitorPage() {
               <h2 className="mb-6 text-lg font-bold text-foreground">Engine-by-Engine Radar</h2>
               <ResponsiveContainer height={320} width="100%">
                 <RadarChart data={radarData}>
-                  <PolarGrid stroke="#1f2937" />
-                  <PolarAngleAxis dataKey="engine" tick={{ fontSize: 12, fill: '#6b7280' }} />
+                  <PolarGrid stroke={gridColor} />
+                  <PolarAngleAxis dataKey="engine" tick={{ fontSize: 12, fill: gridColor }} />
                   <PolarRadiusAxis
                     angle={90}
                     domain={[0, 100]}

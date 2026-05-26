@@ -28,6 +28,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
+import { ENGINE_COLORS as CHART_ENGINE_COLORS } from '@/lib/chart-tokens'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -61,12 +62,15 @@ const COMPETITOR_COLORS: Record<string, string> = {
   Fortnox: '#14b8a6',
 }
 
+// Engine palette imported from chart-tokens so this page agrees with
+// snapshots / geo-score / sentiment on which colour represents which
+// engine. The 'all' aggregate stays brand-indigo as before.
 const ENGINE_COLORS: Record<string, string> = {
-  chatgpt: '#10b981',
-  gemini: '#3b82f6',
-  perplexity: '#a855f7',
-  claude: '#f97316',
-  all: '#6366f1',
+  chatgpt: CHART_ENGINE_COLORS.chatgpt,
+  gemini: CHART_ENGINE_COLORS.gemini,
+  perplexity: CHART_ENGINE_COLORS.perplexity,
+  claude: CHART_ENGINE_COLORS.claude,
+  all: '#6366f1', // brand indigo — used only for the "all engines" series
 }
 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
@@ -114,7 +118,7 @@ function StatCard({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function CitationsPage() {
-  const { tooltipStyle } = useChartTheme()
+  const { tooltipStyle, gridColor, axisColor } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
@@ -143,6 +147,10 @@ export default function CitationsPage() {
   }, [])
 
   // ── Fetch snapshots when brand changes ────────────────────────────────────
+  // The user-visible "Failed to load citation data" used to be a catch-all;
+  // now we propagate the real cause (network error, parse error, auth)
+  // so the panel can show what actually went wrong instead of stonewalling.
+  // Empty snapshots are NOT an error — that's "no data yet, hit Recalculate".
   const fetchSnapshots = useCallback(async () => {
     if (!selectedBrand) return
     setLoading(true)
@@ -153,30 +161,41 @@ export default function CitationsPage() {
       const res = await fetch(
         `/api/snapshots?brand_id=${selectedBrand.id}&engine=all&category=all&language=${selectedLanguage}`,
       )
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.message || `API error: ${res.status}`)
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data) {
+        setError(data?.message || `Snapshot API responded ${res.status} — try Recalculate.`)
         setSnapshots([])
+        setEngineSnapshots([])
         return
       }
       setSnapshots(data.data?.snapshots || [])
 
-      // Fetch per-engine breakdown for latest date
-      const engines = ['chatgpt', 'gemini', 'perplexity']
+      // Fetch per-engine breakdown for latest date. Per-engine fetches
+      // are best-effort: if one fails, we skip it instead of nuking the
+      // whole panel — the "all engines" aggregate above is the primary
+      // signal and is already populated.
+      const engines = ['chatgpt', 'gemini', 'perplexity', 'claude']
       const engineData: Snapshot[] = []
 
-      for (const engine of engines) {
-        const r = await fetch(
-          `/api/snapshots?brand_id=${selectedBrand.id}&engine=${engine}&category=all&language=${selectedLanguage}`,
-        )
-        const d = await r.json()
-        const snaps = d.data?.snapshots || []
+      const settled = await Promise.allSettled(
+        engines.map((engine) =>
+          fetch(
+            `/api/snapshots?brand_id=${selectedBrand.id}&engine=${engine}&category=all&language=${selectedLanguage}`,
+          ).then((r) => r.json()),
+        ),
+      )
+      for (const result of settled) {
+        if (result.status !== 'fulfilled') continue
+        const snaps = result.value?.data?.snapshots || []
         if (snaps.length > 0) engineData.push(snaps[snaps.length - 1])
       }
 
       setEngineSnapshots(engineData)
-    } catch {
-      setError('Failed to load citation data')
+    } catch (e) {
+      // Surface the actual error message so users can act on it (network
+      // offline, auth expired, etc.). The generic "Failed to load citation
+      // data" was unactionable.
+      setError(e instanceof Error ? e.message : 'Unexpected error while loading citation data')
     } finally {
       setLoading(false)
     }
@@ -373,10 +392,10 @@ export default function CitationsPage() {
             </div>
             <ResponsiveContainer height={260} width="100%">
               <BarChart data={competitorChartData} layout="vertical">
-                <CartesianGrid horizontal={false} stroke="#1f2937" />
+                <CartesianGrid horizontal={false} stroke={gridColor} />
                 <XAxis
                   domain={[0, 100]}
-                  tick={{ fontSize: 10, fill: '#6b7280' }}
+                  tick={{ fontSize: 10, fill: axisColor }}
                   type="number"
                   unit="%"
                 />
@@ -499,9 +518,9 @@ export default function CitationsPage() {
               </div>
               <ResponsiveContainer height={300} width="100%">
                 <LineChart data={trendData}>
-                  <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[0, 100]} unit="%" />
+                  <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: axisColor }} />
+                  <YAxis tick={{ fontSize: 11, fill: axisColor }} domain={[0, 100]} unit="%" />
                   <Tooltip {...tooltipStyle} />
                   <Line
                     dataKey="citation_rate"

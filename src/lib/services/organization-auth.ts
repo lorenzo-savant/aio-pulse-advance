@@ -268,8 +268,17 @@ export async function getUserOrganizations(userId: string) {
     return []
   }
 
-  return (data ?? []).map((m: any) => ({
-    ...m.organizations,
-    role: m.role,
-  }))
+  type OrgRow = {
+    role: string
+    organizations: {
+      id: string
+      name: string
+      slug: string | null
+      plan: string | null
+      default_workspace_id: string | null
+    } | null
+  }
+  return ((data ?? []) as OrgRow[]).flatMap((m) =>
+    m.organizations ? [{ ...m.organizations, role: m.role }] : [],
+  )
 }

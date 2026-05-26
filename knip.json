@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,route,not-found,loading,error,sitemap,robots,opengraph-image,icon,apple-icon,manifest}.{ts,tsx}",
+    "src/middleware.ts",
+    "next.config.{js,mjs,ts}",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "scripts/**/*.{ts,mjs}",
+    "e2e/**/*.spec.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
+  "ignore": [
+    "src/components/ui/index.tsx",
+    "src/cost-monitor/index.ts",
+    "src/components/dashboard/**",
+    "src/lib/services/preset-feedback.ts"
+  ],
+  "ignoreDependencies": ["pino-pretty", "tsx", "lint-staged"],
+  "ignoreExportsUsedInFile": true
+}

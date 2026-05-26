@@ -61,10 +61,13 @@ export default [
     },
   },
   {
-    // Test files legitimately use require() for dynamic imports / mocking.
-    files: ['**/*.test.{ts,tsx}', '**/__tests__/**'],
+    // Test files legitimately use require() for dynamic imports / mocking,
+    // and `any` is acceptable in test scaffolding where strict typing of
+    // fixtures and mocks adds noise without safety.
+    files: ['**/*.test.{ts,tsx}', '**/__tests__/**', 'e2e/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ]

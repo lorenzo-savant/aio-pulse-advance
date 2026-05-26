@@ -1,5 +1,10 @@
 // PATH: src/lib/services/preset-feedback.ts
 //
+// PENDING UI — service is complete (getPresetFeedback can be called from
+// any route or dashboard page), but no UI consumer is wired yet. Knip will
+// flag this file as "unused"; that's expected until the preset health
+// dashboard is built.
+//
 // Analyzes real monitoring data to suggest improvements to industry presets.
 // The feedback loop closes the gap between static template patterns and what
 // actually happens in production.

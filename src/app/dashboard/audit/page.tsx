@@ -32,6 +32,7 @@ import {
 } from 'recharts'
 import { Card } from '@/components/ui/Card'
 import { ActionPlanPanel } from '@/components/ActionPlanPanel'
+import { MentionInjectionPanel } from '@/components/MentionInjectionPanel'
 import type { AuditResult as TechnicalAuditResult } from '@/lib/services/technical-seo-audit'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -856,6 +857,11 @@ export default function AuditPage() {
               </div>
             </Card>
           )}
+
+          {/* Mention Injection Opportunities — paste your URLs + topic
+              phrases, surface pages that discuss the topic without
+              naming the brand. Semrush "LLM Visibility" playbook step 3. */}
+          <MentionInjectionPanel />
         </div>
       )}
     </div>

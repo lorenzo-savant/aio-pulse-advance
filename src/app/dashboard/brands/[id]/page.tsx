@@ -246,6 +246,11 @@ export default function BrandDetailPage() {
     aliases: [] as string[],
     competitorInput: '',
     competitors: [] as string[],
+    // Legal identifier — VAT / Swedish orgnr / Italian codice fiscale / EIN.
+    // Maps to Schema.org vatID (vat) or taxID (others). Strongest LLMO
+    // entity-resolution signal because it's globally unique.
+    legalId: '',
+    legalIdType: '' as '' | 'vat' | 'orgnr' | 'fiscal_code' | 'ein' | 'other',
   })
 
   useEffect(() => {
@@ -304,18 +309,25 @@ export default function BrandDetailPage() {
         report_primary_color: brand.report_primary_color || '#6366f1',
         report_logo_url: brand.report_logo_url || '',
       })
+      const bExt = brand as {
+        market?: string | null
+        legal_id?: string | null
+        legal_id_type?: '' | 'vat' | 'orgnr' | 'fiscal_code' | 'ein' | 'other' | null
+      }
       setBrandForm({
         name: brand.name || '',
         description: brand.description || '',
         domain: brand.domain || '',
         industry: brand.industry || '',
-        market: (brand as { market?: string | null }).market || '',
+        market: bExt.market || '',
         language: (brand.language as string) || 'en',
         color: brand.color || '#6366f1',
         aliasInput: '',
         aliases: Array.isArray(brand.aliases) ? (brand.aliases as string[]) : [],
         competitorInput: '',
         competitors: Array.isArray(brand.competitors) ? (brand.competitors as string[]) : [],
+        legalId: bExt.legal_id || '',
+        legalIdType: bExt.legal_id_type || '',
       })
     }
   }, [brand])
@@ -327,8 +339,11 @@ export default function BrandDetailPage() {
     }
     setSavingBrand(true)
     try {
+      // PATCH (not PUT) because the PATCH route owns the camelCase →
+      // snake_case mapping for the LLMO fields (legalId → legal_id,
+      // legalIdType → legal_id_type, citationFormat → citation_format, …).
       const res = await fetch(`/api/brands/${brandId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: brandForm.name.trim(),
@@ -342,6 +357,8 @@ export default function BrandDetailPage() {
           // Only sent when set, so brand edits keep working even before the
           // brands.market migration is applied.
           ...(brandForm.market.trim() ? { market: brandForm.market.trim() } : {}),
+          legalId: brandForm.legalId.trim() || null,
+          legalIdType: brandForm.legalIdType || null,
         }),
       })
       const json = await res.json()
@@ -1488,6 +1505,47 @@ export default function BrandDetailPage() {
                     </button>
                   </span>
                 ))}
+              </div>
+            </div>
+
+            {/* Legal identifier — VAT / orgnr / fiscal code / EIN.
+                Maps to Schema.org vatID (vat) or taxID (everything else).
+                Strongest LLMO entity-resolution signal because it ties the
+                brand to authoritative registries (VIES, allabolag.se,
+                registro imprese) which AI engines already crawl. */}
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Legal Identifier
+              </label>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                VAT, Swedish organisationsnummer, Italian codice fiscale, US EIN, or any other
+                official registration. Surfaces in Schema.org JSON-LD + llms-full.txt.
+              </p>
+              <div className="grid grid-cols-[160px_1fr] gap-2">
+                <select
+                  className="rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  value={brandForm.legalIdType}
+                  onChange={(e) =>
+                    setBrandForm((f) => ({
+                      ...f,
+                      legalIdType: e.target.value as typeof f.legalIdType,
+                    }))
+                  }
+                >
+                  <option value="">Type…</option>
+                  <option value="vat">VAT</option>
+                  <option value="orgnr">Org.nr (SE)</option>
+                  <option value="fiscal_code">Codice fiscale (IT)</option>
+                  <option value="ein">EIN (US)</option>
+                  <option value="other">Other</option>
+                </select>
+                <input
+                  className="rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  placeholder="e.g. SE556677889901 / 556677-8899"
+                  value={brandForm.legalId}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, legalId: e.target.value }))}
+                  maxLength={64}
+                />
               </div>
             </div>
           </div>

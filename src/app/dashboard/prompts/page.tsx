@@ -159,6 +159,11 @@ function PromptsPageContent() {
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [templateLang, setTemplateLang] = useState<'en' | 'it' | 'sv'>('en')
+  // Performative-phrasing matches block submission until the user
+  // rewrites the prompt. Computed every render — cheap, no memo needed.
+  // See src/lib/prompt-quality.ts for the rules + reasoning.
+  const performativeMatches = findPerformativePatterns(form.text)
+  const isBlockedByPerformative = performativeMatches.length > 0
   const [showLibrary, setShowLibrary] = useState(false)
   const [showGenerator, setShowGenerator] = useState(false)
   // Borrow #1 — prompt suggestions from Perplexity's related_questions.
@@ -260,6 +265,19 @@ function PromptsPageContent() {
     }
     if (form.engines.length === 0) {
       toast.error(t('prompts.toast.select_engine_error'))
+      return
+    }
+    // Belt-and-suspenders client-side block: the button is already
+    // disabled, but if some path (keyboard, race) reaches this handler
+    // with performative phrasing still in the text, fail loudly and
+    // explain why. Server-side enforcement could be added later if
+    // operators ever bypass the UI via direct API calls.
+    const blockers = findPerformativePatterns(form.text)
+    if (blockers.length > 0 && blockers[0]) {
+      toast.error(
+        `Cannot save — "${blockers[0].phrase}" triggers AI role-simulation. ${blockers[0].suggestion}`,
+        { duration: 8000 },
+      )
       return
     }
     setCreating(true)
@@ -633,34 +651,51 @@ function PromptsPageContent() {
                 {t('prompts.form.text_label')} *
               </label>
               <textarea
-                className="placeholder-text-muted-surface w-full resize-none rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-brand"
+                className={cn(
+                  'placeholder-text-muted-surface w-full resize-none rounded-xl border bg-input px-4 py-3 text-sm text-foreground outline-none',
+                  isBlockedByPerformative
+                    ? 'border-rose-500/60 focus:border-rose-400'
+                    : 'border-input focus:border-brand',
+                )}
                 placeholder={t('prompts.form.text_placeholder')}
                 rows={3}
                 value={form.text}
                 onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
               />
-              {/* Live performative-phrasing linter. "Act as", "Pretend",
+              {/* Performative-phrasing block. "Act as", "Pretend",
                   "Imagine you are", … shift AI engines into role-simulation
                   mode and inflate hallucination rate in the responses we
-                  later measure as visibility. Non-blocking — operators can
-                  still save, but they see the why + a rewrite suggestion. */}
-              {(() => {
-                const matches = findPerformativePatterns(form.text)
-                if (matches.length === 0) return null
-                return (
-                  <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <div className="space-y-1">
-                      <p className="font-bold">
-                        Performative phrasing detected
-                        {matches[0] ? ` ("${matches[0].phrase}")` : ''}
-                      </p>
-                      <p className="text-amber-300/80">{matches[0]?.reason}</p>
-                      <p className="text-amber-300/70">↳ {matches[0]?.suggestion}</p>
-                    </div>
+                  later measure as visibility. We BLOCK save (rather than
+                  warn) so the noise never enters monitoring_results in the
+                  first place — explanatory message includes the matched
+                  phrase, WHY it's blocked, and HOW to fix it. */}
+              {isBlockedByPerformative && performativeMatches[0] && (
+                <div className="mt-2 flex items-start gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-xs text-rose-200">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-bold text-rose-300">
+                      Submission blocked — performative phrasing detected
+                    </p>
+                    <p className="text-rose-200/90">
+                      Matched:{' '}
+                      <code className="rounded bg-rose-500/20 px-1 py-0.5 font-mono">
+                        {performativeMatches[0].phrase}
+                      </code>
+                    </p>
+                    <p>
+                      <span className="font-semibold text-rose-300">Why blocked:</span>{' '}
+                      {performativeMatches[0].reason} Prompts in this form make AI engines improvise
+                      rather than retrieve facts — the hallucinated answers would inflate your
+                      Visibility / Share of Voice metrics with junk.
+                    </p>
+                    <p>
+                      <span className="font-semibold text-rose-300">How to fix:</span>{' '}
+                      {performativeMatches[0].suggestion} Once you rewrite the prompt without the
+                      performative framing, the Create button will re-enable.
+                    </p>
                   </div>
-                )
-              })()}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -758,7 +793,16 @@ function PromptsPageContent() {
               <Button variant="ghost" onClick={() => setShowForm(false)}>
                 {t('prompts.form.cancel')}
               </Button>
-              <Button loading={creating} onClick={handleCreate}>
+              <Button
+                loading={creating}
+                onClick={handleCreate}
+                disabled={isBlockedByPerformative}
+                title={
+                  isBlockedByPerformative
+                    ? 'Rewrite the prompt to remove the performative phrasing flagged above before saving.'
+                    : undefined
+                }
+              >
                 <Plus className="h-4 w-4" /> {t('prompts.form.create_button')}
               </Button>
             </div>

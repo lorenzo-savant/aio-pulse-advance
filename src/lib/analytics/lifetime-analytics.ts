@@ -24,7 +24,10 @@ export async function getLifetimeAnalytics(brandId: string): Promise<LifetimeAna
     if (!userId) return null
 
     const supabase = createServerClient()
-    if (!supabase) return getMockLifetimeAnalytics(brandId)
+    // Without a configured DB there is no real data to return. Returning
+    // mock figures (150 queries / 89 mentions / 72 visibility) used to
+    // pollute the UI with bogus stats; null is the honest signal.
+    if (!supabase) return null
 
     const { data, error } = await supabase
       .from('monitoring_results')
@@ -101,39 +104,5 @@ export async function getLifetimeAnalytics(brandId: string): Promise<LifetimeAna
   } catch (err) {
     logger.error('Failed to get lifetime analytics', { error: err })
     return null
-  }
-}
-
-function getMockLifetimeAnalytics(brandId: string): LifetimeAnalytics {
-  return {
-    brandId,
-    totalQueries: 150,
-    totalBrandMentions: 89,
-    totalCitations: 234,
-    domainCitations: 156,
-    visibilityScore: 72,
-    topProvider: 'chatgpt',
-    averageMentionsPerQuery: 0.59,
-    averageCitationsPerQuery: 1.56,
-    firstQueryAt: '2024-01-15T10:00:00Z',
-    lastQueryAt: new Date().toISOString(),
-    providerDistribution: {
-      chatgpt: 45,
-      gemini: 38,
-      perplexity: 35,
-      claude: 32,
-    },
-    sentimentBreakdown: {
-      positive: 65,
-      neutral: 55,
-      negative: 30,
-    },
-    queryCategoryBreakdown: {
-      awareness: 40,
-      interest: 35,
-      consideration: 30,
-      purchase: 25,
-      comparison: 20,
-    },
   }
 }

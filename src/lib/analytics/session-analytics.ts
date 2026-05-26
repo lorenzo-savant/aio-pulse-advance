@@ -29,7 +29,9 @@ export async function getSessionAnalytics(
     if (!userId) return null
 
     const supabase = createServerClient()
-    if (!supabase) return getMockSessionAnalytics(brandId)
+    // Without a configured DB there is no real session data. Returning
+    // hardcoded mock figures used to pollute the UI; null is honest.
+    if (!supabase) return null
 
     let query = supabase
       .from('monitoring_results')
@@ -88,22 +90,5 @@ export async function getSessionAnalytics(
   } catch (err) {
     logger.error('Failed to get session analytics', { error: err })
     return null
-  }
-}
-
-function getMockSessionAnalytics(brandId: string): SessionAnalytics {
-  return {
-    sessionId: 'mock-session',
-    brandId,
-    providerBreakdown: {
-      chatgpt: { mentions: 5, citations: 12, queries: 3 },
-      gemini: { mentions: 3, citations: 8, queries: 3 },
-    },
-    totalBrandMentions: 8,
-    totalCitations: 20,
-    totalQueries: 6,
-    lastQueryAt: new Date().toISOString(),
-    averageLatencyMs: 1500,
-    providersUsed: ['chatgpt', 'gemini'],
   }
 }

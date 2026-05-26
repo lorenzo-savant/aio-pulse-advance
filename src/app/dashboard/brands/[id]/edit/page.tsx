@@ -42,6 +42,12 @@ interface BrandEditForm {
   competitors: string
   language: BrandLanguage
   color: string
+  // LLMO identity — same shape as the create wizard but flat strings to
+  // keep the edit form simple. sameAs stays a newline-separated textarea
+  // because URLs are too long for a comma-separated input.
+  sameAs: string
+  disambiguation: string
+  citationFormat: string
 }
 
 export default function BrandEditPage() {
@@ -75,6 +81,10 @@ export default function BrandEditPage() {
           competitors: Array.isArray(b.competitors) ? b.competitors.join(', ') : '',
           language: lang,
           color: b.color || '#6366f1',
+          // GET /api/brands/[id] returns snake_case columns from the DB.
+          sameAs: Array.isArray(b.same_as) ? b.same_as.join('\n') : '',
+          disambiguation: b.disambiguation || '',
+          citationFormat: b.citation_format || '',
         })
         setOriginalLanguage(lang)
       } catch (err) {
@@ -115,6 +125,16 @@ export default function BrandEditPage() {
                 .map((s) => s.trim())
                 .filter(Boolean)
             : [],
+          // LLMO identity — sameAs is newline-separated in the textarea;
+          // split + trim + filter empty + filter non-absolute-https.
+          sameAs: form.sameAs
+            ? form.sameAs
+                .split(/\r?\n/)
+                .map((s) => s.trim())
+                .filter((s) => /^https?:\/\//i.test(s))
+            : [],
+          disambiguation: form.disambiguation.trim() || null,
+          citationFormat: form.citationFormat.trim() || null,
         }),
       })
       const data = await res.json()
@@ -259,6 +279,55 @@ export default function BrandEditPage() {
               placeholder="e.g. Zapier, Make"
             />
           </Field>
+
+          {/* ── LLMO identity ──────────────────────────────────────────
+              Same three controls as the create wizard. Most LLMO value
+              for existing brands lives here — Wikipedia/Crunchbase
+              anchors prevent entity confusion, disambiguation kills
+              homonym hallucinations, citation format dictates how AI
+              engines credit the brand. */}
+          <div className="bg-secondary/30 rounded-2xl border border-dashed border-border p-4">
+            <h3 className="mb-1 text-xs font-black uppercase tracking-widest text-muted-foreground">
+              LLM Optimization
+            </h3>
+            <p className="mb-4 text-[11px] text-muted-foreground">
+              How AI engines identify and credit this brand. All three are optional but
+              high-leverage — see <code className="text-foreground">docs/DECISIONS.md</code>.
+            </p>
+
+            <Field label="Verified Identities (one URL per line)">
+              <textarea
+                className="input font-mono text-xs"
+                rows={4}
+                value={form.sameAs}
+                onChange={(e) => setForm({ ...form, sameAs: e.target.value })}
+                placeholder={
+                  'https://en.wikipedia.org/wiki/Your_Brand\nhttps://www.crunchbase.com/organization/your-brand\nhttps://www.linkedin.com/company/your-brand'
+                }
+              />
+            </Field>
+
+            <Field label="Disambiguation">
+              <textarea
+                className="input"
+                rows={3}
+                value={form.disambiguation}
+                onChange={(e) => setForm({ ...form, disambiguation: e.target.value })}
+                placeholder='e.g. "Acasting is a Swedish casting platform — NOT to be confused with Acast, the podcast hosting service."'
+                maxLength={2000}
+              />
+            </Field>
+
+            <Field label="Suggested Citation Format">
+              <input
+                className="input"
+                value={form.citationFormat}
+                onChange={(e) => setForm({ ...form, citationFormat: e.target.value })}
+                placeholder="e.g. AcmeCorp [acme.com], 2026"
+                maxLength={200}
+              />
+            </Field>
+          </div>
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-2">

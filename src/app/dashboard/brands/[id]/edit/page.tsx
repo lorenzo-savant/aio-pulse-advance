@@ -23,6 +23,8 @@ const LANGUAGES: Array<{ value: BrandLanguage; label: string }> = [
   { value: 'sv', label: '🇸🇪 Svenska' },
 ]
 
+type LegalIdType = '' | 'vat' | 'orgnr' | 'fiscal_code' | 'ein' | 'other'
+
 interface BrandEditForm {
   name: string
   domain: string
@@ -38,6 +40,10 @@ interface BrandEditForm {
   sameAs: string
   disambiguation: string
   citationFormat: string
+  // Legal identifier (VAT/orgnr/fiscal_code/EIN). Maps to Schema.org
+  // vatID or taxID — strongest LLMO entity-resolution signal.
+  legalId: string
+  legalIdType: LegalIdType
 }
 
 export default function BrandEditPage() {
@@ -88,6 +94,8 @@ export default function BrandEditPage() {
           sameAs: Array.isArray(b.same_as) ? b.same_as.join('\n') : '',
           disambiguation: b.disambiguation || '',
           citationFormat: b.citation_format || '',
+          legalId: b.legal_id || '',
+          legalIdType: (b.legal_id_type as LegalIdType) || '',
         })
         setOriginalLanguage(lang)
       } catch (err) {
@@ -138,6 +146,8 @@ export default function BrandEditPage() {
             : [],
           disambiguation: form.disambiguation.trim() || null,
           citationFormat: form.citationFormat.trim() || null,
+          legalId: form.legalId.trim() || null,
+          legalIdType: form.legalIdType || null,
         }),
       })
       const data = await res.json()
@@ -332,6 +342,33 @@ export default function BrandEditPage() {
                 placeholder="e.g. AcmeCorp [acme.com], 2026"
                 maxLength={200}
               />
+            </Field>
+
+            {/* Legal identifier — VAT / orgnr / fiscal code / EIN.
+                Maps to Schema.org vatID (vat) or taxID (everything else).
+                Globally unique → strongest LLMO entity-resolution signal. */}
+            <Field label="Legal Identifier (VAT / Org.nr / Codice Fiscale / EIN)">
+              <div className="grid grid-cols-[140px_1fr] gap-2">
+                <select
+                  className="input"
+                  value={form.legalIdType}
+                  onChange={(e) => setForm({ ...form, legalIdType: e.target.value as LegalIdType })}
+                >
+                  <option value="">Type…</option>
+                  <option value="vat">VAT</option>
+                  <option value="orgnr">Org.nr (SE)</option>
+                  <option value="fiscal_code">Codice fiscale (IT)</option>
+                  <option value="ein">EIN (US)</option>
+                  <option value="other">Other</option>
+                </select>
+                <input
+                  className="input"
+                  value={form.legalId}
+                  onChange={(e) => setForm({ ...form, legalId: e.target.value })}
+                  placeholder="e.g. SE556677889901 / 556677-8899"
+                  maxLength={64}
+                />
+              </div>
             </Field>
           </div>
         </div>

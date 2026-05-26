@@ -38,6 +38,11 @@ const brandSchema = z.object({
   sameAs: z.array(z.string().url()).max(20).optional().default([]),
   disambiguation: z.string().max(2000).optional(),
   citationFormat: z.string().max(200).optional(),
+  // Legal identifier — VAT, Swedish orgnr, Italian codice fiscale, EIN,
+  // etc. Globally unique → strongest LLMO entity-resolution signal.
+  // Maps to Schema.org vatID (legalIdType='vat') or taxID (anything else).
+  legalId: z.string().max(64).optional(),
+  legalIdType: z.enum(['vat', 'orgnr', 'fiscal_code', 'ein', 'other']).optional(),
 })
 
 // Safe columns that always exist — include workspace/org scoping
@@ -199,7 +204,7 @@ export async function POST(req: NextRequest) {
 
   // Map the validated camelCase fields onto the Supabase columns
   // (snake_case for the LLMO trio + workspace/org scoping).
-  const { sameAs, disambiguation, citationFormat, ...restData } = parsed.data
+  const { sameAs, disambiguation, citationFormat, legalId, legalIdType, ...restData } = parsed.data
   const insertData: Record<string, unknown> = {
     ...restData,
     aliases: withDerivedAliases(parsed.data.name, parsed.data.aliases),
@@ -208,6 +213,8 @@ export async function POST(req: NextRequest) {
     same_as: sameAs,
     disambiguation: disambiguation ?? null,
     citation_format: citationFormat ?? null,
+    legal_id: legalId ?? null,
+    legal_id_type: legalIdType ?? null,
   }
 
   if (workspaceId) insertData.workspace_id = workspaceId

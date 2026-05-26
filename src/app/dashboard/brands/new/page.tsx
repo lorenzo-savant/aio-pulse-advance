@@ -132,6 +132,11 @@ export default function NewBrandWizard() {
     sameAs: [] as string[],
     disambiguation: '',
     citationFormat: '',
+    // Legal identifier (VAT / orgnr / fiscal code / EIN). Maps to Schema.org
+    // vatID (when type='vat') or taxID (everything else) — strongest LLMO
+    // entity-resolution signal because it's globally unique.
+    legalId: '',
+    legalIdType: '' as '' | 'vat' | 'orgnr' | 'fiscal_code' | 'ein' | 'other',
   })
 
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -315,6 +320,8 @@ export default function NewBrandWizard() {
           sameAs: form.sameAs,
           disambiguation: form.disambiguation.trim() || undefined,
           citationFormat: form.citationFormat.trim() || undefined,
+          legalId: form.legalId.trim() || undefined,
+          legalIdType: form.legalIdType || undefined,
         }),
       })
 
@@ -657,7 +664,7 @@ export default function NewBrandWizard() {
             </div>
 
             {/* Citation format */}
-            <div>
+            <div className="mb-4">
               <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Suggested Citation Format
               </label>
@@ -672,6 +679,40 @@ export default function NewBrandWizard() {
                 onChange={(e) => set('citationFormat', e.target.value)}
                 maxLength={200}
               />
+            </div>
+
+            {/* Legal identifier — VAT / orgnr / fiscal code / EIN. Maps to
+                Schema.org vatID (vat) or taxID (orgnr / fiscal_code / ein /
+                other). Globally unique → strongest entity-resolution signal. */}
+            <div>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Legal Identifier
+              </label>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                VAT, Swedish organisationsnummer, Italian codice fiscale, US EIN, or any other
+                official registration. Globally unique → strongest LLMO entity-resolution signal.
+              </p>
+              <div className="grid grid-cols-[140px_1fr] gap-2">
+                <select
+                  className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                  value={form.legalIdType}
+                  onChange={(e) => set('legalIdType', e.target.value as typeof form.legalIdType)}
+                >
+                  <option value="">Type…</option>
+                  <option value="vat">VAT</option>
+                  <option value="orgnr">Org.nr (SE)</option>
+                  <option value="fiscal_code">Codice fiscale (IT)</option>
+                  <option value="ein">EIN (US)</option>
+                  <option value="other">Other</option>
+                </select>
+                <input
+                  className="rounded-xl border border-border px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+                  placeholder="e.g. SE556677889901 / 556677-8899"
+                  value={form.legalId}
+                  onChange={(e) => set('legalId', e.target.value)}
+                  maxLength={64}
+                />
+              </div>
             </div>
           </div>
 

@@ -24,8 +24,29 @@ export interface LlmsInput {
   /** Suggested citation format the LLM should use when quoting the brand
    *  (e.g. "AcmeCorp [acme.com], 2026"). */
   citationFormat?: string
+  /** Legal identifier for the entity behind the brand — VAT number,
+   *  Swedish organisationsnummer, Italian codice fiscale, US EIN, etc.
+   *  Globally unique → strongest LLMO entity-resolution signal.
+   *  Schema.org maps it to `vatID` (when legalIdType='vat') or `taxID`
+   *  (anything else). */
+  legalId?: string
+  /** Type discriminator for legalId. Drives the Schema.org mapping
+   *  (vat → vatID, everything else → taxID) and the human-readable label
+   *  in llms-full.txt. */
+  legalIdType?: 'vat' | 'orgnr' | 'fiscal_code' | 'ein' | 'other'
   /** Last-updated date in ISO format. Defaults to today when omitted. */
   lastUpdated?: string
+}
+
+// Human-readable label for legalIdType, used in llms-full.txt under the
+// Brand Identity block. Kept beside the type so future additions stay in
+// sync. Falls back to "Legal Identifier" when no type is set.
+const LEGAL_ID_LABEL: Record<NonNullable<LlmsInput['legalIdType']>, string> = {
+  vat: 'VAT Number',
+  orgnr: 'Organisationsnummer',
+  fiscal_code: 'Codice Fiscale',
+  ein: 'EIN',
+  other: 'Legal Identifier',
 }
 
 /**
@@ -119,6 +140,8 @@ export function generateLlmsFullTxt(input: LlmsInput): string {
     sameAs,
     disambiguation,
     citationFormat,
+    legalId,
+    legalIdType,
     lastUpdated,
   } = input
 
@@ -156,6 +179,14 @@ export function generateLlmsFullTxt(input: LlmsInput): string {
   }
   if (locale) {
     lines.push(`- **Primary Locale**: ${locale}`)
+  }
+  // Legal identifier — VAT / orgnr / fiscal_code / EIN. Globally unique,
+  // resolves to authoritative registries (VIES, allabolag.se, registro
+  // imprese) which AI engines crawl. The single strongest entity-
+  // resolution signal after sameAs.
+  if (legalId) {
+    const label = legalIdType ? LEGAL_ID_LABEL[legalIdType] : 'Legal Identifier'
+    lines.push(`- **${label}**: ${legalId}`)
   }
   lines.push('')
 
@@ -278,6 +309,8 @@ export function buildOrganizationJsonLd(input: LlmsInput): Record<string, unknow
     disambiguation,
     keyFacts,
     locale,
+    legalId,
+    legalIdType,
   } = input
 
   const payload: Record<string, unknown> = {
@@ -301,6 +334,15 @@ export function buildOrganizationJsonLd(input: LlmsInput): Record<string, unknow
   if (disambiguation) payload.disambiguatingDescription = disambiguation.trim()
 
   if (sameAs && sameAs.length > 0) payload.sameAs = sameAs
+
+  // Legal identifier → Schema.org vatID (VAT only) or taxID (everything
+  // else). Schema.org's own docs use vatID strictly for VAT numbers and
+  // taxID as the generic catch-all that includes orgnr / fiscal code /
+  // EIN. Both fields feed Google Knowledge Graph + AI engine grounding.
+  if (legalId) {
+    if (legalIdType === 'vat') payload.vatID = legalId
+    else payload.taxID = legalId
+  }
 
   if (keyFacts?.founded) payload.foundingDate = keyFacts.founded
   if (keyFacts?.headquarters) {

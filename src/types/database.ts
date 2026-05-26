@@ -856,6 +856,8 @@ export type Database = {
           industry: string | null
           is_active: boolean | null
           language: string
+          legal_id: string | null
+          legal_id_type: string | null
           logo_url: string | null
           market: string | null
           name: string
@@ -883,6 +885,8 @@ export type Database = {
           industry?: string | null
           is_active?: boolean | null
           language?: string
+          legal_id?: string | null
+          legal_id_type?: string | null
           logo_url?: string | null
           market?: string | null
           name: string
@@ -910,6 +914,8 @@ export type Database = {
           industry?: string | null
           is_active?: boolean | null
           language?: string
+          legal_id?: string | null
+          legal_id_type?: string | null
           logo_url?: string | null
           market?: string | null
           name?: string

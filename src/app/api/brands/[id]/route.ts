@@ -36,11 +36,16 @@ const updateBrandSchema = z.object({
   sameAs: z.array(z.string().url()).max(20).optional(),
   disambiguation: z.string().max(2000).optional().nullable(),
   citationFormat: z.string().max(200).optional().nullable(),
+  // Legal identifier (VAT / orgnr / fiscal_code / EIN). Maps to Schema.org
+  // vatID (legalIdType='vat') or taxID (anything else). The single
+  // strongest LLMO entity-resolution signal because it's globally unique.
+  legalId: z.string().max(64).optional().nullable(),
+  legalIdType: z.enum(['vat', 'orgnr', 'fiscal_code', 'ein', 'other']).optional().nullable(),
 })
 
 // Explicit column list — try full list first, fallback to safe list
 const BRAND_ALL_COLS =
-  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, market, language, color, logo_url, is_active, created_at, updated_at, report_logo_url, report_brand_name, report_primary_color, same_as, disambiguation, citation_format'
+  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, market, language, color, logo_url, is_active, created_at, updated_at, report_logo_url, report_brand_name, report_primary_color, same_as, disambiguation, citation_format, legal_id, legal_id_type'
 const BRAND_SAFE_COLS =
   'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
 
@@ -238,14 +243,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   // Filter out undefined values for partial update + map camelCase LLMO
   // fields to their snake_case DB columns. Zod gives us camelCase keys
-  // (sameAs, disambiguation, citationFormat); Supabase expects same_as,
-  // disambiguation, citation_format.
-  const { sameAs, citationFormat, ...rest } = parsed.data
+  // (sameAs, citationFormat, legalId, legalIdType); Supabase expects
+  // same_as, citation_format, legal_id, legal_id_type.
+  const { sameAs, citationFormat, legalId, legalIdType, ...rest } = parsed.data
   const updateData: Record<string, unknown> = Object.fromEntries(
     Object.entries(rest).filter(([_, v]) => v !== undefined),
   )
   if (sameAs !== undefined) updateData.same_as = sameAs
   if (citationFormat !== undefined) updateData.citation_format = citationFormat
+  if (legalId !== undefined) updateData.legal_id = legalId
+  if (legalIdType !== undefined) updateData.legal_id_type = legalIdType
 
   // Keep the legal-suffix-stripped alias in sync when name + aliases change.
   if (typeof updateData.name === 'string' && Array.isArray(updateData.aliases)) {

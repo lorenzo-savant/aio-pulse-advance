@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { asUntyped } from '@/lib/supabase-untyped'
 import { z } from 'zod'
 import type { LlmsInput } from '@/lib/services/llms-generator'
 import { generateLlmsTxt, generateLlmsFullTxt } from '@/lib/services/llms-generator'
@@ -152,9 +153,15 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { data: brand, error: brandError } = await db
+  // Route through asUntyped because `legal_id` / `legal_id_type` (plus the
+  // earlier LLMO trio) aren't in the generated Database type until the
+  // operator runs `npm run db:gen-types` after applying the migration.
+  // Functionally identical select; just avoids the typed-select complaint.
+  const { data: brand, error: brandError } = await asUntyped(db)
     .from('brands')
-    .select('id, name, domain, description, industry, competitors, aliases, language')
+    .select(
+      'id, name, domain, description, industry, competitors, aliases, language, same_as, disambiguation, citation_format, legal_id, legal_id_type',
+    )
     .eq('id', brandId)
     .eq('user_id', userId)
     .single()
@@ -203,6 +210,22 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // LLMO identity columns. The select above includes them; cast through
+  // a narrow shape so the rest of this code stays typed without depending
+  // on regenerated Database types.
+  const brandLlmo = brand as unknown as {
+    same_as?: string[] | null
+    disambiguation?: string | null
+    citation_format?: string | null
+    legal_id?: string | null
+    legal_id_type?: 'vat' | 'orgnr' | 'fiscal_code' | 'ein' | 'other' | null
+    language?: string | null
+  }
+  // Map brand.language ('en' | 'it' | 'sv') to a BCP-47-ish locale string
+  // for Schema.org `inLanguage` + the llms-full.txt metadata header.
+  const localeMap: Record<string, string> = { en: 'en-US', it: 'it-IT', sv: 'sv-SE' }
+  const locale = brandLlmo.language ? localeMap[brandLlmo.language] : undefined
+
   const input: LlmsInput = {
     brandName: brand.name,
     domain,
@@ -210,6 +233,12 @@ export async function POST(req: NextRequest) {
     industry: brand.industry || undefined,
     competitors: brand.competitors || undefined,
     aliases: brand.aliases || undefined,
+    locale,
+    sameAs: brandLlmo.same_as ?? undefined,
+    disambiguation: brandLlmo.disambiguation ?? undefined,
+    citationFormat: brandLlmo.citation_format ?? undefined,
+    legalId: brandLlmo.legal_id ?? undefined,
+    legalIdType: brandLlmo.legal_id_type ?? undefined,
     // Manual values win; otherwise fall back to whatever enrichment produced.
     products: products ?? enrichedPatch.products,
     keyFacts: keyFacts ?? enrichedPatch.keyFacts,

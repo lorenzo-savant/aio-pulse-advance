@@ -223,5 +223,66 @@ describe('buildOrganizationJsonLd', () => {
     expect(minimal.disambiguatingDescription).toBeUndefined()
     expect(minimal.sameAs).toBeUndefined()
     expect(minimal.foundingDate).toBeUndefined()
+    expect(minimal.vatID).toBeUndefined()
+    expect(minimal.taxID).toBeUndefined()
+  })
+
+  it('maps legalId with type=vat to Schema.org vatID', () => {
+    const payload = buildOrganizationJsonLd({
+      ...baseInput,
+      legalId: 'SE556677889901',
+      legalIdType: 'vat',
+    })
+    expect(payload.vatID).toBe('SE556677889901')
+    expect(payload.taxID).toBeUndefined()
+  })
+
+  it('maps legalId with type=orgnr to Schema.org taxID', () => {
+    const payload = buildOrganizationJsonLd({
+      ...baseInput,
+      legalId: '556677-8899',
+      legalIdType: 'orgnr',
+    })
+    expect(payload.taxID).toBe('556677-8899')
+    expect(payload.vatID).toBeUndefined()
+  })
+
+  it('falls back to taxID when legalIdType is not set', () => {
+    const payload = buildOrganizationJsonLd({
+      ...baseInput,
+      legalId: '12345',
+    })
+    expect(payload.taxID).toBe('12345')
+    expect(payload.vatID).toBeUndefined()
+  })
+})
+
+describe('generateLlmsFullTxt — legal identifier line', () => {
+  it('emits a localised label per legalIdType under Brand Identity', () => {
+    const swe = generateLlmsFullTxt({
+      ...baseInput,
+      legalId: '556677-8899',
+      legalIdType: 'orgnr',
+    })
+    expect(swe).toContain('- **Organisationsnummer**: 556677-8899')
+
+    const ita = generateLlmsFullTxt({
+      ...baseInput,
+      legalId: 'IT12345678901',
+      legalIdType: 'fiscal_code',
+    })
+    expect(ita).toContain('- **Codice Fiscale**: IT12345678901')
+
+    const vat = generateLlmsFullTxt({
+      ...baseInput,
+      legalId: 'SE556677889901',
+      legalIdType: 'vat',
+    })
+    expect(vat).toContain('- **VAT Number**: SE556677889901')
+  })
+
+  it('falls back to "Legal Identifier" label when no type is set', () => {
+    const out = generateLlmsFullTxt({ ...baseInput, legalId: '99999' })
+    expect(out).toContain('- **Legal Identifier**: 99999')
   })
 })

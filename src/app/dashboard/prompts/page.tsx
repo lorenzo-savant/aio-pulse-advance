@@ -3,7 +3,17 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Plus, X, Play, Loader2, MessageSquare, Clock, Library, Wand2 } from 'lucide-react'
+import {
+  Plus,
+  X,
+  Play,
+  Loader2,
+  MessageSquare,
+  Clock,
+  Library,
+  Wand2,
+  AlertTriangle,
+} from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -17,6 +27,7 @@ import { useConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PromptLibrarySelector } from '@/components/PromptLibrarySelector'
 import { PromptGeneratorPanel } from '@/components/PromptGeneratorPanel'
 import { JourneyGuide } from '@/components/JourneyGuide'
+import { findPerformativePatterns } from '@/lib/prompt-quality'
 
 const PROMPT_TEMPLATES = {
   en: [
@@ -628,6 +639,28 @@ function PromptsPageContent() {
                 value={form.text}
                 onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
               />
+              {/* Live performative-phrasing linter. "Act as", "Pretend",
+                  "Imagine you are", … shift AI engines into role-simulation
+                  mode and inflate hallucination rate in the responses we
+                  later measure as visibility. Non-blocking — operators can
+                  still save, but they see the why + a rewrite suggestion. */}
+              {(() => {
+                const matches = findPerformativePatterns(form.text)
+                if (matches.length === 0) return null
+                return (
+                  <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <div className="space-y-1">
+                      <p className="font-bold">
+                        Performative phrasing detected
+                        {matches[0] ? ` ("${matches[0].phrase}")` : ''}
+                      </p>
+                      <p className="text-amber-300/80">{matches[0]?.reason}</p>
+                      <p className="text-amber-300/70">↳ {matches[0]?.suggestion}</p>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -49,6 +49,8 @@ function DashboardInitializer({ children }: DashboardLayoutProps) {
     }
 
     init()
+    // supabase client is stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setUserId, loadScanHistory])
 
   return <>{children}</>

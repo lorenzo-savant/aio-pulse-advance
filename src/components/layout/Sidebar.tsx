@@ -376,6 +376,8 @@ export function Sidebar() {
       setLoading(false)
     }
     getUser()
+    // supabase?.auth is stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleLogout = async () => {

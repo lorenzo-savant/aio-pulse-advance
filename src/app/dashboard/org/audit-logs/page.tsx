@@ -53,6 +53,8 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     fetchLogs()
+    // fetchLogs redefined per render — intentional, deps drive refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, actionFilter, resourceTypeFilter])
 
   const fetchLogs = async () => {

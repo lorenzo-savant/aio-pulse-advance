@@ -249,6 +249,8 @@ export default function MonitoringPage() {
     } finally {
       setLoading(false)
     }
+    // `t` from next-intl is stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBrand, selectedEngine, selectedLanguage])
 
   useEffect(() => {

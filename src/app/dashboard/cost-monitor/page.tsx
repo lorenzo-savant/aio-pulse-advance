@@ -94,6 +94,8 @@ export default function CostMonitorPage() {
 
   useEffect(() => {
     fetchData()
+    // fetchData is redefined per render; intentionally only re-fetch when days changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days])
 
   const fetchData = async () => {

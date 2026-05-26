@@ -110,6 +110,8 @@ export default function KeywordsPage() {
 
   useEffect(() => {
     fetchKeywords()
+    // fetchKeywords redefined per render — intentional, only refetch on brand change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBrand])
 
   // Refresh keywords

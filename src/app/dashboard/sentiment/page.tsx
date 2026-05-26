@@ -32,6 +32,7 @@ import { SectionHelp } from '@/components/help/SectionHelp'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Brand } from '@/types'
+import { SentimentDriversPanel } from '@/components/SentimentDriversPanel'
 
 interface AspectBreakdown {
   aspect: string
@@ -939,6 +940,11 @@ export default function SentimentPage() {
               <p className="text-muted-foreground">{t('run_monitoring')}</p>
             </div>
           )}
+
+          {/* Which aspects (pricing, support, ease-of-use, …) drive positive vs
+              negative AI portrayal of the brand. Mined from monitoring_results
+              with the lexical sentiment engine — see service/sentiment-drivers.ts */}
+          {selectedBrand && <SentimentDriversPanel brandId={selectedBrand} />}
         </>
       ) : null}
 

@@ -433,6 +433,8 @@ export default function BrandDetailPage() {
     if (brandId) {
       loadTeam()
     }
+    // loadTeam redefined per render — intentional, only refetch on brandId change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId])
 
   const handleInvite = async () => {

@@ -18,6 +18,7 @@
     "security:audit:fix": "npm audit fix",
     "security:check": "npm audit && npm outdated",
     "db:gen-types": "supabase gen types typescript --linked > src/types/database.ts && prettier --write src/types/database.ts",
+    "check:deadcode": "npx --node-options=\"--max-old-space-size=4096\" knip",
     "prepare": "husky"
   },
   "dependencies": {

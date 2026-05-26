@@ -62,6 +62,9 @@ export default function AuditLogsPage() {
   useEffect(() => {
     if (!organizationId) return
     fetchLogs()
+    // fetchLogs is redefined per render; deliberately not in deps to avoid
+    // a refetch on every render — we only want refetch when org/filters change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId])
 
   const fetchLogs = async () => {

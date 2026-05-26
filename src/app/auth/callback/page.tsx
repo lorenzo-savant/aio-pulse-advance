@@ -75,6 +75,9 @@ function AuthCallbackContent() {
     }
 
     handleCallback()
+    // supabase client is stable across renders; including it would force
+    // a needless re-run on each render without changing behaviour.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, router])
 
   return (

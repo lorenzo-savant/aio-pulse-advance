@@ -78,6 +78,8 @@ function AcceptContent() {
     }
 
     acceptInvitation()
+    // router is stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   return (

@@ -263,6 +263,8 @@ function ProfileSection() {
 
   useEffect(() => {
     loadProfile()
+    // Run-once on mount; loadProfile uses supabase from outer scope.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadProfile = async () => {

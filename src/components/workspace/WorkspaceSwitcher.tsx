@@ -28,6 +28,8 @@ export default function WorkspaceSwitcher({ currentWorkspaceId, userId }: Worksp
 
   useEffect(() => {
     fetchWorkspaces()
+    // fetchWorkspaces redefined per render — intentional.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   const fetchWorkspaces = async () => {

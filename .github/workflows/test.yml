@@ -32,6 +32,60 @@ jobs:
       - name: Run TypeScript type check
         run: npm run type-check
 
+  migration-drift-check:
+    name: Migration ↔ Types Drift Check
+    runs-on: ubuntu-latest
+    # Catches the pattern that broke us in May 2026: a migration file
+    # exists in the repo but `src/types/database.ts` doesn't reflect its
+    # tables/columns — or vice versa. The check is "regenerate the types
+    # from the linked DB and diff against what's checked in". Drift = fail.
+    #
+    # Requires SUPABASE_DB_URL (a connection string with read access) as
+    # a repo secret. Without it the job soft-skips so forks/branches
+    # without backend access don't get false reds. See docs/DECISIONS.md.
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Detect secret
+        id: secret
+        run: |
+          if [ -n "${SUPABASE_DB_URL}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Drift check skipped::Add SUPABASE_DB_URL secret to enable schema-drift detection."
+          fi
+
+      - name: Checkout
+        if: steps.secret.outputs.configured == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.secret.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.secret.outputs.configured == 'true'
+        run: npm ci --legacy-peer-deps
+
+      - name: Regenerate types from remote DB
+        if: steps.secret.outputs.configured == 'true'
+        run: |
+          npx supabase gen types typescript --db-url "$SUPABASE_DB_URL" \
+            > /tmp/database.ts
+          npx prettier --write /tmp/database.ts
+
+      - name: Diff against committed types
+        if: steps.secret.outputs.configured == 'true'
+        run: |
+          if ! diff -u src/types/database.ts /tmp/database.ts; then
+            echo "::error title=Schema drift detected::src/types/database.ts is out of sync with the remote DB. Run 'npm run db:gen-types' locally and commit the result."
+            exit 1
+          fi
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest

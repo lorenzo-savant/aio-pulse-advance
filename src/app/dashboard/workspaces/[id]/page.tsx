@@ -30,6 +30,8 @@ export default function WorkspaceDetailPage() {
 
   useEffect(() => {
     fetchWorkspaceData()
+    // fetchWorkspaceData redefined per render — intentional.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId])
 
   const fetchWorkspaceData = async () => {

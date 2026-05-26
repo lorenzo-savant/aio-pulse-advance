@@ -526,6 +526,8 @@ export default function OptimizerPage() {
     } finally {
       setLoading(false)
     }
+    // `provider` is the AI router instance — stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, mode, engine, model, addScan])
 
   const charCount = input.length

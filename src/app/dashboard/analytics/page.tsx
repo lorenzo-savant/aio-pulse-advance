@@ -95,6 +95,8 @@ export default function EnhancedAnalyticsPage() {
     if (selectedBrand) {
       fetchAllData()
     }
+    // fetchAllData redefined per render — intentional, deps drive refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBrand, period, metric])
 
   const fetchBrands = async () => {

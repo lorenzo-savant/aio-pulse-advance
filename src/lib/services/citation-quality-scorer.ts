@@ -75,6 +75,102 @@ function bandFor(score: number): QualityBand {
   return 'weak'
 }
 
+// ─── Shared content-shape heuristics ───────────────────────────────────
+// These power the secondary signals added per the Semrush featured-
+// snippet research (2018 large-scale study + 2025 update): top
+// performers correlate strongly with low reading level, image alt-text
+// density, list ≥8 items, table ≥5 rows / ≥7 cols, ≥10 outbound links.
+// Same content-shape that wins Google featured snippets also wins AI
+// engine citations — operator optimises once, gains on two surfaces.
+
+/** Count syllables in a single English word with a deterministic heuristic.
+ *  Strips non-letters, drops trailing silent 'e', counts vowel groups,
+ *  with a min of 1. Not perfect for IT/SV but used only to compute a
+ *  rough reading-level proxy that's directionally correct. */
+function syllableCount(word: string): number {
+  const w = word.toLowerCase().replace(/[^a-zà-ÿ]/g, '')
+  if (w.length === 0) return 0
+  const trimmed = w.replace(/e$/, '') || w
+  const matches = trimmed.match(/[aeiouyà-ÿ]+/g)
+  return Math.max(1, matches?.length ?? 1)
+}
+
+/** Flesch-Kincaid grade level. Lower = simpler text. Semrush's 2018
+ *  featured-snippet study found top-performing pages at ~7th grade.
+ *  English-tuned; for IT/SV the formula overshoots a bit (more
+ *  syllables/word native), so we only USE the signal when low — we
+ *  reward simple text, we don't punish complex text. Exported so tests
+ *  can pin the formula independently of the overall scorer. */
+export function fleschKincaidGrade(text: string): number {
+  const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0)
+  const words = text.split(/\s+/).filter((w) => /[a-zà-ÿ]/i.test(w))
+  if (sentences.length === 0 || words.length === 0) return 0
+  const totalSyllables = words.reduce((sum, w) => sum + syllableCount(w), 0)
+  return 0.39 * (words.length / sentences.length) + 11.8 * (totalSyllables / words.length) - 15.59
+}
+
+/** Count `<img>` tags vs `<img alt="…">` tags in HTML. Returns
+ *  { total, withAlt, density } where density is 0-1. Empty alt="" counts
+ *  as "with alt" — it's the accessibility-correct way to mark decorative
+ *  images and is fine for the AI-citation signal. */
+function imgAltStats(html: string): { total: number; withAlt: number; density: number } {
+  const total = (html.match(/<img\b[^>]*>/gi) ?? []).length
+  const withAlt = (html.match(/<img\b[^>]*\balt\s*=/gi) ?? []).length
+  const density = total > 0 ? withAlt / total : 0
+  return { total, withAlt, density }
+}
+
+/** Count list-block sizes (HTML <ul>/<ol> with their <li> counts +
+ *  contiguous markdown bullet/numbered runs). Returns the SIZE of the
+ *  largest list found; ≥8 items is the Semrush truncation threshold
+ *  (Google truncates and shows "...more" which lifts engagement). */
+function largestListSize(text: string, html: string | undefined): number {
+  let largest = 0
+  if (html) {
+    const lists = html.match(/<(?:ul|ol)\b[\s\S]*?<\/(?:ul|ol)>/gi) ?? []
+    for (const list of lists) {
+      const items = (list.match(/<li[\s>]/gi) ?? []).length
+      if (items > largest) largest = items
+    }
+  }
+  // Markdown / plain-text contiguous-line lists. Split on blank lines so
+  // adjacent bullets group into a single list.
+  const blocks = text.split(/\n{2,}/)
+  for (const block of blocks) {
+    const lines = block.split('\n').filter((l) => /^\s*(?:[-*]|\d+\.)\s+\S/.test(l))
+    if (lines.length > largest) largest = lines.length
+  }
+  return largest
+}
+
+/** Largest table size found in HTML — returns { rows, cols } of the
+ *  biggest table by row count. Empty when no tables present. Semrush's
+ *  truncation threshold for tables is ≥5 rows OR ≥7 cols. */
+function largestTableSize(html: string | undefined): { rows: number; cols: number } {
+  if (!html) return { rows: 0, cols: 0 }
+  const tables = html.match(/<table\b[\s\S]*?<\/table>/gi) ?? []
+  let best = { rows: 0, cols: 0 }
+  for (const table of tables) {
+    const rows = (table.match(/<tr[\s>]/gi) ?? []).length
+    const firstRowMatch = table.match(/<tr\b[\s\S]*?<\/tr>/i)
+    const cols = firstRowMatch ? (firstRowMatch[0].match(/<t[hd][\s>]/gi) ?? []).length : 0
+    if (rows > best.rows || (rows === best.rows && cols > best.cols)) {
+      best = { rows, cols }
+    }
+  }
+  return best
+}
+
+/** Count outbound absolute `http(s)://` links in HTML. We don't strip
+ *  same-domain links because the scorer doesn't know the brand context
+ *  — slight overcount on link-heavy internal pages, accepted for v1.
+ *  Semrush's 2018 study found top featured-snippet hubs at ~33 outbound
+ *  citations on average; ≥10 is our practical floor. */
+function countAbsoluteLinks(html: string | undefined): number {
+  if (!html) return 0
+  return (html.match(/<a\b[^>]*\bhref\s*=\s*["']https?:\/\/[^"']+["']/gi) ?? []).length
+}
+
 // ─── Pillar 1: Clarity / lead summary ──────────────────────────────────
 // AI engines preferentially cite pages that "lead with the answer". The
 // canonical signals: a TL;DR-style opener, a tight first paragraph, or
@@ -136,6 +232,29 @@ function scoreClarity(input: CitationQualityInput): PillarScore {
   ) {
     score += 10
     signals.push('A dedicated lead/summary container is present in the markup.')
+  }
+
+  // Reading-level bonus. Semrush's 2018 mobile featured-snippet study
+  // found top performers at ~7th grade (Flesch-Kincaid). Same content-
+  // shape lifts AI-citation rate. We REWARD simple text but don't punish
+  // complex — the formula is English-tuned and overshoots on IT/SV.
+  //
+  // F-K can return NEGATIVE grades for extremely short / simple text
+  // ("preschool" tier) — those are still "simple" for the bonus.
+  // fleschKincaidGrade returns 0 only when input is empty (sentinel),
+  // so we gate on >0-or-negative vs strictly-0.
+  const grade = fleschKincaidGrade(trimmed.slice(0, 4000))
+  const haveGrade = grade !== 0
+  if (haveGrade && grade <= 8) {
+    score += 15
+    signals.push(`Reading level ~grade ${grade.toFixed(1)} — at or below the 7-8 sweet spot.`)
+  } else if (haveGrade && grade <= 11) {
+    score += 7
+    signals.push(`Reading level ~grade ${grade.toFixed(1)} — slightly above the ideal 7-8 grade.`)
+  } else if (grade > 11) {
+    signals.push(
+      `Reading level ~grade ${grade.toFixed(1)} — simpler prose lifts both human + AI engagement.`,
+    )
   }
 
   const final = clamp(score)
@@ -224,6 +343,23 @@ function scoreEeat(input: CitationQualityInput): PillarScore {
     signals.push('Inline citations / footnotes detected ([1], "source:", "fonte:").')
   } else {
     signals.push('No inline citations/footnotes. Cite the sources behind your claims.')
+  }
+
+  // Total outbound link density. Semrush's 2018 study found top featured-
+  // snippet hubs at ~33 outbound citations on average — link density is
+  // a "page is part of the web" signal that AI engines reward. Our
+  // practical floor: ≥10 absolute http(s) links from the page.
+  if (html) {
+    const absLinks = countAbsoluteLinks(html)
+    if (absLinks >= 10) {
+      score += 10
+      signals.push(`${absLinks} outbound links — strong "page is part of the web" signal.`)
+    } else if (absLinks >= 5) {
+      score += 5
+      signals.push(`${absLinks} outbound links — fair; aim for ≥10 for top-tier hub-style depth.`)
+    } else if (absLinks > 0) {
+      signals.push(`Only ${absLinks} outbound link(s). Cite more sources to lift authority.`)
+    }
   }
 
   const final = clamp(score)
@@ -324,7 +460,10 @@ function scoreStructure(input: CitationQualityInput): PillarScore {
     signals.push('Few or no H2/H3 sections — AI engines struggle to chunk the page.')
   }
 
-  // Lists / bulleted enumeration
+  // Lists / bulleted enumeration. Reduced base weight from 25→15 to
+  // make room for the "long-list bonus" below (Semrush's ≥8 items
+  // truncation signal). Composite is unchanged for content that hits
+  // both: 25 (legacy) ≈ 15 + 10.
   let lists = 0
   if (html) {
     lists = (html.match(/<(?:ul|ol)[\s>]/gi) ?? []).length
@@ -334,22 +473,68 @@ function scoreStructure(input: CitationQualityInput): PillarScore {
     lists = Math.ceil(lists / 3)
   }
   if (lists >= 2) {
-    score += 25
+    score += 15
     signals.push(`${lists} list block(s) detected — AI engines cite enumerated content readily.`)
   } else if (lists === 1) {
-    score += 12
+    score += 8
     signals.push('Only 1 list. Add at least one more enumerated list (steps, criteria, options).')
   } else {
     signals.push('No bulleted/numbered lists. Add at least 2.')
   }
 
-  // Tables
+  // Long-list bonus — Semrush's 2018 study found ≥8-item lists hit
+  // Google's truncation threshold, surfacing a "show more" CTA that
+  // lifts engagement. Same shape correlates with AI citation pickup.
+  const biggestList = largestListSize(text, html)
+  if (biggestList >= 8) {
+    score += 10
+    signals.push(
+      `Largest list has ${biggestList} items — at or above the ≥8 truncation sweet spot.`,
+    )
+  } else if (biggestList >= 5) {
+    signals.push(`Largest list has ${biggestList} items — extend to ≥8 to hit the truncation lift.`)
+  }
+
+  // Tables. Reduced base weight from 20→10 to make room for the size
+  // bonus below.
   const tables = html ? (html.match(/<table[\s>]/gi) ?? []).length : 0
   if (tables >= 1) {
-    score += 20
+    score += 10
     signals.push(`${tables} table(s) — comparison tables are heavily cited by AI summarisers.`)
   } else if (html) {
     signals.push('No tables. A single comparison table can lift citation rate noticeably.')
+  }
+
+  // Table-size bonus — Semrush's threshold for truncation is ≥5 rows
+  // OR ≥7 cols, same engagement-lift logic as the long-list bonus.
+  const tableSize = largestTableSize(html)
+  if (tableSize.rows >= 5 || tableSize.cols >= 7) {
+    score += 10
+    signals.push(
+      `Largest table is ${tableSize.rows}×${tableSize.cols} — meets the ≥5 rows / ≥7 cols truncation threshold.`,
+    )
+  } else if (tableSize.rows > 0) {
+    signals.push(
+      `Largest table is ${tableSize.rows}×${tableSize.cols} — extend to ≥5 rows or ≥7 cols for truncation lift.`,
+    )
+  }
+
+  // Image alt-text density (HTML mode only). Top featured-snippet hubs
+  // had ~12 images with alt text on average; we cap at "≥3 images AND
+  // ≥80% have alt" because alt density signals accessibility + AI
+  // multimodal compatibility.
+  if (html) {
+    const alt = imgAltStats(html)
+    if (alt.total >= 3 && alt.density >= 0.8) {
+      score += 10
+      signals.push(
+        `${alt.withAlt}/${alt.total} images carry alt text — strong accessibility + AI signal.`,
+      )
+    } else if (alt.total >= 3) {
+      signals.push(
+        `${alt.withAlt}/${alt.total} images have alt text. Add alt to the remaining ${alt.total - alt.withAlt}.`,
+      )
+    }
   }
 
   // Heading density vs word count

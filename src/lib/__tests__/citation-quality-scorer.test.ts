@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { scoreCitationQuality, CITATION_QUALITY_WEIGHTS } from '../services/citation-quality-scorer'
+import {
+  scoreCitationQuality,
+  fleschKincaidGrade,
+  CITATION_QUALITY_WEIGHTS,
+} from '../services/citation-quality-scorer'
 
 const TIGHT_LEAD =
   'Acasting is a Swedish casting platform. Key takeaway: it matches productions with talent across Stockholm, Göteborg, and Malmö.'
@@ -179,6 +183,120 @@ describe('structuredData pillar', () => {
     })
     expect(r.pillars.structuredData.score).toBe(0)
     expect(r.pillars.structuredData.recommendation).toMatch(/Schema\.org/i)
+  })
+})
+
+describe('fleschKincaidGrade', () => {
+  it('returns 0 on empty input', () => {
+    expect(fleschKincaidGrade('')).toBe(0)
+  })
+
+  it('returns a low grade for simple prose', () => {
+    // Slightly meatier than "a cat sat on a mat" so the formula doesn't
+    // collapse to a negative grade (the formula treats ultra-tiny text
+    // as "preschool" which isn't the signal we care about).
+    const simple =
+      'Acasting is a Swedish casting platform. It links shows to talent. Anyone can sign up online and start to find work fast.'
+    const grade = fleschKincaidGrade(simple)
+    expect(grade).toBeLessThanOrEqual(8)
+  })
+
+  it('returns a higher grade for dense technical prose', () => {
+    const technical =
+      'The constitutional interpretation of administrative regulatory mechanisms necessitates multidisciplinary jurisprudential analysis incorporating philosophical methodological frameworks. Comprehensive epistemological assessment demonstrates substantive intersectional complexity throughout institutional governmental architecture.'
+    const grade = fleschKincaidGrade(technical)
+    expect(grade).toBeGreaterThan(14)
+  })
+})
+
+describe('clarity pillar — reading-level bonus (new)', () => {
+  it('lifts the pillar when prose reads at ~grade 7', () => {
+    // Same content twice: once with simple sentences, once with dense
+    // ones. Other clarity signals (tight lead, definitional opener)
+    // identical, so the delta is the reading-level bonus.
+    const simple = scoreCitationQuality({
+      text: 'Acasting is a Swedish casting platform. Key takeaway: it links shows to talent. It works fast.',
+    })
+    const dense = scoreCitationQuality({
+      text: 'Acasting is a Swedish casting platform. Key takeaway: notwithstanding multidimensional intersectional methodologies underpinning audiovisual industrial infrastructures.',
+    })
+    expect(simple.pillars.clarity.score).toBeGreaterThanOrEqual(dense.pillars.clarity.score)
+  })
+})
+
+describe('structure pillar — long-list + table-size + alt-density bonuses (new)', () => {
+  it('rewards lists with ≥8 items', () => {
+    const longList = scoreCitationQuality({
+      text: [
+        '## How does it work?',
+        '',
+        '- step 1',
+        '- step 2',
+        '- step 3',
+        '- step 4',
+        '- step 5',
+        '- step 6',
+        '- step 7',
+        '- step 8',
+        '- step 9',
+      ].join('\n'),
+    })
+    const shortList = scoreCitationQuality({
+      text: ['## How does it work?', '', '- step 1', '- step 2'].join('\n'),
+    })
+    expect(longList.pillars.structure.score).toBeGreaterThan(shortList.pillars.structure.score)
+  })
+
+  it('rewards tables with ≥5 rows', () => {
+    const bigTable = `<h2>Pricing</h2><table>
+      <tr><th>Plan</th><th>Price</th></tr>
+      <tr><td>Free</td><td>0</td></tr>
+      <tr><td>Pro</td><td>49</td></tr>
+      <tr><td>Team</td><td>149</td></tr>
+      <tr><td>Enterprise</td><td>Custom</td></tr>
+      <tr><td>Education</td><td>10</td></tr>
+    </table>`
+    const smallTable = `<h2>Pricing</h2><table>
+      <tr><th>Plan</th><th>Price</th></tr>
+      <tr><td>Free</td><td>0</td></tr>
+    </table>`
+    const big = scoreCitationQuality({ text: 'Plans', html: bigTable })
+    const small = scoreCitationQuality({ text: 'Plans', html: smallTable })
+    expect(big.pillars.structure.score).toBeGreaterThan(small.pillars.structure.score)
+  })
+
+  it('rewards high image alt-text density (≥80% of ≥3 images)', () => {
+    const withAlt = `<h2>Gallery</h2>
+      <img src="a.png" alt="A">
+      <img src="b.png" alt="B">
+      <img src="c.png" alt="C">
+      <img src="d.png" alt="D">`
+    const noAlt = `<h2>Gallery</h2>
+      <img src="a.png">
+      <img src="b.png">
+      <img src="c.png">
+      <img src="d.png">`
+    const withReport = scoreCitationQuality({ text: 'Gallery', html: withAlt })
+    const withoutReport = scoreCitationQuality({ text: 'Gallery', html: noAlt })
+    expect(withReport.pillars.structure.score).toBeGreaterThan(
+      withoutReport.pillars.structure.score,
+    )
+  })
+})
+
+describe('eeat pillar — outbound link density bonus (new)', () => {
+  it('rewards ≥10 absolute outbound links', () => {
+    const links = Array.from(
+      { length: 12 },
+      (_, i) => `<a href="https://source${i}.example.com">x</a>`,
+    ).join(' ')
+    const html = `<article><p>By Anna Lindberg, PhD.</p>${links}</article>`
+    const withLinks = scoreCitationQuality({ text: 'By Anna Lindberg, PhD.', html })
+    const withoutLinks = scoreCitationQuality({
+      text: 'By Anna Lindberg, PhD.',
+      html: '<article><p>By Anna Lindberg, PhD.</p></article>',
+    })
+    expect(withLinks.pillars.eeat.score).toBeGreaterThan(withoutLinks.pillars.eeat.score)
   })
 })
 

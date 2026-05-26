@@ -60,21 +60,13 @@ const ENGINE_COLORS: Record<string, string> = {
   claude: '#f97316',
 }
 
-// Mirrors the brand-creation wizard so the Brand Detail editor asks the same
-// questions. Industries are aligned to the prompt-generator presets.
-const INDUSTRIES = [
-  'Casting & Talent',
-  'SaaS B2B',
-  'E-commerce',
-  'Local Business',
-  'Real Estate',
-  'Healthcare',
-  'Education',
-  'Hospitality & Tourism',
-  'Automotive',
-  'Construction',
-  'Other',
-]
+// Industries are loaded from /api/industries (sourced from INDUSTRY_PRESETS
+// in lib/services/prompt-generator.ts) so this dropdown stays in sync with
+// the canonical 26-vertical list plus their en/it/sv localised labels.
+interface IndustryOption {
+  id: string
+  name: { en: string; it: string; sv: string }
+}
 const LANGUAGES = [
   { id: 'en', label: '🇬🇧 English' },
   { id: 'it', label: '🇮🇹 Italiano' },
@@ -208,6 +200,20 @@ export default function BrandDetailPage() {
   } | null>(null)
   const [llmsInstructions, setLlmsInstructions] = useState<string[]>([])
   const [llmsActiveTab, setLlmsActiveTab] = useState<'llms.txt' | 'llms-full.txt'>('llms.txt')
+  const [industries, setIndustries] = useState<IndustryOption[]>([])
+
+  // Load the 26 canonical industry presets so the dropdown matches the
+  // wizard and the prompt-generator engine.
+  useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && Array.isArray(j.data)) setIndustries(j.data as IndustryOption[])
+      })
+      .catch(() => {
+        /* silent — dropdown stays empty if the request fails */
+      })
+  }, [])
   // When on, the file is auto-enriched from the website + AEO + keywords + AI.
   const [llmsEnrich, setLlmsEnrich] = useState(true)
   const [llmsEnrichment, setLlmsEnrichment] = useState<{
@@ -1351,11 +1357,15 @@ export default function BrandDetailPage() {
                   onChange={(e) => setBrandForm((f) => ({ ...f, industry: e.target.value }))}
                 >
                   <option value="">Select…</option>
-                  {INDUSTRIES.map((i) => (
-                    <option key={i} value={i}>
-                      {i}
-                    </option>
-                  ))}
+                  {industries.map((opt) => {
+                    const lang = (brand?.language as 'en' | 'it' | 'sv') || 'en'
+                    const label = opt.name[lang] || opt.name.en || opt.id
+                    return (
+                      <option key={opt.id} value={label}>
+                        {label}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
               <div>

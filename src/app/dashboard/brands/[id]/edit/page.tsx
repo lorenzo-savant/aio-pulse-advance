@@ -9,23 +9,13 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import type { BrandLanguage } from '@/types'
 
-const INDUSTRIES = [
-  'Accounting & Finance',
-  'Agency / Marketing',
-  'B2B Services',
-  'Construction',
-  'Consulting',
-  'E-commerce',
-  'Education',
-  'Healthcare',
-  'Legal',
-  'Manufacturing',
-  'Real Estate',
-  'Restaurant & Food',
-  'SaaS / Technology',
-  'Travel & Hospitality',
-  'Other',
-]
+// Industries are loaded from /api/industries (sourced from INDUSTRY_PRESETS
+// in lib/services/prompt-generator.ts) so this dropdown stays in sync with
+// the 26 canonical verticals plus their en/it/sv localised labels.
+interface IndustryOption {
+  id: string
+  name: { en: string; it: string; sv: string }
+}
 
 const LANGUAGES: Array<{ value: BrandLanguage; label: string }> = [
   { value: 'en', label: '🇬🇧 English' },
@@ -60,6 +50,19 @@ export default function BrandEditPage() {
   const [form, setForm] = useState<BrandEditForm | null>(null)
   const [originalLanguage, setOriginalLanguage] = useState<BrandLanguage>('en')
   const [reseedOffer, setReseedOffer] = useState(false)
+  const [industries, setIndustries] = useState<IndustryOption[]>([])
+
+  // Load the 26 canonical industry presets (matches the brand-new wizard).
+  useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && Array.isArray(j.data)) setIndustries(j.data as IndustryOption[])
+      })
+      .catch(() => {
+        /* fail silent — the field just stays empty */
+      })
+  }, [])
 
   useEffect(() => {
     const load = async () => {
@@ -222,11 +225,14 @@ export default function BrandEditPage() {
               onChange={(e) => setForm({ ...form, industry: e.target.value })}
             >
               <option value="">Select industry...</option>
-              {INDUSTRIES.map((i) => (
-                <option key={i} value={i}>
-                  {i}
-                </option>
-              ))}
+              {industries.map((opt) => {
+                const label = opt.name[form.language] || opt.name.en || opt.id
+                return (
+                  <option key={opt.id} value={label}>
+                    {label}
+                  </option>
+                )
+              })}
             </select>
           </Field>
 

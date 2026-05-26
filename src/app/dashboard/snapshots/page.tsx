@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
+import { ENGINE_COLORS as CHART_ENGINE_COLORS } from '@/lib/chart-tokens'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -58,18 +59,21 @@ const DATE_RANGES = [
 
 const ENGINES = ['all', 'chatgpt', 'gemini', 'perplexity', 'claude']
 
+// Engine palette comes from chart-tokens.ts — this page used to have
+// Gemini=orange / Claude=purple while geo-score had Gemini=blue /
+// Claude=orange. Operators were memorising different colours per page.
 const ENGINE_COLORS: Record<string, string> = {
-  all: '#6366f1',
-  chatgpt: '#10b981',
-  gemini: '#f97316',
-  perplexity: '#3b82f6',
-  claude: '#a855f7',
+  all: '#6366f1', // brand indigo — only used in the "all engines" aggregate
+  chatgpt: CHART_ENGINE_COLORS.chatgpt,
+  gemini: CHART_ENGINE_COLORS.gemini,
+  perplexity: CHART_ENGINE_COLORS.perplexity,
+  claude: CHART_ENGINE_COLORS.claude,
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function SnapshotsPage() {
-  const { tooltipStyle } = useChartTheme()
+  const { tooltipStyle, gridColor, axisColor } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
@@ -381,9 +385,9 @@ export default function SnapshotsPage() {
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
-              <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} unit="%" />
+              <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: axisColor }} />
+              <YAxis tick={{ fontSize: 11, fill: axisColor }} unit="%" />
               <Tooltip {...tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line
@@ -408,9 +412,9 @@ export default function SnapshotsPage() {
           </p>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
-              <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[0, 100]} />
+              <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: axisColor }} />
+              <YAxis tick={{ fontSize: 11, fill: axisColor }} domain={[0, 100]} />
               <Tooltip {...tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line
@@ -452,9 +456,9 @@ export default function SnapshotsPage() {
                 ...competitorData,
               ]}
             >
-              <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6b7280' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} unit="%" />
+              <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: axisColor }} />
+              <YAxis tick={{ fontSize: 11, fill: axisColor }} unit="%" />
               <Tooltip {...tooltipStyle} />
               <Bar dataKey="rate" radius={[6, 6, 0, 0]}>
                 {[{ color: '#6366f1' }, ...competitorData.map((c) => ({ color: c.color }))].map(

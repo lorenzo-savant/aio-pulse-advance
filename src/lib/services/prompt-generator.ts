@@ -1054,6 +1054,469 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
       sv: ['bank', 'försäkring', 'fintech', 'sparande'],
     },
   },
+
+  // ─── EXPANDED PRESETS (2026-05-26) ────────────────────────────────────────
+  // 12 additional canonical industries so the brand wizard covers the real
+  // economy beyond the original 14 verticals. Each carries name/description
+  // in en/it/sv plus a minimal-but-complete prompt scaffold (6 intentPatterns
+  // across the 5 buckets). Operators can expand competitors and templates
+  // per case; the wizard will surface these immediately.
+
+  {
+    id: 'manufacturing-industrial',
+    name: {
+      en: 'Manufacturing & Industrial',
+      it: 'Manifattura e Industria',
+      sv: 'Tillverkning & Industri',
+    },
+    description: {
+      en: 'OEMs, contract manufacturers, industrial suppliers, machinery makers. Monitor visibility across B2B sourcing and supplier-evaluation queries.',
+      it: 'OEM, produttori conto terzi, fornitori industriali, costruttori di macchinari. Monitora la visibilità nelle ricerche di sourcing B2B e valutazione fornitori.',
+      sv: 'OEM-tillverkare, kontraktstillverkare, industrileverantörer, maskintillverkare. Övervaka synlighet i B2B-sourcing och leverantörsutvärderingssökningar.',
+    },
+    competitors: ['Siemens', 'ABB', 'Bosch', 'Schneider Electric'],
+    categories: {
+      en: ['manufacturer', 'industrial supplier', 'OEM', 'machinery maker'],
+      it: ['produttore', 'fornitore industriale', 'OEM', 'costruttore macchinari'],
+      sv: ['tillverkare', 'industrileverantör', 'OEM', 'maskintillverkare'],
+    },
+    roles: {
+      en: ['procurement manager', 'plant engineer', 'operations director'],
+      it: ['responsabile acquisti', 'ingegnere impianti', 'direttore operativo'],
+      sv: ['inköpschef', 'driftingenjör', 'verksamhetschef'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} reviews specifications', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} suppliers {location}', priority: 'high' },
+      { bucket: 'B3', template: 'how to choose a {category}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} lead time pricing', priority: 'high' },
+      { bucket: 'B5', template: '{brand} ISO certification compliance', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['manufacturer', 'industrial', 'OEM', 'machinery'],
+      it: ['produttore', 'industriale', 'OEM', 'macchinari'],
+      sv: ['tillverkare', 'industriell', 'OEM', 'maskiner'],
+    },
+  },
+
+  {
+    id: 'energy-utilities',
+    name: {
+      en: 'Energy & Utilities',
+      it: 'Energia e Utility',
+      sv: 'Energi & Försörjning',
+    },
+    description: {
+      en: 'Energy producers, grid operators, renewables, water and gas utilities. Monitor visibility across rate-comparison and provider-trust queries.',
+      it: 'Produttori di energia, gestori di rete, rinnovabili, utility idriche e gas. Monitora la visibilità nelle ricerche di confronto tariffe e fiducia fornitori.',
+      sv: 'Energiproducenter, nätoperatörer, förnybar energi, vatten- och gasleverantörer. Övervaka synlighet i pris- och leverantörssökningar.',
+    },
+    competitors: ['Vattenfall', 'E.ON', 'Enel', 'Engie'],
+    categories: {
+      en: ['energy provider', 'utility company', 'renewable energy', 'grid operator'],
+      it: ['fornitore di energia', 'utility', 'energia rinnovabile', 'gestore di rete'],
+      sv: ['energileverantör', 'försörjningsbolag', 'förnybar energi', 'nätoperatör'],
+    },
+    roles: {
+      en: ['homeowner', 'small business', 'facility manager'],
+      it: ['proprietario casa', 'piccola impresa', 'facility manager'],
+      sv: ['villaägare', 'småföretag', 'fastighetschef'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review rates {location}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor} pricing', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'how to switch {category} {location}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} contract terms', priority: 'high' },
+      { bucket: 'B5', template: '{brand} renewable certification', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['energy', 'electricity', 'gas', 'renewable'],
+      it: ['energia', 'elettricità', 'gas', 'rinnovabile'],
+      sv: ['energi', 'elektricitet', 'gas', 'förnybar'],
+    },
+  },
+
+  {
+    id: 'food-beverage',
+    name: {
+      en: 'Food & Beverage',
+      it: 'Alimentare e Bevande',
+      sv: 'Livsmedel & Dryck',
+    },
+    description: {
+      en: 'Restaurants, food producers, beverage brands, catering. Monitor visibility across diner-decision and product-discovery queries.',
+      it: 'Ristoranti, produttori alimentari, brand di bevande, catering. Monitora la visibilità nelle ricerche di scelta ristorante e scoperta prodotti.',
+      sv: 'Restauranger, livsmedelsproducenter, dryckesvarumärken, catering. Övervaka synlighet i sökningar om restaurangval och produktupptäckt.',
+    },
+    competitors: ['Nestlé', 'Coca-Cola', 'Unilever'],
+    categories: {
+      en: ['restaurant', 'food brand', 'beverage', 'catering'],
+      it: ['ristorante', 'brand alimentare', 'bevanda', 'catering'],
+      sv: ['restaurang', 'matvarumärke', 'dryck', 'catering'],
+    },
+    roles: {
+      en: ['diner', 'home cook', 'event planner'],
+      it: ['cliente', 'cuoco casalingo', 'organizzatore eventi'],
+      sv: ['matgäst', 'hemmakock', 'eventplanerare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review {location}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'where to find {category} {location}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} menu prices', priority: 'high' },
+      { bucket: 'B5', template: '{brand} allergens nutrition', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['restaurant', 'food', 'beverage', 'catering'],
+      it: ['ristorante', 'cibo', 'bevanda', 'catering'],
+      sv: ['restaurang', 'mat', 'dryck', 'catering'],
+    },
+  },
+
+  {
+    id: 'retail',
+    name: {
+      en: 'Retail (Brick-and-Mortar)',
+      it: 'Retail Fisico',
+      sv: 'Detaljhandel (Fysisk)',
+    },
+    description: {
+      en: 'Physical stores, chain retailers, department stores. Distinct from e-commerce — focus on local-search and in-store experience.',
+      it: 'Negozi fisici, catene retail, grandi magazzini. Diverso da e-commerce — focus su ricerca locale ed esperienza in-store.',
+      sv: 'Fysiska butiker, kedjor, varuhus. Skiljer sig från e-handel — fokus på lokalsökning och butiksupplevelse.',
+    },
+    competitors: ['IKEA', 'H&M', 'Zara'],
+    categories: {
+      en: ['retail store', 'chain', 'department store', 'specialty shop'],
+      it: ['negozio retail', 'catena', 'grande magazzino', 'negozio specializzato'],
+      sv: ['butik', 'kedja', 'varuhus', 'specialbutik'],
+    },
+    roles: {
+      en: ['shopper', 'family buyer', 'gift buyer'],
+      it: ['acquirente', 'famiglia', 'acquirente regalo'],
+      sv: ['kund', 'familjeköpare', 'gåvoköpare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} store {location}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'where to buy {category} {location}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} opening hours {location}', priority: 'high' },
+      { bucket: 'B5', template: '{brand} return policy', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['retail', 'store', 'shop', 'shopping'],
+      it: ['retail', 'negozio', 'shopping'],
+      sv: ['detaljhandel', 'butik', 'shopping'],
+    },
+  },
+
+  {
+    id: 'logistics-transportation',
+    name: {
+      en: 'Logistics & Transportation',
+      it: 'Logistica e Trasporti',
+      sv: 'Logistik & Transport',
+    },
+    description: {
+      en: 'Freight, shipping, last-mile delivery, fleet operators, 3PLs. Monitor visibility across carrier-selection and SLA queries.',
+      it: 'Trasporti merci, spedizioni, last-mile, gestori flotte, 3PL. Monitora la visibilità nelle ricerche di selezione corriere e SLA.',
+      sv: 'Gods, frakt, sista-milen-leverans, flottoperatörer, 3PL. Övervaka synlighet i transportörsval och SLA-sökningar.',
+    },
+    competitors: ['DHL', 'FedEx', 'UPS', 'PostNord'],
+    categories: {
+      en: ['freight forwarder', 'courier', 'logistics provider', '3PL'],
+      it: ['spedizioniere', 'corriere', 'fornitore logistica', '3PL'],
+      sv: ['speditör', 'kurir', 'logistikleverantör', '3PL'],
+    },
+    roles: {
+      en: ['shipper', 'e-commerce merchant', 'supply chain manager'],
+      it: ['spedizioniere', 'merchant e-commerce', 'responsabile supply chain'],
+      sv: ['avsändare', 'e-handlare', 'supply chain-chef'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review shipping', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor} delivery times', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'how to choose a {category}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} rates pricing', priority: 'high' },
+      { bucket: 'B5', template: '{brand} customs duties tracking', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['logistics', 'shipping', 'freight', 'courier'],
+      it: ['logistica', 'spedizione', 'trasporto', 'corriere'],
+      sv: ['logistik', 'frakt', 'transport', 'kurir'],
+    },
+  },
+
+  {
+    id: 'media-entertainment',
+    name: {
+      en: 'Media & Entertainment',
+      it: 'Media e Intrattenimento',
+      sv: 'Media & Underhållning',
+    },
+    description: {
+      en: 'Streaming, broadcasters, publishers, game studios, podcasters. Monitor visibility across discovery and subscription queries.',
+      it: 'Streaming, emittenti, editori, studi di gaming, podcaster. Monitora la visibilità nelle ricerche di scoperta e abbonamento.',
+      sv: 'Streaming, sändare, förlag, spelstudior, podcaster. Övervaka synlighet i upptäckts- och prenumerationssökningar.',
+    },
+    competitors: ['Netflix', 'Spotify', 'Disney+', 'HBO Max'],
+    categories: {
+      en: ['streaming service', 'broadcaster', 'publisher', 'game studio', 'podcast'],
+      it: ['servizio streaming', 'emittente', 'editore', 'studio di gaming', 'podcast'],
+      sv: ['streamingtjänst', 'sändare', 'förlag', 'spelstudio', 'podcast'],
+    },
+    roles: {
+      en: ['viewer', 'subscriber', 'gamer', 'reader'],
+      it: ['spettatore', 'abbonato', 'gamer', 'lettore'],
+      sv: ['tittare', 'prenumerant', 'gamer', 'läsare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review worth it', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'what to watch on {brand}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} subscription plans', priority: 'high' },
+      { bucket: 'B5', template: '{brand} cancel free trial', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['streaming', 'media', 'entertainment', 'podcast'],
+      it: ['streaming', 'media', 'intrattenimento', 'podcast'],
+      sv: ['streaming', 'media', 'underhållning', 'podcast'],
+    },
+  },
+
+  {
+    id: 'telecommunications',
+    name: {
+      en: 'Telecommunications',
+      it: 'Telecomunicazioni',
+      sv: 'Telekommunikation',
+    },
+    description: {
+      en: 'Mobile carriers, ISPs, fixed-line, satellite. Monitor visibility across plan-comparison and coverage queries.',
+      it: 'Operatori mobili, ISP, telefonia fissa, satellitare. Monitora la visibilità nelle ricerche di confronto piani e copertura.',
+      sv: 'Mobiloperatörer, ISP:er, fast telefoni, satellit. Övervaka synlighet i abonnemangsjämförelser och täckningssökningar.',
+    },
+    competitors: ['Telia', 'Tele2', 'Telenor', 'Vodafone', 'TIM'],
+    categories: {
+      en: ['mobile carrier', 'internet provider', 'fiber', 'satellite'],
+      it: ['operatore mobile', 'fornitore internet', 'fibra', 'satellitare'],
+      sv: ['mobiloperatör', 'internetleverantör', 'fiber', 'satellit'],
+    },
+    roles: {
+      en: ['consumer', 'family', 'business customer'],
+      it: ['consumatore', 'famiglia', 'cliente business'],
+      sv: ['konsument', 'familj', 'företagskund'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} coverage {location}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor} 5G', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'how to switch {category} {location}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} plans prices', priority: 'high' },
+      { bucket: 'B5', template: '{brand} contract early termination', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['mobile', 'internet', '5G', 'broadband'],
+      it: ['mobile', 'internet', '5G', 'banda larga'],
+      sv: ['mobil', 'internet', '5G', 'bredband'],
+    },
+  },
+
+  {
+    id: 'sports-fitness',
+    name: {
+      en: 'Sports & Fitness',
+      it: 'Sport e Fitness',
+      sv: 'Sport & Träning',
+    },
+    description: {
+      en: 'Gyms, sports clubs, fitness apps, supplement brands, athletic gear. Monitor visibility across activity and product queries.',
+      it: 'Palestre, club sportivi, app fitness, integratori, abbigliamento sportivo. Monitora la visibilità nelle ricerche di attività e prodotti.',
+      sv: 'Gym, sportklubbar, träningsappar, kosttillskott, sportkläder. Övervaka synlighet i aktivitets- och produktsökningar.',
+    },
+    competitors: ['SATS', 'Nike', 'Adidas', 'Strava'],
+    categories: {
+      en: ['gym', 'sports club', 'fitness app', 'sports brand'],
+      it: ['palestra', 'club sportivo', 'app fitness', 'brand sportivo'],
+      sv: ['gym', 'sportklubb', 'träningsapp', 'sportvarumärke'],
+    },
+    roles: {
+      en: ['athlete', 'beginner', 'parent'],
+      it: ['atleta', 'principiante', 'genitore'],
+      sv: ['idrottare', 'nybörjare', 'förälder'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} membership {location}', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'how to start {category}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} pricing trial', priority: 'high' },
+      { bucket: 'B5', template: '{brand} cancel refund policy', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['gym', 'fitness', 'sports', 'training'],
+      it: ['palestra', 'fitness', 'sport', 'allenamento'],
+      sv: ['gym', 'träning', 'sport', 'fitness'],
+    },
+  },
+
+  {
+    id: 'nonprofit-ngo',
+    name: {
+      en: 'Non-profit & NGO',
+      it: 'Non Profit e ONG',
+      sv: 'Ideella & NGO',
+    },
+    description: {
+      en: 'Charities, foundations, advocacy groups, NGOs. Monitor visibility across donation-decision and trust queries.',
+      it: 'Enti benefici, fondazioni, gruppi di advocacy, ONG. Monitora la visibilità nelle ricerche di scelta donazione e fiducia.',
+      sv: 'Välgörenhet, stiftelser, opinionsbildare, NGO:er. Övervaka synlighet i donations- och förtroendesökningar.',
+    },
+    competitors: ['Red Cross', 'Save the Children', 'UNICEF'],
+    categories: {
+      en: ['charity', 'foundation', 'advocacy group', 'NGO'],
+      it: ['ente benefico', 'fondazione', 'gruppo advocacy', 'ONG'],
+      sv: ['välgörenhet', 'stiftelse', 'opinionsbildare', 'NGO'],
+    },
+    roles: {
+      en: ['donor', 'volunteer', 'beneficiary'],
+      it: ['donatore', 'volontario', 'beneficiario'],
+      sv: ['donator', 'volontär', 'mottagare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} reviews legitimacy', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor} impact', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'how to donate to {category}', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} tax-deductible donate', priority: 'high' },
+      { bucket: 'B5', template: '{brand} transparency reports', priority: 'high' },
+    ],
+    seedKeywords: {
+      en: ['charity', 'NGO', 'donate', 'non-profit'],
+      it: ['ente benefico', 'ONG', 'donare', 'non profit'],
+      sv: ['välgörenhet', 'NGO', 'donera', 'ideell'],
+    },
+  },
+
+  {
+    id: 'fashion-apparel',
+    name: {
+      en: 'Fashion & Apparel',
+      it: 'Moda e Abbigliamento',
+      sv: 'Mode & Kläder',
+    },
+    description: {
+      en: 'Fashion brands, apparel makers, footwear, accessories. Monitor visibility across trend, sizing, and brand-comparison queries.',
+      it: 'Brand di moda, abbigliamento, calzature, accessori. Monitora la visibilità nelle ricerche di trend, taglie e confronto brand.',
+      sv: 'Modevarumärken, klädtillverkare, skor, accessoarer. Övervaka synlighet i trend-, storleks- och varumärkesjämförelser.',
+    },
+    competitors: ['H&M', 'Zara', 'Uniqlo', 'COS'],
+    categories: {
+      en: ['fashion brand', 'apparel', 'footwear', 'accessories'],
+      it: ['brand moda', 'abbigliamento', 'calzature', 'accessori'],
+      sv: ['modevarumärke', 'kläder', 'skor', 'accessoarer'],
+    },
+    roles: {
+      en: ['shopper', 'fashion-conscious', 'sustainable buyer'],
+      it: ['acquirente', 'fashion-conscious', 'acquirente sostenibile'],
+      sv: ['kund', 'modemedveten', 'hållbar köpare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review quality', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor} sustainable', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'where to buy {category} online', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} sizing fit', priority: 'high' },
+      { bucket: 'B5', template: '{brand} ethics labor sourcing', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['fashion', 'apparel', 'clothing', 'footwear'],
+      it: ['moda', 'abbigliamento', 'calzature'],
+      sv: ['mode', 'kläder', 'skor'],
+    },
+  },
+
+  {
+    id: 'pharma-biotech',
+    name: {
+      en: 'Pharma & Biotech',
+      it: 'Farmaceutico e Biotecnologie',
+      sv: 'Läkemedel & Biotech',
+    },
+    description: {
+      en: 'Pharmaceutical companies, biotech, medical-device manufacturers. Distinct from Healthcare (providers/clinics).',
+      it: 'Aziende farmaceutiche, biotech, produttori di dispositivi medici. Distinto da Sanità (fornitori/cliniche).',
+      sv: 'Läkemedelsföretag, bioteknik, tillverkare av medicintekniska produkter. Skiljer sig från Sjukvård (vårdgivare/kliniker).',
+    },
+    competitors: ['Pfizer', 'Novartis', 'AstraZeneca', 'Roche'],
+    categories: {
+      en: ['pharma company', 'biotech', 'medical device', 'CRO'],
+      it: ['azienda farmaceutica', 'biotech', 'dispositivo medico', 'CRO'],
+      sv: ['läkemedelsföretag', 'bioteknik', 'medicinteknik', 'CRO'],
+    },
+    roles: {
+      en: ['patient', 'physician', 'investor'],
+      it: ['paziente', 'medico', 'investitore'],
+      sv: ['patient', 'läkare', 'investerare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} drug review', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor} efficacy', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'medium' },
+      { bucket: 'B3', template: 'how does {category} work', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} clinical trials enrollment', priority: 'medium' },
+      { bucket: 'B5', template: '{brand} FDA approval safety', priority: 'high' },
+    ],
+    seedKeywords: {
+      en: ['pharma', 'biotech', 'drug', 'medical device'],
+      it: ['farmaco', 'biotech', 'dispositivo medico'],
+      sv: ['läkemedel', 'bioteknik', 'medicinteknik'],
+    },
+  },
+
+  {
+    id: 'tech-hardware',
+    name: {
+      en: 'Technology & Hardware',
+      it: 'Tecnologia e Hardware',
+      sv: 'Teknik & Hårdvara',
+    },
+    description: {
+      en: 'Consumer electronics, IoT devices, robotics, AI hardware. Distinct from SaaS — focus on physical product reviews and specs.',
+      it: 'Elettronica consumer, dispositivi IoT, robotica, hardware AI. Distinto da SaaS — focus su recensioni prodotto e specifiche.',
+      sv: 'Konsumentelektronik, IoT-enheter, robotik, AI-hårdvara. Skiljer sig från SaaS — fokus på produktrecensioner och specifikationer.',
+    },
+    competitors: ['Apple', 'Samsung', 'Sony', 'Dell'],
+    categories: {
+      en: ['consumer electronics', 'IoT device', 'wearable', 'robotics'],
+      it: ['elettronica consumer', 'dispositivo IoT', 'wearable', 'robotica'],
+      sv: ['konsumentelektronik', 'IoT-enhet', 'wearable', 'robotik'],
+    },
+    roles: {
+      en: ['tech enthusiast', 'home user', 'creator'],
+      it: ['appassionato tech', 'utente casa', 'creator'],
+      sv: ['teknikentusiast', 'hemanvändare', 'kreatör'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review specs', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'is {brand} worth buying', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} price availability', priority: 'high' },
+      { bucket: 'B5', template: '{brand} warranty repair support', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['electronics', 'IoT', 'hardware', 'gadget'],
+      it: ['elettronica', 'IoT', 'hardware', 'gadget'],
+      sv: ['elektronik', 'IoT', 'hårdvara', 'prylar'],
+    },
+  },
 ]
 
 export interface ExpandedQuery {

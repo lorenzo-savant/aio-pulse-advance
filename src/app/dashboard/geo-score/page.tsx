@@ -26,6 +26,13 @@ import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
+import {
+  ENGINE_COLORS as ENGINE_PALETTE,
+  engineColor,
+  GRADE_COLORS,
+  SCORE_BAND_COLORS,
+  scoreColor,
+} from '@/lib/chart-tokens'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -84,36 +91,26 @@ interface GeoData {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const GRADE_COLOR: Record<string, string> = {
-  A: '#10b981',
-  B: '#22c55e',
-  C: '#f59e0b',
-  D: '#f97316',
-  F: '#ef4444',
-}
+// Grade + engine palettes come from chart-tokens.ts so all dashboards agree
+// on which colour represents Gemini vs Perplexity vs Claude.
+const GRADE_COLOR = GRADE_COLORS
+const ENGINE_COLORS = ENGINE_PALETTE
 
-const ENGINE_COLORS: Record<string, string> = {
-  chatgpt: '#10b981',
-  gemini: '#3b82f6',
-  perplexity: '#a855f7',
-  claude: '#f97316',
-}
-
-function scoreAccent(score: number): string {
-  if (score >= 70) return '#10b981'
-  if (score >= 55) return '#f59e0b'
-  if (score >= 40) return '#f97316'
-  return '#ef4444'
-}
+// scoreAccent maps a 0-100 score to the canonical band colour. Thresholds
+// match the citation worthiness rubric (80/65/45/25) and the AI SEO grade
+// thresholds (85/70/55/40); using the shared scoreColor() keeps both
+// rubrics rendered with the same green/amber/orange/red.
+const scoreAccent = scoreColor
 
 // Qualitative band for a 0–100 pillar/score, with a matching colour. Used by
 // the colour-coded Score-by-Category table so each number reads as a verdict,
-// not just a digit.
+// not just a digit. Thresholds intentionally a bit looser than the strict
+// rubric so most pillar scores get a non-red label.
 function scoreRating(score: number): { label: string; color: string } {
-  if (score >= 70) return { label: 'Excellent', color: '#10b981' }
-  if (score >= 55) return { label: 'Good', color: '#f59e0b' }
-  if (score >= 40) return { label: 'Fair', color: '#f97316' }
-  return { label: 'Weak', color: '#ef4444' }
+  if (score >= 70) return { label: 'Excellent', color: SCORE_BAND_COLORS.excellent }
+  if (score >= 55) return { label: 'Good', color: SCORE_BAND_COLORS.moderate }
+  if (score >= 40) return { label: 'Fair', color: SCORE_BAND_COLORS.weak }
+  return { label: 'Weak', color: SCORE_BAND_COLORS.poor }
 }
 
 // What each GEO pillar actually measures (mirrors geo-score.ts inputs), so the
@@ -180,7 +177,7 @@ function SiteAuditLine({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function GeoScorePage() {
-  const { tooltipStyle } = useChartTheme()
+  const { tooltipStyle, gridColor, axisColor } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [period, setPeriod] = useState('30d')
@@ -622,14 +619,14 @@ export default function GeoScorePage() {
               {chartData.length > 1 ? (
                 <ResponsiveContainer height={240} width="100%">
                   <LineChart data={chartData}>
-                    <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                    <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: axisColor }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: axisColor }} />
                     <Tooltip {...tooltipStyle} />
                     <Line
                       type="monotone"
                       dataKey="score"
-                      stroke="#6366f1"
+                      stroke={SCORE_BAND_COLORS.excellent}
                       strokeWidth={2.5}
                       dot={false}
                       name="GEO Score"
@@ -661,7 +658,7 @@ export default function GeoScorePage() {
                           className="h-full rounded-full transition-all duration-700"
                           style={{
                             width: `${Math.min(e.visibility, 100)}%`,
-                            backgroundColor: ENGINE_COLORS[e.engine] || '#6b7280',
+                            backgroundColor: engineColor(e.engine),
                           }}
                         />
                       </div>

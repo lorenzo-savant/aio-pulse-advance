@@ -29,6 +29,8 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
 import { ENGINE_COLORS as CHART_ENGINE_COLORS } from '@/lib/chart-tokens'
+import { CitationCapturePanel } from '@/components/CitationCapturePanel'
+import { CrawlerAccessPanel } from '@/components/CrawlerAccessPanel'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -312,6 +314,16 @@ export default function CitationsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Foundational health check — does the brand site actually let
+          AI crawlers in? Mounted at the top because a blocked GPTBot
+          makes every downstream metric on this page invalid. */}
+      {selectedBrand && <CrawlerAccessPanel brandId={selectedBrand.id} />}
+
+      {/* Citation-capture rate — when AI engines mention the brand, do
+          they ALSO cite the brand's own site? Direct port of Semrush's
+          "Domain doesn't rank in feature" filter, applied to AI citations. */}
+      {selectedBrand && <CitationCapturePanel brandId={selectedBrand.id} />}
 
       {/* Error */}
       {error && (

@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient as createSSRClient } from '@supabase/ssr'
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest } from 'next/server'
 import type { Database } from '@/types/database'
 import { logger } from '@/lib/logger'
 
@@ -57,10 +57,6 @@ export function createServerClient(): TypedSupabaseClient | null {
   return createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-}
-
-export function dbNotConfigured() {
-  return NextResponse.json({ success: false, message: 'Database not configured' }, { status: 503 })
 }
 
 export class AuthError extends Error {

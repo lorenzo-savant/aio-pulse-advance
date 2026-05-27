@@ -31,7 +31,19 @@ interface ScheduleRow {
   next_run_at: string
 }
 
-/** Roll next_run_at forward by the cadence. */
+/** Roll next_run_at forward by the cadence.
+ *
+ * IMPORTANT: arithmetic is UTC. The cron sweep itself runs on whatever
+ * schedule the trigger fires (Vercel cron / GH Actions / etc) so a
+ * weekly schedule created at 09:00 CET will fire at 09:00 UTC + 7d
+ * intervals — i.e. delivery time will drift relative to the operator's
+ * local time across daylight savings, and "every Monday" reads as
+ * "every Monday in UTC" not "every Monday in your timezone".
+ *
+ * Operators in CET/CEST see delivery at 10:00 (winter) / 11:00 (summer)
+ * when the row was created at 10:00 winter. If that becomes a real
+ * complaint, the migration needs an optional `tz` column and this
+ * function needs to accept it. Mythos audit, May 2026. */
 function nextRunAfter(now: Date, frequency: ScheduleRow['frequency']): Date {
   const d = new Date(now)
   if (frequency === 'daily') d.setUTCDate(d.getUTCDate() + 1)

@@ -167,9 +167,3 @@ export const useAppStore = create<AppStore>()(
     { name: 'AIOPulseStore' },
   ),
 )
-
-// ─── Selectors ────────────────────────────────────────────────────────────────
-
-export const selectScanHistory = (s: AppStore) => s.scanHistory
-export const selectShareStats = (s: AppStore) => s.shareStats
-export const selectSidebarOpen = (s: AppStore) => s.sidebarOpen

@@ -164,9 +164,14 @@ export async function POST(req: NextRequest) {
     )
 
     // ── Save to database ───────────────────────────────────────────────────
+    // Track persistence so the client can warn when history won't survive.
+    // Anonymous users skip persistence by design (no user_id to scope to);
+    // we report null for them to distinguish "by-design skip" from "failed save".
+    let persisted: boolean | null = null
     if (userId && !userId.startsWith('anonymous:') && db) {
+      persisted = true
       try {
-        await db.from('analysis_results').insert({
+        const { error: insertErr } = await db.from('analysis_results').insert({
           brand_id: brandId,
           user_id: userId,
           input,
@@ -180,15 +185,24 @@ export async function POST(req: NextRequest) {
           recommendations: result.suggestions as unknown as Json,
           raw_response: result as unknown as Json,
         })
+        if (insertErr) {
+          logger.error('Failed to save result', { source: 'analyze', error: insertErr.message })
+          persisted = false
+        }
       } catch (dbError) {
         logger.error('Failed to save result', { source: 'analyze', error: String(dbError) })
+        persisted = false
       }
     }
 
-    const response: ApiResponse<AnalysisResult> = {
+    const response: ApiResponse<AnalysisResult> & { persisted: boolean | null } = {
       data: result,
       success: true,
       message: 'Analysis complete',
+      // persisted: true → saved to history; false → DB save failed (client
+      // can show "result shown but history unavailable"); null → anonymous
+      // / DB not configured, persistence was intentionally skipped.
+      persisted,
       timestamp: Date.now(),
     }
 

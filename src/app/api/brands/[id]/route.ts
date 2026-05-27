@@ -43,11 +43,15 @@ const updateBrandSchema = z.object({
   legalIdType: z.enum(['vat', 'orgnr', 'fiscal_code', 'ein', 'other']).optional().nullable(),
 })
 
-// Explicit column list — try full list first, fallback to safe list
+// Full column list including report_* + LLMO fields (same_as,
+// disambiguation, citation_format, legal_id, legal_id_type). Every
+// supported deploy has these now — migrations 20260526200000 +
+// 20260526300000 are mandatory. The previous BRAND_SAFE_COLS fallback
+// silently dropped LLMO data on schema-cache races, masking the real
+// problem and letting PATCH calls null out fields the user just typed
+// in (Mythos audit, May 2026). Removed in favour of fail-loud.
 const BRAND_ALL_COLS =
   'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, market, language, color, logo_url, is_active, created_at, updated_at, report_logo_url, report_brand_name, report_primary_color, same_as, disambiguation, citation_format, legal_id, legal_id_type'
-const BRAND_SAFE_COLS =
-  'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -55,31 +59,6 @@ interface Params {
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
-}
-
-/**
- * Try to select with report columns, fallback to safe columns if schema cache error.
- */
-async function selectBrand(db: any, id: string, userId: string) {
-  const { data, error } = await db
-    .from('brands')
-    .select(BRAND_ALL_COLS)
-    .eq('id', id)
-    .eq('user_id', userId)
-    .single()
-
-  if (error && error.message?.includes('schema cache')) {
-    // Fallback: select without report_* columns
-    const fallback = await db
-      .from('brands')
-      .select(BRAND_SAFE_COLS)
-      .eq('id', id)
-      .eq('user_id', userId)
-      .single()
-    return fallback
-  }
-
-  return { data, error }
 }
 
 // ─── GET /api/brands/[id] ─────────────────────────────────────────────────────
@@ -109,7 +88,12 @@ export async function GET(req: NextRequest, { params }: Params) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { data, error } = await selectBrand(db, id, userId)
+  const { data, error } = await db
+    .from('brands')
+    .select(BRAND_ALL_COLS)
+    .eq('id', id)
+    .eq('user_id', userId)
+    .single()
 
   if (error || !data) return err('Brand not found', 404)
   return NextResponse.json({ success: true, data, timestamp: Date.now() })
@@ -175,22 +159,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
     .select(BRAND_ALL_COLS)
     .single()
 
-  if (error) {
-    // If schema cache error on report columns, try without them
-    if (error.message?.includes('schema cache')) {
-      const fallback = await db
-        .from('brands')
-        .update(parsed.data)
-        .eq('id', id)
-        .eq('user_id', userId)
-        .select(BRAND_SAFE_COLS)
-        .single()
-      if (fallback.error) return err(fallback.error.message)
-      if (!fallback.data) return err('Brand not found', 404)
-      return NextResponse.json({ success: true, data: fallback.data, timestamp: Date.now() })
-    }
-    return err(error.message)
-  }
+  // Fail loud on schema-cache errors. The previous fallback selected
+  // BRAND_SAFE_COLS which dropped same_as / disambiguation /
+  // citation_format / legal_id / legal_id_type from the response, and
+  // since the form posts those keys on every save, the user would be
+  // shown a "saved successfully" toast while the LLMO data silently
+  // never round-tripped. Mythos audit, May 2026.
+  if (error) return err(error.message)
   if (!data) return err('Brand not found', 404)
   return NextResponse.json({ success: true, data, timestamp: Date.now() })
 }
@@ -270,21 +245,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .select(BRAND_ALL_COLS)
     .single()
 
-  if (error) {
-    if (error.message?.includes('schema cache')) {
-      const fallback = await db
-        .from('brands')
-        .update(updateData)
-        .eq('id', id)
-        .eq('user_id', userId)
-        .select(BRAND_SAFE_COLS)
-        .single()
-      if (fallback.error) return err(fallback.error.message)
-      if (!fallback.data) return err('Brand not found', 404)
-      return NextResponse.json({ success: true, data: fallback.data, timestamp: Date.now() })
-    }
-    return err(error.message)
-  }
+  // Same fail-loud rationale as PUT — see comment there.
+  if (error) return err(error.message)
   if (!data) return err('Brand not found', 404)
   return NextResponse.json({ success: true, data, timestamp: Date.now() })
 }

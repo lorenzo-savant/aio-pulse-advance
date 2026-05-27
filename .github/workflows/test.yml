@@ -77,10 +77,18 @@ jobs:
         # prettier picks up the repo's .prettierrc (semi: false +
         # singleQuote: true). Writing to /tmp first produced spurious
         # quoting/semicolon drift in May 2026 — see the CI archaeology.
+        #
+        # Use ./node_modules/.bin/supabase (the pinned dev-dep version
+        # from package.json) instead of `npx supabase` — the latter
+        # resolves to whichever version npm picks at runtime (latest
+        # cached), causing version skew vs the local generator. Drift
+        # was previously caused by the `__InternalSupabase` block
+        # appearing in v2.100.1 output but not v2.101.0+. Pin removes
+        # the wedge.
         run: |
-          npx supabase gen types typescript --db-url "$SUPABASE_DB_URL" \
+          ./node_modules/.bin/supabase gen types typescript --db-url "$SUPABASE_DB_URL" \
             > src/types/database.regen.ts
-          npx prettier --write src/types/database.regen.ts
+          ./node_modules/.bin/prettier --write src/types/database.regen.ts
 
       - name: Diff against committed types
         if: steps.secret.outputs.configured == 'true'

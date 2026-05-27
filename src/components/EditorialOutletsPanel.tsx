@@ -3,7 +3,7 @@
 // Editorial outlets leaderboard — the publications AI engines cite
 // most often for queries in this brand's space, with per-engine
 // breakdown. Acts as the PR target list: pitch the outlets the
-// engines already trust. Closes the gap from the Semrush 2026
+// engines already trust. Closes the gap from the industry research 2026
 // brand-first SEO piece (>75% of AI brand mentions come from earned
 // editorial/social; a single Men's Journal mention drove a noticeable
 // ChatGPT + Perplexity lift).

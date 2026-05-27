@@ -8,7 +8,7 @@
 // Formats:
 //   json     — 4-question structured payload (default)
 //   md       — Markdown render of the 4 questions
-//   tiered   — Tier 1 / Tier 2 / Tier 3 Markdown deck (Semrush template)
+//   tiered   — Tier 1 / Tier 2 / Tier 3 Markdown deck (industry template)
 //   trend    — Monthly trend table over the last N months (Markdown)
 
 import { type NextRequest, NextResponse } from 'next/server'

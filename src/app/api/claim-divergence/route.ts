@@ -2,7 +2,7 @@
 //
 // Reports cases where AI engines disagree about factual claims for the
 // same prompt (founding year, HQ, founder, team size, pricing, funding).
-// Implements the operator-facing surface for the Semrush "find and fix
+// Implements the operator-facing surface for the industry research "find and fix
 // what AI gets wrong about your brand" playbook — zero extra API calls,
 // just regex over response_text we already store.
 //

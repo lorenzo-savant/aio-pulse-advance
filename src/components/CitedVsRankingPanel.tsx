@@ -3,7 +3,7 @@
 // "Cited × Ranking" panel — pages AI cites vs Google ranks, with
 // actionable opportunity tags (SEO gap / AEO gap / aligned).
 //
-// Closes the gap from the Semrush AI Mode study:
+// Closes the gap from the industry research AI Mode study:
 //   "Most of ChatGPT's citations in the study sample were pulled from
 //    URLs ranking beyond position 21+ on Google."
 //
@@ -206,8 +206,8 @@ export function CitedVsRankingPanel({ brandId: brandIdProp }: { brandId?: string
       <p className="mb-4 text-sm text-muted-foreground">
         Cross-reference: pages AI cites vs Google rankings on{' '}
         <strong>{data.ownedDomain ?? 'your domain'}</strong>. ChatGPT cites pages ranking beyond
-        position 21+ ~90% of the time (Semrush AI Mode study) — these are real opportunities you can
-        act on.
+        position 21+ ~90% of the time (industry research AI Mode study) — these are real
+        opportunities you can act on.
       </p>
 
       {data.gscAvailable === false && (

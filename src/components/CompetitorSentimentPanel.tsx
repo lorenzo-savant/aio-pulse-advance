@@ -1,6 +1,6 @@
 'use client'
 
-// "Competitor Sentiment" panel — closes Semrush competitor-intelligence
+// "Competitor Sentiment" panel — closes industry competitor-intelligence
 // best-practice #3 ("AI analyzes competitor customer reviews to identify
 // pain points / popular features / service gaps") by leaning on the data
 // we already collect: every monitoring response carries a sentiment_score

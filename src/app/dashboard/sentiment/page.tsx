@@ -559,7 +559,7 @@ export default function SentimentPage() {
   const [loadingStats, setLoadingStats] = useState(false)
   const [themes, setThemes] = useState<Theme[]>([])
   const [loadingThemes, setLoadingThemes] = useState(false)
-  // Sentiment-by-source (closes Semrush best-practice #5 — "look at sentiment
+  // Sentiment-by-source (closes industry-recommended-practice #5 — "look at sentiment
   // sources / triggers"). Aggregates by cited domain so the user can see
   // WHERE the AI is getting its negative impressions from.
   const [sourcesData, setSourcesData] = useState<SourcesData | null>(null)
@@ -889,7 +889,7 @@ export default function SentimentPage() {
           )}
 
           {/* Sentiment by Source — which cited domains drive the AI's framing.
-              Closes the Semrush "look at sentiment sources / triggers"
+              Closes the industry research "look at sentiment sources / triggers"
               best-practice. Hidden when no sources are aggregated yet. */}
           {sourcesData &&
             (sourcesData.topNegative.length > 0 || sourcesData.topPositive.length > 0) && (

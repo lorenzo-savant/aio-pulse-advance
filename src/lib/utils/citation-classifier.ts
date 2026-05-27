@@ -10,7 +10,7 @@
 // Instagram product post) — we treat multimedia hosts as multimedia first.
 //
 // References:
-//   - Semrush "AI Citations" article — 3 citation types (informational /
+//   - industry research "AI Citations" article — 3 citation types (informational /
 //     product / multimedia) match what users observe in ChatGPT, Google AI
 //     Mode and AI Overviews.
 

@@ -4,7 +4,7 @@
 // prompt, extracts simple factual claims (founding year, HQ city,
 // pricing tier, founder name, team size) via regex and flags cases
 // where engines disagree. Used by /api/claim-divergence to surface the
-// "AI gets X wrong" angle from the Semrush brand-misinformation
+// "AI gets X wrong" angle from the industry brand-misinformation
 // playbook — without any extra LLM calls.
 //
 // Trade-off: regex extraction misses everything outside the patterns

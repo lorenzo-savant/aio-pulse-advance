@@ -1,7 +1,7 @@
 'use client'
 
 // Audience declaration audit panel. Implements the agentic-web readiness
-// gap from the Semrush piece: AI agents reward brands that EXPLICITLY
+// gap from the industry article: AI agents reward brands that EXPLICITLY
 // declare who they serve (industries, personas, use cases). This panel
 // fetches the brand's homepage on demand, looks for those signals, and
 // scores them 0-100.

@@ -19,7 +19,7 @@ const MOCK_ACASTING_BRAND: Brand = {
   domain: 'acasting.ai',
   aliases: ['Acasting S.r.l.', 'AIO Pulse Advance', 'AIO Pulse'],
   domains: ['acasting.ai', 'aiopulse.com'],
-  competitors: ['Brand24', 'Mention', 'Determ', 'Semrush'],
+  competitors: ['Brand24', 'Mention', 'Determ', 'industry research'],
   industry: 'AI Visibility / SaaS / MarTech',
   color: '#6366f1',
   is_active: true,

@@ -92,16 +92,16 @@ describe('buildEditorialOutletLeaderboard', () => {
   })
 
   it('excludes brand-owned editorial-looking hosts (first_party)', () => {
-    // semrush.com is in the editorial bucket by default — but if the
+    // techcrunch.com is in the editorial bucket by default — but if the
     // brand owns it, it must NOT show up in the editorial leaderboard.
     const out = buildEditorialOutletLeaderboard(
       [
         {
           engine: 'chatgpt',
-          citedUrls: ['https://semrush.com/blog/a', 'https://forbes.com/b'],
+          citedUrls: ['https://techcrunch.com/blog/a', 'https://forbes.com/b'],
         },
       ],
-      { brandDomains: ['semrush.com'] },
+      { brandDomains: ['techcrunch.com'] },
     )
     expect(out.outlets.map((o) => o.host)).toEqual(['forbes.com'])
     expect(out.totalEditorialCitations).toBe(1)

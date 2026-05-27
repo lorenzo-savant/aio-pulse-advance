@@ -4,7 +4,7 @@
 // AI Funnel unified report.
 //
 // Closes the gap from the Earned Media Australia agency case study:
-//   "Tracking the AI funnel with Semrush, the team breaks it down into
+//   "Tracking the AI funnel with industry research, the team breaks it down into
 //    three levels:
 //      Top of the Funnel: high-level metrics like AI Visibility,
 //        Mentions, and Citations.
@@ -137,7 +137,7 @@ export default function AiFunnelPage() {
               <a
                 href={`/api/reports/exec-summary?brand_id=${activeBrandId}&days=30&format=tiered`}
                 className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
-                title="Tier 1 / Tier 2 / Tier 3 client deck (Semrush template framing)"
+                title="Tier 1 / Tier 2 / Tier 3 client deck (industry template framing)"
               >
                 <Download className="h-3.5 w-3.5" />
                 Tiered KPI deck

@@ -1,6 +1,6 @@
 // PATH: src/lib/services/sentiment-drivers.ts
 //
-// "Key Sentiment Drivers" — closes the Semrush AI-SoV-article gap:
+// "Key Sentiment Drivers" — closes the industry AI-SoV-article gap:
 // the Perception report flags WHICH aspects of a brand drive positive vs
 // negative AI portrayal ("strong praise for ease of use, no-code automations;
 // gaps in depth, advanced controls, learning curve").

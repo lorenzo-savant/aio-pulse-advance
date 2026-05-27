@@ -815,7 +815,7 @@ function checkContentStructure(html: string, url: string): AuditCategory {
   // 9) Answer-first structure — for every H2/H3, look at the first
   // paragraph that follows and check whether it starts with a direct
   // answer (not a preamble like "In this article we will discuss…").
-  // Semrush AEO guidance: "Use the question in a subheading and
+  // AEO guidance: "Use the question in a subheading and
   // immediately provide a clear answer." AI engines preferentially
   // cite sections that lead with the answer.
   const WEAK_OPENERS = [
@@ -950,7 +950,7 @@ function checkContentStructure(html: string, url: string): AuditCategory {
   }
 
   // 10) E-E-A-T markup — author byline / reviewed-by / original-data signals.
-  // Semrush AEO guidance + AirOps study: "LLMs seem to favor content that
+  // AEO guidance + AirOps study: "LLMs seem to favor content that
   // reflects real-world use, personal insights, and/or original research."
   // We score 3 micro-signals independently then aggregate to pass/warn/fail.
   let eeatSignals = 0
@@ -1028,7 +1028,7 @@ function checkContentStructure(html: string, url: string): AuditCategory {
   // structure + interactivity + original data raise resilience, short
   // definition pages lower it. We surface the score (0-100) + verdict so
   // the operator can prioritise refactors on the most-vulnerable pages.
-  // Semrush "Zero-click search" piece: "Short factual queries are often
+  // industry research "Zero-click search" piece: "Short factual queries are often
   // fully answered directly in the SERP… formats like original research,
   // interactive tools, detailed guides remain more resilient."
   const zeroClick = analyseZeroClickVulnerability(html)
@@ -1052,7 +1052,7 @@ function checkContentStructure(html: string, url: string): AuditCategory {
   })
 
   // 12) Intent × length fit — does this page's depth match what AI
-  // engines expect for the query intent? Semrush AI Mode study:
+  // engines expect for the query intent? industry research AI Mode study:
   //   "commercial and transactional queries triggered the longest and
   //    most detailed responses — often double informational length…
   //    informational? clarity and conciseness. commercial? expand."
@@ -1073,7 +1073,7 @@ function checkContentStructure(html: string, url: string): AuditCategory {
         : intentLength.recommendation,
   })
 
-  // 13) Image-based comparison/pricing table detector — Semrush SaaS-AI
+  // 13) Image-based comparison/pricing table detector — competitor SaaS-AI
   // pitfall #5: "tables saved as screenshots are invisible to AI
   // extraction". Only fires when the URL signals a pricing or comparison
   // page; on every other URL the check is `info` so it doesn't penalize.

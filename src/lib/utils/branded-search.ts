@@ -1,7 +1,7 @@
 // PATH: src/lib/utils/branded-search.ts
 //
 // Classifies GSC query rows as "branded" vs "non-branded" so the dashboard
-// can plot the AEO/GEO signal Semrush calls out:
+// can plot the AEO/GEO signal industry research calls out:
 //   "Inside Google's AI Overviews and AI Mode, mentions can also increase
 //    your search impressions. These impressions now show up in Google
 //    Search Console, even if the user never clicks a link. When your brand
@@ -251,14 +251,14 @@ export interface AiAssistScore {
  * Compares branded vs non-branded growth rates within the window to
  * produce a single "AI assist" verdict.
  *
- * Semrush "Zero-click search" piece + AEO chapter:
+ * industry research "Zero-click search" piece + AEO chapter:
  *   "Zero-click visibility can still contribute to measurable business
  *    outcomes... track branded search growth, assisted conversions,
  *    share-of-voice trends. Even when users don't click immediately,
  *    repeated exposure to your brand in search features and AI answers
  *    can build trust and drive conversions later in the buying process."
  *
- * The pattern Semrush calls out: AI Overviews push the click below the
+ * The pattern industry research calls out: AI Overviews push the click below the
  * fold for INFORMATIONAL queries (non-branded ↓), but the user remembers
  * the brand they saw cited and types it directly later (branded ↑). When
  * branded growth materially outpaces non-branded decline, AI is acting

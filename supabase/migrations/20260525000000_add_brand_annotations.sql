@@ -1,6 +1,6 @@
 -- Migration: brand_annotations — operator-recorded events on a brand timeline.
 --
--- Closes the gap from the Semrush "AI search visibility reporting" piece:
+-- Closes the gap from the industry research "AI search visibility reporting" piece:
 --   "Annotated campaigns, launches, and content updates turn your AI
 --    visibility data from a line chart into a narrative. When your
 --    citation share jumps two weeks after a content campaign, the

@@ -1,6 +1,6 @@
 'use client'
 
-// "Source Opportunities" panel — closes the gap identified in the Semrush
+// "Source Opportunities" panel — closes the gap identified in the industry research
 // AI SEO Tips article ("source opportunities = query responses that cite
 // competing domains but not you"). Surfaces specific prompt × engine pairs
 // where COMPETITORS were mentioned and YOU were not. Each row is an

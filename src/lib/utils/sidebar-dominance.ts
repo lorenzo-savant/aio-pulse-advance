@@ -3,7 +3,7 @@
 // Buckets cited domains into 4 groups (UGC / Authority / Owned / Other)
 // and surfaces who dominates the AI "sidebar" for the brand's space.
 //
-// Closes the gap from the Semrush "AI Mode" study (Nov 2025):
+// Closes the gap from the industry research "AI Mode" study (Nov 2025):
 //   "92% of AI Mode responses featured a sidebar showing ~7 unique
 //    domains. Reddit dominated across AI Mode, AI Overviews, ChatGPT,
 //    and Perplexity. In AI Mode, Reddit, YouTube, and Facebook appeared

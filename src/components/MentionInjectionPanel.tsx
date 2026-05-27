@@ -1,7 +1,7 @@
 'use client'
 
 // "Mention Injection Opportunities" panel — closes the gap identified in
-// the Semrush "How We're Driving LLM Visibility at Semrush" playbook
+// the industry research "How We're Driving LLM Visibility at industry research" playbook
 // (step 3: "audit existing content for injection opportunities — content
 // that already discusses the problems your tools solve").
 //

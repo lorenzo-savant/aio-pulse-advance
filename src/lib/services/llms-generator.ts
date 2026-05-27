@@ -52,7 +52,7 @@ const LEGAL_ID_LABEL: Record<NonNullable<LlmsInput['legalIdType']>, string> = {
 /**
  * Synthesise 3-5 "Key Takeaways" bullets from the LlmsInput we already
  * have. Powers the `## Key Takeaways` section at the top of llms-full.txt
- * — Semrush's AI-citation study identified "Clarity & summarization" as
+ * — the AI-citation research study identified "Clarity & summarization" as
  * the strongest positive signal (+33% citation lift), and the canonical
  * pattern is a tight bullet summary BEFORE the long-form content.
  *
@@ -206,7 +206,7 @@ export function generateLlmsFullTxt(input: LlmsInput): string {
   lines.push('')
 
   // ── Key Takeaways ─────────────────────────────────────────────────────
-  // Semrush's Aug-2025 AI-citation study found "Clarity & summarization"
+  // the Aug-2025 AI-citation research found "Clarity & summarization"
   // to be the strongest positive signal (+33% citation lift). Pages that
   // lead with a tight bullet summary get cited disproportionately. We
   // synthesise 3-5 takeaways from the data we already have (industry,

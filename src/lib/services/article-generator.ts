@@ -1,7 +1,7 @@
 // PATH: src/lib/services/article-generator.ts
 //
 // AI Article Generator — produces draft Markdown articles optimised
-// against the same 5 Semrush AI-citation signals that citation-quality-
+// against the same 5 AI-citation signals that citation-quality-
 // scorer measures (clarity, EEAT, Q&A, structure, structured-data).
 // Closes the loop: AIO Pulse is the only tool that both MEASURES AI
 // citations AND GENERATES content scored against the measured signals.
@@ -54,7 +54,7 @@ export interface GenerateArticleInput {
 export interface GenerateArticleOutput {
   /** Generated Markdown body. */
   markdown: string
-  /** Auto-graded against the 5 Semrush AI-citation pillars. */
+  /** Auto-graded against the 5 industry AI-citation pillars. */
   qualityScore: CitationQualityReport
   /** LLM provider + model that fulfilled the request. */
   provider: string
@@ -63,7 +63,7 @@ export interface GenerateArticleOutput {
   systemPromptDigest: string
 }
 
-// Length → target word count band. Calibrated to Semrush's featured-
+// Length → target word count band. Calibrated to industry research featured-
 // snippet hub finding (top performers ~2.5k words for long-form) but
 // scaled down for typical brand-content use.
 const LENGTH_TARGET: Record<ArticleLength, { words: number; sections: number; faqs: number }> = {
@@ -92,7 +92,7 @@ const FORMAT_HINT_INSTRUCTION: Record<NonNullable<GenerateArticleInput['formatHi
   list: 'Build the body as a bulleted list of ≥8 items, each with a short label and one sentence of detail. Order from most to least important.',
 }
 
-/** Build the system prompt that encodes the 5 Semrush AI-citation
+/** Build the system prompt that encodes the 5 industry AI-citation
  *  signals as hard constraints. Exported for unit tests. */
 export function buildArticleSystemPrompt(input: GenerateArticleInput): string {
   const { brand, intent, length, formatHint } = input
@@ -229,7 +229,7 @@ export async function generateArticle(
   const result = await llmCaller(systemPrompt, userPrompt)
   const markdown = sanitiseMarkdown(result.text)
 
-  // Auto-score against the 5 Semrush AI-citation pillars. We pass both
+  // Auto-score against the 5 industry AI-citation pillars. We pass both
   // the markdown (for text-mode signals: clarity, EEAT, Q&A patterns)
   // AND a derived scannable HTML (for structure pillar to see headings
   // + lists). Structured-data pillar stays low — operators wrap the

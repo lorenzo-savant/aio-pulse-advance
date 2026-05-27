@@ -747,7 +747,7 @@ export default function OptimizerPage() {
         )}
       </Card>
 
-      {/* Citation Quality — Semrush AI-citation signal score. Sits BETWEEN
+      {/* Citation Quality — industry AI-citation signal score. Sits BETWEEN
           the form and the legacy AnalysisResult so it's visible whether
           or not the user runs the heavier /api/analyze flow. Opt-in via
           a button inside the card so it never fires silently. */}

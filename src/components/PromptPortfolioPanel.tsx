@@ -2,7 +2,7 @@
 
 // "Prompt Portfolio" panel — classifies tracked prompts into the 4-bucket
 // business-impact taxonomy (revenue / reputation / competitor / gap)
-// from the Semrush "Prompt Tracking" piece, with average brand visibility
+// from the industry research "Prompt Tracking" piece, with average brand visibility
 // per bucket.
 //
 // Self-contained: fetches own brand list, hides when the brand has no
@@ -182,7 +182,7 @@ export function PromptPortfolioPanel({ brandId: brandIdProp }: { brandId?: strin
       </div>
 
       <p className="mb-3 text-sm text-muted-foreground">
-        Your {report.rows.length} tracked prompts classified by business impact (per Semrush Prompt
+        Your {report.rows.length} tracked prompts classified by business impact (per industry Prompt
         Tracking framework). The visibility % shows how often your brand was named in the engine
         responses for the prompts in each bucket.
       </p>

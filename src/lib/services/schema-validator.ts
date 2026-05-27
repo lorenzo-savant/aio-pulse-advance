@@ -29,7 +29,7 @@ export interface SchemaValidationResponse {
   overall: 'pass' | 'fail' | 'warning'
   /** SaaS-specific SoftwareApplication audit — only populated when a
    *  SoftwareApplication / SaaSApplication / WebApplication schema is
-   *  present on the page. Targets Semrush SaaS-AI step #6 + pitfall #2
+   *  present on the page. Targets competitor SaaS-AI step #6 + pitfall #2
    *  ("schema lag behind UI changes"). */
   softwareApplication?: SoftwareApplicationAudit | null
 }
@@ -315,7 +315,7 @@ export function getFixSuggestions(results: ValidationResult[]): FixSuggestion[] 
 
 // ─── SoftwareApplication audit ───────────────────────────────────────────────
 //
-// Semrush "SaaS AI search optimization" step #6 + pitfall #2: SaaS pricing
+// industry research "SaaS AI search optimization" step #6 + pitfall #2: SaaS pricing
 // schema is a top citation surface for AI engines, but goes stale fast. We
 // drill into the actual JSON-LD payload to validate `offers.price`,
 // `offers.priceCurrency`, `priceValidUntil`/`priceValidFrom` (and warn when

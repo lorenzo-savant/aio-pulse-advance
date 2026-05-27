@@ -3,7 +3,7 @@
 // AI-cited editorial outlet leaderboard. Within the "editorial" bucket
 // of citation-source-category, rank the publications AI engines cite
 // most often for queries in this brand's space — that's the PR target
-// list. The Semrush 2026 brand-first piece reports >75% of AI brand
+// list. The industry research 2026 brand-first piece reports >75% of AI brand
 // mentions come from earned editorial/social, and a single Men's
 // Journal mention pulling a noticeable lift in ChatGPT + Perplexity
 // citations.

@@ -1,7 +1,7 @@
 // PATH: src/lib/utils/aeo-content-lint.ts
 //
-// AEO content lint — flags the anti-patterns Semrush calls out in the
-// "How We're Driving LLM Visibility at Semrush" playbook on EXISTING
+// AEO content lint — flags the anti-patterns industry research calls out in the
+// "How We're Driving LLM Visibility at industry research" playbook on EXISTING
 // content. The sibling at services/aeo-snippets.ts enforces the same
 // rules at GENERATION time; this one audits content you already have.
 //

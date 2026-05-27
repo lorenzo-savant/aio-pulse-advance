@@ -51,7 +51,7 @@ export interface BrandPresence {
   youtube: PlatformPresence
   quora: PlatformPresence
   /** Aggregate "UGC presence score" 0-100: weighted across Reddit, YouTube,
-   *  Quora. Closes the gap from the Semrush AI Mode study: UGC platforms
+   *  Quora. Closes the gap from the industry research AI Mode study: UGC platforms
    *  appear in 68%+ of AI Mode results — being absent on all three is the
    *  biggest single AEO blind spot for brands. */
   ugcScore?: number
@@ -234,7 +234,7 @@ async function checkReddit(brandName: string, language?: string | null): Promise
 //
 // Same pattern as Reddit: `site:youtube.com <brand>` and
 // `site:quora.com <brand>` via Brave. UGC platforms dominate AI Mode
-// sidebars per the Semrush study, so tracking presence on Reddit +
+// sidebars per the industry research, so tracking presence on Reddit +
 // YouTube + Quora gives the operator a single "are we in the UGC
 // sidebar club?" view.
 
@@ -307,7 +307,7 @@ async function checkQuora(brandName: string, language?: string | null): Promise<
 
 /** Aggregate "UGC presence score" 0-100 from Reddit + YouTube + Quora.
  *  Weighted to reflect each platform's AI-citation weight:
- *  Reddit 0.5 (dominant per Semrush study), YouTube 0.3, Quora 0.2.
+ *  Reddit 0.5 (dominant per industry research), YouTube 0.3, Quora 0.2.
  *  A platform contributes max 100 / weight * (count >= 5 ? 1 : count/5). */
 function computeUgcScore(
   reddit: PlatformPresence,
@@ -331,7 +331,7 @@ function computeUgcScore(
  * Reddit / YouTube / Quora. Soft-fails on errors — the caller doesn't
  * get crashes from network blips.
  *
- * The UGC additions close the gap from the Semrush AI Mode study:
+ * The UGC additions close the gap from the industry research AI Mode study:
  * UGC platforms appear in 68%+ of AI Mode sidebars and dominate the
  * citation pool, so brand absence on all three is the biggest AEO gap.
  */

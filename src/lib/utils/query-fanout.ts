@@ -4,7 +4,7 @@
 // of a page, asks "of the sub-questions an AI would explode this topic
 // into, how many does your page actually address?".
 //
-// Closes the gap from the Semrush "AI search optimization" piece:
+// Closes the gap from the industry research "AI search optimization" piece:
 //   "Optimize for query fan-out: AI systems split user prompts into
 //    related sub-queries. Run your target topic through an AI tool and
 //    note the sub-topics, entities, and follow-up angles. Check whether
@@ -131,7 +131,7 @@ export function extractContentSections(html: string): Array<{
 /**
  * Emit the UNCOVERED sub-questions as a ready-to-paste FAQ block.
  *
- * The Semrush "We Tested Query Fan-Out Optimization" experiment more than
+ * The industry research "We Tested Query Fan-Out Optimization" experiment more than
  * doubled AI citations (2 → 5, briefly peaking at 9) by editing each
  * article to address the missed fan-out queries — and explicitly used a
  * dedicated FAQ section when integration into the prose was awkward.

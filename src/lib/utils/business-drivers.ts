@@ -4,7 +4,7 @@
 // attributes LLMs use to differentiate brands (pricing, speed, quality,
 // customer support, features, value, reliability, ease of use).
 //
-// Closes the gap from the Semrush "Brand Performance" piece:
+// Closes the gap from the industry research "Brand Performance" piece:
 //   "The Key Business Drivers heatmap shows which attributes (like
 //    pricing, fulfillment speed, or product assortment) AI mentions
 //    most often for each brand in your category. Notice the trophy

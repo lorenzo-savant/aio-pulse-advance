@@ -289,7 +289,7 @@ export const SEMANTIC_MONOPOLIES: SemanticMonopoly[] = [
   },
   {
     category: 'SEO / Marketing',
-    dominantBrands: ['Semrush', 'Ahrefs', 'Moz'],
+    dominantBrands: ['industry research', 'Ahrefs', 'Moz'],
     nicheStrategy:
       'Position as AI-native alternative — e.g., "AI-powered SEO for non-technical founders"',
   },

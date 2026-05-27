@@ -2,7 +2,7 @@
 //
 // Citation Quality Scorer — measures how likely a page is to be cited
 // by AI search engines (ChatGPT, Google AI Mode, Perplexity, etc.).
-// Operationalises the five positive-correlation signals from Semrush's
+// Operationalises the five positive-correlation signals from industry research
 // "What makes content get cited by AI" study (study period Jul–Aug 2025,
 // 304k cited URLs vs 921k Google-ranking-only URLs):
 //
@@ -54,7 +54,7 @@ export interface CitationQualityInput {
   text: string
 }
 
-// Pillar weights — anchored to Semrush's measured correlations, then
+// Pillar weights — anchored to the measured correlations, then
 // normalised to sum to 100 for a clean overall percentage. Higher weight
 // = more leverage when this pillar moves.
 const WEIGHTS = {
@@ -76,7 +76,7 @@ function bandFor(score: number): QualityBand {
 }
 
 // ─── Shared content-shape heuristics ───────────────────────────────────
-// These power the secondary signals added per the Semrush featured-
+// These power the secondary signals added per the industry research featured-
 // snippet research (2018 large-scale study + 2025 update): top
 // performers correlate strongly with low reading level, image alt-text
 // density, list ≥8 items, table ≥5 rows / ≥7 cols, ≥10 outbound links.
@@ -95,7 +95,7 @@ function syllableCount(word: string): number {
   return Math.max(1, matches?.length ?? 1)
 }
 
-/** Flesch-Kincaid grade level. Lower = simpler text. Semrush's 2018
+/** Flesch-Kincaid grade level. Lower = simpler text. industry research 2018
  *  featured-snippet study found top-performing pages at ~7th grade.
  *  English-tuned; for IT/SV the formula overshoots a bit (more
  *  syllables/word native), so we only USE the signal when low — we
@@ -122,7 +122,7 @@ function imgAltStats(html: string): { total: number; withAlt: number; density: n
 
 /** Count list-block sizes (HTML <ul>/<ol> with their <li> counts +
  *  contiguous markdown bullet/numbered runs). Returns the SIZE of the
- *  largest list found; ≥8 items is the Semrush truncation threshold
+ *  largest list found; ≥8 items is the the truncation threshold
  *  (Google truncates and shows "...more" which lifts engagement). */
 function largestListSize(text: string, html: string | undefined): number {
   let largest = 0
@@ -144,7 +144,7 @@ function largestListSize(text: string, html: string | undefined): number {
 }
 
 /** Largest table size found in HTML — returns { rows, cols } of the
- *  biggest table by row count. Empty when no tables present. Semrush's
+ *  biggest table by row count. Empty when no tables present. industry research
  *  truncation threshold for tables is ≥5 rows OR ≥7 cols. */
 function largestTableSize(html: string | undefined): { rows: number; cols: number } {
   if (!html) return { rows: 0, cols: 0 }
@@ -164,7 +164,7 @@ function largestTableSize(html: string | undefined): { rows: number; cols: numbe
 /** Count outbound absolute `http(s)://` links in HTML. We don't strip
  *  same-domain links because the scorer doesn't know the brand context
  *  — slight overcount on link-heavy internal pages, accepted for v1.
- *  Semrush's 2018 study found top featured-snippet hubs at ~33 outbound
+ *  the 2018 mobile featured-snippet research found top featured-snippet hubs at ~33 outbound
  *  citations on average; ≥10 is our practical floor. */
 function countAbsoluteLinks(html: string | undefined): number {
   if (!html) return 0
@@ -181,7 +181,7 @@ function scoreClarity(input: CitationQualityInput): PillarScore {
   let score = 0
 
   // Lead paragraph length — operates on the first ~1500 chars to dodge
-  // long-form intros. The Semrush study correlated short, dense leads.
+  // long-form intros. The industry research correlated short, dense leads.
   const trimmed = text.trim()
   const firstParagraph = trimmed.split(/\n{2,}|\.{1}\s+/)[0] ?? ''
   const leadWords = firstParagraph.split(/\s+/).filter(Boolean).length
@@ -234,7 +234,7 @@ function scoreClarity(input: CitationQualityInput): PillarScore {
     signals.push('A dedicated lead/summary container is present in the markup.')
   }
 
-  // Reading-level bonus. Semrush's 2018 mobile featured-snippet study
+  // Reading-level bonus. the 2018 mobile featured-snippet research
   // found top performers at ~7th grade (Flesch-Kincaid). Same content-
   // shape lifts AI-citation rate. We REWARD simple text but don't punish
   // complex — the formula is English-tuned and overshoots on IT/SV.
@@ -345,7 +345,7 @@ function scoreEeat(input: CitationQualityInput): PillarScore {
     signals.push('No inline citations/footnotes. Cite the sources behind your claims.')
   }
 
-  // Total outbound link density. Semrush's 2018 study found top featured-
+  // Total outbound link density. the 2018 mobile featured-snippet research found top featured-
   // snippet hubs at ~33 outbound citations on average — link density is
   // a "page is part of the web" signal that AI engines reward. Our
   // practical floor: ≥10 absolute http(s) links from the page.
@@ -461,7 +461,7 @@ function scoreStructure(input: CitationQualityInput): PillarScore {
   }
 
   // Lists / bulleted enumeration. Reduced base weight from 25→15 to
-  // make room for the "long-list bonus" below (Semrush's ≥8 items
+  // make room for the "long-list bonus" below (industry research ≥8 items
   // truncation signal). Composite is unchanged for content that hits
   // both: 25 (legacy) ≈ 15 + 10.
   let lists = 0
@@ -482,7 +482,7 @@ function scoreStructure(input: CitationQualityInput): PillarScore {
     signals.push('No bulleted/numbered lists. Add at least 2.')
   }
 
-  // Long-list bonus — Semrush's 2018 study found ≥8-item lists hit
+  // Long-list bonus — the 2018 mobile featured-snippet research found ≥8-item lists hit
   // Google's truncation threshold, surfacing a "show more" CTA that
   // lifts engagement. Same shape correlates with AI citation pickup.
   const biggestList = largestListSize(text, html)
@@ -505,7 +505,7 @@ function scoreStructure(input: CitationQualityInput): PillarScore {
     signals.push('No tables. A single comparison table can lift citation rate noticeably.')
   }
 
-  // Table-size bonus — Semrush's threshold for truncation is ≥5 rows
+  // Table-size bonus — the truncation threshold for truncation is ≥5 rows
   // OR ≥7 cols, same engagement-lift logic as the long-list bonus.
   const tableSize = largestTableSize(html)
   if (tableSize.rows >= 5 || tableSize.cols >= 7) {

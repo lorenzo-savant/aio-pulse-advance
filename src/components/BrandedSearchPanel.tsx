@@ -2,7 +2,7 @@
 
 // "Branded vs Non-branded GSC search" panel.
 //
-// Closes the gap from the Semrush AEO piece: "Inside Google's AI
+// Closes the gap from the AEO piece: "Inside Google's AI
 // Overviews and AI Mode, mentions can also increase your search
 // impressions. When your brand consistently appears in AI-generated
 // summaries, users begin to recognize and trust it — that can lead

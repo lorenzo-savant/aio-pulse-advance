@@ -536,8 +536,8 @@ export default function CitationSourcesPage() {
                   <p className="mb-3 text-xs text-muted-foreground">
                     AI engines lean heavily on a few <strong>UGC</strong> (Reddit/Quora/YouTube) and{' '}
                     <strong>authority</strong> (Wikipedia, major media, .edu/.gov) sources per the
-                    Semrush AI Mode study. This view shows how citations split between UGC,
-                    authoritative sources, your own pages, and other sites.
+                    industry research AI Mode study. This view shows how citations split between
+                    UGC, authoritative sources, your own pages, and other sites.
                   </p>
                   <div className="flex h-4 w-full overflow-hidden rounded-full bg-secondary">
                     <div

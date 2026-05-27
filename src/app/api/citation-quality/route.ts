@@ -1,7 +1,7 @@
 // PATH: src/app/api/citation-quality/route.ts
 //
 // POST → score the citation-quality of pasted text or a fetched URL
-// against the five Semrush AI-citation signals (see scoreCitationQuality
+// against the five AI-citation signals (see scoreCitationQuality
 // in src/lib/services/citation-quality-scorer.ts).
 //
 // Text mode: pure, no network. URL mode: fetches HTML with safeFetchText

@@ -3,7 +3,7 @@
 // Citation source-category breakdown panel. Shows which CATEGORY of
 // source (first-party, review site, community, encyclopedia, editorial,
 // social, aggregator) AI engines cite for the brand, and which category
-// each engine prefers. Closes the gap from the Semrush "Why AI is
+// each engine prefers. Closes the gap from the industry research "Why AI is
 // citing third-party sources" piece: the operator can target the
 // platforms that actually move the needle for THEIR engine mix.
 

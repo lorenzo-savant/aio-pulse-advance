@@ -4,7 +4,7 @@
 // surface a specific class of opportunity: pages the AI engines cite
 // often but that Google ranks beyond page 1.
 //
-// Closes the gap from the Semrush "AI Mode" study:
+// Closes the gap from the industry research "AI Mode" study:
 //   "Our recent research on the impact of AI on SEO traffic found that
 //    most of ChatGPT's citations in that study sample were pulled from
 //    URLs ranking beyond position 21+ on Google."

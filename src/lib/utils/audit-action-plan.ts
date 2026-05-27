@@ -3,7 +3,7 @@
 // Pure prioritiser that turns a Content Audit result into an ordered
 // action plan: "Today / This week / This month / Backlog".
 //
-// Closes the gap from the Semrush "AI search optimization next steps":
+// Closes the gap from the industry research "AI search optimization next steps":
 //   "Today (30 minutes): Find 2-3 statistics for an article and add them.
 //    This week: Rewrite 3-5 key headings as questions. Add one specific
 //    statistic, result, or case study to your author bio. Run your top

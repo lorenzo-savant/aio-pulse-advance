@@ -7,7 +7,7 @@
 // Reads monitoring_results.cited_urls + engine for the brand+window and
 // runs computeEngineFormatAffinity. When ?owned=1 (default), restricts
 // the count to URLs on the brand's owned domain — the typical use case
-// per Semrush ("the fix was to rewrite their pages in forms each LLM
+// per industry research ("the fix was to rewrite their pages in forms each LLM
 // would prefer"). When ?owned=0, counts every cited URL.
 //
 // Pure aggregation, no new external API.

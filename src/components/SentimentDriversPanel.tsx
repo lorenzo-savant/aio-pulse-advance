@@ -1,6 +1,6 @@
 'use client'
 
-// "Key Sentiment Drivers" panel — closes the Semrush AI-SoV-article gap:
+// "Key Sentiment Drivers" panel — closes the industry AI-SoV-article gap:
 // the Perception report flags WHICH aspects of a brand drive positive vs
 // negative AI portrayal. We mine our own monitoring_results.response_text
 // per brand mention to produce the same view — no new API key, no new

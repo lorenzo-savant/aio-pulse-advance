@@ -49,7 +49,7 @@ export function emitOrganizationJsonLd(input: LlmsInput): string {
  *   - Organization (the brand itself)
  *   - WebSite (the canonical site, with SearchAction for chatbots)
  *   - FAQPage (when input has FAQs — heavy AI-citation lift, +25% per
- *     the Semrush Aug-2025 study)
+ *     the industry research Aug-2025 study)
  *   - Article (when input has a description — anchors the homepage as
  *     citeable editorial content, +30% lift)
  *

@@ -3,7 +3,7 @@
 // Audits the brand's homepage for explicit audience-declaration signals
 // (industry pages, persona pages, use-case pages, "built for X"
 // language). Output backs the AudienceDeclarationPanel that surfaces the
-// agentic-web readiness gap from the Semrush "agentic web" piece.
+// agentic-web readiness gap from the industry research "agentic web" piece.
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/api-auth'

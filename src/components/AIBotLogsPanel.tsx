@@ -4,7 +4,7 @@
 // Combined, Nginx default, or CSV with a user_agent column) and we
 // surface which LLM bots actually crawl their site, on which pages, and
 // with what error rate. Pure client-side parse — no upload, no fetch,
-// no logging. Implements the operator-side of the Semrush "track
+// no logging. Implements the operator-side of the industry research "track
 // ChatGPT traffic" piece: referrer filters cover human clicks, this
 // covers bot fetches.
 

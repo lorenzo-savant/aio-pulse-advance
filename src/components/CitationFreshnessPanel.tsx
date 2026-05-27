@@ -2,7 +2,7 @@
 
 // "Citation Freshness" panel.
 //
-// Closes the gap from the Semrush AEO piece (AirOps study):
+// Closes the gap from the AEO piece (AirOps study):
 //   "95% of ChatGPT citations come from content published or updated
 //    within the last 10 months, and pages with a clear 'last updated'
 //    timestamp receive 1.8x more citations than those without one."

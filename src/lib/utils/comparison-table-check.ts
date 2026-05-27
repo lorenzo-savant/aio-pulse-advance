@@ -1,6 +1,6 @@
 // PATH: src/lib/utils/comparison-table-check.ts
 //
-// Detects image-based pricing/comparison tables — the Semrush "SaaS AI
+// Detects image-based pricing/comparison tables — the industry research "SaaS AI
 // search optimization" pitfall #5: "tables saved as screenshots are
 // invisible to AI extraction". When a page's URL signals it's a pricing
 // or comparison page, we want at least one real HTML <table>; if all the

@@ -3,7 +3,7 @@
 // Lists pages on the brand's OWN domain that AI engines are actually
 // citing, ranked by hit count and with per-engine breakdown. Direct
 // answer to "which pages on my site does AI cite most?" from the
-// Semrush "Why AI is citing third-party sources" piece. Pure DB
+// industry research "Why AI is citing third-party sources" piece. Pure DB
 // query — reads cited_urls already stored on monitoring_results.
 
 import { type NextRequest, NextResponse } from 'next/server'

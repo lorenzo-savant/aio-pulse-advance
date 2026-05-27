@@ -4,7 +4,7 @@
 // same site rank in the same top-N window, splitting Google's
 // attention and hurting overall performance.
 //
-// Closes the gap from the Semrush "Keyword Tracking" piece:
+// Closes the gap from the industry research "Keyword Tracking" piece:
 //   "When multiple pages on your site rank for the same keyword, they
 //    can compete against each other and hurt your overall performance.
 //    Cannibalization can lead to unstable rankings, reduced visibility,

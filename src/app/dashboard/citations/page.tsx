@@ -321,7 +321,7 @@ export default function CitationsPage() {
       {selectedBrand && <CrawlerAccessPanel brandId={selectedBrand.id} />}
 
       {/* Citation-capture rate — when AI engines mention the brand, do
-          they ALSO cite the brand's own site? Direct port of Semrush's
+          they ALSO cite the brand's own site? Direct port of industry research
           "Domain doesn't rank in feature" filter, applied to AI citations. */}
       {selectedBrand && <CitationCapturePanel brandId={selectedBrand.id} />}
 

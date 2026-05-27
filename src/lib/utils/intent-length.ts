@@ -3,7 +3,7 @@
 // "Does the depth of this page match what AI expects for the query
 // intent?"
 //
-// Closes the gap from the Semrush AI Mode study (Nov 2025):
+// Closes the gap from the industry research AI Mode study (Nov 2025):
 //   "Across all platforms, commercial and transactional queries
 //    triggered the longest and most detailed responses — often double
 //    the length of informational responses. For SEOs, this means
@@ -31,7 +31,7 @@ export interface IntentBand {
   max: number
 }
 
-// Calibrated against the Semrush AI Mode study averages:
+// Calibrated against the industry research AI Mode study averages:
 //   - AI Overviews ~150-220 words for informational
 //   - AI Mode ~300 words baseline, commercial ~600
 //   - Transactional pages tend to be product-page-like + comparison

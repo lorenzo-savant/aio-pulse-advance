@@ -4,7 +4,7 @@
 //
 // Classifies the brand's tracked prompts into the 4-bucket business-impact
 // portfolio (revenue / reputation / competitor / gap / other) per the
-// Semrush "Prompt Tracking" piece, and adds an aggregate brand-visibility
+// industry research "Prompt Tracking" piece, and adds an aggregate brand-visibility
 // metric per bucket from the recent monitoring_results.
 //
 // Pure aggregation. No external API.

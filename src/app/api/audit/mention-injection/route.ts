@@ -3,7 +3,7 @@
 // POST /api/audit/mention-injection
 //
 // Finds owned pages that discuss brand-relevant topics but never mention
-// the brand — "injection opportunities" per the Semrush "How We're
+// the brand — "injection opportunities" per the industry research "How We're
 // Driving LLM Visibility" playbook (step 3: audit existing content for
 // natural injection spots).
 //

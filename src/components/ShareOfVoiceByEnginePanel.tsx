@@ -2,7 +2,7 @@
 
 // "Share of Voice — per AI Engine" panel.
 //
-// Closes the gap from the Semrush AEO piece:
+// Closes the gap from the AEO piece:
 //   "The Visibility report shows your share of voice — a metric that
 //    reflects how often your brand appears relative to competitors
 //    across AI-generated answers."
@@ -28,7 +28,7 @@ interface SovEntity {
   mentionRate: number
   avgPosition: number | null
   /** Per-bucket share stddev — surfaces day-to-day fluctuation on
-   *  non-deterministic LLM engines (Semrush AEO playbook). */
+   *  non-deterministic LLM engines (AEO playbook). */
   volatility?: number
   range?: { min: number; max: number; bucketsObserved: number }
 }

@@ -7,7 +7,7 @@
 // For every domain the AI engines cite in a brand's monitoring responses,
 // compute the SENTIMENT of those responses. Lets the operator see which
 // cited sources drive negative sentiment — and act on them (correct the
-// source content, reach out, etc.). Closes the Semrush "look at sentiment
+// source content, reach out, etc.). Closes the industry research "look at sentiment
 // sources/triggers" best practice (#5 of 6 — the only one we didn't
 // already cover).
 //

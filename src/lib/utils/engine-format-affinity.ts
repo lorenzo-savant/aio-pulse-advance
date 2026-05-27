@@ -4,7 +4,7 @@
 // docs / product / support / other) so the operator can see which engine
 // prefers which content format from a domain.
 //
-// Closes the gap from the Semrush "LLM Prompt Tracking" piece:
+// Closes the gap from the industry research "LLM Prompt Tracking" piece:
 //   "The fix was to rewrite their existing high-converting pages in forms
 //    each of the other LLMs would prefer: a Reddit Q&A thread for
 //    Perplexity, a page with a listicle for ChatGPT, a blog post for

@@ -260,7 +260,7 @@ export async function GET(req: NextRequest) {
           typeBreakdown: d.types,
           // Page-depth mix for this domain (root / hub / leaf). Used by the
           // UI to surface "AI cites your blog/docs, not your homepage" per
-          // the Semrush AEO finding that AI favours deep subpages.
+          // the AEO finding that AI favours deep subpages.
           depthBreakdown: d.depths,
           deepPageRate: deepPageRate(d.depths),
           // AI Trust Score: proprietary 0–100 metric (cross-engine + domain
@@ -312,13 +312,13 @@ export async function GET(req: NextRequest) {
           // Citation-type mix across all sources for the period.
           citationTypeBreakdown,
           // Citation-depth mix (root / hub / leaf) + deep-page rate %.
-          // Aligns with the Semrush AEO finding that AI engines favour
+          // Aligns with the AEO finding that AI engines favour
           // deep subpages over homepage URLs even when ranking the latter.
           citationDepthBreakdown,
           deepPageRate: deepPageRate(citationDepthBreakdown),
           // Sidebar dominance — UGC / authority / owned / other breakdown
           // + sidebarScore (% of responses where the brand was cited).
-          // Closes the gap from the Semrush AI Mode study: "Reddit
+          // Closes the gap from the industry research AI Mode study: "Reddit
           // dominated across all LLMs; UGC platforms appeared in 68%+
           // of AI Mode results."
           sidebarDominance: computeSidebarDominance(

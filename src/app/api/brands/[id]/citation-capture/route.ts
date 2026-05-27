@@ -3,7 +3,7 @@
 // GET → per-engine "Citation Capture Rate" report: how often does the AI
 // cite the brand's OWN domain on prompts that mention the brand by name?
 // Low rate = the AI knows about you but doesn't think your site is the
-// authoritative source. Direct port of Semrush's "Domain doesn't rank
+// authoritative source. Direct port of industry research "Domain doesn't rank
 // in feature" filter, applied to AI citations.
 //
 // Query params:

@@ -2,7 +2,7 @@
 
 // AI Referral Filter Generator — copy-paste-ready segment expressions
 // for the most common analytics tools (GA4, Plausible, Matomo, Looker
-// Studio, Cloudflare Logs). Closes the gap from the Semrush "track
+// Studio, Cloudflare Logs). Closes the gap from the industry research "track
 // ChatGPT traffic" piece: operators want a single source of truth for
 // the host list so they don't miss new engines as they appear.
 //

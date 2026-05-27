@@ -860,7 +860,7 @@ export default function AuditPage() {
 
           {/* Mention Injection Opportunities — paste your URLs + topic
               phrases, surface pages that discuss the topic without
-              naming the brand. Semrush "LLM Visibility" playbook step 3. */}
+              naming the brand. industry research "LLM Visibility" playbook step 3. */}
           <MentionInjectionPanel />
         </div>
       )}

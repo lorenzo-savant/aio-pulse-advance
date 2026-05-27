@@ -5,7 +5,7 @@
 // into a pillar page + N cluster pages, where each cluster is anchored
 // on the most-frequent content term shared by its questions.
 //
-// Closes the gap from the Semrush "Query Fan-Out" piece:
+// Closes the gap from the industry research "Query Fan-Out" piece:
 //   "Topic clusters are groups of interlinked webpages [...]. Topic
 //    clustering helps you to address multiple queries that may be
 //    generated through relevant query fan-outs."

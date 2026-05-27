@@ -30,7 +30,7 @@ export interface CategoryStat {
 // hostname *ends with* the key (so "uk.trustpilot.com" still maps to
 // trustpilot.com). Keep entries lowercased; matchHost normalises input.
 //
-// Sources mined from the Semrush "Why AI is citing third-party sources"
+// Sources mined from the industry research "Why AI is citing third-party sources"
 // piece + the Search Engine Land cross-platform research it cites.
 const HOST_CATEGORY: Array<[string, SourceCategory]> = [
   // Review aggregators / B2B comparison
@@ -84,7 +84,7 @@ const HOST_CATEGORY: Array<[string, SourceCategory]> = [
   ['venturebeat.com', 'editorial'],
   ['searchengineland.com', 'editorial'],
   ['searchenginejournal.com', 'editorial'],
-  ['semrush.com', 'editorial'],
+  ['techcrunch.com', 'editorial'],
   ['hubspot.com', 'editorial'],
   ['ahrefs.com', 'editorial'],
   ['moz.com', 'editorial'],

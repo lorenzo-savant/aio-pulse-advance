@@ -1,7 +1,7 @@
 'use client'
 
 // Site Audit Hub — single page bundling every AI-readiness check we
-// have. Mounted as the analog to Semrush's "Site Audit" entry under
+// have. Mounted as the analog to industry research "Site Audit" entry under
 // AI Visibility. The pieces already exist scattered across other
 // pages (Citations: crawler + capture; Optimizer: citation quality);
 // this is a CONSOLIDATED view so operators don't have to hop between
@@ -117,12 +117,12 @@ export default function SiteAuditPage() {
           <CitationCapturePanel brandId={selectedBrand.id} />
 
           {/* 4. Topic Finder — clusters the gap list into ranked content
-              opportunities. Direct port of Semrush's Content > Topic
+              opportunities. Direct port of industry content > Topic
               Finder applied to AI-citation gaps. */}
           <TopicFinderPanel brandId={selectedBrand.id} />
 
           {/* 5. Citation Quality — scores the homepage HTML against the
-              5 Semrush AI-citation signals. Operator clicks "Score" to
+              5 AI-citation signals. Operator clicks "Score" to
               fire the URL fetch (avoids silent cost). */}
           {probeUrl && (
             <div>

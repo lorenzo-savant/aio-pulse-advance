@@ -4,7 +4,7 @@
 // Aggregates existing signals (monitoring volume, multi-engine cover,
 // mention rate, own-domain citation share, FAQPage schema, llms.txt,
 // branded search uplift, competitor coverage) into a single A-F grade
-// + itemised punch list. Closes the gap from the Semrush 2026 piece.
+// + itemised punch list. Closes the gap from the industry research 2026 piece.
 
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'

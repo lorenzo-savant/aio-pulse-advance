@@ -1,7 +1,7 @@
 -- Migration: brand_facts — operator-declared "ground truth" facts for
 -- claim verification.
 --
--- Pairs with AA (cross-engine claim divergence) to close the Semrush
+-- Pairs with AA (cross-engine claim divergence) to close the industry research
 -- "find and fix what AI gets wrong about your brand" workflow:
 --   1. Operator declares the brand's source-of-truth facts (founded
 --      year, HQ city, founder, team size, pricing, funding).

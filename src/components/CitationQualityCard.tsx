@@ -1,7 +1,7 @@
 'use client'
 
 // "Citation Quality" card for the Content Optimizer page. Scores the
-// pasted text or fetched URL against the five Semrush AI-citation
+// pasted text or fetched URL against the five industry AI-citation
 // signals (clarity, EEAT, Q&A, structure, structured-data). Fires
 // on-demand — operator clicks the button so the work + URL fetch only
 // happens when wanted, not silently alongside every Analyze.
@@ -39,7 +39,7 @@ const PILLAR_LABELS: Record<keyof CitationQualityReport['pillars'], string> = {
   structuredData: 'Structured Data',
 }
 
-// Semrush-measured citation correlation lifts — surfaced as context so
+// industry-measured citation correlation lifts — surfaced as context so
 // operators understand WHY each pillar matters.
 const PILLAR_LIFT: Record<keyof CitationQualityReport['pillars'], string> = {
   clarity: '+33% citation lift',
@@ -97,7 +97,7 @@ export function CitationQualityCard({ input, mode }: { input: string; mode: 'tex
             <h2 className="text-lg font-bold text-foreground">Citation Quality Score</h2>
             <p className="text-xs text-muted-foreground">
               Probability your content gets cited by AI search engines (ChatGPT, Google AI Mode,
-              Perplexity). Five signals weighted from a 300k-URL Semrush study.
+              Perplexity). Five signals weighted from a 300k-URL industry research.
             </p>
           </div>
         </div>
@@ -121,7 +121,7 @@ export function CitationQualityCard({ input, mode }: { input: string; mode: 'tex
       {!report && !error && !running && (
         <p className="bg-input/30 mt-2 rounded-lg border border-input px-4 py-6 text-center text-sm text-muted-foreground">
           Click <b>Score citation quality</b> to grade the {mode === 'url' ? 'URL' : 'pasted text'}{' '}
-          against the five Semrush-measured AI-citation signals.
+          against the five industry-measured AI-citation signals.
         </p>
       )}
 

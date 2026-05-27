@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
   const report = scoreFanoutCoverage(html, subQuestions)
 
   // 5) Turn the missed sub-questions into a ready-to-paste FAQ block
-  //    (markdown + FAQPage JSON-LD). The Semrush fan-out experiment
+  //    (markdown + FAQPage JSON-LD). The query fan-out experiment
   //    more-than-doubled AI citations by editing articles to address
   //    the gaps — this is the actionable artifact for that workflow.
   const faqExport = exportFanoutAsFAQ(report)

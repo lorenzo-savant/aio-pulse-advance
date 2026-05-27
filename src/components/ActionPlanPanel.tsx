@@ -3,7 +3,7 @@
 // "Action plan" panel — turns a technical-SEO audit result into a
 // prioritised Today / This week / This month list.
 //
-// Closes the gap from the Semrush "AI search optimization next steps":
+// Closes the gap from the industry research "AI search optimization next steps":
 //   "Today (30 minutes): Find 2-3 statistics for an article and add them.
 //    This week: Rewrite 3-5 key headings as questions. Add one specific
 //    statistic, result, or case study to your author bio…"

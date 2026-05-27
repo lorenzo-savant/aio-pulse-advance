@@ -1,7 +1,7 @@
 'use client'
 
 // AI Article Generator — produces draft Markdown articles optimised
-// against the same 5 Semrush AI-citation signals that CitationQualityCard
+// against the same 5 AI-citation signals that CitationQualityCard
 // measures. Operator picks brand + topic + intent + length (+ optional
 // format hint from Topic Finder), the LLM chain generates a draft, and
 // the result is auto-scored. Operator can copy / download the markdown
@@ -156,8 +156,8 @@ export default function ContentGeneratorPage() {
           <h1 className="text-3xl font-black tracking-tight text-foreground">Content Generator</h1>
         </div>
         <p className="mt-1 text-muted-foreground">
-          Generate Markdown articles optimised against the 5 Semrush AI-citation signals (clarity,
-          EEAT, Q&A, structure, structured-data). The output is auto-scored — iterate until it lands
+          Generate Markdown articles optimised against the 5 AI-citation signals (clarity, EEAT,
+          Q&A, structure, structured-data). The output is auto-scored — iterate until it lands
           strong.
         </p>
       </div>
@@ -292,7 +292,7 @@ export default function ContentGeneratorPage() {
                 <div>
                   <p className="text-sm font-bold text-foreground">Citation Quality Score</p>
                   <p className="text-xs text-muted-foreground">
-                    Auto-graded against the 5 Semrush AI-citation signals. Band:{' '}
+                    Auto-graded against the 5 AI-citation signals. Band:{' '}
                     <b className={bandColor(output.qualityScore.band)}>
                       {output.qualityScore.band.toUpperCase()}
                     </b>

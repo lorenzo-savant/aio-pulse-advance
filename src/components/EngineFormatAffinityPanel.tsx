@@ -2,7 +2,7 @@
 
 // "Engine × Content-Format Affinity" panel.
 //
-// Closes the gap from the Semrush "LLM Prompt Tracking" piece:
+// Closes the gap from the industry research "LLM Prompt Tracking" piece:
 //   "The fix was to rewrite their existing high-converting pages in
 //    forms each of the other LLMs would prefer: a Reddit Q&A thread
 //    for Perplexity, a page with a listicle for ChatGPT, a blog post

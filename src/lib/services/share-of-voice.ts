@@ -32,7 +32,7 @@ export interface SovEntity {
   /** Average answer position when mentioned (lower = better); null if never positioned. */
   avgPosition: number | null
   /** Population stddev of per-bucket share% across the timeline (0 when ≤1 bucket).
-   *  Surfaces the "30% ± 10%" volatility Semrush flags: LLMs are non-deterministic,
+   *  Surfaces the "30% ± 10%" volatility industry research flags: LLMs are non-deterministic,
    *  so a point estimate hides whether the brand actually holds its share day to day. */
   volatility: number
   /** Min/max per-bucket share% observed, plus how many buckets had any responses. */
@@ -231,7 +231,7 @@ export function computeShareOfVoice(
 }
 
 // ─── Per-engine variant ────────────────────────────────────────────────────
-// Closes the Semrush AEO gap: "share of voice — how often your brand appears
+// Closes the AEO gap: "share of voice — how often your brand appears
 // relative to competitors ACROSS AI-GENERATED ANSWERS" (per platform).
 // Each AI engine has its own retrieval + ranking behaviour, so an aggregate
 // SoV hides where the brand is strong vs weak.

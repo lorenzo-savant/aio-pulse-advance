@@ -3,7 +3,7 @@
 // "Key Business Drivers" panel — brand × attribute heatmap with a
 // trophy on each driver's leader, plus a "narrative gaps" punch-list.
 //
-// Closes the gap from the Semrush "Brand Performance" piece:
+// Closes the gap from the industry research "Brand Performance" piece:
 //   "The Key Business Drivers heatmap shows which attributes — pricing,
 //    fulfillment speed, product assortment, ease of use — AI mentions
 //    most often for each brand in your category. Notice the trophy icon

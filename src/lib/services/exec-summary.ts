@@ -1,7 +1,7 @@
 // PATH: src/lib/services/exec-summary.ts
 //
 // Builds a single 1-page executive summary for a brand structured around
-// the 4 questions from the Semrush "AI search visibility reporting" piece:
+// the 4 questions from the industry research "AI search visibility reporting" piece:
 //
 //   Q1. Where do we appear?            (citation frequency + prompt coverage)
 //   Q2. How accurately are we described? (sentiment + driver narrative)
@@ -509,7 +509,7 @@ export function execSummaryTrendToMarkdown(trend: ExecSummaryTrend): string {
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Tiered KPI deck (JJ) — Tier 1 / Tier 2 / Tier 3 framing from the Semrush
+// Tiered KPI deck (JJ) — Tier 1 / Tier 2 / Tier 3 framing from the industry research
 // "Create an SEO + AI Search Marketing Report" piece. Wraps the existing
 // ExecSummary so the same data renders three ways: 4-question JSON, plain
 // MD, and now a client-deck-ready tiered MD.
@@ -619,7 +619,7 @@ export function tieredKpiDeckToMarkdown(deck: TieredKpiDeck): string {
   )
   out.push('')
   out.push(
-    `_Tier framing from the Semrush "Create an SEO + AI Search Marketing Report" template. Tier 1 = business impact, Tier 2 = visibility context, Tier 3 = supporting signal._`,
+    `_Tier framing from the industry research "Create an SEO + AI Search Marketing Report" template. Tier 1 = business impact, Tier 2 = visibility context, Tier 3 = supporting signal._`,
   )
   out.push('')
   out.push(...tierBlock('Tier 1 — Primary KPIs', deck.tier1))

@@ -1,7 +1,7 @@
 // PATH: src/lib/utils/prompt-portfolio.ts
 //
 // Classifies a tracked prompt into the 4-bucket business-impact taxonomy
-// from the Semrush "Prompt Tracking" piece:
+// from the industry research "Prompt Tracking" piece:
 //
 //   - revenue:    user-intent prompts about your brand or category
 //                 where AI's answer can directly drive a purchase
@@ -202,7 +202,7 @@ export interface PortfolioBucketSummary {
   averageBrandVisibility: number | null
 }
 
-/** Branded-vs-category mix verdict — Semrush SaaS-AI pitfall #1: testing
+/** Branded-vs-category mix verdict — competitor SaaS-AI pitfall #1: testing
  *  only branded prompts ("what is X?") gives an inflated SoV read because
  *  the brand is already in the question. A healthy portfolio leans on
  *  category-level prompts that reflect how unaware buyers actually search. */

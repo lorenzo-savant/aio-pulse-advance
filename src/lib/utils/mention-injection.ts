@@ -5,7 +5,7 @@
 // Inverts brand-mention.ts: instead of flagging WHERE the brand IS cited,
 // this surfaces pages where the brand SHOULD be cited but isn't — owned
 // content discussing brand-relevant topics that fails to namedrop the
-// brand or product. From the Semrush "How We're Driving LLM Visibility"
+// brand or product. From the industry research "How We're Driving LLM Visibility"
 // playbook, step 3: "audit existing content for injection opportunities…
 // content that already discusses the problems your tools solve".
 //

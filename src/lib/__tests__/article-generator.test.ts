@@ -26,7 +26,7 @@ const baseInput: GenerateArticleInput = {
 }
 
 describe('buildArticleSystemPrompt', () => {
-  it('embeds all 5 Semrush AI-citation constraints', () => {
+  it('embeds all 5 industry AI-citation constraints', () => {
     const sys = buildArticleSystemPrompt(baseInput)
     expect(sys).toMatch(/Lead with the answer/i)
     expect(sys).toMatch(/40-60 word/)

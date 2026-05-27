@@ -1,6 +1,6 @@
 // PATH: src/lib/services/citation-capture.ts
 //
-// "Citation Capture Rate" — operationalises the cheap-win from Semrush's
+// "Citation Capture Rate" — operationalises the cheap-win from industry research
 // SERP-feature article: for every prompt where the AI engine MENTIONED
 // the brand by name, was the BRAND'S OWN domain among the cited URLs?
 // If the AI mentions you but cites Wikipedia / a competitor / a blog

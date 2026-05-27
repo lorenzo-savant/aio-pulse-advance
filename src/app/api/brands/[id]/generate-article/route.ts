@@ -1,6 +1,6 @@
 // PATH: src/app/api/brands/[id]/generate-article/route.ts
 //
-// POST → generates a Markdown article optimised against the 5 Semrush
+// POST → generates a Markdown article optimised against the 5 industry research
 // AI-citation signals (clarity / EEAT / Q&A / structure / structured-
 // data) and auto-scores it. Reuses brand context from the DB so the
 // caller only sends the topic + intent + length + optional format hint.

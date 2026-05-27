@@ -1,6 +1,6 @@
 // PATH: src/lib/services/ai-seo-readiness.ts
 //
-// "AI SEO 2026 readiness" scorecard — turns the Semrush 2026 checklist
+// "AI SEO 2026 readiness" scorecard — turns the industry research 2026 checklist
 // (multi-engine coverage, schema markup, fresh citations, branded
 // search uplift, llms.txt, competitor awareness) into a single 0-100
 // score with an itemised list of what's missing.

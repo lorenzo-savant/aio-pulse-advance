@@ -2,7 +2,7 @@
 //
 // "Audience declaration" audit — fetches the brand's homepage and
 // (optionally) sitemap.xml, then looks for the signals AI agents key
-// off in the delegate economy (Semrush "agentic web" piece):
+// off in the delegate economy (industry research "agentic web" piece):
 //   - Vertical/industry pages (/industries/, /solutions/, /for-…)
 //   - Persona/role pages (/for-marketers, /for-engineering-leaders)
 //   - Use-case pages (/use-cases/, /workflows/)

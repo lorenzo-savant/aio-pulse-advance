@@ -10,7 +10,7 @@
 // OPERATIONAL score — "your page is at 47/100, fix these three things to
 // get to 80" — without re-classifying anything.
 //
-// Closes the gap from the Semrush "AI search visibility" piece:
+// Closes the gap from the industry research "AI search visibility" piece:
 // operators don't want six different scorecards, they want one number
 // per page plus the next-best-action ranked by impact.
 //

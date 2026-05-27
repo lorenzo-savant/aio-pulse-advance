@@ -3,7 +3,7 @@
 // Deterministic classifier that buckets a cited URL by PAGE DEPTH — i.e.
 // how far the cited page sits from the root of its domain.
 //
-// Motivation (from Semrush "SEO vs AEO" April 2026 piece):
+// Motivation (from industry research "SEO vs AEO" April 2026 piece):
 //   "AI doesn't necessarily cite high-ranking pages: AI often pulls deeper
 //   subpages, blog posts, or documentation within trusted domains instead
 //   of the exact ranking URLs."
@@ -184,7 +184,7 @@ export function emptyDepthBreakdown(): DepthBreakdown {
 
 /**
  * Deep-page citation rate as a percentage (0-100, 1 decimal). This is the
- * KPI the Semrush article highlights: "AI cites deep subpages, not the
+ * KPI the industry article highlights: "AI cites deep subpages, not the
  * homepage." A high rate means your blog/docs do the citation-earning
  * work; a low rate means AI engines mostly cite your homepage and you
  * may have a "deep content gap".

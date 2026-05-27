@@ -4,12 +4,12 @@
 // score for THIS brand's standing, so the operator sees "how hard would
 // it be for ME to rank for this term?" instead of the generic landscape.
 //
-// Closes the gap from the Semrush "Low-Competition Keywords" piece:
+// Closes the gap from the industry research "Low-Competition Keywords" piece:
 //   "A keyword might show a KD% of 60, which sounds competitive on paper.
 //    But if your PKD% comes back at 35, that term is actually within
 //    reach for you."
 //
-// We don't have Semrush's full backlink + DR data. But we DO have signals
+// We don't have published full backlink + DR data. But we DO have signals
 // that proxy brand authority well enough for a relative metric:
 //   - GSC clicks volume (more total clicks = stronger track record)
 //   - Average GSC position (lower number = better track record)
@@ -51,7 +51,7 @@ export interface PkdResult {
  *   - Brand-new site, no signals → factor ~0.05 (almost no discount)
  *   - Small-to-mid brand (low five-figure clicks, some AI cites) → ~0.3
  *   - Established brand (six-figure clicks + many citations) → ~0.6
- *   - Anchor brand (Semrush-tier) → capped at 0.7
+ *   - Anchor brand (enterprise-tier) → capped at 0.7
  */
 export function computeAuthorityFactor(signals: AuthoritySignals): number {
   // Sub-scores all in [0, 1].
@@ -90,7 +90,7 @@ export function computePersonalKeywordDifficulty(kd: number, signals: AuthorityS
 
 /**
  * Convert a GSC position into a rough KD proxy when the caller doesn't
- * have a Semrush-style KD number. Heuristic: bottom-of-page-1 (10) and
+ * have a industry-standard KD number. Heuristic: bottom-of-page-1 (10) and
  * page-2 (11–20) → 50-60 KD, page 3+ → 65-80. This is a SIDE helper for
  * the Striking Distance widget so it can show a PKD column even without
  * an external KD source.

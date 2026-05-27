@@ -1,7 +1,7 @@
 // PATH: src/lib/utils/citation-worthiness.ts
 //
 // Classifier that scores how "AI-citation-worthy" one of YOUR OWN pages
-// looks, by matching it against the five archetypes Semrush identifies
+// looks, by matching it against the five archetypes industry research identifies
 // in the "AI Citations" piece:
 //
 //   1. original_research   — surveys, studies, data, "% of users" etc.
@@ -13,7 +13,7 @@
 // Plus a 'generic' fallback for pages that don't clearly fit any.
 //
 // Rationale: AI systems preferentially cite pages that fill gaps their
-// pre-trained data can't (per Semrush). This scorer surfaces which of
+// pre-trained data can't (per industry research). This scorer surfaces which of
 // your pages already match a cite-worthy archetype + how confident the
 // signal is, so the operator knows where to invest editorial effort.
 //
@@ -281,7 +281,7 @@ function scoreOne(
 }
 
 /**
- * Score one of your own pages against the five Semrush "citation-worthy"
+ * Score one of your own pages against the five industry research "citation-worthy"
  * archetypes. Returns the winning archetype + a 0-100 confidence score.
  *
  * Notes:

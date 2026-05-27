@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { AeoBridgeButton } from '@/components/AeoBridgeButton'
+import { ReportSchedulesPanel } from '@/components/ReportSchedulesPanel'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -519,6 +520,12 @@ export default function ReportsPage() {
               />
             </Card>
           )}
+
+          {/* Scheduled deliveries — recurring email delivery of the
+              white-label PDF via the cron-driven report-delivery
+              route. See /api/cron/report-delivery + migration
+              20260527000000_report_schedules.sql. */}
+          {selectedBrand && <ReportSchedulesPanel brandId={selectedBrand.id} />}
         </div>
       </div>
     </div>

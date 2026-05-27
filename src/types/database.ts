@@ -1976,6 +1976,62 @@ export type Database = {
           },
         ]
       }
+      report_schedules: {
+        Row: {
+          brand_id: string
+          created_at: string
+          frequency: string
+          id: string
+          is_active: boolean
+          label: string | null
+          last_error: string | null
+          last_sent_at: string | null
+          next_run_at: string
+          recipients: string[]
+          send_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          frequency: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          last_error?: string | null
+          last_sent_at?: string | null
+          next_run_at?: string
+          recipients?: string[]
+          send_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          last_error?: string | null
+          last_sent_at?: string | null
+          next_run_at?: string
+          recipients?: string[]
+          send_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'report_schedules_brand_id_fkey'
+            columns: ['brand_id']
+            isOneToOne: false
+            referencedRelation: 'brands'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       report_templates: {
         Row: {
           brand_id: string

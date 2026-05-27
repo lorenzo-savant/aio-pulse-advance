@@ -425,6 +425,82 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
   }
 }
 
+interface ScheduledReportEmailParams {
+  to: string[]
+  brandName: string
+  fromDate: string
+  toDate: string
+  pdfBuffer: Buffer
+  /** Optional human label from the schedule (e.g. "Monthly client report"). */
+  label?: string | null
+}
+
+/**
+ * Deliver a white-label PDF report by email. Used by the cron-driven
+ * report-delivery flow (/api/cron/report-delivery). One Resend call per
+ * batch — recipients land in `to`, attachment is the rendered PDF.
+ */
+export async function sendScheduledReportEmail({
+  to,
+  brandName,
+  fromDate,
+  toDate,
+  pdfBuffer,
+  label,
+}: ScheduledReportEmailParams) {
+  if (!process.env.RESEND_API_KEY) {
+    logger.warn('Resend not configured, skipping scheduled report email', { service: 'email' })
+    return { success: false, error: 'Resend not configured' }
+  }
+  if (to.length === 0) {
+    return { success: false, error: 'No recipients' }
+  }
+
+  const subject = label
+    ? `${label} — ${brandName} (${fromDate} → ${toDate})`
+    : `${brandName} — AI Visibility Report (${fromDate} → ${toDate})`
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; padding: 32px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #1e293b; border-radius: 12px; padding: 28px;">
+          <h1 style="color: white; font-size: 22px; margin: 0 0 12px;">AI Visibility Report</h1>
+          <p style="font-size: 15px; line-height: 1.6; color: #cbd5e1;">
+            Attached is the latest AI visibility report for <strong style="color: white;">${brandName}</strong>,
+            covering ${fromDate} to ${toDate}.
+          </p>
+          <p style="font-size: 14px; color: #94a3b8;">
+            This report was delivered automatically from AIO Pulse on the schedule you configured.
+            Manage your schedule in the dashboard under <em>Reports → Scheduled deliveries</em>.
+          </p>
+        </div>
+      </body>
+    </html>
+  `
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `${brandName.replace(/[^a-zA-Z0-9-]+/g, '-')}-${fromDate}-${toDate}.pdf`,
+          content: pdfBuffer.toString('base64'),
+        },
+      ],
+    })
+    if (result.error) {
+      return { success: false, error: result.error.message }
+    }
+    return { success: true, id: (result.data as { id?: string } | null)?.id }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 export async function sendWebhookNotification(
   webhookUrl: string,
   payload: Record<string, unknown>,

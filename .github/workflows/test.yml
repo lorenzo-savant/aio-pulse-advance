@@ -73,15 +73,19 @@ jobs:
 
       - name: Regenerate types from remote DB
         if: steps.secret.outputs.configured == 'true'
+        # Write the regenerated types to a path INSIDE the repo so
+        # prettier picks up the repo's .prettierrc (semi: false +
+        # singleQuote: true). Writing to /tmp first produced spurious
+        # quoting/semicolon drift in May 2026 — see the CI archaeology.
         run: |
           npx supabase gen types typescript --db-url "$SUPABASE_DB_URL" \
-            > /tmp/database.ts
-          npx prettier --write /tmp/database.ts
+            > src/types/database.regen.ts
+          npx prettier --write src/types/database.regen.ts
 
       - name: Diff against committed types
         if: steps.secret.outputs.configured == 'true'
         run: |
-          if ! diff -u src/types/database.ts /tmp/database.ts; then
+          if ! diff -u src/types/database.ts src/types/database.regen.ts; then
             echo "::error title=Schema drift detected::src/types/database.ts is out of sync with the remote DB. Run 'npm run db:gen-types' locally and commit the result."
             exit 1
           fi

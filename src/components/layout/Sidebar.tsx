@@ -36,6 +36,7 @@ import {
   TrendingUp,
   Filter,
   ShieldCheck,
+  Wand2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
@@ -231,6 +232,14 @@ export const NAV_SECTIONS: NavSection[] = [
         href: '/dashboard/site-audit',
         icon: ShieldCheck,
         labelKey: 'sidebar.items.site_audit',
+      },
+      // Content Generator — AI-citation-optimised article drafting,
+      // auto-scored against the same 5 signals the Site Audit measures.
+      // Closes the measure → create loop.
+      {
+        href: '/dashboard/content-generator',
+        icon: Wand2,
+        labelKey: 'sidebar.items.content_generator',
       },
       { href: '/dashboard/monitor', icon: Globe, labelKey: 'sidebar.items.engine_info' },
     ],

@@ -170,6 +170,7 @@
       "content_optimizer": "Content Optimizer",
       "content_audit": "Content Audit",
       "site_audit": "Site Audit",
+      "content_generator": "Content Generator",
       "recommendations": "Recommendations",
       "strategy_advisor": "Strategy Advisor",
       "engine_info": "Engine Info",

@@ -97,15 +97,18 @@ jobs:
         # with the PostgrestVersion from project config; `--db-url`
         # (used in CI) doesn't because there's no project metadata to
         # read. This is CLI-version metadata, not schema drift, so the
-        # check shouldn't trip on it.
+        # check shouldn't trip on it. We re-run prettier after the
+        # strip so leftover formatting from the regex doesn't produce
+        # spurious whitespace drift.
         run: |
           node -e "
             const fs = require('fs');
             const strip = (f) => fs.writeFileSync(f, fs.readFileSync(f, 'utf8')
-              .replace(/\s*\/\/ Allows to automatically[^]*?__InternalSupabase: \{[^]*?\}\n/g, ''));
+              .replace(/^\s*\/\/ Allows to automatically[^]*?^\s*__InternalSupabase: \{[^]*?^\s*\}\n/m, ''));
             strip('src/types/database.ts');
             strip('src/types/database.regen.ts');
           "
+          ./node_modules/.bin/prettier --write src/types/database.ts src/types/database.regen.ts
           if ! diff -u src/types/database.ts src/types/database.regen.ts; then
             echo "::error title=Schema drift detected::src/types/database.ts is out of sync with the remote DB. Run 'npm run db:gen-types' locally and commit the result."
             exit 1

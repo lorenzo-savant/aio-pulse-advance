@@ -1,10 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   AIO Pulse Design System v3.0
-   Horizon UI-inspired Design System
+   AIO Pulse Design System v3.0 — Qvery-inspired Design System
    Unified Light & Dark Theme with OKLCH Colors
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,700;1,900&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,300;1,400;1,700;1,900&family=Fustat:wght@300;500&family=Fragment+Mono&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -15,25 +14,25 @@
 
 @layer base {
   :root {
-    /* ═══ BRAND ACCENT — Horizon Brand Purple ═══ */
-    --color-accent: 0.44 0.28 275; /* #4318FF — brand.500 */
-    --color-accent-hover: 0.5 0.26 275; /* #7551FF — brand.400 */
-    --color-accent-muted: 0.95 0.04 275; /* ~#F4F7FE tinted purple */
+    /* ═══ BRAND ACCENT — Qvery Teal ═══ */
+    --color-accent: 0.72 0.16 178; /* #0AD0BC — Qvery teal */
+    --color-accent-hover: 0.68 0.2 178; /* darker teal for hover */
+    --color-accent-muted: 0.95 0.04 180; /* light teal tint */
     --color-accent-foreground: 0.99 0 0; /* white */
 
-    /* ═══ SURFACE SCALE — Horizon Light Gray-Blue ═══ */
+    /* ═══ SURFACE SCALE — Qvery Light Palette ═══ */
     --surface-0: 1 0 0; /* #FFFFFF — pure white */
-    --surface-50: 0.985 0.003 240; /* ~#FAFCFF */
-    --surface-100: 0.975 0.008 240; /* #F4F7FE — Horizon page bg */
-    --surface-200: 0.955 0.012 240; /* #EDF2F7 — card hover, input bg */
-    --surface-300: 0.925 0.015 240; /* #E2E8F0 — borders */
-    --surface-400: 0.88 0.018 240; /* #E0E5F2 — muted UI */
-    --surface-500: 0.62 0.025 240; /* #A3AED0 — secondary text */
-    --surface-600: 0.55 0.03 240; /* #8F9BBA — placeholder text */
-    --surface-700: 0.42 0.035 240; /* #707EAE — labels */
-    --surface-800: 0.22 0.05 240; /* #2B3674 — primary text */
-    --surface-900: 0.18 0.06 240; /* #1B2559 — headings */
-    --surface-950: 0.1 0.05 240; /* near-black */
+    --surface-50: 0.985 0.003 264; /* ~#FAFCFF */
+    --surface-100: 0.972 0.003 264; /* #F6F8FF — Qvery page bg */
+    --surface-200: 0.945 0.006 264; /* ~#EDF0F7 — card hover, input bg */
+    --surface-300: 0.92 0.004 265; /* #E8E8EA — Qvery borders */
+    --surface-400: 0.88 0.008 265; /* ~#E0E5F2 — muted UI */
+    --surface-500: 0.57 0.01 195; /* #798283 — Qvery mute-1 */
+    --surface-600: 0.65 0 0; /* #999999 — Qvery mute-2 */
+    --surface-700: 0.42 0.03 225; /* ~#707EAE — labels */
+    --surface-800: 0.15 0.02 220; /* #011C25 — Qvery ink */
+    --surface-900: 0.15 0.02 220; /* #011C25 — Qvery ink headings */
+    --surface-950: 0.03 0 0; /* #080808 — Qvery near-black */
 
     /* ═══ SEMANTIC SURFACES ═══ */
     --background: var(--surface-100); /* #F4F7FE page bg */
@@ -98,22 +97,62 @@
     --info-foreground: 0.99 0 0;
     --info-muted: 0.95 0.05 255;
 
-    /* ═══ RADII — Horizon uses 20px cards, 16px inputs ═══ */
-    --radius-sm: 0.375rem; /* 6px */
-    --radius-md: 0.625rem; /* 10px */
-    --radius-lg: 1rem; /* 16px */
-    --radius-xl: 1.25rem; /* 20px — Horizon card radius */
+    /* ═══ RADII — Qvery scale ═══ */
+    --radius-sm: 0.375rem; /* 6px — q-btn */
+    --radius-md: 0.5rem; /* 8px — q-nav */
+    --radius-lg: 0.75rem; /* 12px — q-quote-card */
+    --radius-xl: 1rem; /* 16px — q-industry-card */
     --radius-2xl: 1.875rem; /* 30px — pill shapes */
+    --radius-pill: 100px; /* q-pill */
 
-    /* ═══ SHADOWS — Horizon light mode uses very soft shadows ═══ */
-    --shadow-sm: 0 2px 5px -1px oklch(0.55 0.03 240 / 0.06);
-    --shadow-md: 0 4px 12px -2px oklch(0.55 0.03 240 / 0.1);
-    --shadow-lg: 0 18px 40px -12px oklch(0.55 0.03 240 / 0.14);
+    /* ═══ SHADOWS — Qvery light mode ═══ */
+    --shadow-sm: 0 2px 5px -1px oklch(0.57 0.01 195 / 0.06);
+    --shadow-md: 0 4px 12px -2px oklch(0.57 0.01 195 / 0.1);
+    --shadow-lg: 0 18px 40px -12px oklch(0.57 0.01 195 / 0.14);
+    --shadow-card: 0 4px 20px rgba(0,0,0,0.10);
+    --shadow-card-hover: 0 10px 30px rgba(0,0,0,0.12);
+    --shadow-nav: 0 1px 20px rgba(0,0,0,0.15);
     --shadow-glow: 0 0 30px -5px oklch(var(--color-accent) / 0.35);
 
     --transition-fast: 150ms ease;
     --transition-base: 250ms ease;
     --transition-slow: 400ms ease;
+
+    /* ═══ QVERY BRAND TOKENS (light mode) ═══ */
+    --brand-ink: #011C25;
+    --brand-accent-1: #0AD0BC;
+    --brand-accent-2: #FF3131;
+    --brand-bg: #F6F8FF;
+    --brand-surface: #FFFFFF;
+    --brand-near-black: #080808;
+    --brand-line: #E8E8E8;
+    --brand-line-2: #EAEAEC;
+    --brand-mute-1: #798283;
+    --brand-mute-2: #999999;
+
+    --gradient-glow-teal: radial-gradient(circle at center, rgba(10,208,188,.75) 0%, #F6F8FF 70%);
+    --gradient-glow-red: radial-gradient(circle at center, rgba(255,49,49,.55) 0%, #F6F8FF 70%);
+    --gradient-mesh:
+      radial-gradient(at 20% 30%, rgba(10,208,188,.35) 0%, transparent 50%),
+      radial-gradient(at 80% 70%, rgba(255,49,49,.25) 0%, transparent 50%),
+      #F6F8FF;
+
+    /* Qvery font tokens */
+    --font-display: 'Lato', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-soft: 'Fustat', system-ui, sans-serif;
+    --font-mono-code: 'Fragment Mono', ui-monospace, monospace;
+
+    --s-1: 4px;
+    --s-2: 8px;
+    --s-3: 12px;
+    --s-4: 16px;
+    --s-5: 20px;
+    --s-6: 24px;
+    --s-7: 32px;
+    --s-8: 40px;
+    --s-9: 64px;
+    --s-10: 80px;
 
     color-scheme: light;
   }
@@ -248,7 +287,8 @@
     background-color: oklch(var(--background));
     color: oklch(var(--foreground));
     line-height: 1.6;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: var(--font-body);
+    font-weight: 300;
   }
 
   /* Focus ring */
@@ -286,9 +326,14 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-display, inherit);
+    font-family: var(--font-display);
     letter-spacing: -0.025em;
     line-height: 1.2;
+  }
+
+  /* Qvery page background override — delicate blue-white */
+  html, body {
+    background-color: oklch(var(--background));
   }
 }
 
@@ -577,6 +622,413 @@
       background-position: -200% 0;
     }
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     QVERY COMPONENT CLASSES (light mode)
+     Extracted from AIO Pulse Marketing UI Kit
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* ─── Typography ──────────────────────────────────── */
+  .q-h1 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 56px;
+    line-height: 60px;
+    color: var(--brand-ink);
+    margin: 0;
+  }
+  .q-h2 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 55px;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--brand-ink);
+    margin: 0;
+  }
+  .q-h2::after { content: '.'; color: var(--brand-accent-2); }
+  .q-h3 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 35px;
+    line-height: 1.3;
+    color: var(--brand-ink);
+    margin: 0;
+  }
+  .q-h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1.2;
+    color: var(--brand-ink);
+    margin: 0;
+  }
+  .q-lead {
+    font-family: var(--font-body);
+    font-weight: 300;
+    font-size: 22px;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--brand-ink);
+    margin: 0;
+  }
+  .q-body {
+    font-family: var(--font-body);
+    font-weight: 300;
+    font-size: 18px;
+    line-height: 32px;
+    color: var(--brand-ink);
+  }
+  .q-caption {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--brand-ink);
+  }
+  .q-caption--bold { font-weight: 900; }
+
+  @media (max-width: 1199px) {
+    .q-h1 { font-size: 40px; line-height: 45px; }
+    .q-h2 { font-size: 40px; line-height: 1.2; }
+    .q-h3 { font-size: 25px; line-height: 1.1; }
+    .q-h6 { font-size: 18px; }
+    .q-lead { font-size: 20px; }
+    .q-body { font-size: 16px; line-height: 1.6em; }
+  }
+  @media (max-width: 809px) {
+    .q-h1 { font-size: 35px; line-height: 40px; }
+    .q-h2 { font-size: 35px; line-height: 1.4; }
+    .q-h3 { font-size: 22px; line-height: 1.3; }
+    .q-h6 { font-size: 16px; line-height: 1.4; }
+    .q-lead { font-size: 18px; line-height: 1.3; }
+  }
+
+  /* ─── Pill / Badge ────────────────────────────────── */
+  .q-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-size: 15px;
+    letter-spacing: .01em;
+    color: var(--brand-ink);
+    background: transparent;
+  }
+  .q-pill--live { border: 2px solid var(--brand-accent-1); }
+  .q-pill--soon { border: 2px solid var(--brand-accent-2); }
+  .q-pill__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    position: relative;
+  }
+  .q-pill--live .q-pill__dot { background: var(--brand-accent-1); }
+  .q-pill--soon .q-pill__dot { background: var(--brand-accent-2); }
+  .q-pill__dot::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .4;
+    animation: q-pulse 1.8s ease-out infinite;
+  }
+  @keyframes q-pulse {
+    0%   { transform: scale(.6); opacity: .4; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  /* ─── Buttons ─────────────────────────────────────── */
+  .q-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 30px;
+    border-radius: var(--radius-sm);
+    background: var(--brand-ink);
+    color: var(--brand-surface);
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 18px;
+    line-height: .73;
+    text-decoration: none;
+    border: 2px solid var(--brand-ink);
+    cursor: pointer;
+    transition: transform .2s ease, background .2s ease;
+  }
+  .q-btn:hover { transform: translateY(-2px); }
+  .q-btn--ghost {
+    background: transparent;
+    color: var(--brand-ink);
+  }
+  .q-btn--ghost:hover {
+    background: var(--brand-ink);
+    color: var(--brand-surface);
+  }
+  .q-btn--sm {
+    padding: 12px 25px;
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .q-btn--link {
+    background: transparent;
+    border: 0;
+    padding: 2px 0;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--brand-ink);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .q-btn--link::after {
+    content: '\2192';
+    margin-left: 4px;
+    transition: transform .25s ease;
+    display: inline-block;
+  }
+  .q-btn--link:hover::after { transform: translateX(6px); }
+
+  /* ─── Industry Card ───────────────────────────────── */
+  .q-industry-card {
+    background: var(--brand-bg);
+    border: 6px solid var(--brand-surface);
+    border-radius: var(--radius-xl);
+    padding: 25px;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+  }
+  .q-industry-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+  }
+  .q-industry-card__icon { width: 80px; height: 80px; }
+  .q-industry-card__title {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 24px;
+    line-height: 1.1;
+    color: var(--brand-ink);
+  }
+
+  /* ─── Quote Card ──────────────────────────────────── */
+  .q-quote-card {
+    background: var(--brand-surface);
+    border: 2px solid var(--brand-line);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    max-width: 488px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .q-quote-card__head { display: flex; align-items: center; gap: 15px; }
+  .q-quote-card__avatar {
+    width: 37px;
+    height: 37px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--brand-line);
+  }
+  .q-quote-card__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--brand-ink);
+    margin: 0;
+  }
+  .q-quote-card__text {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 1.5;
+    color: var(--brand-ink);
+    margin: 0;
+  }
+
+  /* ─── Blockquote ──────────────────────────────────── */
+  blockquote.q {
+    position: relative;
+    margin: 40px 0;
+    padding: 24px 48px 24px 56px;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 22px;
+    font-weight: 500;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--brand-ink);
+  }
+  blockquote.q::before,
+  blockquote.q::after {
+    content: '"';
+    position: absolute;
+    font-family: var(--font-display);
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  blockquote.q::before { top: 0; left: 0; color: var(--brand-accent-2); }
+  blockquote.q::after {
+    bottom: -20px;
+    right: 0;
+    color: var(--brand-accent-1);
+    opacity: .6;
+  }
+
+  /* ─── Navbar ──────────────────────────────────────── */
+  .q-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(255,255,255,.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-nav);
+    position: sticky;
+    top: 20px;
+    z-index: 10;
+  }
+
+  /* ─── FAQ ─────────────────────────────────────────── */
+  .q-faq-row {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px 15px 0;
+    border-bottom: 2px solid var(--brand-line-2);
+    cursor: pointer;
+    width: 100%;
+    max-width: 768px;
+  }
+  .q-faq-row__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .q-faq-row__q {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1.2;
+    color: var(--brand-ink);
+    margin: 0;
+  }
+  .q-faq-row__a {
+    font-family: var(--font-body);
+    font-weight: 300;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--brand-ink);
+    margin: 12px 0 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .4s ease;
+  }
+  .q-faq-row.is-open .q-faq-row__a { max-height: 500px; }
+
+  @media (max-width: 1199px) { .q-faq-row__q { font-size: 18px; } }
+  @media (max-width: 809px)  { .q-faq-row__q { font-size: 16px; line-height: 1.4; } }
+
+  /* ─── Footer ──────────────────────────────────────── */
+  .q-footer {
+    background: var(--brand-ink);
+    color: var(--brand-bg);
+    padding: 80px 64px 40px;
+  }
+  .q-footer a {
+    color: var(--brand-bg);
+    text-decoration: none;
+    transition: color .2s ease;
+  }
+  .q-footer a:hover { color: var(--brand-accent-1); }
+  .q-footer-claim {
+    font-family: var(--font-soft);
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 1.2;
+    color: var(--brand-bg);
+  }
+  .q-footer-copy {
+    font-family: var(--font-soft);
+    font-weight: 300;
+    font-size: 14px;
+    letter-spacing: .05em;
+    line-height: 1.5;
+    color: var(--brand-bg);
+  }
+
+  /* ─── Qvery Appear Animations (scroll-triggered) ── */
+  .q-reveal {
+    opacity: 0;
+    transition:
+      opacity 0.8s cubic-bezier(0.44, 0, 0.56, 1),
+      transform 0.8s cubic-bezier(0.44, 0, 0.56, 1);
+  }
+  .q-reveal.is-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  .q-reveal--down  { transform: translateY(-30px); }
+  .q-reveal--up    { transform: translateY(30px); }
+  .q-reveal--left  { transform: translateX(-30px); }
+  .q-reveal--right { transform: translateX(30px); }
+  .q-reveal--scale { transform: scale(0.85); }
+  .q-reveal--up-lg    { transform: translateY(60px); }
+  .q-reveal--down-lg  { transform: translateY(-60px); }
+  .q-reveal--left-lg  { transform: translateX(-60px); }
+  .q-reveal--right-lg { transform: translateX(60px); }
+  .q-reveal--d1 { transition-delay: 0.05s; }
+  .q-reveal--d2 { transition-delay: 0.12s; }
+  .q-reveal--d3 { transition-delay: 0.2s; }
+  .q-reveal--d4 { transition-delay: 0.28s; }
+  .q-reveal--d5 { transition-delay: 0.36s; }
+  .q-reveal--d6 { transition-delay: 0.44s; }
+  .q-reveal--d7 { transition-delay: 0.52s; }
+  .q-reveal--d8 { transition-delay: 0.6s; }
+
+  /* ─── Navbar mount animation ─── */
+  .q-nav-enter {
+    opacity: 0;
+    transform: translateY(-100%);
+    animation: q-nav-slide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s forwards;
+  }
+  @keyframes q-nav-slide {
+    0%   { opacity: 0; transform: translateY(-100%); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── Staggered children ─── */
+  .q-stagger > * {
+    opacity: 0;
+    transform: translateY(15px);
+    transition:
+      opacity 0.6s cubic-bezier(0.44, 0, 0.56, 1),
+      transform 0.6s cubic-bezier(0.44, 0, 0.56, 1);
+  }
+  .q-stagger.is-visible > * {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .q-stagger.is-visible > *:nth-child(1) { transition-delay: 0s; }
+  .q-stagger.is-visible > *:nth-child(2) { transition-delay: 0.08s; }
+  .q-stagger.is-visible > *:nth-child(3) { transition-delay: 0.16s; }
+  .q-stagger.is-visible > *:nth-child(4) { transition-delay: 0.24s; }
+  .q-stagger.is-visible > *:nth-child(5) { transition-delay: 0.32s; }
+  .q-stagger.is-visible > *:nth-child(6) { transition-delay: 0.4s; }
 }
 
 /* ─── Utility Layer ────────────────────────────────────────────────────────── */
@@ -595,5 +1047,25 @@
 
   .pretty {
     text-wrap: pretty;
+  }
+
+  .bg-grid-pattern {
+    background-image:
+      linear-gradient(oklch(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float 3s ease-in-out 1.5s infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
   }
 }

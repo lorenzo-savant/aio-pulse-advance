@@ -1,6 +1,12 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Inter as GeistSans, JetBrains_Mono as GeistMono } from 'next/font/google'
+import {
+  Inter as GeistSans,
+  JetBrains_Mono as GeistMono,
+  Lato,
+  Fustat,
+  Fragment_Mono,
+} from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'react-hot-toast'
 import { NextIntlClientProvider } from 'next-intl'
@@ -16,6 +22,24 @@ const geistSans = GeistSans({
 const geistMono = GeistMono({
   subsets: ['latin'],
   variable: '--font-geist-mono',
+})
+
+const lato = Lato({
+  subsets: ['latin'],
+  weight: ['400', '700', '900'],
+  variable: '--font-display',
+})
+
+const fustat = Fustat({
+  subsets: ['latin'],
+  weight: ['300', '500'],
+  variable: '--font-soft',
+})
+
+const fragmentMono = Fragment_Mono({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-mono-code',
 })
 
 export const metadata: Metadata = {
@@ -74,7 +98,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   return (
     <html
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${lato.variable} ${fustat.variable} ${fragmentMono.variable}`}
       lang={locale}
     >
       <body className="font-sans antialiased" suppressHydrationWarning>

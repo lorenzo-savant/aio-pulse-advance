@@ -14,6 +14,7 @@ import { CrawlerAccessPanel } from '@/components/CrawlerAccessPanel'
 import { CitationCapturePanel } from '@/components/CitationCapturePanel'
 import { SiteAuditFoundationsCard } from '@/components/SiteAuditFoundationsCard'
 import { CitationQualityCard } from '@/components/CitationQualityCard'
+import { TopicFinderPanel } from '@/components/TopicFinderPanel'
 
 interface BrandLite {
   id: string
@@ -115,7 +116,12 @@ export default function SiteAuditPage() {
           {/* 3. Citation capture — uses existing monitoring data. */}
           <CitationCapturePanel brandId={selectedBrand.id} />
 
-          {/* 4. Citation Quality — scores the homepage HTML against the
+          {/* 4. Topic Finder — clusters the gap list into ranked content
+              opportunities. Direct port of Semrush's Content > Topic
+              Finder applied to AI-citation gaps. */}
+          <TopicFinderPanel brandId={selectedBrand.id} />
+
+          {/* 5. Citation Quality — scores the homepage HTML against the
               5 Semrush AI-citation signals. Operator clicks "Score" to
               fire the URL fetch (avoids silent cost). */}
           {probeUrl && (

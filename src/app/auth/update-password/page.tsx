@@ -3,12 +3,16 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Shield, ArrowLeft, Loader2, Eye, EyeOff, Check, X } from 'lucide-react'
+import { ArrowLeft, Loader2, Eye, EyeOff, Check, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { updatePasswordSchema } from '@/lib/validations'
-import { ThemeToggle } from '@/components/ThemeToggle'
+import { AioLogo } from '@/components/brand/Logo'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export default function UpdatePasswordPage() {
+  const t = useTranslations('auth_update_password')
+  const tHeader = useTranslations('site_header')
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
   const [password, setPassword] = useState('')
@@ -27,10 +31,10 @@ export default function UpdatePasswordPage() {
     if (/[0-9]/.test(password)) score++
     if (/[^A-Za-z0-9]/.test(password)) score++
 
-    if (score <= 2) return { score, label: 'Weak', color: 'bg-red-500' }
-    if (score <= 3) return { score, label: 'Fair', color: 'bg-yellow-500' }
-    if (score <= 4) return { score, label: 'Good', color: 'bg-blue-500' }
-    return { score, label: 'Strong', color: 'bg-emerald-500' }
+    if (score <= 2) return { score, label: t('strength_weak'), color: 'bg-red-500' }
+    if (score <= 3) return { score, label: t('strength_fair'), color: 'bg-yellow-500' }
+    if (score <= 4) return { score, label: t('strength_good'), color: 'bg-blue-500' }
+    return { score, label: t('strength_strong'), color: 'bg-emerald-500' }
   })()
 
   const passwordsMatch = password === confirmPassword && password.length > 0
@@ -83,34 +87,26 @@ export default function UpdatePasswordPage() {
         <div className="bg-accent/10 absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]" />
       </div>
 
-      <header className="relative z-10 flex items-center justify-between px-6 py-5">
-        <Link
-          href="/auth/login"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Link>
-        <ThemeToggle />
-      </header>
+      <SiteHeader
+        secondaryCta={null}
+        primaryCta={{ label: tHeader('sign_in'), href: '/auth/login' }}
+      />
 
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="mb-8 flex flex-col items-center gap-4 text-center">
-            <Link href="/auth/login">
-              <div className="shadow-primary/30 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-xl">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
+            <Link href="/auth/login" aria-label="AIO Pulse">
+              <AioLogo size={48} markOnly />
             </Link>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-foreground">New Password</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Enter your new password below</p>
+              <h1 className="text-2xl font-black tracking-tight text-foreground">{t('title')}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
             </div>
           </div>
 
           <div className="glass rounded-2xl p-8">
             {error && (
-              <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div className="border-red-500/20 bg-red-500/10 text-red-400 mb-5 rounded-xl border px-4 py-3 text-sm">
                 {error}
               </div>
             )}
@@ -120,14 +116,14 @@ export default function UpdatePasswordPage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
                   <Check className="h-8 w-8 text-emerald-400" />
                 </div>
-                <p className="text-sm text-muted-foreground">Password updated successfully!</p>
-                <p className="text-xs text-muted-foreground">Redirecting to login...</p>
+                <p className="text-sm font-semibold text-foreground">{t('success_title')}</p>
+                <p className="text-xs text-muted-foreground">{t('success_body')}</p>
               </div>
             ) : (
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
                   <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    New Password
+                    {t('new_password_label')}
                   </label>
                   <div className="relative">
                     <input
@@ -135,7 +131,7 @@ export default function UpdatePasswordPage() {
                       autoComplete="new-password"
                       className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                       disabled={loading}
-                      placeholder="••••••••"
+                      placeholder={t('new_password_placeholder')}
                       type={showPw ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -160,32 +156,21 @@ export default function UpdatePasswordPage() {
                           />
                         ))}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground">{passwordStrength.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {password.length >= 8 &&
-                          /[A-Z]/.test(password) &&
-                          /[a-z]/.test(password) &&
-                          /[0-9]/.test(password) &&
-                          /[^A-Za-z0-9]/.test(password)
-                            ? 'Meets requirements'
-                            : 'Missing requirements'}
-                        </p>
-                      </div>
+                      <p className="text-xs text-muted-foreground">{passwordStrength.label}</p>
                     </div>
                   )}
                 </div>
 
                 <div>
                   <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Confirm Password
+                    {t('confirm_password_label')}
                   </label>
                   <input
                     required
                     autoComplete="new-password"
                     className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                     disabled={loading}
-                    placeholder="••••••••"
+                    placeholder={t('confirm_password_placeholder')}
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -195,7 +180,7 @@ export default function UpdatePasswordPage() {
                       className={`mt-1 flex items-center gap-1 text-xs ${passwordsMatch ? 'text-emerald-400' : 'text-red-400'}`}
                     >
                       {passwordsMatch ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                      {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
+                      {passwordsMatch ? t('passwords_match') : t('passwords_no_match')}
                     </p>
                   )}
                 </div>
@@ -208,10 +193,10 @@ export default function UpdatePasswordPage() {
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Updating...
+                      {t('updating')}
                     </>
                   ) : (
-                    'Update Password'
+                    t('update_button')
                   )}
                 </button>
 
@@ -220,7 +205,7 @@ export default function UpdatePasswordPage() {
                     className="hover:text-accent/80 font-semibold text-accent"
                     href="/auth/login"
                   >
-                    <ArrowLeft className="mr-1 inline h-4 w-4" /> Back to Sign In
+                    <ArrowLeft className="mr-1 inline h-4 w-4" /> {t('back_to_sign_in')}
                   </Link>
                 </p>
               </form>

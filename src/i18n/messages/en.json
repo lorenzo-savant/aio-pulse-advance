@@ -1317,5 +1317,327 @@
   "breadcrumb": {
     "home": "Dashboard",
     "next": "Next"
+  },
+  "site_header": {
+    "nav": {
+      "features": "Features",
+      "capabilities": "Capabilities",
+      "industries": "Industries",
+      "faq": "FAQ",
+      "docs": "Docs",
+      "dashboard": "Dashboard",
+      "trust": "Trust"
+    },
+    "sign_in": "Sign in",
+    "get_started": "Get Started",
+    "create_account": "Create account",
+    "language_aria": "Change language"
+  },
+  "site_footer": {
+    "claim": "Enterprise-grade AI search visibility & optimization platform.",
+    "socials": {
+      "twitter": "Twitter",
+      "linkedin": "LinkedIn",
+      "youtube": "YouTube"
+    },
+    "product": {
+      "title": "Product",
+      "features": "Features",
+      "pricing": "Pricing",
+      "api": "API",
+      "integrations": "Integrations",
+      "changelog": "Changelog"
+    },
+    "resources": {
+      "title": "Resources",
+      "documentation": "Documentation",
+      "blog": "Blog",
+      "help": "Help Center",
+      "community": "Community",
+      "status": "Status"
+    },
+    "company": {
+      "title": "Company",
+      "about": "About",
+      "careers": "Careers",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
+    },
+    "rights_reserved": "All rights reserved."
+  },
+  "home": {
+    "hero": {
+      "pill": "AI Search Visibility Platform",
+      "title_a": "Make Your Brand",
+      "title_b": "Discoverable",
+      "subtitle": "Measure your proprietary AI Visibility Index (AVI) across ChatGPT, Gemini, Perplexity, and Claude. Get actionable insights to optimize your brand's presence in every AI-generated response.",
+      "cta_demo": "Get a Demo",
+      "cta_login": "Log In / Sign Up",
+      "label_avi": "AVI Score 0-100",
+      "label_multi_engine": "Multi-Engine Tracking",
+      "label_competitor": "Competitor Benchmarking",
+      "label_aeo_geo": "AEO & GEO Insights"
+    },
+    "features": {
+      "title": "Your AI Visibility Command Center",
+      "subtitle": "From proprietary AVI scoring to competitive benchmarking — everything you need to measure, understand, and grow your presence across generative AI search.",
+      "open_dashboard": "Open dashboard",
+      "items": {
+        "avi": {
+          "title": "AI Visibility Index (AVI)",
+          "description": "Our proprietary 0-100 score measures how often and how prominently your brand appears across ChatGPT, Gemini, Perplexity, and Claude. Combines citation frequency, sentiment analysis, position ranking, and hallucination detection into a single actionable metric."
+        },
+        "multi_engine": {
+          "title": "Multi-Engine Monitoring",
+          "description": "Daily automated scans across ChatGPT, Google Gemini, Perplexity AI, Claude, and Google AI Overviews. Track citation rate, mention frequency, recommendation rate, and answer position per engine — all in a unified dashboard."
+        },
+        "competitive": {
+          "title": "Competitive Intelligence",
+          "description": "Benchmark your AVI against up to 3 competitors side-by-side. Compare share of voice per engine, identify citation sources they use that you don't, and get actionable recommendations to close the gap."
+        },
+        "content_opt": {
+          "title": "Content Optimization Suite",
+          "description": "AEO snippet tracking with schema JSON-LD export, GEO score diagnostics with 5 weighted pillars, AI article generator optimized for citation signals, and URL/text analysis with engine-specific recommendations."
+        }
+      }
+    },
+    "capabilities": {
+      "title": "Powered by AIO Pulse",
+      "subtitle": "Three integrated engines that work together to give you complete AI visibility intelligence — from citation tracking to health monitoring.",
+      "items": {
+        "aeo": {
+          "title": "AEO Snippet Engine",
+          "description": "Track question/answer snippets across all AI engines, identify coverage gaps vs. competitors, and export schema-compliant JSON-LD markup to boost answer engine visibility."
+        },
+        "citation": {
+          "title": "Citation Analyzer",
+          "description": "Deep citation quality scoring on 5 pillars, freshness tracking, per-engine format analysis, and citation source discovery to expand your brand's AI reference footprint."
+        },
+        "health": {
+          "title": "Brand Health Monitor",
+          "description": "Real-time health scores with sentiment tracking across engines, keyword correlation, homonym/brand confusion detection, and automated alerting for mention loss or sentiment drops."
+        }
+      }
+    },
+    "industries": {
+      "title": "Trusted across industries",
+      "subtitle": "From agencies optimizing multi-brand portfolios to enterprises protecting their AI reputation — AIO Pulse delivers actionable visibility data for every sector.",
+      "labels": {
+        "travel": "Travel",
+        "ecommerce": "Ecommerce",
+        "finance": "Finance",
+        "healthcare": "Healthcare",
+        "automotive": "Automotive",
+        "education": "Education",
+        "real_estate": "Real Estate",
+        "legal": "Legal",
+        "saas": "SaaS",
+        "crypto": "Crypto"
+      }
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "subtitle": "Everything you need to know about AI visibility monitoring.",
+      "items": [
+        {
+          "q": "What is AI Visibility Index (AVI)?",
+          "a": "AVI is a proprietary 0-100 score combining 6 weighted factors: citation rate (20%), mention frequency (20%), recommendation rate (20%), sentiment score (15%), position average (15%), and hallucination index (10%). Higher scores mean better visibility across AI-generated responses."
+        },
+        {
+          "q": "How does multi-engine monitoring work?",
+          "a": "Enter your domain and up to 3 competitors. Our engine orchestrates parallel queries to ChatGPT/SearchGPT, Google Gemini, Perplexity AI, and Claude, then aggregates results into a unified dashboard with per-engine breakdowns and trend analysis."
+        },
+        {
+          "q": "Which AI engines and models are supported?",
+          "a": "ChatGPT (web + GPTs + SearchGPT), Google Gemini (web + Advanced), Perplexity AI, Claude (web), and Google AI Overviews. Analysis models include Gemini 2.5 Flash/Pro, GPT-4o/4o-mini, Claude Sonnet 4.5/Haiku 4.5, and Perplexity Sonar."
+        },
+        {
+          "q": "How often is my data refreshed?",
+          "a": "Daily automated scans for all active subscriptions, with configurable alert rules for new mentions, lost mentions, sentiment drops, positive spikes, competitor lead changes, and hallucination detection."
+        },
+        {
+          "q": "Can I try before committing?",
+          "a": "Yes — start with a free single audit that covers your domain across all supported engines. No credit card required. Full dashboards, competitor comparison, and exportable reports are included."
+        },
+        {
+          "q": "What is the difference between AIO, AEO, and GEO?",
+          "a": "AIO (AI Optimization) optimizes content for AI model discoverability. AEO (Answer Engine Optimization) targets direct answers and featured snippets. GEO (Generative Engine Optimization) optimizes for AI-generated search results. Our platform covers all three with dedicated tools and scoring."
+        },
+        {
+          "q": "Do you support multi-language content?",
+          "a": "Yes, we analyze visibility across 50+ languages. AI models respond differently per language — our platform tracks those variations and provides language-specific insights in your reports."
+        },
+        {
+          "q": "What integrations are available?",
+          "a": "Google Search Console sync (branded search, striking distance keywords, cannibalization detection), public REST API v1 with webhooks, Obsidian export, and custom report scheduling with automated PDF/CSV/JSON delivery."
+        },
+        {
+          "q": "How is billing structured?",
+          "a": "Three tiers: Pro at $49/month (individuals and small teams), Business at $199/month (teams with full features), Agency at $499/month (multi-brand agencies). Annual plans include a 20% discount. 14-day money-back guarantee on all plans."
+        },
+        {
+          "q": "What kind of support do you offer?",
+          "a": "All plans include email support with 24-hour response. Business includes live chat, Agency includes a dedicated account manager with priority phone support. Technical documentation and API reference are available for all users."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Know your AI visibility score",
+      "subtitle": "Start your free audit today — no credit card required. Full AVI report in minutes.",
+      "button": "Measure Your AVI",
+      "checks": ["No credit card", "Free audit report", "Cancel anytime"]
+    }
+  },
+  "trust_pages": {
+    "back_to_trust": "Back to Trust Center",
+    "back_to_home": "Back to Home",
+    "hub": {
+      "title": "Trust Center",
+      "subtitle": "AIO Pulse is built with security and compliance at its core. Here you will find everything you need to evaluate our security posture.",
+      "compliance_status": "Compliance Status",
+      "security_practices": "Security Practices",
+      "sub_processors": "Sub-Processors",
+      "dpa_title": "Data Processing Agreement (DPA)",
+      "dpa_body": "Our DPA is based on the EU Standard Contractual Clauses (SCCs) and covers all data processing activities. Available for download below.",
+      "download_dpa": "Download DPA",
+      "gdpr_title": "Your GDPR Rights",
+      "gdpr_body": "Under GDPR, you have the right to access, export, and delete your personal data. You can exercise these rights directly from your dashboard settings.",
+      "contact_title": "Contact"
+    },
+    "security": {
+      "title": "Security Practices",
+      "subtitle": "A detailed overview of the security controls and practices implemented across AIO Pulse. Our security posture is reviewed quarterly and audited annually."
+    },
+    "dpa": {
+      "title": "Data Processing Agreement",
+      "subtitle": "This Data Processing Agreement (DPA) governs the processing of personal data by AIO Pulse on behalf of its customers, in compliance with the EU General Data Protection Regulation (GDPR)."
+    },
+    "gdpr": {
+      "title": "Your GDPR Rights",
+      "subtitle": "Under the General Data Protection Regulation (GDPR), you have specific rights regarding your personal data. AIO Pulse provides self-serve tools to exercise these rights directly from your dashboard."
+    },
+    "sub_processors": {
+      "title": "Sub-Processors",
+      "subtitle": "AIO Pulse engages the following third-party sub-processors to deliver our service. All sub-processors are bound by Data Processing Agreements (DPAs) that comply with GDPR Article 28."
+    }
+  },
+  "auth_pages": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your account to continue",
+      "email_label": "Email",
+      "password_label": "Password",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot password?",
+      "sign_in": "Sign in",
+      "signing_in": "Signing in…",
+      "password_tab": "Password",
+      "magic_link_tab": "Magic Link",
+      "magic_link_hint": "We'll email you a magic link. Click it to sign in instantly — no password needed.",
+      "send_magic_link": "Send Magic Link",
+      "sending_link": "Sending link…",
+      "no_account": "Don't have an account?",
+      "create_one": "Create one",
+      "check_email_title": "Check your email",
+      "check_email_body": "We sent a magic link to {email}",
+      "check_email_hint": "Click the link to sign in. The link expires in 1 hour.",
+      "use_different_method": "Use a different login method",
+      "terms_prefix": "By continuing, you agree to our",
+      "terms": "Terms of Service",
+      "and": "and",
+      "privacy": "Privacy Policy"
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Get started with AIO Pulse",
+      "full_name_label": "Full Name",
+      "full_name_placeholder": "Your Name",
+      "email_label": "Email",
+      "password_label": "Password",
+      "password_placeholder": "Min. 8 characters",
+      "create_account": "Create Account",
+      "creating": "Creating account…",
+      "have_account": "Already have an account?",
+      "sign_in": "Sign in",
+      "check_inbox_title": "Check your inbox",
+      "check_inbox_body": "We sent a verification link to {email}. Click the link to activate your account.",
+      "back_to_sign_in": "Back to Sign In"
+    },
+    "forgot_password": {
+      "title": "Reset Password",
+      "subtitle_idle": "Enter your email to receive reset instructions",
+      "subtitle_sent": "Check your email for the reset link",
+      "email_label": "Email",
+      "send": "Send Reset Link",
+      "sending": "Sending...",
+      "sent_body": "We sent a password reset link to {email}",
+      "remember_password": "Remember your password?",
+      "sign_in": "Sign In",
+      "back_to_sign_in": "Back to Sign In"
+    }
+  },
+  "docs_ui": {
+    "back_home": "Back to Home",
+    "title": "Documentation",
+    "subtitle": "Everything you need to know about using AIO Pulse.",
+    "search_placeholder": "Search documentation...",
+    "result_singular": "{count} result found",
+    "result_plural": "{count} results found",
+    "no_results_title": "No results found",
+    "no_results_hint": "Try a different search term or",
+    "clear_search": "clear the search",
+    "back_to_top": "Back to top"
+  },
+  "home_stats": {
+    "engines": "AI Engines Monitored",
+    "metrics": "Metrics Tracked",
+    "accuracy": "Analysis Accuracy",
+    "audit_time": "Average Audit Time"
+  },
+  "team_accept": {
+    "accepting_title": "Accepting Invitation",
+    "accepting_message": "Accepting invitation...",
+    "success_title": "Welcome!",
+    "error_title": "Unable to Accept",
+    "invalid_token": "Invalid invitation link. No token provided.",
+    "init_failed": "Unable to initialize. Please refresh the page.",
+    "generic_error": "An error occurred while accepting the invitation",
+    "go_to_dashboard": "Go to Dashboard",
+    "sign_in": "Sign In",
+    "go_to_homepage": "Go to Homepage"
+  },
+  "auth_callback": {
+    "verifying": "Verifying your account...",
+    "not_configured": "Supabase not configured",
+    "recovery_success": "Password reset verified! Redirecting...",
+    "signup_success": "Email confirmed! Please sign in with your password.",
+    "magiclink_success": "Signed in successfully! Redirecting...",
+    "email_change_success": "Email updated successfully!",
+    "session_success": "Signed in successfully! Redirecting...",
+    "invalid_link": "Invalid or expired link. Please try again.",
+    "verifying_title": "Verifying",
+    "success_title": "Success!",
+    "error_title": "Error",
+    "back_to_login": "Back to Login"
+  },
+  "auth_update_password": {
+    "title": "Set a New Password",
+    "subtitle": "Choose a strong password to secure your account",
+    "success_title": "Password updated",
+    "success_body": "You can now sign in with your new password.",
+    "new_password_label": "New Password",
+    "new_password_placeholder": "Min. 8 characters",
+    "confirm_password_label": "Confirm Password",
+    "confirm_password_placeholder": "Re-enter your password",
+    "strength_weak": "Weak",
+    "strength_fair": "Fair",
+    "strength_good": "Good",
+    "strength_strong": "Strong",
+    "passwords_match": "Passwords match",
+    "passwords_no_match": "Passwords do not match",
+    "update_button": "Update Password",
+    "updating": "Updating…",
+    "back_to_sign_in": "Back to Sign In"
   }
 }

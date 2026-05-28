@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface StatCounterProps {
   value: string
@@ -51,11 +52,12 @@ function AnimatedCounter({ value, isVisible }: { value: string; isVisible: boole
 }
 
 export function AnimatedStats() {
+  const t = useTranslations('home_stats')
   const stats: StatCounterProps[] = [
-    { value: '4', label: 'AI Engines Monitored' },
-    { value: '50', label: 'Metrics Tracked' },
-    { value: '99', label: 'Analysis Accuracy' },
-    { value: '2', label: 'Average Audit Time' },
+    { value: '4', label: t('engines') },
+    { value: '50', label: t('metrics') },
+    { value: '99', label: t('accuracy') },
+    { value: '2', label: t('audit_time') },
   ]
 
   const [isVisible, setIsVisible] = useState(false)
@@ -94,12 +96,12 @@ export function AnimatedStats() {
           className="group text-center transition-transform duration-300 hover:-translate-y-1"
         >
           <div className="relative inline-flex">
-            <span className="text-text-on-surface text-5xl font-black tracking-tight transition-all duration-300 group-hover:scale-110">
+            <span className="text-5xl font-black tracking-tight text-foreground transition-all duration-300 group-hover:scale-110">
               <AnimatedCounter value={stat.value} isVisible={isVisible} />
               {suffixes[stat.value]}
             </span>
           </div>
-          <p className="text-text-muted-surface mt-2 text-sm font-medium">{stat.label}</p>
+          <p className="mt-2 text-sm font-medium text-muted-foreground">{stat.label}</p>
         </div>
       ))}
     </div>

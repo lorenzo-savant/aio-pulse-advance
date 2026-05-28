@@ -1,30 +1,46 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft, FileText, Download, CheckCircle } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
+import { Reveal } from '@/components/Reveal'
+import { Ornament } from '@/components/Ornament'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
   title: 'Data Processing Agreement — AIO Pulse Trust Center',
   description: 'Download the Data Processing Agreement (DPA) for AIO Pulse.',
 }
 
-export default function DpaPage() {
+export default async function DpaPage() {
+  const t = await getTranslations('trust_pages')
+  const tHeader = await getTranslations('site_header')
   return (
-    <div className="min-h-screen bg-background">
-      <section className="border-b border-border bg-card">
+    <div className="relative min-h-screen overflow-x-clip bg-background">
+      <SiteHeader
+        navItems={[
+          { label: tHeader('nav.features'), href: '/#features' },
+          { label: tHeader('nav.docs'), href: '/docs' },
+          { label: tHeader('nav.trust'), href: '/trust', active: true },
+        ]}
+      />
+      <div className="pointer-events-none absolute -right-24 top-16 h-[260px] w-[260px] opacity-20">
+        <Ornament variant="burst" />
+      </div>
+      <section className="relative border-b border-border bg-card">
         <div className="mx-auto max-w-5xl px-6 py-12">
           <Link
             href="/trust"
             className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Trust Center
+            {t('back_to_trust')}
           </Link>
-          <h1 className="text-3xl font-bold">Data Processing Agreement</h1>
-          <p className="mt-3 max-w-2xl text-muted-foreground">
-            This Data Processing Agreement (DPA) governs the processing of personal data by AIO
-            Pulse on behalf of its customers, in compliance with the EU General Data Protection
-            Regulation (GDPR).
-          </p>
+          <Reveal as="h1" direction="up" delay={1} className="text-3xl font-bold">
+            {t('dpa.title')}
+          </Reveal>
+          <Reveal as="p" direction="up" delay={2} className="mt-3 max-w-2xl text-muted-foreground">
+            {t('dpa.subtitle')}
+          </Reveal>
         </div>
       </section>
 

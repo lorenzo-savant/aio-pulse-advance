@@ -5,12 +5,17 @@ import type { FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Shield, Eye, EyeOff, Loader2, Mail, Zap, ArrowRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { APP_NAME } from '@/lib/constants'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { loginSchema } from '@/lib/validations'
-import { ThemeToggle } from '@/components/ThemeToggle'
+import { Reveal } from '@/components/Reveal'
+import { Ornament } from '@/components/Ornament'
+import { SiteHeader } from '@/components/SiteHeader'
 
 function LoginForm() {
+  const t = useTranslations('auth_pages.login')
+  const tHeader = useTranslations('site_header')
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createSupabaseBrowserClient()
@@ -153,41 +158,28 @@ function LoginForm() {
   return (
     <div className="relative flex min-h-screen flex-col">
       <div className="absolute inset-0 bg-background">
-        {/* Shared grid utility (tailwind config) — brand-indigo SVG overlay
-            that works in both light + dark mode. Replaces a previous
-            hardcoded `#1f2937` linear-gradient that was almost invisible
-            on the F4F7FE light background. */}
         <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40" />
         <div className="bg-accent/20 absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full blur-[120px]" />
         <div className="bg-accent/10 absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]" />
+        <div className="pointer-events-none absolute -left-24 top-1/3 h-[280px] w-[280px] opacity-25">
+          <Ornament variant="orbit" />
+        </div>
+        <div className="pointer-events-none absolute -right-20 bottom-12 h-[220px] w-[220px] opacity-20">
+          <Ornament variant="blob" />
+        </div>
       </div>
 
-      <header className="relative z-10 flex items-center justify-between px-6 py-5">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="to-primary/80 shadow-primary/30 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary shadow-lg">
-            <Shield className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-black tracking-tight text-foreground">{APP_NAME}</span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Link
-            href="/auth/register"
-            className="hover:bg-accent/10 flex items-center gap-2 rounded-xl bg-input px-4 py-2 text-sm font-medium text-foreground transition-all"
-          >
-            Create account <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </header>
+      <SiteHeader
+        secondaryCta={null}
+        primaryCta={{ label: tHeader('create_account'), href: '/auth/register' }}
+      />
 
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
+        <Reveal direction="scale" delay={1} className="w-full max-w-md">
           <div className="rounded-2xl border border-input bg-card p-8 shadow-2xl backdrop-blur-xl">
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-black text-foreground">Welcome back</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Sign in to your account to continue
-              </p>
+              <h1 className="text-2xl font-black text-foreground">{t('title')}</h1>
+              <p className="mt-2 text-sm text-muted-foreground">{t('subtitle')}</p>
             </div>
 
             {successMessage && (
@@ -199,11 +191,11 @@ function LoginForm() {
               </div>
             )}
             {error && (
-              <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/20">
-                  <Shield className="h-4 w-4 text-red-400" />
+              <div className="border-red-500/20 bg-red-500/10 mb-6 flex items-center gap-3 rounded-xl border p-4">
+                <div className="bg-red-500/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                  <Shield className="text-red-400 h-4 w-4" />
                 </div>
-                <p className="text-sm text-red-400">{error}</p>
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
@@ -225,14 +217,11 @@ function LoginForm() {
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
                     <Mail className="h-8 w-8 text-emerald-400" />
                   </div>
-                  <h2 className="text-lg font-bold text-foreground">Check your email</h2>
+                  <h2 className="text-lg font-bold text-foreground">{t('check_email_title')}</h2>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    We sent a magic link to{' '}
-                    <span className="font-medium text-foreground">{email}</span>
+                    {t('check_email_body', { email })}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Click the link to sign in. The link expires in 1 hour.
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t('check_email_hint')}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -241,7 +230,7 @@ function LoginForm() {
                   }}
                   className="hover:bg-accent/10 w-full rounded-xl border border-input bg-input py-3 text-sm font-medium text-foreground transition-all"
                 >
-                  Use a different login method
+                  {t('use_different_method')}
                 </button>
               </div>
             ) : (
@@ -256,7 +245,7 @@ function LoginForm() {
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    Password
+                    {t('password_tab')}
                   </button>
                   <button
                     type="button"
@@ -267,7 +256,7 @@ function LoginForm() {
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    Magic Link
+                    {t('magic_link_tab')}
                   </button>
                 </div>
 
@@ -275,7 +264,7 @@ function LoginForm() {
                   <form className="space-y-5" onSubmit={handlePasswordSubmit}>
                     <div>
                       <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Email
+                        {t('email_label')}
                       </label>
                       <input
                         required
@@ -291,7 +280,7 @@ function LoginForm() {
 
                     <div>
                       <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Password
+                        {t('password_label')}
                       </label>
                       <div className="relative">
                         <input
@@ -328,13 +317,13 @@ function LoginForm() {
                           type="checkbox"
                           onChange={(e) => setRememberMe(e.target.checked)}
                         />
-                        Remember me
+                        {t('remember_me')}
                       </label>
                       <Link
                         className="hover:text-accent/80 text-sm font-medium text-accent transition-colors"
                         href="/auth/forgot-password"
                       >
-                        Forgot password?
+                        {t('forgot_password')}
                       </Link>
                     </div>
 
@@ -346,11 +335,11 @@ function LoginForm() {
                       {loading ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Signing in…
+                          {t('signing_in')}
                         </>
                       ) : (
                         <>
-                          Sign in
+                          {t('sign_in')}
                           <ArrowRight className="h-4 w-4" />
                         </>
                       )}
@@ -374,10 +363,7 @@ function LoginForm() {
                       />
                     </div>
 
-                    <p className="text-xs text-muted-foreground">
-                      We&apos;ll email you a magic link. Click it to sign in instantly — no password
-                      needed.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('magic_link_hint')}</p>
 
                     <button
                       className="to-primary/80 shadow-primary/25 hover:from-primary/90 hover:to-primary/70 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary py-3.5 text-sm font-bold text-primary-foreground shadow-lg transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
@@ -387,12 +373,12 @@ function LoginForm() {
                       {loading ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Sending link…
+                          {t('sending_link')}
                         </>
                       ) : (
                         <>
                           <Zap className="h-4 w-4" />
-                          Send Magic Link
+                          {t('send_magic_link')}
                         </>
                       )}
                     </button>
@@ -400,12 +386,12 @@ function LoginForm() {
                 )}
 
                 <p className="mt-8 text-center text-sm text-muted-foreground">
-                  Don&apos;t have an account?{' '}
+                  {t('no_account')}{' '}
                   <Link
                     className="hover:text-accent/80 font-semibold text-accent transition-colors"
                     href="/auth/register"
                   >
-                    Create one
+                    {t('create_one')}
                   </Link>
                 </p>
               </>
@@ -413,16 +399,16 @@ function LoginForm() {
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            By continuing, you agree to our{' '}
+            {t('terms_prefix')}{' '}
             <Link className="hover:text-accent/80 text-accent" href="#">
-              Terms of Service
+              {t('terms')}
             </Link>{' '}
-            and{' '}
+            {t('and')}{' '}
             <Link className="hover:text-accent/80 text-accent" href="#">
-              Privacy Policy
+              {t('privacy')}
             </Link>
           </p>
-        </div>
+        </Reveal>
       </main>
     </div>
   )

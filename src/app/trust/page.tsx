@@ -10,6 +10,10 @@ import {
   CheckCircle,
   AlertTriangle,
 } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
+import { Reveal } from '@/components/Reveal'
+import { Ornament } from '@/components/Ornament'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
   title: 'Trust Center — AIO Pulse',
@@ -61,26 +65,49 @@ const securityPractices = [
   },
 ]
 
-export default function TrustCenterPage() {
+export default async function TrustCenterPage() {
+  const t = await getTranslations('trust_pages')
+  const tHeader = await getTranslations('site_header')
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen overflow-x-clip bg-background">
+      <SiteHeader
+        navItems={[
+          { label: tHeader('nav.features'), href: '/#features' },
+          { label: tHeader('nav.docs'), href: '/docs' },
+          { label: tHeader('nav.trust'), href: '/trust', active: true },
+        ]}
+      />
+      <div className="pointer-events-none absolute -right-32 top-16 h-[320px] w-[320px] opacity-25">
+        <Ornament variant="orbit" />
+      </div>
+
       {/* Hero */}
-      <section className="border-b border-border bg-card">
+      <section className="relative border-b border-border bg-card">
         <div className="mx-auto max-w-5xl px-6 py-16 text-center">
-          <Shield className="mx-auto mb-4 h-12 w-12 text-primary" />
-          <h1 className="text-3xl font-bold md:text-4xl">Trust Center</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            AIO Pulse is built with security and compliance at its core. Here you will find
-            everything you need to evaluate our security posture.
-          </p>
+          <Reveal direction="up" delay={1}>
+            <Shield className="mx-auto mb-4 h-12 w-12 text-primary" />
+          </Reveal>
+          <Reveal as="h1" direction="up" delay={2} className="text-3xl font-bold md:text-4xl">
+            {t('hub.title')}
+          </Reveal>
+          <Reveal
+            as="p"
+            direction="up"
+            delay={3}
+            className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground"
+          >
+            {t('hub.subtitle')}
+          </Reveal>
         </div>
       </section>
 
       <div className="mx-auto max-w-5xl space-y-16 px-6 py-12">
         {/* Compliance Status */}
         <section>
-          <h2 className="mb-6 text-2xl font-bold">Compliance Status</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+          <Reveal as="h2" direction="up" className="mb-6 text-2xl font-bold">
+            {t('hub.compliance_status')}
+          </Reveal>
+          <Reveal stagger className="grid gap-4 md:grid-cols-2">
             {complianceStatus.map((c) => (
               <div
                 key={c.name}
@@ -108,13 +135,15 @@ export default function TrustCenterPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </Reveal>
         </section>
 
         {/* Security Practices */}
         <section>
-          <h2 className="mb-6 text-2xl font-bold">Security Practices</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Reveal as="h2" direction="up" className="mb-6 text-2xl font-bold">
+            {t('hub.security_practices')}
+          </Reveal>
+          <Reveal stagger className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {securityPractices.map((p) => (
               <div key={p.title} className="rounded-xl border border-border bg-card p-5">
                 <p.icon className="mb-3 h-6 w-6 text-primary" />
@@ -122,7 +151,7 @@ export default function TrustCenterPage() {
                 <p className="text-sm text-muted-foreground">{p.description}</p>
               </div>
             ))}
-          </div>
+          </Reveal>
           <p className="mt-4 text-sm text-muted-foreground">
             Full security details:{' '}
             <Link href="/trust/security" className="text-primary underline">

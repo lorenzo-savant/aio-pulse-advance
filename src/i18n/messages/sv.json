@@ -1317,5 +1317,327 @@
   "breadcrumb": {
     "home": "Dashboard",
     "next": "Nästa"
+  },
+  "site_header": {
+    "nav": {
+      "features": "Funktioner",
+      "capabilities": "Förmågor",
+      "industries": "Branscher",
+      "faq": "FAQ",
+      "docs": "Dokumentation",
+      "dashboard": "Dashboard",
+      "trust": "Trust"
+    },
+    "sign_in": "Logga in",
+    "get_started": "Kom igång",
+    "create_account": "Skapa konto",
+    "language_aria": "Byt språk"
+  },
+  "site_footer": {
+    "claim": "Företagsklassad plattform för AI-sökoptimering och varumärkessynlighet.",
+    "socials": {
+      "twitter": "Twitter",
+      "linkedin": "LinkedIn",
+      "youtube": "YouTube"
+    },
+    "product": {
+      "title": "Produkt",
+      "features": "Funktioner",
+      "pricing": "Priser",
+      "api": "API",
+      "integrations": "Integrationer",
+      "changelog": "Ändringslogg"
+    },
+    "resources": {
+      "title": "Resurser",
+      "documentation": "Dokumentation",
+      "blog": "Blogg",
+      "help": "Hjälpcenter",
+      "community": "Community",
+      "status": "Status"
+    },
+    "company": {
+      "title": "Företag",
+      "about": "Om oss",
+      "careers": "Karriär",
+      "privacy": "Integritet",
+      "terms": "Villkor",
+      "contact": "Kontakt"
+    },
+    "rights_reserved": "Alla rättigheter förbehållna."
+  },
+  "home": {
+    "hero": {
+      "pill": "AI-sökplattform för varumärkessynlighet",
+      "title_a": "Gör ditt varumärke",
+      "title_b": "Synligt",
+      "subtitle": "Mät ditt proprietära AI Visibility Index (AVI) över ChatGPT, Gemini, Perplexity och Claude. Få konkreta insikter för att optimera ditt varumärkes närvaro i varje AI-genererat svar.",
+      "cta_demo": "Boka demo",
+      "cta_login": "Logga in / Registrera",
+      "label_avi": "AVI-poäng 0-100",
+      "label_multi_engine": "Multi-Engine Tracking",
+      "label_competitor": "Konkurrentbenchmark",
+      "label_aeo_geo": "AEO & GEO insikter"
+    },
+    "features": {
+      "title": "Ditt kommandocentrum för AI-synlighet",
+      "subtitle": "Från proprietär AVI-scoring till konkurrentbenchmark — allt du behöver för att mäta, förstå och växa din närvaro i generativ AI-sök.",
+      "open_dashboard": "Öppna dashboard",
+      "items": {
+        "avi": {
+          "title": "AI Visibility Index (AVI)",
+          "description": "Vår proprietära 0-100-poäng mäter hur ofta och hur framträdande ditt varumärke syns över ChatGPT, Gemini, Perplexity och Claude. Kombinerar citeringsfrekvens, sentimentanalys, positionsranking och hallucinationsdetektering till en handlingsbar metrik."
+        },
+        "multi_engine": {
+          "title": "Multi-Engine-monitorering",
+          "description": "Dagliga automatiska skanningar över ChatGPT, Google Gemini, Perplexity AI, Claude och Google AI Overviews. Spåra citeringsfrekvens, omnämnandefrekvens, rekommendationsgrad och svarsposition per engine — allt i en enhetlig dashboard."
+        },
+        "competitive": {
+          "title": "Konkurrentintelligens",
+          "description": "Jämför ditt AVI mot upp till 3 konkurrenter sida vid sida. Jämför share of voice per engine, identifiera citeringskällor de använder men inte du, och få konkreta rekommendationer för att stänga gapet."
+        },
+        "content_opt": {
+          "title": "Content Optimization Suite",
+          "description": "AEO-snippet-tracking med schema JSON-LD-export, GEO-poängdiagnostik med 5 viktade pelare, AI-artikelgenerator optimerad för citeringssignaler, och URL/textanalys med engine-specifika rekommendationer."
+        }
+      }
+    },
+    "capabilities": {
+      "title": "Drivet av AIO Pulse",
+      "subtitle": "Tre integrerade engines som arbetar tillsammans för att ge dig fullständig AI-synlighetsintelligens — från citeringsspårning till hälsoövervakning.",
+      "items": {
+        "aeo": {
+          "title": "AEO Snippet Engine",
+          "description": "Spåra frågesvar-snippets över alla AI-engines, identifiera täckningsgap mot konkurrenter och exportera schemakompatibel JSON-LD-markup för att höja synligheten i answer engines."
+        },
+        "citation": {
+          "title": "Citation Analyzer",
+          "description": "Djup kvalitetsscoring av citeringar på 5 pelare, freshness-tracking, formatanalys per engine och upptäckt av nya citeringskällor för att utöka ditt varumärkes referensavtryck i AI."
+        },
+        "health": {
+          "title": "Brand Health Monitor",
+          "description": "Realtidshälsoscoring med sentiment-tracking över engines, nyckelordskorrelation, detektering av homonymer/varumärkesförväxling och automatisk varning vid förlorade omnämnanden eller sentimentfall."
+        }
+      }
+    },
+    "industries": {
+      "title": "Använt över branscher",
+      "subtitle": "Från byråer som optimerar multi-brand-portföljer till företag som skyddar sitt AI-rykte — AIO Pulse levererar handlingsbar synlighetsdata för varje sektor.",
+      "labels": {
+        "travel": "Resa",
+        "ecommerce": "E-handel",
+        "finance": "Finans",
+        "healthcare": "Vård",
+        "automotive": "Fordon",
+        "education": "Utbildning",
+        "real_estate": "Fastigheter",
+        "legal": "Juridik",
+        "saas": "SaaS",
+        "crypto": "Krypto"
+      }
+    },
+    "faq": {
+      "title": "Vanliga frågor",
+      "subtitle": "Allt du behöver veta om AI-synlighetsövervakning.",
+      "items": [
+        {
+          "q": "Vad är AI Visibility Index (AVI)?",
+          "a": "AVI är en proprietär 0-100-poäng som kombinerar 6 viktade faktorer: citeringsfrekvens (20%), omnämnandefrekvens (20%), rekommendationsgrad (20%), sentimentpoäng (15%), genomsnittlig position (15%) och hallucinationsindex (10%). Högre poäng betyder bättre synlighet i AI-genererade svar."
+        },
+        {
+          "q": "Hur fungerar multi-engine-monitorering?",
+          "a": "Ange din domän och upp till 3 konkurrenter. Vår engine orkestrerar parallella frågor till ChatGPT/SearchGPT, Google Gemini, Perplexity AI och Claude och aggregerar sedan resultaten i en enhetlig dashboard med uppdelning per engine och trendanalys."
+        },
+        {
+          "q": "Vilka AI-engines och modeller stöds?",
+          "a": "ChatGPT (web + GPTs + SearchGPT), Google Gemini (web + Advanced), Perplexity AI, Claude (web) och Google AI Overviews. Analysmodeller inkluderar Gemini 2.5 Flash/Pro, GPT-4o/4o-mini, Claude Sonnet 4.5/Haiku 4.5 och Perplexity Sonar."
+        },
+        {
+          "q": "Hur ofta uppdateras min data?",
+          "a": "Dagliga automatiska skanningar för alla aktiva prenumerationer, med konfigurerbara varningsregler för nya omnämnanden, förlorade omnämnanden, sentimentfall, positiva toppar, konkurrentledningsbyten och hallucinationsdetektering."
+        },
+        {
+          "q": "Kan jag prova innan jag bestämmer mig?",
+          "a": "Ja — börja med en gratis enskild audit som täcker din domän över alla stödda engines. Inget kreditkort krävs. Fulla dashboards, konkurrentjämförelse och exporterbara rapporter ingår."
+        },
+        {
+          "q": "Vad är skillnaden mellan AIO, AEO och GEO?",
+          "a": "AIO (AI Optimization) optimerar innehåll för upptäckbarhet av AI-modeller. AEO (Answer Engine Optimization) inriktar sig på direktsvar och featured snippets. GEO (Generative Engine Optimization) optimerar för AI-genererade sökresultat. Vår plattform täcker alla tre med dedikerade verktyg och scoring."
+        },
+        {
+          "q": "Stödjer ni innehåll på flera språk?",
+          "a": "Ja, vi analyserar synlighet på 50+ språk. AI-modeller svarar olika beroende på språk — vår plattform spårar dessa variationer och ger språkspecifika insikter i dina rapporter."
+        },
+        {
+          "q": "Vilka integrationer finns tillgängliga?",
+          "a": "Google Search Console-synk (branded search, striking distance keywords, kannibaliseringsdetektering), publik REST API v1 med webhooks, Obsidian-export och anpassad rapportschemaläggning med automatisk PDF/CSV/JSON-leverans."
+        },
+        {
+          "q": "Hur är faktureringen strukturerad?",
+          "a": "Tre nivåer: Pro för $49/månad (individer och små team), Business för $199/månad (team med alla funktioner), Agency för $499/månad (multi-brand-byråer). Årsplaner inkluderar 20% rabatt. 14-dagars pengarna-tillbaka-garanti på alla planer."
+        },
+        {
+          "q": "Vilken typ av support erbjuder ni?",
+          "a": "Alla planer inkluderar e-postsupport med 24-timmars svarstid. Business inkluderar livechatt, Agency inkluderar en dedikerad account manager med prioriterad telefonsupport. Teknisk dokumentation och API-referens finns för alla användare."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Lär känna din AI-synlighetspoäng",
+      "subtitle": "Starta din gratis audit idag — inget kreditkort krävs. Komplett AVI-rapport på minuter.",
+      "button": "Mät ditt AVI",
+      "checks": ["Inget kreditkort", "Gratis auditrapport", "Avsluta när som helst"]
+    }
+  },
+  "trust_pages": {
+    "back_to_trust": "Tillbaka till Trust Center",
+    "back_to_home": "Tillbaka till start",
+    "hub": {
+      "title": "Trust Center",
+      "subtitle": "AIO Pulse är byggt med säkerhet och compliance i kärnan. Här hittar du allt du behöver för att utvärdera vår säkerhetsposition.",
+      "compliance_status": "Compliance-status",
+      "security_practices": "Säkerhetspraxis",
+      "sub_processors": "Sub-Processors",
+      "dpa_title": "Data Processing Agreement (DPA)",
+      "dpa_body": "Vårt DPA baseras på EU:s standardavtalsklausuler (SCC) och täcker all databehandling. Tillgängligt för nedladdning nedan.",
+      "download_dpa": "Ladda ner DPA",
+      "gdpr_title": "Dina GDPR-rättigheter",
+      "gdpr_body": "Enligt GDPR har du rätt att få åtkomst till, exportera och radera dina personuppgifter. Du kan utöva dessa rättigheter direkt från dashboard-inställningarna.",
+      "contact_title": "Kontakt"
+    },
+    "security": {
+      "title": "Säkerhetspraxis",
+      "subtitle": "En detaljerad översikt över säkerhetskontroller och rutiner som implementerats i AIO Pulse. Vår säkerhetsposition granskas kvartalsvis och auditeras årligen."
+    },
+    "dpa": {
+      "title": "Data Processing Agreement",
+      "subtitle": "Detta Data Processing Agreement (DPA) reglerar AIO Pulses behandling av personuppgifter för kunders räkning, i enlighet med EU:s allmänna dataskyddsförordning (GDPR)."
+    },
+    "gdpr": {
+      "title": "Dina GDPR-rättigheter",
+      "subtitle": "Enligt allmänna dataskyddsförordningen (GDPR) har du särskilda rättigheter över dina personuppgifter. AIO Pulse tillhandahåller självbetjäningsverktyg för att utöva dessa rättigheter direkt från dashboarden."
+    },
+    "sub_processors": {
+      "title": "Sub-Processors",
+      "subtitle": "AIO Pulse anlitar följande sub-processors från tredje part för att leverera tjänsten. Alla sub-processors är bundna av Data Processing Agreements (DPA) i enlighet med GDPR artikel 28."
+    }
+  },
+  "auth_pages": {
+    "login": {
+      "title": "Välkommen tillbaka",
+      "subtitle": "Logga in på ditt konto för att fortsätta",
+      "email_label": "E-post",
+      "password_label": "Lösenord",
+      "remember_me": "Kom ihåg mig",
+      "forgot_password": "Glömt lösenord?",
+      "sign_in": "Logga in",
+      "signing_in": "Loggar in…",
+      "password_tab": "Lösenord",
+      "magic_link_tab": "Magic Link",
+      "magic_link_hint": "Vi mejlar dig en magic link. Klicka på den för att logga in direkt — inget lösenord behövs.",
+      "send_magic_link": "Skicka Magic Link",
+      "sending_link": "Skickar länk…",
+      "no_account": "Har du inget konto?",
+      "create_one": "Skapa ett",
+      "check_email_title": "Kolla din e-post",
+      "check_email_body": "Vi skickade en magic link till {email}",
+      "check_email_hint": "Klicka på länken för att logga in. Länken går ut om 1 timme.",
+      "use_different_method": "Använd en annan inloggningsmetod",
+      "terms_prefix": "Genom att fortsätta godkänner du våra",
+      "terms": "Användarvillkor",
+      "and": "och",
+      "privacy": "Integritetspolicy"
+    },
+    "register": {
+      "title": "Skapa ditt konto",
+      "subtitle": "Kom igång med AIO Pulse",
+      "full_name_label": "Fullständigt namn",
+      "full_name_placeholder": "Ditt namn",
+      "email_label": "E-post",
+      "password_label": "Lösenord",
+      "password_placeholder": "Min. 8 tecken",
+      "create_account": "Skapa konto",
+      "creating": "Skapar konto…",
+      "have_account": "Har du redan ett konto?",
+      "sign_in": "Logga in",
+      "check_inbox_title": "Kolla din inbox",
+      "check_inbox_body": "Vi skickade en verifieringslänk till {email}. Klicka på länken för att aktivera ditt konto.",
+      "back_to_sign_in": "Tillbaka till inloggning"
+    },
+    "forgot_password": {
+      "title": "Återställ lösenord",
+      "subtitle_idle": "Ange din e-post för att få instruktioner om återställning",
+      "subtitle_sent": "Kolla din e-post för återställningslänken",
+      "email_label": "E-post",
+      "send": "Skicka återställningslänk",
+      "sending": "Skickar...",
+      "sent_body": "Vi skickade en länk för att återställa lösenordet till {email}",
+      "remember_password": "Kom du ihåg lösenordet?",
+      "sign_in": "Logga in",
+      "back_to_sign_in": "Tillbaka till inloggning"
+    }
+  },
+  "docs_ui": {
+    "back_home": "Tillbaka till start",
+    "title": "Dokumentation",
+    "subtitle": "Allt du behöver veta om att använda AIO Pulse.",
+    "search_placeholder": "Sök i dokumentationen...",
+    "result_singular": "{count} resultat hittat",
+    "result_plural": "{count} resultat hittade",
+    "no_results_title": "Inga resultat hittades",
+    "no_results_hint": "Prova en annan sökterm eller",
+    "clear_search": "rensa sökningen",
+    "back_to_top": "Tillbaka till toppen"
+  },
+  "home_stats": {
+    "engines": "AI-engines övervakade",
+    "metrics": "Mätvärden spårade",
+    "accuracy": "Analysprecision",
+    "audit_time": "Genomsnittlig audittid"
+  },
+  "team_accept": {
+    "accepting_title": "Accepterar inbjudan",
+    "accepting_message": "Accepterar inbjudan...",
+    "success_title": "Välkommen!",
+    "error_title": "Kunde inte acceptera inbjudan",
+    "invalid_token": "Ogiltig inbjudningslänk. Ingen token.",
+    "init_failed": "Kunde inte initiera. Uppdatera sidan.",
+    "generic_error": "Ett fel uppstod vid accepterande av inbjudan",
+    "go_to_dashboard": "Gå till Dashboard",
+    "sign_in": "Logga in",
+    "go_to_homepage": "Gå till start"
+  },
+  "auth_callback": {
+    "verifying": "Verifierar ditt konto...",
+    "not_configured": "Supabase är inte konfigurerat",
+    "recovery_success": "Återställning av lösenord verifierad! Omdirigerar...",
+    "signup_success": "E-post bekräftad! Logga in med ditt lösenord.",
+    "magiclink_success": "Inloggad! Omdirigerar...",
+    "email_change_success": "E-post uppdaterad!",
+    "session_success": "Inloggad! Omdirigerar...",
+    "invalid_link": "Ogiltig eller utgången länk. Försök igen.",
+    "verifying_title": "Verifierar",
+    "success_title": "Klart!",
+    "error_title": "Fel",
+    "back_to_login": "Tillbaka till inloggning"
+  },
+  "auth_update_password": {
+    "title": "Sätt ett nytt lösenord",
+    "subtitle": "Välj ett starkt lösenord för att skydda ditt konto",
+    "success_title": "Lösenord uppdaterat",
+    "success_body": "Du kan nu logga in med ditt nya lösenord.",
+    "new_password_label": "Nytt lösenord",
+    "new_password_placeholder": "Min. 8 tecken",
+    "confirm_password_label": "Bekräfta lösenord",
+    "confirm_password_placeholder": "Ange lösenordet igen",
+    "strength_weak": "Svagt",
+    "strength_fair": "OK",
+    "strength_good": "Bra",
+    "strength_strong": "Starkt",
+    "passwords_match": "Lösenorden matchar",
+    "passwords_no_match": "Lösenorden matchar inte",
+    "update_button": "Uppdatera lösenord",
+    "updating": "Uppdaterar…",
+    "back_to_sign_in": "Tillbaka till inloggning"
   }
 }

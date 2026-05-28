@@ -2,12 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Shield, ArrowLeft, Loader2, Mail } from 'lucide-react'
+import { ArrowLeft, Loader2, Mail } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { forgotPasswordSchema } from '@/lib/validations'
-import { ThemeToggle } from '@/components/ThemeToggle'
+import { Reveal } from '@/components/Reveal'
+import { Ornament } from '@/components/Ornament'
+import { AioLogo } from '@/components/brand/Logo'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('auth_pages.forgot_password')
+  const tHeader = useTranslations('site_header')
   const supabase = createSupabaseBrowserClient()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -52,42 +58,35 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background px-6">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip bg-background">
       <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" />
       <div className="bg-primary/15 pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-1/4 h-[240px] w-[240px] opacity-20">
+        <Ornament variant="burst" />
+      </div>
 
-      <header className="relative z-10 flex items-center justify-between py-5">
-        <Link
-          href="/auth/login"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Link>
-        <ThemeToggle />
-      </header>
+      <SiteHeader
+        secondaryCta={null}
+        primaryCta={{ label: tHeader('sign_in'), href: '/auth/login' }}
+      />
 
-      <div className="animate-in relative z-10 flex flex-1 items-center justify-center pb-12">
-        <div className="w-full max-w-sm">
+      <div className="relative z-10 flex flex-1 items-center justify-center pb-12">
+        <Reveal direction="scale" delay={1} className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-4 text-center">
-            <Link href="/auth/login">
-              <div className="shadow-primary/30 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-xl">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
+            <Link href="/auth/login" aria-label="AIO Pulse">
+              <AioLogo size={48} markOnly />
             </Link>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-foreground">Reset Password</h1>
+              <h1 className="text-2xl font-black tracking-tight text-foreground">{t('title')}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                {sent
-                  ? 'Check your email for the reset link'
-                  : 'Enter your email to receive reset instructions'}
+                {sent ? t('subtitle_sent') : t('subtitle_idle')}
               </p>
             </div>
           </div>
 
           <div className="glass rounded-2xl p-8">
             {error && (
-              <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div className="border-red-500/20 bg-red-500/10 text-red-400 mb-5 rounded-xl border px-4 py-3 text-sm">
                 {error}
               </div>
             )}
@@ -97,22 +96,19 @@ export default function ForgotPasswordPage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
                   <Mail className="h-8 w-8 text-emerald-400" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  We sent a password reset link to{' '}
-                  <strong className="text-foreground">{email}</strong>
-                </p>
+                <p className="text-sm text-muted-foreground">{t('sent_body', { email })}</p>
                 <Link
                   href="/auth/login"
                   className="hover:text-accent/80 mt-4 inline-flex items-center gap-2 text-sm font-semibold text-accent"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Back to Sign In
+                  <ArrowLeft className="h-4 w-4" /> {t('back_to_sign_in')}
                 </Link>
               </div>
             ) : (
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
                   <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Email
+                    {t('email_label')}
                   </label>
                   <input
                     required
@@ -134,26 +130,26 @@ export default function ForgotPasswordPage() {
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Sending...
+                      {t('sending')}
                     </>
                   ) : (
-                    'Send Reset Link'
+                    t('send')
                   )}
                 </button>
 
                 <p className="text-center text-sm text-muted-foreground">
-                  Remember your password?{' '}
+                  {t('remember_password')}{' '}
                   <Link
                     className="hover:text-accent/80 font-semibold text-accent"
                     href="/auth/login"
                   >
-                    Sign In
+                    {t('sign_in')}
                   </Link>
                 </p>
               </form>
             )}
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   )

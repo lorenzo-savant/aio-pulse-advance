@@ -1,30 +1,46 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft, Mail, Shield } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
+import { Reveal } from '@/components/Reveal'
+import { Ornament } from '@/components/Ornament'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
   title: 'GDPR Rights — AIO Pulse Trust Center',
   description: 'Your rights under GDPR and how to exercise them with AIO Pulse.',
 }
 
-export default function GdprPage() {
+export default async function GdprPage() {
+  const t = await getTranslations('trust_pages')
+  const tHeader = await getTranslations('site_header')
   return (
-    <div className="min-h-screen bg-background">
-      <section className="border-b border-border bg-card">
+    <div className="relative min-h-screen overflow-x-clip bg-background">
+      <SiteHeader
+        navItems={[
+          { label: tHeader('nav.features'), href: '/#features' },
+          { label: tHeader('nav.docs'), href: '/docs' },
+          { label: tHeader('nav.trust'), href: '/trust', active: true },
+        ]}
+      />
+      <div className="pointer-events-none absolute -right-24 top-16 h-[260px] w-[260px] opacity-20">
+        <Ornament variant="orbit" />
+      </div>
+      <section className="relative border-b border-border bg-card">
         <div className="mx-auto max-w-5xl px-6 py-12">
           <Link
             href="/trust"
             className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Trust Center
+            {t('back_to_trust')}
           </Link>
-          <h1 className="text-3xl font-bold">Your GDPR Rights</h1>
-          <p className="mt-3 max-w-2xl text-muted-foreground">
-            Under the General Data Protection Regulation (GDPR), you have specific rights regarding
-            your personal data. AIO Pulse provides self-serve tools to exercise these rights
-            directly from your dashboard.
-          </p>
+          <Reveal as="h1" direction="up" delay={1} className="text-3xl font-bold">
+            {t('gdpr.title')}
+          </Reveal>
+          <Reveal as="p" direction="up" delay={2} className="mt-3 max-w-2xl text-muted-foreground">
+            {t('gdpr.subtitle')}
+          </Reveal>
         </div>
       </section>
 

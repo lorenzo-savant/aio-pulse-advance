@@ -4,11 +4,15 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import Link from 'next/link'
-import { Shield, Eye, EyeOff, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { APP_NAME } from '@/lib/constants'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { registerSchema } from '@/lib/validations'
-import { ThemeToggle } from '@/components/ThemeToggle'
+import { Reveal } from '@/components/Reveal'
+import { Ornament } from '@/components/Ornament'
+import { AioLogo } from '@/components/brand/Logo'
+import { SiteHeader } from '@/components/SiteHeader'
 
 import { useRouter } from 'next/navigation'
 
@@ -21,6 +25,8 @@ function PasswordRequirement({ label, met }: { label: string; met: boolean }) {
 }
 
 export default function RegisterPage() {
+  const t = useTranslations('auth_pages.register')
+  const tHeader = useTranslations('site_header')
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
   const [name, setName] = useState('')
@@ -84,16 +90,13 @@ export default function RegisterPage() {
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="w-full max-w-sm text-center">
           <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-500" />
-          <h1 className="mb-2 text-2xl font-black text-foreground">Check your inbox</h1>
-          <p className="mb-6 text-sm text-muted-foreground">
-            We sent a verification link to <strong className="text-foreground">{email}</strong>.
-            Click the link to activate your account.
-          </p>
+          <h1 className="mb-2 text-2xl font-black text-foreground">{t('check_inbox_title')}</h1>
+          <p className="mb-6 text-sm text-muted-foreground">{t('check_inbox_body', { email })}</p>
           <Link
             className="hover:bg-primary/90 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-all"
             href="/auth/login"
           >
-            Back to Sign In
+            {t('back_to_sign_in')}
           </Link>
         </div>
       </div>
@@ -101,36 +104,34 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background px-6">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip bg-background">
       <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" />
       <div className="bg-primary/15 pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -left-20 bottom-10 h-[240px] w-[240px] opacity-20">
+        <Ornament variant="blob" />
+      </div>
+      <div className="pointer-events-none absolute -right-20 top-20 h-[240px] w-[240px] opacity-20">
+        <Ornament variant="orbit" />
+      </div>
 
-      <header className="relative z-10 flex items-center justify-between py-5">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Link>
-        <ThemeToggle />
-      </header>
+      <SiteHeader
+        secondaryCta={null}
+        primaryCta={{ label: tHeader('sign_in'), href: '/auth/login' }}
+      />
 
-      <div className="animate-in relative z-10 flex flex-1 items-center justify-center pb-12">
-        <div className="w-full max-w-sm">
+      <div className="relative z-10 flex flex-1 items-center justify-center pb-12">
+        <Reveal direction="scale" delay={1} className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-4 text-center">
-            <div className="shadow-primary/30 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-xl">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
+            <AioLogo size={48} markOnly />
             <div>
               <h1 className="text-2xl font-black tracking-tight text-foreground">{APP_NAME}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Create your account</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
             </div>
           </div>
 
           <div className="glass rounded-2xl p-8">
             {error && (
-              <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div className="border-red-500/20 bg-red-500/10 text-red-400 mb-5 rounded-xl border px-4 py-3 text-sm">
                 {error}
               </div>
             )}
@@ -138,14 +139,14 @@ export default function RegisterPage() {
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Full Name
+                  {t('full_name_label')}
                 </label>
                 <input
                   required
                   autoComplete="name"
                   className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                   disabled={loading}
-                  placeholder="Your Name"
+                  placeholder={t('full_name_placeholder')}
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -154,7 +155,7 @@ export default function RegisterPage() {
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Email
+                  {t('email_label')}
                 </label>
                 <input
                   required
@@ -170,7 +171,7 @@ export default function RegisterPage() {
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Password
+                  {t('password_label')}
                 </label>
                 <div className="relative">
                   <input
@@ -179,7 +180,7 @@ export default function RegisterPage() {
                     className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
                     disabled={loading}
                     minLength={8}
-                    placeholder="Min. 8 characters"
+                    placeholder={t('password_placeholder')}
                     type={showPw ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -235,22 +236,22 @@ export default function RegisterPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating account…
+                    {t('creating')}
                   </>
                 ) : (
-                  'Create Account'
+                  t('create_account')
                 )}
               </button>
             </form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
+              {t('have_account')}{' '}
               <Link className="hover:text-accent/80 font-semibold text-accent" href="/auth/login">
-                Sign in
+                {t('sign_in')}
               </Link>
             </p>
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   )

@@ -2,15 +2,18 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Shield, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { AioLogo } from '@/components/brand/Logo'
 
 function AuthCallbackContent() {
+  const t = useTranslations('auth_callback')
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createSupabaseBrowserClient()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const [message, setMessage] = useState('Verifying your account...')
+  const [message, setMessage] = useState(t('verifying'))
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -20,7 +23,7 @@ function AuthCallbackContent() {
 
       if (!supabase) {
         setStatus('error')
-        setMessage('Supabase not configured')
+        setMessage(t('not_configured'))
         return
       }
 
@@ -39,11 +42,11 @@ function AuthCallbackContent() {
 
         if (type === 'recovery') {
           setStatus('success')
-          setMessage('Password reset verified! Redirecting...')
+          setMessage(t('recovery_success'))
           setTimeout(() => router.push('/auth/update-password'), 1500)
         } else if (type === 'signup') {
           setStatus('success')
-          setMessage('Email confirmed! Please sign in with your password.')
+          setMessage(t('signup_success'))
           setTimeout(
             () =>
               router.push(`/auth/login?confirmed=true&email=${encodeURIComponent(email || '')}`),
@@ -51,11 +54,11 @@ function AuthCallbackContent() {
           )
         } else if (type === 'magiclink') {
           setStatus('success')
-          setMessage('Signed in successfully! Redirecting...')
+          setMessage(t('magiclink_success'))
           setTimeout(() => router.push('/dashboard'), 1500)
         } else if (type === 'email_change') {
           setStatus('success')
-          setMessage('Email updated successfully!')
+          setMessage(t('email_change_success'))
           setTimeout(() => router.push('/dashboard/settings'), 1500)
         }
       } else {
@@ -65,11 +68,11 @@ function AuthCallbackContent() {
 
         if (session) {
           setStatus('success')
-          setMessage('Signed in successfully! Redirecting...')
+          setMessage(t('session_success'))
           setTimeout(() => router.push('/dashboard'), 1500)
         } else {
           setStatus('error')
-          setMessage('Invalid or expired link. Please try again.')
+          setMessage(t('invalid_link'))
         }
       }
     }
@@ -81,23 +84,21 @@ function AuthCallbackContent() {
   }, [searchParams, router])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-950 px-6">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-6">
       <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" />
-      <div className="bg-brand-600/15 pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
+      <div className="bg-accent/15 pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
 
-      <div className="animate-in relative z-10 w-full max-w-sm text-center">
+      <div className="relative z-10 w-full max-w-sm text-center">
         <div className="mb-8 flex justify-center">
-          <div className="bg-brand-600 shadow-brand-600/30 flex h-12 w-12 items-center justify-center rounded-2xl shadow-xl">
-            <Shield className="h-6 w-6 text-white" />
-          </div>
+          <AioLogo size={48} markOnly />
         </div>
 
         <div className="glass rounded-2xl p-8">
           {status === 'loading' && (
             <>
-              <Loader2 className="text-brand-400 mx-auto mb-4 h-12 w-12 animate-spin" />
-              <h2 className="mb-2 text-xl font-bold text-white">Verifying</h2>
-              <p className="text-sm text-gray-400">{message}</p>
+              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-accent" />
+              <h2 className="mb-2 text-xl font-bold text-foreground">{t('verifying_title')}</h2>
+              <p className="text-sm text-muted-foreground">{message}</p>
             </>
           )}
 
@@ -106,23 +107,23 @@ function AuthCallbackContent() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
                 <CheckCircle2 className="h-8 w-8 text-emerald-400" />
               </div>
-              <h2 className="mb-2 text-xl font-bold text-white">Success!</h2>
-              <p className="text-sm text-gray-400">{message}</p>
+              <h2 className="mb-2 text-xl font-bold text-foreground">{t('success_title')}</h2>
+              <p className="text-sm text-muted-foreground">{message}</p>
             </>
           )}
 
           {status === 'error' && (
             <>
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
-                <XCircle className="h-8 w-8 text-red-400" />
+              <div className="bg-red-500/10 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+                <XCircle className="text-red-400 h-8 w-8" />
               </div>
-              <h2 className="mb-2 text-xl font-bold text-white">Error</h2>
-              <p className="mb-4 text-sm text-gray-400">{message}</p>
+              <h2 className="mb-2 text-xl font-bold text-foreground">{t('error_title')}</h2>
+              <p className="mb-4 text-sm text-muted-foreground">{message}</p>
               <a
                 href="/auth/login"
-                className="bg-brand-600 hover:bg-brand-500 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white transition-all"
+                className="hover:bg-accent-hover inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground transition-all"
               >
-                Back to Login
+                {t('back_to_login')}
               </a>
             </>
           )}
@@ -136,8 +137,8 @@ export default function AuthCallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-surface-950">
-          <Loader2 className="text-brand-400 h-8 w-8 animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
       }
     >

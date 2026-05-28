@@ -109,9 +109,9 @@
     --shadow-sm: 0 2px 5px -1px oklch(0.57 0.01 195 / 0.06);
     --shadow-md: 0 4px 12px -2px oklch(0.57 0.01 195 / 0.1);
     --shadow-lg: 0 18px 40px -12px oklch(0.57 0.01 195 / 0.14);
-    --shadow-card: 0 4px 20px rgba(0,0,0,0.10);
-    --shadow-card-hover: 0 10px 30px rgba(0,0,0,0.12);
-    --shadow-nav: 0 1px 20px rgba(0,0,0,0.15);
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.1);
+    --shadow-card-hover: 0 10px 30px rgba(0, 0, 0, 0.12);
+    --shadow-nav: 0 1px 20px rgba(0, 0, 0, 0.15);
     --shadow-glow: 0 0 30px -5px oklch(var(--color-accent) / 0.35);
 
     --transition-fast: 150ms ease;
@@ -119,23 +119,26 @@
     --transition-slow: 400ms ease;
 
     /* ═══ QVERY BRAND TOKENS (light mode) ═══ */
-    --brand-ink: #011C25;
-    --brand-accent-1: #0AD0BC;
-    --brand-accent-2: #FF3131;
-    --brand-bg: #F6F8FF;
-    --brand-surface: #FFFFFF;
+    --brand-ink: #011c25;
+    --brand-accent-1: #0ad0bc;
+    --brand-accent-2: #ff3131;
+    --brand-bg: #f6f8ff;
+    --brand-surface: #ffffff;
     --brand-near-black: #080808;
-    --brand-line: #E8E8E8;
-    --brand-line-2: #EAEAEC;
+    --brand-line: #e8e8e8;
+    --brand-line-2: #eaeaec;
     --brand-mute-1: #798283;
     --brand-mute-2: #999999;
 
-    --gradient-glow-teal: radial-gradient(circle at center, rgba(10,208,188,.75) 0%, #F6F8FF 70%);
-    --gradient-glow-red: radial-gradient(circle at center, rgba(255,49,49,.55) 0%, #F6F8FF 70%);
+    --gradient-glow-teal: radial-gradient(
+      circle at center,
+      rgba(10, 208, 188, 0.75) 0%,
+      #f6f8ff 70%
+    );
+    --gradient-glow-red: radial-gradient(circle at center, rgba(255, 49, 49, 0.55) 0%, #f6f8ff 70%);
     --gradient-mesh:
-      radial-gradient(at 20% 30%, rgba(10,208,188,.35) 0%, transparent 50%),
-      radial-gradient(at 80% 70%, rgba(255,49,49,.25) 0%, transparent 50%),
-      #F6F8FF;
+      radial-gradient(at 20% 30%, rgba(10, 208, 188, 0.35) 0%, transparent 50%),
+      radial-gradient(at 80% 70%, rgba(255, 49, 49, 0.25) 0%, transparent 50%), #f6f8ff;
 
     /* Qvery font tokens */
     --font-display: 'Lato', system-ui, sans-serif;
@@ -169,19 +172,19 @@
     --color-accent-muted: 0.18 0.1 275; /* subtle purple bg */
     --color-accent-foreground: 0.99 0 0;
 
-    /* ═══ NAVY SCALE — Horizon dark backgrounds ═══ */
-    --surface-0: 0.06 0.03 250; /* #0b1437 — deepest navy page bg */
-    --surface-50: 0.08 0.035 250; /* slightly lighter */
-    --surface-100: 0.1 0.04 250; /* #111c44 — card bg */
-    --surface-200: 0.14 0.045 250; /* #1B254B — elevated surface */
-    --surface-300: 0.2 0.05 250; /* borders on dark */
-    --surface-400: 0.32 0.05 250; /* muted elements */
-    --surface-500: 0.48 0.04 250; /* secondary text */
-    --surface-600: 0.6 0.035 250; /* labels */
-    --surface-700: 0.72 0.03 250; /* light body text */
-    --surface-800: 0.86 0.02 250; /* primary text */
-    --surface-900: 0.94 0.01 250; /* headings — near white */
-    --surface-950: 0.97 0.005 250; /* brightest */
+    /* ═══ NAVY SCALE — Horizon dark backgrounds (rebalanced for WCAG AA) ═══ */
+    --surface-0: 0.13 0.035 250; /* page bg — lifted from 0.06 to avoid "black hole" */
+    --surface-50: 0.15 0.04 250;
+    --surface-100: 0.17 0.045 250; /* card bg — clearer separation from page */
+    --surface-200: 0.21 0.05 250; /* elevated surface */
+    --surface-300: 0.28 0.05 250; /* borders on dark */
+    --surface-400: 0.4 0.045 250; /* muted elements */
+    --surface-500: 0.7 0.04 250; /* muted-foreground — was 0.48 (illegible), now ~4.5:1 vs bg */
+    --surface-600: 0.78 0.035 250; /* labels */
+    --surface-700: 0.84 0.03 250; /* light body text */
+    --surface-800: 0.9 0.02 250; /* primary text */
+    --surface-900: 0.96 0.01 250; /* headings — near white */
+    --surface-950: 0.98 0.005 250; /* brightest */
 
     /* ═══ SEMANTIC SURFACES (dark) ═══ */
     --background: var(--surface-0);
@@ -251,6 +254,19 @@
     --shadow-md: 0 4px 12px oklch(0 0 0 / 0.45);
     --shadow-lg: 0 18px 40px -12px oklch(0 0 0 / 0.55);
     --shadow-glow: 0 0 30px -5px oklch(var(--color-accent) / 0.3);
+
+    /* ═══ QVERY BRAND TOKENS (dark mode) — invertiti per leggibilità ═══
+       Senza questo override, tutte le classi .q-* (.q-h1, .q-pill, .q-btn,
+       .q-industry-card, .q-faq-row, .q-footer-*) restano col testo ink
+       scuro hardcoded e diventano illeggibili sul navy. */
+    --brand-ink: oklch(0.94 0.01 250); /* "ink" inverso = quasi-bianco per dark */
+    --brand-surface: oklch(0.17 0.045 250); /* card surface scura */
+    --brand-bg: oklch(0.13 0.035 250); /* page bg dark */
+    --brand-near-black: oklch(0.98 0.005 250);
+    --brand-line: oklch(0.28 0.05 250);
+    --brand-line-2: oklch(0.28 0.05 250);
+    --brand-mute-1: oklch(0.7 0.04 250);
+    --brand-mute-2: oklch(0.75 0.035 250);
 
     color-scheme: dark;
   }
@@ -332,7 +348,8 @@
   }
 
   /* Qvery page background override — delicate blue-white */
-  html, body {
+  html,
+  body {
     background-color: oklch(var(--background));
   }
 }
@@ -456,16 +473,18 @@
       0 0 0 1px oklch(1 0 0 / 0.05);
   }
 
-  /* ─── Gradient Text ───────────────────────────────────────────────────── */
+  /* ─── Gradient Text — on-brand teal monochrome with subtle deep-teal stop ──
+     Coerente con la palette AIO Pulse (teal + ink). Niente viola fuori brand. */
   .text-gradient {
-    background: linear-gradient(135deg, oklch(var(--color-accent)) 0%, oklch(0.65 0.2 300) 100%);
+    background: linear-gradient(135deg, oklch(0.62 0.18 178) 0%, oklch(0.32 0.1 200) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    text-shadow: none;
   }
 
   .dark .text-gradient {
-    background: linear-gradient(135deg, oklch(var(--color-accent)) 0%, oklch(0.7 0.15 260) 100%);
+    background: linear-gradient(135deg, oklch(0.78 0.16 185) 0%, oklch(0.95 0.04 180) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -646,7 +665,10 @@
     color: var(--brand-ink);
     margin: 0;
   }
-  .q-h2::after { content: '.'; color: var(--brand-accent-2); }
+  .q-h2::after {
+    content: '.';
+    color: var(--brand-accent-2);
+  }
   .q-h3 {
     font-family: var(--font-display);
     font-weight: 900;
@@ -683,26 +705,59 @@
     font-family: var(--font-display);
     font-weight: 400;
     font-size: 11px;
-    letter-spacing: .1em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--brand-ink);
   }
-  .q-caption--bold { font-weight: 900; }
+  .q-caption--bold {
+    font-weight: 900;
+  }
 
   @media (max-width: 1199px) {
-    .q-h1 { font-size: 40px; line-height: 45px; }
-    .q-h2 { font-size: 40px; line-height: 1.2; }
-    .q-h3 { font-size: 25px; line-height: 1.1; }
-    .q-h6 { font-size: 18px; }
-    .q-lead { font-size: 20px; }
-    .q-body { font-size: 16px; line-height: 1.6em; }
+    .q-h1 {
+      font-size: 40px;
+      line-height: 45px;
+    }
+    .q-h2 {
+      font-size: 40px;
+      line-height: 1.2;
+    }
+    .q-h3 {
+      font-size: 25px;
+      line-height: 1.1;
+    }
+    .q-h6 {
+      font-size: 18px;
+    }
+    .q-lead {
+      font-size: 20px;
+    }
+    .q-body {
+      font-size: 16px;
+      line-height: 1.6em;
+    }
   }
   @media (max-width: 809px) {
-    .q-h1 { font-size: 35px; line-height: 40px; }
-    .q-h2 { font-size: 35px; line-height: 1.4; }
-    .q-h3 { font-size: 22px; line-height: 1.3; }
-    .q-h6 { font-size: 16px; line-height: 1.4; }
-    .q-lead { font-size: 18px; line-height: 1.3; }
+    .q-h1 {
+      font-size: 35px;
+      line-height: 40px;
+    }
+    .q-h2 {
+      font-size: 35px;
+      line-height: 1.4;
+    }
+    .q-h3 {
+      font-size: 22px;
+      line-height: 1.3;
+    }
+    .q-h6 {
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    .q-lead {
+      font-size: 18px;
+      line-height: 1.3;
+    }
   }
 
   /* ─── Pill / Badge ────────────────────────────────── */
@@ -714,32 +769,46 @@
     border-radius: var(--radius-pill);
     font-family: var(--font-body);
     font-size: 15px;
-    letter-spacing: .01em;
+    letter-spacing: 0.01em;
     color: var(--brand-ink);
     background: transparent;
   }
-  .q-pill--live { border: 2px solid var(--brand-accent-1); }
-  .q-pill--soon { border: 2px solid var(--brand-accent-2); }
+  .q-pill--live {
+    border: 2px solid var(--brand-accent-1);
+  }
+  .q-pill--soon {
+    border: 2px solid var(--brand-accent-2);
+  }
   .q-pill__dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     position: relative;
   }
-  .q-pill--live .q-pill__dot { background: var(--brand-accent-1); }
-  .q-pill--soon .q-pill__dot { background: var(--brand-accent-2); }
+  .q-pill--live .q-pill__dot {
+    background: var(--brand-accent-1);
+  }
+  .q-pill--soon .q-pill__dot {
+    background: var(--brand-accent-2);
+  }
   .q-pill__dot::after {
     content: '';
     position: absolute;
     inset: -4px;
     border-radius: 50%;
     background: currentColor;
-    opacity: .4;
+    opacity: 0.4;
     animation: q-pulse 1.8s ease-out infinite;
   }
   @keyframes q-pulse {
-    0%   { transform: scale(.6); opacity: .4; }
-    100% { transform: scale(1.8); opacity: 0; }
+    0% {
+      transform: scale(0.6);
+      opacity: 0.4;
+    }
+    100% {
+      transform: scale(1.8);
+      opacity: 0;
+    }
   }
 
   /* ─── Buttons ─────────────────────────────────────── */
@@ -754,13 +823,17 @@
     font-family: var(--font-display);
     font-weight: 900;
     font-size: 18px;
-    line-height: .73;
+    line-height: 0.73;
     text-decoration: none;
     border: 2px solid var(--brand-ink);
     cursor: pointer;
-    transition: transform .2s ease, background .2s ease;
+    transition:
+      transform 0.2s ease,
+      background 0.2s ease;
   }
-  .q-btn:hover { transform: translateY(-2px); }
+  .q-btn:hover {
+    transform: translateY(-2px);
+  }
   .q-btn--ghost {
     background: transparent;
     color: var(--brand-ink);
@@ -788,10 +861,12 @@
   .q-btn--link::after {
     content: '\2192';
     margin-left: 4px;
-    transition: transform .25s ease;
+    transition: transform 0.25s ease;
     display: inline-block;
   }
-  .q-btn--link:hover::after { transform: translateX(6px); }
+  .q-btn--link:hover::after {
+    transform: translateX(6px);
+  }
 
   /* ─── Industry Card ───────────────────────────────── */
   .q-industry-card {
@@ -806,13 +881,18 @@
     align-items: flex-start;
     box-shadow: var(--shadow-card);
     overflow: hidden;
-    transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+    transition:
+      transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.35s ease;
   }
   .q-industry-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-card-hover);
   }
-  .q-industry-card__icon { width: 80px; height: 80px; }
+  .q-industry-card__icon {
+    width: 80px;
+    height: 80px;
+  }
   .q-industry-card__title {
     font-family: var(--font-display);
     font-weight: 900;
@@ -832,7 +912,11 @@
     flex-direction: column;
     gap: 20px;
   }
-  .q-quote-card__head { display: flex; align-items: center; gap: 15px; }
+  .q-quote-card__head {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
   .q-quote-card__avatar {
     width: 37px;
     height: 37px;
@@ -879,12 +963,16 @@
     font-weight: 700;
     line-height: 1;
   }
-  blockquote.q::before { top: 0; left: 0; color: var(--brand-accent-2); }
+  blockquote.q::before {
+    top: 0;
+    left: 0;
+    color: var(--brand-accent-2);
+  }
   blockquote.q::after {
     bottom: -20px;
     right: 0;
     color: var(--brand-accent-1);
-    opacity: .6;
+    opacity: 0.6;
   }
 
   /* ─── Navbar ──────────────────────────────────────── */
@@ -893,7 +981,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 20px;
-    background: rgba(255,255,255,.95);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-md);
@@ -936,69 +1024,131 @@
     margin: 12px 0 0;
     max-height: 0;
     overflow: hidden;
-    transition: max-height .4s ease;
+    transition: max-height 0.4s ease;
   }
-  .q-faq-row.is-open .q-faq-row__a { max-height: 500px; }
+  .q-faq-row.is-open .q-faq-row__a {
+    max-height: 500px;
+  }
 
-  @media (max-width: 1199px) { .q-faq-row__q { font-size: 18px; } }
-  @media (max-width: 809px)  { .q-faq-row__q { font-size: 16px; line-height: 1.4; } }
+  @media (max-width: 1199px) {
+    .q-faq-row__q {
+      font-size: 18px;
+    }
+  }
+  @media (max-width: 809px) {
+    .q-faq-row__q {
+      font-size: 16px;
+      line-height: 1.4;
+    }
+  }
 
   /* ─── Footer ──────────────────────────────────────── */
   .q-footer {
-    background: var(--brand-ink);
-    color: var(--brand-bg);
+    background: #011c25;
+    color: #f6f8ff;
     padding: 80px 64px 40px;
+  }
+  .dark .q-footer {
+    /* keep the footer dramatic-dark in both themes; the brand-token override
+       in .dark would otherwise flip it to a light/grey background */
+    background: oklch(0.08 0.03 250);
+    color: oklch(0.94 0.01 250);
+    border-top: 1px solid oklch(var(--surface-200));
   }
   .q-footer a {
     color: var(--brand-bg);
     text-decoration: none;
-    transition: color .2s ease;
+    transition: color 0.2s ease;
   }
-  .q-footer a:hover { color: var(--brand-accent-1); }
+  .q-footer a:hover {
+    color: var(--brand-accent-1);
+  }
   .q-footer-claim {
     font-family: var(--font-soft);
     font-weight: 500;
     font-size: 18px;
     line-height: 1.2;
-    color: var(--brand-bg);
+    color: #f6f8ff;
   }
   .q-footer-copy {
     font-family: var(--font-soft);
     font-weight: 300;
     font-size: 14px;
-    letter-spacing: .05em;
+    letter-spacing: 0.05em;
     line-height: 1.5;
-    color: var(--brand-bg);
+    color: #f6f8ff;
+    opacity: 0.7;
+  }
+  .dark .q-footer-claim,
+  .dark .q-footer-copy {
+    color: oklch(0.94 0.01 250);
+  }
+  .dark .q-footer-copy {
+    opacity: 0.7;
   }
 
-  /* ─── Qvery Appear Animations (scroll-triggered) ── */
+  /* ─── AIO Pulse scroll-triggered reveal (custom easing, distinct from generic Framer-style) ── */
   .q-reveal {
     opacity: 0;
     transition:
-      opacity 0.8s cubic-bezier(0.44, 0, 0.56, 1),
-      transform 0.8s cubic-bezier(0.44, 0, 0.56, 1);
+      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .q-reveal.is-visible {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
-  .q-reveal--down  { transform: translateY(-30px); }
-  .q-reveal--up    { transform: translateY(30px); }
-  .q-reveal--left  { transform: translateX(-30px); }
-  .q-reveal--right { transform: translateX(30px); }
-  .q-reveal--scale { transform: scale(0.85); }
-  .q-reveal--up-lg    { transform: translateY(60px); }
-  .q-reveal--down-lg  { transform: translateY(-60px); }
-  .q-reveal--left-lg  { transform: translateX(-60px); }
-  .q-reveal--right-lg { transform: translateX(60px); }
-  .q-reveal--d1 { transition-delay: 0.05s; }
-  .q-reveal--d2 { transition-delay: 0.12s; }
-  .q-reveal--d3 { transition-delay: 0.2s; }
-  .q-reveal--d4 { transition-delay: 0.28s; }
-  .q-reveal--d5 { transition-delay: 0.36s; }
-  .q-reveal--d6 { transition-delay: 0.44s; }
-  .q-reveal--d7 { transition-delay: 0.52s; }
-  .q-reveal--d8 { transition-delay: 0.6s; }
+  .q-reveal--down {
+    transform: translateY(-24px);
+  }
+  .q-reveal--up {
+    transform: translateY(28px);
+  }
+  .q-reveal--left {
+    transform: translateX(-28px);
+  }
+  .q-reveal--right {
+    transform: translateX(28px);
+  }
+  .q-reveal--scale {
+    transform: scale(0.88);
+  }
+  .q-reveal--up-lg {
+    transform: translateY(56px);
+  }
+  .q-reveal--down-lg {
+    transform: translateY(-56px);
+  }
+  .q-reveal--left-lg {
+    transform: translateX(-56px);
+  }
+  .q-reveal--right-lg {
+    transform: translateX(56px);
+  }
+  .q-reveal--d1 {
+    transition-delay: 0.06s;
+  }
+  .q-reveal--d2 {
+    transition-delay: 0.14s;
+  }
+  .q-reveal--d3 {
+    transition-delay: 0.22s;
+  }
+  .q-reveal--d4 {
+    transition-delay: 0.32s;
+  }
+  .q-reveal--d5 {
+    transition-delay: 0.42s;
+  }
+  .q-reveal--d6 {
+    transition-delay: 0.52s;
+  }
+  .q-reveal--d7 {
+    transition-delay: 0.62s;
+  }
+  .q-reveal--d8 {
+    transition-delay: 0.72s;
+  }
 
   /* ─── Navbar mount animation ─── */
   .q-nav-enter {
@@ -1007,28 +1157,361 @@
     animation: q-nav-slide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s forwards;
   }
   @keyframes q-nav-slide {
-    0%   { opacity: 0; transform: translateY(-100%); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+      opacity: 0;
+      transform: translateY(-100%);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* ─── Staggered children ─── */
   .q-stagger > * {
     opacity: 0;
-    transform: translateY(15px);
+    transform: translateY(14px);
     transition:
-      opacity 0.6s cubic-bezier(0.44, 0, 0.56, 1),
-      transform 0.6s cubic-bezier(0.44, 0, 0.56, 1);
+      opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .q-stagger.is-visible > * {
     opacity: 1;
     transform: translateY(0);
   }
-  .q-stagger.is-visible > *:nth-child(1) { transition-delay: 0s; }
-  .q-stagger.is-visible > *:nth-child(2) { transition-delay: 0.08s; }
-  .q-stagger.is-visible > *:nth-child(3) { transition-delay: 0.16s; }
-  .q-stagger.is-visible > *:nth-child(4) { transition-delay: 0.24s; }
-  .q-stagger.is-visible > *:nth-child(5) { transition-delay: 0.32s; }
-  .q-stagger.is-visible > *:nth-child(6) { transition-delay: 0.4s; }
+  .q-stagger.is-visible > *:nth-child(1) {
+    transition-delay: 0s;
+  }
+  .q-stagger.is-visible > *:nth-child(2) {
+    transition-delay: 0.07s;
+  }
+  .q-stagger.is-visible > *:nth-child(3) {
+    transition-delay: 0.15s;
+  }
+  .q-stagger.is-visible > *:nth-child(4) {
+    transition-delay: 0.23s;
+  }
+  .q-stagger.is-visible > *:nth-child(5) {
+    transition-delay: 0.31s;
+  }
+  .q-stagger.is-visible > *:nth-child(6) {
+    transition-delay: 0.39s;
+  }
+
+  /* ─── AIO Pulse illustration treatment ──────────────────────────────────
+     Tints + saturates third-party SVG illustrations so they read as
+     "AIO Pulse" art rather than the original source. Applied via the
+     .aio-illustration class on <img> wrappers. */
+  .aio-illustration {
+    filter: hue-rotate(28deg) saturate(1.18) contrast(1.04)
+      drop-shadow(0 18px 28px oklch(var(--color-accent) / 0.18));
+    transition: filter 350ms ease;
+  }
+  .aio-illustration--soft {
+    filter: hue-rotate(20deg) saturate(1.1);
+  }
+  .aio-illustration--flip {
+    transform: scaleX(-1);
+  }
+  .dark .aio-illustration {
+    filter: hue-rotate(-12deg) saturate(1.3) brightness(1.05)
+      drop-shadow(0 18px 28px oklch(var(--color-accent) / 0.28));
+  }
+  .group:hover .aio-illustration {
+    filter: hue-rotate(40deg) saturate(1.3) contrast(1.06)
+      drop-shadow(0 20px 32px oklch(var(--color-accent) / 0.25));
+  }
+
+  /* ─── AIO Pulse SVG ornaments (custom, not derived from third-party assets) ─── */
+  .aio-ornament {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .aio-ornament__spin {
+    animation: aio-spin 22s linear infinite;
+  }
+  .aio-ornament__spin--reverse {
+    animation: aio-spin 16s linear infinite reverse;
+  }
+  .aio-ornament__morph {
+    animation: aio-morph 14s ease-in-out infinite;
+    transform-origin: center;
+  }
+  .aio-ornament__pulse {
+    animation: aio-burst-pulse 2.6s ease-in-out infinite;
+  }
+  @keyframes aio-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes aio-morph {
+    0%,
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+    33% {
+      transform: scale(1.06) rotate(8deg);
+    }
+    66% {
+      transform: scale(0.95) rotate(-6deg);
+    }
+  }
+  @keyframes aio-burst-pulse {
+    0%,
+    100% {
+      transform: scale(0.85);
+      opacity: 0.6;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.95;
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+   *  AIO Pulse site header navigation link
+   *  hover: text turns to foreground (high contrast on bg) + accent
+   *  underline slides in from left. The active page keeps a static
+   *  underline so the user always knows where they are.
+   * ────────────────────────────────────────────────────────────────────── */
+  .aio-nav-link {
+    position: relative;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: oklch(var(--muted-foreground));
+    transition:
+      color 200ms ease,
+      background-color 200ms ease;
+  }
+  .aio-nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0.875rem;
+    right: 0.875rem;
+    bottom: 0.25rem;
+    height: 2px;
+    border-radius: 999px;
+    background: oklch(var(--color-accent));
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .aio-nav-link:hover {
+    color: oklch(var(--foreground));
+    background-color: oklch(var(--muted) / 0.6);
+  }
+  .aio-nav-link:hover::after {
+    transform: scaleX(1);
+  }
+  .aio-nav-link--active {
+    color: oklch(var(--foreground));
+    font-weight: 600;
+  }
+  .aio-nav-link--active::after {
+    transform: scaleX(1);
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+   *  AIO PULSE LOGO — heartbeat (lub-dub) + radiating rings
+   *  This is the brand signature animation: the mark literally pulses.
+   * ────────────────────────────────────────────────────────────────────── */
+  .aio-logo {
+    --aio-beat-duration: 1.4s;
+  }
+  .aio-logo__mark {
+    animation: aio-heartbeat var(--aio-beat-duration) ease-out infinite;
+    transform-origin: center;
+    filter: drop-shadow(0 4px 12px oklch(var(--color-accent) / 0.35));
+  }
+  .aio-logo__beat {
+    stroke-dasharray: 78;
+    stroke-dashoffset: 78;
+    animation: aio-beat-trace var(--aio-beat-duration) ease-in-out infinite;
+  }
+  .aio-logo__pulse-dot {
+    animation: aio-pulse-dot var(--aio-beat-duration) ease-in-out infinite;
+    transform-origin: 24px 24px;
+  }
+  .aio-logo__ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid oklch(var(--color-accent) / 0.55);
+    pointer-events: none;
+    opacity: 0;
+  }
+  .aio-logo__ring--1 {
+    animation: aio-ring-out var(--aio-beat-duration) ease-out infinite;
+  }
+  .aio-logo__ring--2 {
+    animation: aio-ring-out var(--aio-beat-duration) ease-out infinite;
+    animation-delay: calc(var(--aio-beat-duration) / 2);
+  }
+  .aio-logo__word-accent {
+    color: oklch(var(--color-accent));
+    margin-left: 2px;
+  }
+  @keyframes aio-heartbeat {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    10% {
+      transform: scale(1.08);
+    }
+    20% {
+      transform: scale(1);
+    }
+    30% {
+      transform: scale(1.05);
+    }
+    40% {
+      transform: scale(1);
+    }
+  }
+  @keyframes aio-beat-trace {
+    0% {
+      stroke-dashoffset: 78;
+      opacity: 0.4;
+    }
+    35% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+    65% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+    100% {
+      stroke-dashoffset: -78;
+      opacity: 0.4;
+    }
+  }
+  @keyframes aio-pulse-dot {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    15% {
+      transform: scale(1.6);
+    }
+    30% {
+      transform: scale(1);
+    }
+  }
+  @keyframes aio-ring-out {
+    0% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.6);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aio-logo__mark,
+    .aio-logo__beat,
+    .aio-logo__pulse-dot,
+    .aio-logo__ring {
+      animation: none !important;
+    }
+    .aio-logo__beat {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+   *  AIO Pulse illustrations — shared animations for inline SVG art
+   * ────────────────────────────────────────────────────────────────────── */
+  .aio-illu {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .aio-illu__gauge {
+    animation: aio-gauge-sweep 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .aio-illu__wave {
+    stroke-dasharray: 400;
+    animation: aio-wave-trace 2.4s ease-in-out infinite;
+  }
+  .aio-illu__wave-tip {
+    animation: aio-pulse-dot 1.4s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  .aio-illu__heart-beat {
+    animation: aio-beat-trace 1.4s ease-in-out infinite;
+    stroke-dasharray: 80;
+  }
+  .aio-illu__ring {
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  .aio-illu__ring--1 {
+    animation: aio-ring-svg 2s ease-out infinite;
+  }
+  .aio-illu__ring--2 {
+    animation: aio-ring-svg 2s ease-out infinite;
+    animation-delay: 1s;
+  }
+  .aio-illu__bar {
+    transform: scaleX(0);
+    animation: aio-bar-grow 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .aio-illu__float {
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: aio-float-soft 3.5s ease-in-out infinite;
+  }
+  @keyframes aio-gauge-sweep {
+    from {
+      stroke-dashoffset: 345;
+    }
+  }
+  @keyframes aio-wave-trace {
+    0% {
+      stroke-dashoffset: 400;
+    }
+    50% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -400;
+    }
+  }
+  @keyframes aio-ring-svg {
+    0% {
+      opacity: 0.7;
+      transform: scale(0.6);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(2);
+    }
+  }
+  @keyframes aio-bar-grow {
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes aio-float-soft {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
 }
 
 /* ─── Utility Layer ────────────────────────────────────────────────────────── */
@@ -1065,7 +1548,12 @@
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
   }
 }

@@ -86,6 +86,18 @@ const protectedRoutes = ['/dashboard']
 const authRoutes = ['/auth/login', '/auth/register']
 const publicApiRoutes: string[] = []
 
+// Routes that REQUIRE a fully MFA-verified session (AAL2) when MFA is
+// enforced for the user. Sub-routes like `/dashboard/org/security/mfa` are
+// excluded so a user mid-enrolment can complete setup without being kicked
+// in a redirect loop.
+const MFA_REQUIRED_ROUTES = ['/dashboard/org', '/dashboard/billing', '/dashboard/audit-logs']
+const MFA_SETUP_EXCEPTIONS = ['/dashboard/org/security']
+
+function requiresMfa(pathname: string): boolean {
+  if (MFA_SETUP_EXCEPTIONS.some((p) => pathname.startsWith(p))) return false
+  return MFA_REQUIRED_ROUTES.some((p) => pathname.startsWith(p))
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -174,6 +186,36 @@ export async function middleware(request: NextRequest) {
   if (user && isAuthRoute) {
     const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
     return applyCspHeaders(redirectResponse, nonce)
+  }
+
+  // MFA enforcement on sensitive sub-routes. We use Supabase's Authenticator
+  // Assurance Level (AAL) — AAL2 means the user passed a second factor in
+  // the current session. If the user has enrolled MFA factors but only
+  // satisfied AAL1, redirect to the MFA challenge page. Users who haven't
+  // enrolled (yet) are nudged to the setup page once we're past the soft
+  // launch; today the redirect is gated on AIO_REQUIRE_MFA env var so it
+  // can be turned on per environment.
+  if (user && isProtectedRoute && requiresMfa(pathname) && process.env.AIO_REQUIRE_MFA === 'true') {
+    try {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (aal && aal.currentLevel === 'aal1' && aal.nextLevel === 'aal2') {
+        // Enrolled but not stepped up in this session → challenge required.
+        const url = new URL('/auth/mfa', request.url)
+        url.searchParams.set('redirect', safeRedirect(pathname))
+        return applyCspHeaders(NextResponse.redirect(url), nonce)
+      }
+      if (aal && aal.currentLevel === 'aal1' && aal.nextLevel === 'aal1') {
+        // No factors enrolled at all → send to setup. The setup page itself
+        // is in MFA_SETUP_EXCEPTIONS so this isn't a redirect loop.
+        const url = new URL('/dashboard/org/security/mfa', request.url)
+        url.searchParams.set('reason', 'required')
+        return applyCspHeaders(NextResponse.redirect(url), nonce)
+      }
+    } catch {
+      // MFA API failure shouldn't lock people out — fail open here. If MFA
+      // is mandatory by policy, the dashboard page itself does a second
+      // server-side check that will block.
+    }
   }
 
   return applyCspHeaders(supabaseResponse, nonce)

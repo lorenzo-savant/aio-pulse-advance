@@ -4,8 +4,14 @@ import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
+import { cached } from '@/lib/response-cache'
 
 export const dynamic = 'force-dynamic'
+
+// Recompute window. Health scores are written by the daily cron, so any value
+// inside a 5-minute window is identical for the same (brand, period) pair.
+// Lower this if you ever switch to real-time score recomputation.
+const CACHE_TTL_SECONDS = 300
 
 interface HealthScoreRow {
   health_score?: number | null
@@ -42,16 +48,27 @@ export async function GET(req: NextRequest) {
   startDate.setDate(startDate.getDate() - daysBack)
 
   try {
-    const query = (supabase as any)
-      .from('brand_health_scores')
-      .select('*')
-      .eq('brand_id', brandId)
-      .gte('date', startDate.toISOString().split('T')[0])
-      .order('date', { ascending: false })
+    // Cache by (brand, period). The query result depends ONLY on these two
+    // inputs — adding userId to the key would defeat the cache (every user
+    // gets their own copy of the same data). Brand-level access was already
+    // validated via verifyBrandAccess above, so the cache key doesn't carry
+    // authorization information.
+    const cacheKey = `health-scores:${brandId}:${period}`
 
-    const { data, error } = await query.limit(100)
+    const data = await cached({ key: cacheKey, ttlSeconds: CACHE_TTL_SECONDS }, async () => {
+      const query = (supabase as any)
+        .from('brand_health_scores')
+        .select('*')
+        .eq('brand_id', brandId)
+        .gte('date', startDate.toISOString().split('T')[0])
+        .order('date', { ascending: false })
 
-    if (error || !data || data.length === 0) {
+      const { data, error } = await query.limit(100)
+      if (error) throw error
+      return (data ?? []) as HealthScoreRow[]
+    })
+
+    if (!data || data.length === 0) {
       return NextResponse.json({ metrics: getDefaultMetrics() })
     }
 

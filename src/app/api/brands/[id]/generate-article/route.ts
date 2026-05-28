@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
-import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { guardWithTier } from '@/lib/rate-limit-tiers'
 import {
   generateArticle,
   type ArticleBrandContext,
@@ -78,11 +78,12 @@ export async function POST(req: NextRequest, { params }: Params) {
   const brand = await verifyBrandAccess(id, userId)
   if (!brand) return err('Brand not found or access denied', 404)
 
-  const ip = getClientIp(req.headers)
-  // Tighter than other routes — each call burns LLM tokens, may take
-  // 10-30s on long-form generation. 5/min is generous for human use.
-  const rate = await checkRateLimit(`generate-article:${ip}`, 5, 60_000)
-  if (!rate.success) return err('Rate limit exceeded', 429)
+  // Per-USER rate limit (not per-IP). The 'ai_heavy' tier in
+  // src/lib/rate-limit-tiers.ts caps at 5/min — generous for human use,
+  // tight enough to bound LLM cost. Per-user keying means a team behind
+  // a shared NAT (office, agency) don't throttle each other.
+  const tierBlock = await guardWithTier(userId, '/api/brands/generate-article', 'ai_heavy')
+  if (tierBlock) return tierBlock
 
   let body: unknown
   try {

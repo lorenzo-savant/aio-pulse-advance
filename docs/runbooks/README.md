@@ -8,14 +8,16 @@ auditable.
 
 ## When to use what
 
-| Situation                                       | Runbook                                              |
-| ----------------------------------------------- | ---------------------------------------------------- |
-| Production is down or degraded right now        | [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md)       |
-| Database needs to be restored from a backup     | [BACKUP_RESTORE.md](./BACKUP_RESTORE.md)             |
-| Disaster scenario (region outage, data loss)    | [DR_PLAN.md](./DR_PLAN.md)                           |
-| A key/secret was leaked or rotated proactively  | [SECRETS_ROTATION.md](./SECRETS_ROTATION.md)         |
-| SLA / RPO / RTO question from a customer        | [SLA_TARGETS.md](./SLA_TARGETS.md)                   |
-| Onboarding a new on-call engineer               | [ONCALL_ONBOARDING.md](./ONCALL_ONBOARDING.md)       |
+| Situation                                       | Runbook                                                    |
+| ----------------------------------------------- | ---------------------------------------------------------- |
+| Production is down or degraded right now        | [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md)             |
+| Database needs to be restored from a backup     | [BACKUP_RESTORE.md](./BACKUP_RESTORE.md)                   |
+| Disaster scenario (region outage, data loss)    | [DR_PLAN.md](./DR_PLAN.md)                                 |
+| A key/secret was leaked or rotated proactively  | [SECRETS_ROTATION.md](./SECRETS_ROTATION.md)               |
+| Supabase security advisor finding (or accepted) | [SECURITY_ADVISORS.md](./SECURITY_ADVISORS.md)             |
+| SLA / RPO / RTO question from a customer        | [SLA_TARGETS.md](./SLA_TARGETS.md)                         |
+| Onboarding a new on-call engineer               | [ONCALL_ONBOARDING.md](./ONCALL_ONBOARDING.md)             |
+| Pending admin tasks (MFA, monitor, status page) | [ADMIN_ACTIONS_CHECKLIST.md](./ADMIN_ACTIONS_CHECKLIST.md) |
 
 ## Contacts (single point of truth)
 

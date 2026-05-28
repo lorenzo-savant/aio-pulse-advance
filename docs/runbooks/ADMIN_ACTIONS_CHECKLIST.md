@@ -10,6 +10,7 @@ Tick each box and add the date when done. Re-tick on quarterly review.
 ## 🚨 Priority 1 — bloccanti per "produzione vera"
 
 ### 1. Enable MFA / 2FA on Supabase
+
 - [ ] Done on YYYY-MM-DD
 
 **Why:** the Supabase project dashboard controls the database that owns
@@ -17,18 +18,21 @@ all customer data. Anyone with the project owner's password owns
 everything.
 
 **How:**
+
 1. Supabase Dashboard → click your avatar (top right) → Account Settings → Security
 2. Set up TOTP (Google Authenticator / 1Password / Authy)
 3. Save backup codes to 1Password
 4. Bonus: do the same for **every team member** with admin access
 
 ### 2. External uptime monitor on `/api/health`
+
 - [ ] Done on YYYY-MM-DD
 
 **Why:** internal health checks can't measure their own downtime. If
 Vercel goes down, your alerts go with it.
 
 **How (BetterStack free tier, ~10 min):**
+
 1. Sign up at https://betterstack.com/uptime (free for 10 monitors)
 2. Create monitor:
    - URL: `https://aio-pulse.com/api/health`
@@ -44,6 +48,7 @@ Vercel goes down, your alerts go with it.
    (degraded is acceptable). Then break the DB and confirm it DOES alert.
 
 ### 3. Status page public URL
+
 - [ ] Done on YYYY-MM-DD
 
 **Why:** the footer links to "Status" but the URL is `#`. Without a real
@@ -51,6 +56,7 @@ status page, every incident becomes a tidal wave of support tickets
 asking "is it down?".
 
 **How (BetterStack Status, included in free tier):**
+
 1. BetterStack → Status Pages → "Create Status Page"
 2. Subdomain: `status.aio-pulse.com`
 3. Add your monitors from step 2 above to the page
@@ -58,6 +64,7 @@ asking "is it down?".
 5. Update footer link in [HomeContent.tsx](src/app/HomeContent.tsx) when ready
 
 ### 4. Customer-facing emails route somewhere
+
 - [ ] `support@aio-pulse.com` configured
 - [ ] `security@aio-pulse.com` configured
 - [ ] `dpo@aio-pulse.com` configured
@@ -67,6 +74,7 @@ asking "is it down?".
 sit in a dead inbox, you fail compliance audits.
 
 **How (Google Workspace / Zoho Mail):**
+
 1. Create group aliases that forward to your real address (no extra cost
    on most plans)
 2. Set up auto-responders saying "we'll reply within 24/72 hours"
@@ -74,25 +82,23 @@ sit in a dead inbox, you fail compliance audits.
 
 ## ⚠️ Priorità 2 — entro 30 giorni post-go-live
 
-### 5. Upgrade Supabase to Pro tier
-- [ ] Done on YYYY-MM-DD
+### 5. Upgrade Supabase to Pro tier — ✅ DONE (May 2026)
 
-**Why:** Pro tier unlocks **Point-in-Time Recovery** (2-min RPO instead
-of 24 h), **30 days backup retention** instead of 7 d, larger connection
-pool (200 vs 60). Without it, the SLA tiers in
-[SLA_TARGETS.md](./SLA_TARGETS.md) for Business/Agency are not deliverable.
+- [x] Done — Pro tier active on project `tttcbwquiexahcmcuech`
 
-**Cost:** $25/month base + small usage fees.
-
-**How:** Supabase Dashboard → Project Settings → Billing → Upgrade.
+**Result:** PITR active, 2-min RPO floor, 30 d backup retention, expanded
+connection pool. SLA tiers Business/Agency are now deliverable; see
+[SLA_TARGETS.md](./SLA_TARGETS.md) for updated targets.
 
 ### 6. Vercel Log Drain → long-term log retention
+
 - [ ] Done on YYYY-MM-DD
 
 **Why:** Vercel keeps logs for 24 h on free tier, 3-7 d on Pro. For
 incident forensics and compliance you need 30-90 d.
 
 **How (BetterStack Logs OR Axiom — free tiers generous):**
+
 - **BetterStack Logs**: 30 d retention, 1 GB/month free. Recommended if
   you already signed up for BetterStack in step 2.
 - **Axiom**: 30 d retention, 500 GB/month free (highest free tier).
@@ -104,6 +110,7 @@ incident forensics and compliance you need 30-90 d.
 5. Save + verify events show up in BetterStack within 5 min
 
 ### 7. Configure scoped Supabase service keys (optional, hardening)
+
 - [ ] Done on YYYY-MM-DD
 
 **Why:** The single `SUPABASE_SERVICE_KEY` has full DB access. If a
@@ -118,6 +125,7 @@ unless you're targeting SOC 2.
 ## 💡 Priorità 3 — nice-to-have
 
 ### 8. Run an `npm run check:all` baseline
+
 - [ ] Run on YYYY-MM-DD, results saved in `docs/audits/`
 
 **Why:** the new audit scripts (zod coverage, RLS coverage, npm audit)
@@ -128,12 +136,14 @@ npm run check:all > docs/audits/baseline-$(date +%Y-%m-%d).log
 ```
 
 ### 9. Quarterly drill — schedule the first one
+
 - [ ] Q1 drill (backup restore) scheduled for YYYY-MM-DD
 
 **Why:** see [DRILL_LOG.md](./DRILL_LOG.md). A backup not tested is
 not a backup.
 
 ### 10. Add a load test to CI (informational)
+
 - [ ] Done on YYYY-MM-DD
 
 **Why:** you don't know what concurrent user count Supabase free tier

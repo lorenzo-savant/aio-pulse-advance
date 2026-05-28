@@ -9,9 +9,9 @@ Tick each box and add the date when done. Re-tick on quarterly review.
 
 ## 🚨 Priority 1 — bloccanti per "produzione vera"
 
-### 1. Enable MFA / 2FA on Supabase
+### 1. Enable MFA / 2FA on Supabase — ✅ DONE (2026-05-28)
 
-- [ ] Done on YYYY-MM-DD
+- [x] Done on 2026-05-28 — TOTP enrolled on owner account, recovery codes stored
 
 **Why:** the Supabase project dashboard controls the database that owns
 all customer data. Anyone with the project owner's password owns

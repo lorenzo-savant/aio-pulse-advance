@@ -20,6 +20,9 @@
     "db:gen-types": "supabase gen types typescript --linked > src/types/database.ts && prettier --write src/types/database.ts",
     "check:deadcode": "npx --node-options=\"--max-old-space-size=4096\" knip",
     "check:prompts": "tsx scripts/audit-prompt-patterns.ts",
+    "check:zod": "node scripts/audit-zod-coverage.mjs",
+    "check:rls": "node scripts/audit-rls-coverage.mjs",
+    "check:all": "npm run check:rls && npm run check:zod && npm run security:audit",
     "prepare": "husky"
   },
   "dependencies": {

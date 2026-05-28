@@ -114,6 +114,32 @@ jobs:
             exit 1
           fi
 
+  security-audit:
+    name: Security Audit (npm)
+    runs-on: ubuntu-latest
+    # Runs `npm audit --audit-level=moderate`. PRs that introduce a moderate+
+    # advisory get a red check. Use `npm run security:audit:fix` locally to
+    # resolve, or pin a known-good version if no fix is available yet.
+    # `continue-on-error: true` so the check is informational during the
+    # ramp — flip to false once the dependency tree is clean to enforce
+    # blocking. Drop the flag when ready.
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run npm audit
+        run: npm run security:audit
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest

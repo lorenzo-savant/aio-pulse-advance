@@ -43,12 +43,31 @@ export function buildCspHeader(nonce: string): string {
     "img-src 'self' data: https://*.supabase.co https://*.vercel.app",
     "font-src 'self' data:",
     "frame-ancestors 'none'",
+    // Violation reporting — the /api/security/csp-report endpoint persists
+    // each violation for review. Without this directive, the CSP report
+    // endpoint (which already exists) would never receive anything.
+    // `report-uri` is the legacy mechanism (broad browser support);
+    // `report-to` is the modern one, paired with the Report-To response
+    // header set in applyCspHeaders below.
+    'report-uri /api/security/csp-report',
+    'report-to csp-endpoint',
   ].join('; ')
 }
 
-/** Set the CSP and x-nonce headers on a response. */
+/** Set the CSP, Report-To, and x-nonce headers on a response. */
 function applyCspHeaders(response: NextResponse, nonce: string): NextResponse {
   response.headers.set('Content-Security-Policy', buildCspHeader(nonce))
+  // Report-To enables the modern (Reporting API) CSP reporting path, matching
+  // the `report-to csp-endpoint` directive in the CSP header. `max_age` of 1
+  // day keeps the endpoint registration fresh without thrashing the browser.
+  response.headers.set(
+    'Report-To',
+    JSON.stringify({
+      group: 'csp-endpoint',
+      max_age: 86400,
+      endpoints: [{ url: '/api/security/csp-report' }],
+    }),
+  )
   response.headers.set('x-nonce', nonce)
   return response
 }

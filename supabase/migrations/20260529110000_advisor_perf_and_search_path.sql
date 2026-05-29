@@ -100,21 +100,25 @@ create policy response_embeddings_owner on public.response_embeddings
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
--- audit_logs (org-admin read; wrap auth.uid() inside the subquery)
-drop policy if exists audit_logs_select_org_admin on public.audit_logs;
-create policy audit_logs_select_org_admin on public.audit_logs
-  for select
-  to authenticated
-  using (
-    org_id in (
-      select om.org_id from public.org_members om
-      where om.user_id = (select auth.uid()) and om.role in ('owner', 'admin')
-    )
-  );
+-- audit_logs: INTENTIONALLY NOT TOUCHED HERE.
+-- The advisor flags public.audit_logs.audit_logs_select_org_admin on prod,
+-- but that table + policy exist ONLY on the prod DB — there is NO definition
+-- in this repo (grep of supabase/migrations + src/types/database.ts = zero
+-- hits). Reproducing the policy from memory risked widening access, so it is
+-- deliberately left out. Whoever has prod access must fix it in place by
+-- reading the live definition first:
+--   select pg_get_expr(polqual, polrelid) from pg_policy
+--     where polname = 'audit_logs_select_org_admin';
+-- then re-create it wrapping each auth.uid() as (select auth.uid()),
+-- preserving the exact org/role columns.
 
--- brand_invitations (brand owner OR accepted team member; wrap auth.uid())
+-- brand_invitations (brand owner OR accepted admin/editor team member).
+-- Faithful to 20260412000200_fix_invitations_rls.sql — the role IN
+-- ('admin','editor') restriction and ::text casts are preserved exactly;
+-- only auth.uid() is wrapped in (select ...) for the initplan fix.
 drop policy if exists "Brand owners and team can manage invitations" on public.brand_invitations;
-create policy "Brand owners and team can manage invitations" on public.brand_invitations
+create policy "Brand owners and team can manage invitations"
+  on public.brand_invitations
   for all
   using (
     brand_id in (
@@ -122,7 +126,9 @@ create policy "Brand owners and team can manage invitations" on public.brand_inv
     )
     or brand_id in (
       select brand_id from public.team_members
-      where user_id::uuid = (select auth.uid()) and status = 'accepted'
+      where user_id = (select auth.uid())::text
+        and role in ('admin', 'editor')
+        and status = 'accepted'
     )
   );
 

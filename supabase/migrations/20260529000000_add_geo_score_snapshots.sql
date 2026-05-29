@@ -64,8 +64,12 @@ create policy geo_score_snapshots_owner_read
     exists (
       select 1
       from public.brands b
+      -- brands.user_id is TEXT, auth.uid() is uuid — cast to text to match
+      -- (every brand-scoped policy in the repo does this, e.g.
+      -- citation_snapshots in 20260412000100). Without ::text Postgres
+      -- raises "operator does not exist: text = uuid" and the policy fails.
       where b.id = geo_score_snapshots.brand_id
-        and b.user_id = (select auth.uid())
+        and b.user_id = (select auth.uid())::text
     )
   );
 

@@ -20,6 +20,17 @@
 --      permissive policy.
 --
 -- All idempotent. Safe to run on a DB where some objects already match.
+--
+-- TRANSACTION WRAPPER (important): Section C drops BOTH team_members policies
+-- before recreating them. Run as ONE transaction so there is never a window
+-- where team_members has no permissive policy (RLS fails closed = deny-all,
+-- which would transiently break team/invitation reads for everyone). The
+-- explicit begin/commit below guarantees this even if pasted statement-by-
+-- statement into the Supabase SQL Editor. (supabase db push / apply_migration
+-- already wrap in a tx; the explicit pair is harmless there and protects the
+-- manual-paste path.)
+
+begin;
 
 -- ─── A. Pin search_path on flagged functions (by oid, all overloads) ─────────
 do $$
@@ -160,3 +171,5 @@ create policy team_owner_delete on public.team_members
   for delete using (
     brand_id in (select id from public.brands where user_id = (select auth.uid())::text)
   );
+
+commit;

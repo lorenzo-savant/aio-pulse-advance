@@ -6,10 +6,13 @@
 --  authenticated_security_definer_function_executable):
 -- these internal usage-tracking + SERP-cache functions run as SECURITY
 -- DEFINER and were callable by the `anon` / `authenticated` roles via
--- PostgREST RPC (`/rest/v1/rpc/<fn>`). They are only ever invoked
--- server-side with the service-role key — no client `.rpc()` call
--- references them (verified: zero matches in src/). So we revoke EXECUTE
--- from PUBLIC / anon / authenticated and keep it for service_role.
+-- PostgREST RPC (`/rest/v1/rpc/<fn>`). The app DOES call some of them
+-- (serp-cache.ts, brave-search.ts, dataforseo-quota.ts) — but ONLY
+-- through `createServerClient()`, which uses SUPABASE_SERVICE_KEY, i.e.
+-- the service_role. So revoking EXECUTE from PUBLIC / anon / authenticated
+-- closes the public RPC surface while keeping it for service_role, which
+-- the server calls retain. (Local dev without a service key falls back to
+-- the anon key; usage-tracking RPCs are best-effort there anyway.)
 --
 -- NOTE ON PROD DRIFT: the matching `search_path` and RLS-initplan advisors
 -- are ALREADY fixed in the repo (20260528100000_fix_security_advisors.sql

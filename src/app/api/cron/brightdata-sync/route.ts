@@ -31,3 +31,8 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
+// Vercel Cron triggers via HTTP GET. Alias GET to POST so the same
+// handler runs whether the scheduler hits it or a human triggers it
+// manually via authenticated POST.
+export const GET = POST

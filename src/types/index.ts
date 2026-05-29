@@ -320,6 +320,8 @@ export type AlertType =
   | 'hallucination'
   | 'visibility_change'
   | 'citation_rate_change'
+  | 'geo_score_drop' // GEO Score fell by >= threshold vs previous snapshot
+  | 'geo_score_critical' // GEO Score dropped below absolute threshold (e.g. 60)
 
 export interface AlertCondition {
   threshold?: number

@@ -112,10 +112,12 @@ create policy response_embeddings_owner on public.response_embeddings
 -- then re-create it wrapping each auth.uid() as (select auth.uid()),
 -- preserving the exact org/role columns.
 
--- brand_invitations (brand owner OR accepted admin/editor team member).
--- Faithful to 20260412000200_fix_invitations_rls.sql — the role IN
--- ('admin','editor') restriction and ::text casts are preserved exactly;
--- only auth.uid() is wrapped in (select ...) for the initplan fix.
+-- brand_invitations (brand owner OR any accepted team member).
+-- Byte-for-byte faithful to 20260412000200_fix_invitations_rls.sql: same
+-- predicates, same `user_id = auth.uid()::text` text casts, same
+-- `status = 'accepted'` (NO role restriction — there is none in source).
+-- The ONLY change is wrapping auth.uid() as (select auth.uid()) for the
+-- initplan perf fix. Behaviourally identical to what is on prod today.
 drop policy if exists "Brand owners and team can manage invitations" on public.brand_invitations;
 create policy "Brand owners and team can manage invitations"
   on public.brand_invitations
@@ -126,9 +128,7 @@ create policy "Brand owners and team can manage invitations"
     )
     or brand_id in (
       select brand_id from public.team_members
-      where user_id = (select auth.uid())::text
-        and role in ('admin', 'editor')
-        and status = 'accepted'
+      where user_id = (select auth.uid())::text and status = 'accepted'
     )
   );
 

@@ -14,13 +14,12 @@
 -- the server calls retain. (Local dev without a service key falls back to
 -- the anon key; usage-tracking RPCs are best-effort there anyway.)
 --
--- NOTE ON PROD DRIFT: the matching `search_path` and RLS-initplan advisors
--- are ALREADY fixed in the repo (20260528100000_fix_security_advisors.sql
--- sets search_path on every function; report_schedules / ai_cost_monitor
--- policies already use `(select auth.uid())`). If those advisors are still
--- firing in prod, it means the prod DB "aio advance" is BEHIND the repo —
--- apply the pending migrations (20260528000000, 20260528100000,
--- 20260529000000, then this one) to clear them.
+-- COMPANION: the remaining search_path advisors (6 functions) and the
+-- RLS-initplan + multiple-permissive PERFORMANCE advisors are fixed in the
+-- sibling migration 20260529110000_advisor_perf_and_search_path.sql. Apply
+-- both together. Pending prod-apply order for "aio advance":
+-- 20260528000000, 20260528100000, 20260529000000 (geo snapshots),
+-- 20260529100000 (this), 20260529110000 (perf/search_path).
 --
 -- This block is resilient: a function missing in prod is skipped, not fatal.
 

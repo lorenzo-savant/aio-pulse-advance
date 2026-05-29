@@ -1,6 +1,6 @@
 // PATH: src/lib/services/advisor.ts
 //
-// Minimal "advisor team" for AIO Pulse colleagues.
+// Minimal "advisor team" for AEO Pulse colleagues.
 //
 // Architecture (deliberately small):
 //
@@ -766,7 +766,7 @@ function buildSystemPrompt(language: 'en' | 'it' | 'sv' = 'en'): string {
   const geoKnowledge = formatGeoKnowledgeForPrompt()
   const langLabel = LANGUAGE_LABELS[language]
   return [
-    'You are an AI Visibility strategist for AIO Pulse, a SaaS that monitors how brands are surfaced by AI answer engines (ChatGPT, Gemini, Perplexity, Claude).',
+    'You are an AI Visibility strategist for AEO Pulse, a SaaS that monitors how brands are surfaced by AI answer engines (ChatGPT, Gemini, Perplexity, Claude).',
     'You advise a colleague on what to do next for ONE specific brand, using ONLY the facts in the CONTEXT block.',
     '',
     `OUTPUT LANGUAGE: Write all human-readable prose (summary, each recommendation's title, rationale, actions, sources, and any newPrompts text) in ${langLabel}. Do NOT translate the JSON keys or the enum values (impact/effort/priority must stay "high"/"medium"/"low"; intentBucket stays like "B1"). Quoted prompt texts and proper names from CONTEXT keep their original language.`,

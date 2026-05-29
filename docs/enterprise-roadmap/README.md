@@ -1,4 +1,4 @@
-# Enterprise Roadmap — AIO Pulse
+# Enterprise Roadmap — AEO Pulse
 
 > 4 faser, 10-14 veckor, mål **SMB/prosumer + enterprise-lite**. Strategiskt beslut från 2026-05-13.
 
@@ -6,7 +6,7 @@
 
 ## 📍 Du är här för att
 
-Förvandla AIO Pulse från "production-grade boilerplate" till **kommersiell SaaS säljbar till SMB och mid-market** utan compliance-bördan från SOC 2 / ISO 27001 / SAML / SCIM.
+Förvandla AEO Pulse från "production-grade boilerplate" till **kommersiell SaaS säljbar till SMB och mid-market** utan compliance-bördan från SOC 2 / ISO 27001 / SAML / SCIM.
 
 Du bygger **INTE** en enterprise-stack redo för Fortune-1000. Den roadmappen finns men kostar €400-700k + 12-18 månader. Här bygger vi lean för att validera kommersiell PMF för €50-110k EUR / 10-14 veckor.
 
@@ -58,7 +58,7 @@ Uppskattning baserad på 1 senior fullstack TypeScript/React + 1 part-time devop
 
 ## ✅ Definition of "Roadmap Complete"
 
-I slutet av Fas 3 bör AIO Pulse:
+I slutet av Fas 3 bör AEO Pulse:
 
 1. **Type-safe end-to-end**: 0 odokumenterade `(db as any)`, `pnpm type-check` PASS
 2. **Äkta multi-tenant**: Organization → Workspace → Brand hierarki live, befintlig migration slutförd

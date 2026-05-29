@@ -1,4 +1,4 @@
-# Secrets Rotation — AIO Pulse
+# Secrets Rotation — AEO Pulse
 
 > Rotate proactively, not reactively. Every rotation costs ~10 minutes
 > when planned and a multi-hour incident when forced.

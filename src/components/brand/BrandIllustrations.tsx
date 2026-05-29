@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Shared SVG primitives — all AIO Pulse illustrations share the same visual
+ * Shared SVG primitives — all AEO Pulse illustrations share the same visual
  * vocabulary: rounded rectangles ("dashboards"), pulse waveforms, gauge arcs,
  * nodes, and citation cards. Colors come from CSS vars so light + dark themes
  * just work.

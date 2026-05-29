@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
   try {
     await sendInvitationEmail({
       to: email,
-      brandName: brand?.name || 'AIO Pulse',
+      brandName: brand?.name || 'AEO Pulse',
       inviterName: inviterDisplayName,
       role: invitation?.role || role,
       acceptUrl,

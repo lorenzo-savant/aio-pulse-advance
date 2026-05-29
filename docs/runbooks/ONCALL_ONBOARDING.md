@@ -1,4 +1,4 @@
-# On-Call Onboarding — AIO Pulse
+# On-Call Onboarding — AEO Pulse
 
 > First day on-call? Spend 1 hour going through this. It will save you
 > 5 hours during your first incident.

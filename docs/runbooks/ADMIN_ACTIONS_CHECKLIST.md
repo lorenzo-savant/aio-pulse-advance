@@ -1,6 +1,6 @@
 # Admin Actions Checklist — go-live readiness
 
-> Code changes alone can't make AIO Pulse production-ready. These five
+> Code changes alone can't make AEO Pulse production-ready. These five
 > tasks need a human (you) to click around in vendor dashboards.
 > Estimated total time: 90 minutes. Estimated cost: $25/month
 > (Supabase Pro) — everything else is free tier.

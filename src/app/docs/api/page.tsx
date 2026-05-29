@@ -227,7 +227,7 @@ export default function ApiDocsPage() {
       <div>
         <h1 className="text-3xl font-black tracking-tight text-white">API Documentation</h1>
         <p className="mt-2 text-gray-400">
-          Complete reference for the AIO Pulse API. All endpoints require authentication.
+          Complete reference for the AEO Pulse API. All endpoints require authentication.
         </p>
       </div>
 
@@ -279,11 +279,11 @@ export default function ApiDocsPage() {
         <div className="space-y-4 text-sm text-gray-400">
           <p>All errors follow a consistent format:</p>
           <div className="rounded-lg bg-gray-900/50 p-4 font-mono text-xs">
-            <p className="mb-2 text-red-400">400 - Bad Request</p>
-            <p className="mb-2 text-red-400">401 - Unauthorized</p>
-            <p className="mb-2 text-red-400">403 - Forbidden</p>
-            <p className="mb-2 text-red-400">404 - Not Found</p>
-            <p className="mb-2 text-red-400">422 - Validation Error</p>
+            <p className="text-red-400 mb-2">400 - Bad Request</p>
+            <p className="text-red-400 mb-2">401 - Unauthorized</p>
+            <p className="text-red-400 mb-2">403 - Forbidden</p>
+            <p className="text-red-400 mb-2">404 - Not Found</p>
+            <p className="text-red-400 mb-2">422 - Validation Error</p>
             <p className="text-red-400">500 - Internal Server Error</p>
           </div>
           <div className="rounded-lg bg-gray-900/50 p-4 font-mono text-xs">

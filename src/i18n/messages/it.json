@@ -121,7 +121,7 @@
     "required_field": "Questo campo è obbligatorio"
   },
   "sidebar": {
-    "title": "AIO Pulse",
+    "title": "AEO Pulse",
     "sections": {
       "overview": {
         "label": "Panoramica"
@@ -209,7 +209,7 @@
     "skipped_step": "Saltato"
   },
   "onboarding": {
-    "page_title": "Benvenuto in AIO Pulse",
+    "page_title": "Benvenuto in AEO Pulse",
     "page_subtitle": "Configura il tuo primo brand in pochi passaggi",
     "steps": {
       "welcome": "Benvenuto",
@@ -218,7 +218,7 @@
       "launch": "Avvio"
     },
     "welcome_screen": {
-      "title": "Benvenuto in AIO Pulse",
+      "title": "Benvenuto in AEO Pulse",
       "subtitle": "Configuriamo il tuo primo brand per il monitoraggio della visibilità AI. Ci vorranno circa 2 minuti.",
       "add_brand": "Aggiungi il tuo brand",
       "add_brand_desc": "Nome, dominio, concorrenti",
@@ -331,7 +331,7 @@
     },
     "journey_guide": {
       "title": "Aggiungi il brand che vuoi tracciare",
-      "lead": "Un brand è chi stai monitorando. AIO Pulse porrà domande ai motori AI su di esso per misurare la tua visibilità.",
+      "lead": "Un brand è chi stai monitorando. AEO Pulse porrà domande ai motori AI su di esso per misurare la tua visibilità.",
       "steps": {
         "click_new_brand": "Clicca \"Nuovo Brand\"",
         "click_new_brand_desc": "Pulsante in alto a destra in questa pagina.",
@@ -380,7 +380,7 @@
     },
     "white_label": {
       "title": "Impostazioni report white-label",
-      "subtitle": "Personalizza come appare il tuo brand nei report PDF. Lascia vuoto per usare il branding predefinito di AIO Pulse.",
+      "subtitle": "Personalizza come appare il tuo brand nei report PDF. Lascia vuoto per usare il branding predefinito di AEO Pulse.",
       "report_brand_name": "Nome brand nel report",
       "report_brand_name_placeholder": "Il nome della tua azienda",
       "primary_color": "Colore primario (Hex)",
@@ -1403,7 +1403,7 @@
       }
     },
     "capabilities": {
-      "title": "Alimentato da AIO Pulse",
+      "title": "Alimentato da AEO Pulse",
       "subtitle": "Tre engine integrati che lavorano insieme per offrirti intelligence completa sulla visibilità AI — dal tracking delle citazioni al monitoraggio della salute del brand.",
       "items": {
         "aeo": {
@@ -1422,7 +1422,7 @@
     },
     "industries": {
       "title": "Adottato in molti settori",
-      "subtitle": "Da agenzie che ottimizzano portfolio multi-brand a enterprise che proteggono la propria reputazione AI — AIO Pulse offre dati di visibilità concreti per ogni settore.",
+      "subtitle": "Da agenzie che ottimizzano portfolio multi-brand a enterprise che proteggono la propria reputazione AI — AEO Pulse offre dati di visibilità concreti per ogni settore.",
       "labels": {
         "travel": "Travel",
         "ecommerce": "E-commerce",
@@ -1494,7 +1494,7 @@
     "back_to_home": "Torna alla home",
     "hub": {
       "title": "Trust Center",
-      "subtitle": "AIO Pulse è costruito con sicurezza e compliance al centro. Qui trovi tutto ciò che serve per valutare la nostra postura di sicurezza.",
+      "subtitle": "AEO Pulse è costruito con sicurezza e compliance al centro. Qui trovi tutto ciò che serve per valutare la nostra postura di sicurezza.",
       "compliance_status": "Stato Compliance",
       "security_practices": "Pratiche di Sicurezza",
       "sub_processors": "Sub-Processor",
@@ -1507,19 +1507,19 @@
     },
     "security": {
       "title": "Pratiche di Sicurezza",
-      "subtitle": "Una panoramica dettagliata dei controlli e delle pratiche di sicurezza implementate in AIO Pulse. La nostra postura di sicurezza viene rivista trimestralmente e auditata annualmente."
+      "subtitle": "Una panoramica dettagliata dei controlli e delle pratiche di sicurezza implementate in AEO Pulse. La nostra postura di sicurezza viene rivista trimestralmente e auditata annualmente."
     },
     "dpa": {
       "title": "Data Processing Agreement",
-      "subtitle": "Questo Data Processing Agreement (DPA) regola il trattamento dei dati personali da parte di AIO Pulse per conto dei suoi clienti, in conformità con il Regolamento Generale UE sulla Protezione dei Dati (GDPR)."
+      "subtitle": "Questo Data Processing Agreement (DPA) regola il trattamento dei dati personali da parte di AEO Pulse per conto dei suoi clienti, in conformità con il Regolamento Generale UE sulla Protezione dei Dati (GDPR)."
     },
     "gdpr": {
       "title": "I tuoi diritti GDPR",
-      "subtitle": "Ai sensi del Regolamento Generale sulla Protezione dei Dati (GDPR) hai diritti specifici sui tuoi dati personali. AIO Pulse fornisce strumenti self-serve per esercitare questi diritti direttamente dalla dashboard."
+      "subtitle": "Ai sensi del Regolamento Generale sulla Protezione dei Dati (GDPR) hai diritti specifici sui tuoi dati personali. AEO Pulse fornisce strumenti self-serve per esercitare questi diritti direttamente dalla dashboard."
     },
     "sub_processors": {
       "title": "Sub-Processor",
-      "subtitle": "AIO Pulse si avvale dei seguenti sub-processor terzi per erogare il servizio. Tutti i sub-processor sono vincolati da Data Processing Agreement (DPA) conformi all'Articolo 28 GDPR."
+      "subtitle": "AEO Pulse si avvale dei seguenti sub-processor terzi per erogare il servizio. Tutti i sub-processor sono vincolati da Data Processing Agreement (DPA) conformi all'Articolo 28 GDPR."
     }
   },
   "auth_pages": {
@@ -1550,7 +1550,7 @@
     },
     "register": {
       "title": "Crea il tuo account",
-      "subtitle": "Inizia con AIO Pulse",
+      "subtitle": "Inizia con AEO Pulse",
       "full_name_label": "Nome completo",
       "full_name_placeholder": "Il tuo nome",
       "email_label": "Email",
@@ -1580,7 +1580,7 @@
   "docs_ui": {
     "back_home": "Torna alla home",
     "title": "Documentazione",
-    "subtitle": "Tutto quello che serve sapere per usare AIO Pulse.",
+    "subtitle": "Tutto quello che serve sapere per usare AEO Pulse.",
     "search_placeholder": "Cerca nella documentazione...",
     "result_singular": "{count} risultato trovato",
     "result_plural": "{count} risultati trovati",

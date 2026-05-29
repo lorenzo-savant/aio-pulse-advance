@@ -50,8 +50,8 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   keywords: ['AI search', 'SEO', 'GEO', 'AEO', 'generative engine optimization', 'visibility'],
-  authors: [{ name: 'AIO Pulse Team' }],
-  creator: 'AIO Pulse',
+  authors: [{ name: 'AEO Pulse Team' }],
+  creator: 'AEO Pulse',
   openGraph: {
     type: 'website',
     locale: 'en_US',

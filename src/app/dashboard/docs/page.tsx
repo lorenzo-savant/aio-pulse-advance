@@ -41,14 +41,14 @@ const DOCS: DocGroup[] = [
     sections: [
       {
         id: 'what-is-aio-pulse',
-        title: 'What is AIO Pulse?',
-        content: `AIO Pulse is an AI Search Visibility Platform. It monitors how your brand appears when people ask AI assistants like ChatGPT, Google Gemini, Perplexity, and Claude about products and services in your industry.
+        title: 'What is AEO Pulse?',
+        content: `AEO Pulse is an AI Search Visibility Platform. It monitors how your brand appears when people ask AI assistants like ChatGPT, Google Gemini, Perplexity, and Claude about products and services in your industry.
 
-Traditional SEO tracks your position on Google search results. AIO Pulse tracks something different: whether AI assistants recommend your brand when users ask questions like "What's the best accounting firm in Falun?" or "Which software should I use for bookkeeping?"
+Traditional SEO tracks your position on Google search results. AEO Pulse tracks something different: whether AI assistants recommend your brand when users ask questions like "What's the best accounting firm in Falun?" or "Which software should I use for bookkeeping?"
 
 This matters because a growing number of people use AI assistants instead of Google to find services and products. If the AI doesn't mention your brand, you're invisible to these users.
 
-AIO Pulse gives you three critical insights:
+AEO Pulse gives you three critical insights:
 
 • Are you being mentioned? — Your Citation Rate shows the percentage of AI responses that include your brand name.
 
@@ -59,9 +59,9 @@ AIO Pulse gives you three critical insights:
       {
         id: 'key-concepts',
         title: 'Key Concepts',
-        content: `Before diving in, here are the core terms you'll see throughout AIO Pulse:
+        content: `Before diving in, here are the core terms you'll see throughout AEO Pulse:
 
-Citation Rate — The percentage of AI responses that mention your brand. If you monitor 50 prompts and your brand appears in 10 responses, your citation rate is 20%. This is the most important metric in AIO Pulse.
+Citation Rate — The percentage of AI responses that mention your brand. If you monitor 50 prompts and your brand appears in 10 responses, your citation rate is 20%. This is the most important metric in AEO Pulse.
 
 Visibility Score — A 0–100 score measuring how prominently your brand appears. A score of 100 means your brand is featured first and prominently. A score of 0 means no mention at all.
 
@@ -69,7 +69,7 @@ Mention Position — Where your brand appears in the AI response. Position #1 me
 
 Sentiment — Whether the AI speaks positively, negatively, or neutrally about your brand. Ranges from −1.0 (very negative) to +1.0 (very positive).
 
-Hallucination — When an AI makes false claims about your brand as if they were fact. AIO Pulse detects and flags these automatically.
+Hallucination — When an AI makes false claims about your brand as if they were fact. AEO Pulse detects and flags these automatically.
 
 Engine — An AI search platform such as ChatGPT, Gemini, Perplexity, or Claude. Each engine may respond differently about your brand.
 
@@ -106,7 +106,7 @@ Domain — Your website address. Used to detect when AI engines cite your websit
 
 Aliases — Other ways people might spell or refer to your brand, separated by commas. The system checks for all of these when analyzing AI responses. Example: "Ekonomirådgivarna, ekonomiradgivarna, Ekonomi Rådgivarna"
 
-Competitors — Your 3–5 main competitors, separated by commas. AIO Pulse tracks how often they are mentioned compared to you. Example: "Fortnox, Björn Lundén, Wint"
+Competitors — Your 3–5 main competitors, separated by commas. AEO Pulse tracks how often they are mentioned compared to you. Example: "Fortnox, Björn Lundén, Wint"
 
 Industry — Your business sector. Used for generating relevant monitoring prompts. Example: "Accounting & Financial Advisory"
 
@@ -196,7 +196,7 @@ If you manage multiple brands (for example, if you're an agency managing clients
       {
         id: 'competitors',
         title: 'Understanding Competitors',
-        content: `When you add competitors to your brand, AIO Pulse tracks how often each competitor appears in AI responses to your monitored prompts.
+        content: `When you add competitors to your brand, AEO Pulse tracks how often each competitor appears in AI responses to your monitored prompts.
 
 This creates a competitive benchmark. For example:
 • Your brand: 5% citation rate
@@ -217,9 +217,9 @@ To improve, study what Fortnox does differently: their website content, structur
       {
         id: 'what-are-prompts',
         title: 'What Are Prompts?',
-        content: `Prompts are the questions AIO Pulse sends to AI engines on your behalf. They simulate what real customers might ask an AI assistant.
+        content: `Prompts are the questions AEO Pulse sends to AI engines on your behalf. They simulate what real customers might ask an AI assistant.
 
-For example, if a potential customer looking for an accountant in Falun asks ChatGPT "What's the best accounting firm in Falun?", AIO Pulse sends this exact question to ChatGPT, Gemini, and Perplexity, then analyzes whether your brand appears in each response.
+For example, if a potential customer looking for an accountant in Falun asks ChatGPT "What's the best accounting firm in Falun?", AEO Pulse sends this exact question to ChatGPT, Gemini, and Perplexity, then analyzes whether your brand appears in each response.
 
 The quality of your monitoring depends entirely on the prompts you create. Good prompts reflect real customer queries. The more prompts you have, the more comprehensive your coverage — aim for 30–50 prompts per brand.`,
       },
@@ -268,7 +268,7 @@ A healthy prompt set includes a mix of all three categories. For a local busines
       {
         id: 'monitoring-frequency',
         title: 'Monitoring Frequency',
-        content: `AIO Pulse checks your prompts on a regular schedule:
+        content: `AEO Pulse checks your prompts on a regular schedule:
 
 Daily — The default setting. Prompts are checked once every 24 hours. Recommended for active monitoring.
 
@@ -287,7 +287,7 @@ You don't need to do anything to trigger scans — they run automatically. After
       {
         id: 'citation-rate',
         title: 'Citation Rate',
-        content: `The Citations page is the core of AIO Pulse. It answers the fundamental question: how often does AI mention your brand?
+        content: `The Citations page is the core of AEO Pulse. It answers the fundamental question: how often does AI mention your brand?
 
 The Citation Rate formula is simple:
 Citation Rate = (Responses mentioning your brand ÷ Total responses) × 100
@@ -338,7 +338,7 @@ If you're weak on a specific engine, focus your content strategy on the signals 
       {
         id: 'how-monitoring-works',
         title: 'How Engine Monitoring Works',
-        content: `AIO Pulse uses a two-step process for each prompt on each engine:
+        content: `AEO Pulse uses a two-step process for each prompt on each engine:
 
 Step 1 — Query Simulation
 Your prompt is sent to the AI engine (or a simulation of how that engine would respond), and the full text response is captured.
@@ -406,7 +406,7 @@ Examples of hallucinations:
 • Fabricating awards, certifications, or partnerships
 • Mixing up your brand with a competitor
 
-AIO Pulse flags potential hallucinations with three severity levels:
+AEO Pulse flags potential hallucinations with three severity levels:
 
 Low — Minor factual discrepancy, possibly outdated information. Monitor and update your website.
 
@@ -456,7 +456,7 @@ You can toggle alerts on and off using the switch next to each rule without dele
       {
         id: 'alert-types',
         title: 'Alert Types',
-        content: `AIO Pulse offers these alert types:
+        content: `AEO Pulse offers these alert types:
 
 New Mention — Triggered when your brand is mentioned by an AI engine for the first time on a specific prompt. This is a positive signal — your optimization work is producing results.
 
@@ -507,7 +507,7 @@ The PDF report includes:
 • Sentiment overview
 • Recommendations for improvement
 
-PDF reports use your brand color and the AIO Pulse branding for a polished, professional appearance.`,
+PDF reports use your brand color and the AEO Pulse branding for a polished, professional appearance.`,
       },
     ],
   },
@@ -522,7 +522,7 @@ PDF reports use your brand color and the AIO Pulse branding for a polished, prof
 
 GEO (Generative Engine Optimization) — Broader strategies to improve visibility in AI-generated responses, including structured data, authoritative content, and citation building.
 
-Citation Rate — The percentage of monitored AI responses that mention your brand. Formula: (Mentions ÷ Total Responses) × 100. The primary KPI in AIO Pulse.
+Citation Rate — The percentage of monitored AI responses that mention your brand. Formula: (Mentions ÷ Total Responses) × 100. The primary KPI in AEO Pulse.
 
 Visibility Score — A 0–100 metric measuring how prominently your brand appears in AI responses. Considers mention position, frequency, and context.
 
@@ -726,7 +726,7 @@ export default function DocsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-black tracking-tight text-foreground">Documentation</h1>
         <p className="mt-1 text-muted-foreground">
-          Everything you need to know about using AIO Pulse.
+          Everything you need to know about using AEO Pulse.
         </p>
       </div>
 

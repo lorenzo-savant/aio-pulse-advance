@@ -457,7 +457,7 @@ export default function NewBrandWizard() {
               </label>
               <input
                 className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                placeholder="e.g. AIO Pulse"
+                placeholder="e.g. AEO Pulse"
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
               />
@@ -583,7 +583,7 @@ export default function NewBrandWizard() {
                       setForm((f) => ({ ...f, aliases: f.aliases.filter((x) => x !== a) }))
                     }
                   >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-red-400" />
+                    <X className="hover:text-red-400 h-3 w-3 text-muted-foreground" />
                   </button>
                 </span>
               ))}
@@ -637,7 +637,7 @@ export default function NewBrandWizard() {
                         setForm((f) => ({ ...f, sameAs: f.sameAs.filter((x) => x !== u) }))
                       }
                     >
-                      <X className="h-3 w-3 text-muted-foreground hover:text-red-400" />
+                      <X className="hover:text-red-400 h-3 w-3 text-muted-foreground" />
                     </button>
                   </span>
                 ))}

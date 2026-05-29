@@ -1318,7 +1318,7 @@ export const SECTION_HELP: Record<string, LocalizedHelp> = {
       metrics: [
         {
           metric: 'Visibility score',
-          meaning: 'How AIO-ready the content is.',
+          meaning: 'How AEO-ready the content is.',
           howMeasured: 'The LLM scores the content for citation / answer readiness.',
           range: '0–100. <60 = needs structural work.',
         },
@@ -1359,7 +1359,7 @@ export const SECTION_HELP: Record<string, LocalizedHelp> = {
       metrics: [
         {
           metric: 'Punteggio di visibilità',
-          meaning: "Quanto il contenuto è pronto per l'AIO.",
+          meaning: "Quanto il contenuto è pronto per l'AEO.",
           howMeasured: "L'LLM valuta il contenuto per la prontezza a citazione / risposta.",
           range: '0–100. <60 = serve lavoro strutturale.',
         },
@@ -1400,7 +1400,7 @@ export const SECTION_HELP: Record<string, LocalizedHelp> = {
       metrics: [
         {
           metric: 'Synlighetspoäng',
-          meaning: 'Hur AIO-redo innehållet är.',
+          meaning: 'Hur AEO-redo innehållet är.',
           howMeasured: 'LLM bedömer innehållet för citerings- / svarsberedskap.',
           range: '0–100. <60 = behöver strukturellt arbete.',
         },
@@ -1550,7 +1550,7 @@ export const SECTION_HELP: Record<string, LocalizedHelp> = {
       metrics: [
         {
           metric: 'Readiness score',
-          meaning: 'Overall technical AIO health of the page.',
+          meaning: 'Overall technical AEO health of the page.',
           howMeasured: 'Weighted across the individual checks.',
           range: '0–100. Higher = easier for engines to parse & trust.',
         },
@@ -1591,7 +1591,7 @@ export const SECTION_HELP: Record<string, LocalizedHelp> = {
       metrics: [
         {
           metric: 'Punteggio di prontezza',
-          meaning: 'Salute tecnica AIO complessiva della pagina.',
+          meaning: 'Salute tecnica AEO complessiva della pagina.',
           howMeasured: 'Pesato sui singoli controlli.',
           range: '0–100. Più alto = più facile interpretare e fidarsi per i motori.',
         },
@@ -1632,7 +1632,7 @@ export const SECTION_HELP: Record<string, LocalizedHelp> = {
       metrics: [
         {
           metric: 'Beredskapspoäng',
-          meaning: 'Sidans övergripande tekniska AIO-hälsa.',
+          meaning: 'Sidans övergripande tekniska AEO-hälsa.',
           howMeasured: 'Viktad över de enskilda kontrollerna.',
           range: '0–100. Högre = lättare för motorer att tolka och lita på.',
         },

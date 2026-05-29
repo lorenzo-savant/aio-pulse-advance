@@ -83,8 +83,8 @@ export default function UpdatePasswordPage() {
     <div className="relative flex min-h-screen flex-col">
       <div className="absolute inset-0 bg-background">
         <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40" />
-        <div className="bg-accent/20 absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full blur-[120px]" />
-        <div className="bg-accent/10 absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]" />
+        <div className="bg-primary/20 absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full blur-[120px]" />
+        <div className="bg-primary/10 absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]" />
       </div>
 
       <SiteHeader
@@ -95,7 +95,7 @@ export default function UpdatePasswordPage() {
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="mb-8 flex flex-col items-center gap-4 text-center">
-            <Link href="/auth/login" aria-label="AIO Pulse">
+            <Link href="/auth/login" aria-label="AEO Pulse">
               <AioLogo size={48} markOnly />
             </Link>
             <div>
@@ -129,7 +129,7 @@ export default function UpdatePasswordPage() {
                     <input
                       required
                       autoComplete="new-password"
-                      className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                      className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                       disabled={loading}
                       placeholder={t('new_password_placeholder')}
                       type={showPw ? 'text' : 'password'}
@@ -168,7 +168,7 @@ export default function UpdatePasswordPage() {
                   <input
                     required
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                    className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                     disabled={loading}
                     placeholder={t('confirm_password_placeholder')}
                     type="password"
@@ -202,7 +202,7 @@ export default function UpdatePasswordPage() {
 
                 <p className="text-center text-sm text-muted-foreground">
                   <Link
-                    className="hover:text-accent/80 font-semibold text-accent"
+                    className="hover:text-primary/80 font-semibold text-primary"
                     href="/auth/login"
                   >
                     <ArrowLeft className="mr-1 inline h-4 w-4" /> {t('back_to_sign_in')}

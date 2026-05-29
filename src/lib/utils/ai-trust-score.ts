@@ -1,6 +1,6 @@
 // PATH: src/lib/utils/ai-trust-score.ts
 //
-// AIO Pulse — AI Trust Score: a proprietary 0–100 metric estimating how
+// AEO Pulse — AI Trust Score: a proprietary 0–100 metric estimating how
 // "trustworthy" a cited domain is from the perspective of AI engines, built
 // from FREE signals we already collect. Inspired by Majestic's Trust Flow
 // concept (referenced in the IT SEO methodology doc) but built without

@@ -8,7 +8,7 @@
 //   Knowledge Graph, Google keyword volume). The reason: PAA is fundamentally
 //   a Google feature — it's the actual questions Google's algorithm surfaces
 //   for a query. Brave has a 'faq' component but it's Brave's own aggregation,
-//   not Google PAA. The naming "AIO Pulse" implies Google AI surface, so the
+//   not Google PAA. The naming "AEO Pulse" implies Google AI surface, so the
 //   PAA data should be Google-authentic.
 //
 // Cost estimate: ~$0.0008 per query → rounded to 1 cent (≤2 cents safety

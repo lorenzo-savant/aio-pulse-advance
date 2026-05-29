@@ -73,7 +73,7 @@ function addHeader(
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text(brand.report_brand_name || 'AIO Pulse', 15, 16)
+  doc.text(brand.report_brand_name || 'AEO Pulse', 15, 16)
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
@@ -95,7 +95,7 @@ export async function generatePdf(
 ): Promise<Buffer> {
   const { locale = 'en' } = options
   const primaryColor = hexToRgb(brand.report_primary_color || '#6366f1')
-  const brandName = brand.report_brand_name || 'AIO Pulse'
+  const brandName = brand.report_brand_name || 'AEO Pulse'
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()

@@ -1,4 +1,4 @@
-# Contacts — AIO Pulse Production
+# Contacts — AEO Pulse Production
 
 > The single source of truth for "who do I call". Update before you go
 > on vacation. Update when team membership changes. Update when a vendor

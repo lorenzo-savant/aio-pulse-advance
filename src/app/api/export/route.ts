@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
 
   const brandName = brand.name || 'Brand'
   const brandIdVal = brand.id
-  const reportBrandName = brand.report_brand_name || 'AIO Pulse'
+  const reportBrandName = brand.report_brand_name || 'AEO Pulse'
   const reportPrimaryColor = brand.report_primary_color || '#6366f1'
   const reportLogoUrl = brand.report_logo_url
 

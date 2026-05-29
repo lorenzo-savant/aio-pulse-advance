@@ -6,7 +6,7 @@
 
 ## 🎯 Fasens mål
 
-Förvandla AIO Pulse från "tekniskt verktyg" till **säljbar self-serve-produkt**: tydlig pricing, onboarding på 10 minuter, API docs som en dev förstår direkt. + flexibilitet i billing för founder-led sales custom mid-market.
+Förvandla AEO Pulse från "tekniskt verktyg" till **säljbar self-serve-produkt**: tydlig pricing, onboarding på 10 minuter, API docs som en dev förstår direkt. + flexibilitet i billing för founder-led sales custom mid-market.
 
 ## ⚠️ Förutsättning
 
@@ -145,7 +145,7 @@ Founder stänger en mid-market-affär via call → kunden vill betala via invoic
 ```
 1. Founder in admin UI: /dashboard/admin/organizations/[orgId]/invoicing
 2. Crea "Custom invoice":
-   - Description: "AIO Pulse Custom — 30 seats + priority support"
+   - Description: "AEO Pulse Custom — 30 seats + priority support"
    - Amount: €X (annual o quarterly)
    - Due date: +30 days
    - Org assigned
@@ -241,7 +241,7 @@ Done — Dashboard
 - [ ] Step 5: insight rendered + CTA upgrade
 - [ ] Tid från signup till step 5: <10 minuter (tidtaget test)
 - [ ] Skip option synlig men inte default
-- [ ] Email "Welcome to AIO Pulse" send efter step 5
+- [ ] Email "Welcome to AEO Pulse" send efter step 5
 - [ ] Empty states för dashboardens huvudsakliga paneler: brands, prompts, alerts, citations
 - [ ] "What's next?" widget i sidebar dashboard
 - [ ] Test E2E: full onboarding komplett, från signup till första insight, <10 min
@@ -428,7 +428,7 @@ Dokument i stil med "5 min tutorial":
 
 Se [README.md](README.md) sektionen "Definition of 'Roadmap Complete'" för de 12 slutkriterierna.
 
-Vid denna punkt är AIO Pulse **shippable as paying SaaS** för målgruppen SMB/prosumer + enterprise-lite.
+Vid denna punkt är AEO Pulse **shippable as paying SaaS** för målgruppen SMB/prosumer + enterprise-lite.
 
 Next steps (post-roadmap, valfritt):
 - Customer feedback loop iterationer

@@ -3,7 +3,7 @@
 // AI Article Generator — produces draft Markdown articles optimised
 // against the same 5 AI-citation signals that citation-quality-
 // scorer measures (clarity, EEAT, Q&A, structure, structured-data).
-// Closes the loop: AIO Pulse is the only tool that both MEASURES AI
+// Closes the loop: AEO Pulse is the only tool that both MEASURES AI
 // citations AND GENERATES content scored against the measured signals.
 //
 // Stack:

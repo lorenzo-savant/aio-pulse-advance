@@ -185,7 +185,7 @@ STEP 3 (Status page — DNS CNAME)
 ### Passi
 - [ ] BetterStack → sidebar **Status pages** → **Create status page**
 - [ ] Form:
-  - Name: `AIO Pulse`
+  - Name: `AEO Pulse`
   - Subdomain temporaneo: lascia `aio-pulse.betteruptime.com`
   - Add monitors: spunta i 2 monitor del STEP 2
   - Aggregation: separate resources
@@ -267,7 +267,7 @@ STEP 3 (Status page — DNS CNAME)
 - [ ] Create new filter:
   - To: `support@aio-pulse.com`
   - Action: Send canned response (crearne uno con: "Thanks for reaching
-    AIO Pulse Support. We'll get back to you within 24 hours.")
+    AEO Pulse Support. We'll get back to you within 24 hours.")
 - [ ] Stesso pattern per `security@` (response: "Disclosure received,
       response within 48h") e `dpo@` ("GDPR request received, response
       within the 30-day deadline")

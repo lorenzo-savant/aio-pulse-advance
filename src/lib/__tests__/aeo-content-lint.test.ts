@@ -34,16 +34,16 @@ describe('lintAeoContent', () => {
 
   it('flags a section opening with a bare pronoun + auxiliary', () => {
     const r = lintAeoContent({
-      markdown: ['## Enterprise AIO', 'It updates daily and tracks every prompt.'].join('\n'),
+      markdown: ['## Enterprise AEO', 'It updates daily and tracks every prompt.'].join('\n'),
     })
     const ant = r.issues.filter((i) => i.rule === 'unclear-antecedent')
     expect(ant).toHaveLength(1)
-    expect(ant[0]!.section).toBe('Enterprise AIO')
+    expect(ant[0]!.section).toBe('Enterprise AEO')
   })
 
   it('does not flag unclear-antecedent when the pronoun is followed by a noun', () => {
     const r = lintAeoContent({
-      markdown: ['## Enterprise AIO', 'This guide explains how the tool works.'].join('\n'),
+      markdown: ['## Enterprise AEO', 'This guide explains how the tool works.'].join('\n'),
     })
     expect(r.byRule['unclear-antecedent']).toBe(0)
   })

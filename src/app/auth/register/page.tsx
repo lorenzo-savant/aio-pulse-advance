@@ -144,7 +144,7 @@ export default function RegisterPage() {
                 <input
                   required
                   autoComplete="name"
-                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                   disabled={loading}
                   placeholder={t('full_name_placeholder')}
                   type="text"
@@ -160,7 +160,7 @@ export default function RegisterPage() {
                 <input
                   required
                   autoComplete="email"
-                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                   disabled={loading}
                   placeholder="you@company.com"
                   type="email"
@@ -177,7 +177,7 @@ export default function RegisterPage() {
                   <input
                     required
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                    className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                     disabled={loading}
                     minLength={8}
                     placeholder={t('password_placeholder')}
@@ -219,7 +219,7 @@ export default function RegisterPage() {
                 <input
                   required
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                  className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                   disabled={loading}
                   placeholder="••••••••"
                   type="password"
@@ -246,7 +246,7 @@ export default function RegisterPage() {
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               {t('have_account')}{' '}
-              <Link className="hover:text-accent/80 font-semibold text-accent" href="/auth/login">
+              <Link className="hover:text-primary/80 font-semibold text-primary" href="/auth/login">
                 {t('sign_in')}
               </Link>
             </p>

@@ -6,7 +6,7 @@
 
 ## 🎯 Mission
 
-> Förvandla AIO Pulse från production-grade boilerplate till en kommersiellt säljbar SaaS för SMB ($49-499/månad) + byråer + mid-market-team (custom deals upp till ~€50k ARR) **på 10-14 veckor**.
+> Förvandla AEO Pulse från production-grade boilerplate till en kommersiellt säljbar SaaS för SMB ($49-499/månad) + byråer + mid-market-team (custom deals upp till ~€50k ARR) **på 10-14 veckor**.
 
 Vi bygger inte för Fortune 1000. Vi bygger inte för regulated industries. Vi bygger för **byråägare + marketing director SMB + founder prosumer** som vill ha ett seriöst verktyg men inte vill göra procurement.
 

@@ -121,7 +121,7 @@
     "required_field": "Detta fält är obligatoriskt"
   },
   "sidebar": {
-    "title": "AIO Pulse",
+    "title": "AEO Pulse",
     "sections": {
       "overview": {
         "label": "Översikt"
@@ -209,7 +209,7 @@
     "skipped_step": "Överhoppat"
   },
   "onboarding": {
-    "page_title": "Välkommen till AIO Pulse",
+    "page_title": "Välkommen till AEO Pulse",
     "page_subtitle": "Konfigurera ditt första varumärke på bara några steg",
     "steps": {
       "welcome": "Välkommen",
@@ -218,7 +218,7 @@
       "launch": "Starta"
     },
     "welcome_screen": {
-      "title": "Välkommen till AIO Pulse",
+      "title": "Välkommen till AEO Pulse",
       "subtitle": "Låt oss konfigurera ditt första varumärke för AI-synlighetsövervakning. Det tar cirka 2 minuter.",
       "add_brand": "Lägg till ditt varumärke",
       "add_brand_desc": "Namn, domän, konkurrenter",
@@ -331,7 +331,7 @@
     },
     "journey_guide": {
       "title": "Lägg till varumärket du vill spåra",
-      "lead": "Ett varumärke är vem du övervakar. AIO Pulse kommer att ställa frågor till AI-motorer om det för att mäta din synlighet.",
+      "lead": "Ett varumärke är vem du övervakar. AEO Pulse kommer att ställa frågor till AI-motorer om det för att mäta din synlighet.",
       "steps": {
         "click_new_brand": "Klicka \"Nytt Varumärke\"",
         "click_new_brand_desc": "Knappen uppe till höger på denna sida.",
@@ -380,7 +380,7 @@
     },
     "white_label": {
       "title": "White-label-rapportinställningar",
-      "subtitle": "Anpassa hur ditt varumärke visas i PDF-rapporter. Lämna tomt för att använda AIO Pulses standardvarumärke.",
+      "subtitle": "Anpassa hur ditt varumärke visas i PDF-rapporter. Lämna tomt för att använda AEO Pulses standardvarumärke.",
       "report_brand_name": "Varumärkesnamn i rapport",
       "report_brand_name_placeholder": "Ditt företagsnamn",
       "primary_color": "Primärfärg (Hex)",
@@ -1403,7 +1403,7 @@
       }
     },
     "capabilities": {
-      "title": "Drivet av AIO Pulse",
+      "title": "Drivet av AEO Pulse",
       "subtitle": "Tre integrerade engines som arbetar tillsammans för att ge dig fullständig AI-synlighetsintelligens — från citeringsspårning till hälsoövervakning.",
       "items": {
         "aeo": {
@@ -1422,7 +1422,7 @@
     },
     "industries": {
       "title": "Använt över branscher",
-      "subtitle": "Från byråer som optimerar multi-brand-portföljer till företag som skyddar sitt AI-rykte — AIO Pulse levererar handlingsbar synlighetsdata för varje sektor.",
+      "subtitle": "Från byråer som optimerar multi-brand-portföljer till företag som skyddar sitt AI-rykte — AEO Pulse levererar handlingsbar synlighetsdata för varje sektor.",
       "labels": {
         "travel": "Resa",
         "ecommerce": "E-handel",
@@ -1494,7 +1494,7 @@
     "back_to_home": "Tillbaka till start",
     "hub": {
       "title": "Trust Center",
-      "subtitle": "AIO Pulse är byggt med säkerhet och compliance i kärnan. Här hittar du allt du behöver för att utvärdera vår säkerhetsposition.",
+      "subtitle": "AEO Pulse är byggt med säkerhet och compliance i kärnan. Här hittar du allt du behöver för att utvärdera vår säkerhetsposition.",
       "compliance_status": "Compliance-status",
       "security_practices": "Säkerhetspraxis",
       "sub_processors": "Sub-Processors",
@@ -1507,19 +1507,19 @@
     },
     "security": {
       "title": "Säkerhetspraxis",
-      "subtitle": "En detaljerad översikt över säkerhetskontroller och rutiner som implementerats i AIO Pulse. Vår säkerhetsposition granskas kvartalsvis och auditeras årligen."
+      "subtitle": "En detaljerad översikt över säkerhetskontroller och rutiner som implementerats i AEO Pulse. Vår säkerhetsposition granskas kvartalsvis och auditeras årligen."
     },
     "dpa": {
       "title": "Data Processing Agreement",
-      "subtitle": "Detta Data Processing Agreement (DPA) reglerar AIO Pulses behandling av personuppgifter för kunders räkning, i enlighet med EU:s allmänna dataskyddsförordning (GDPR)."
+      "subtitle": "Detta Data Processing Agreement (DPA) reglerar AEO Pulses behandling av personuppgifter för kunders räkning, i enlighet med EU:s allmänna dataskyddsförordning (GDPR)."
     },
     "gdpr": {
       "title": "Dina GDPR-rättigheter",
-      "subtitle": "Enligt allmänna dataskyddsförordningen (GDPR) har du särskilda rättigheter över dina personuppgifter. AIO Pulse tillhandahåller självbetjäningsverktyg för att utöva dessa rättigheter direkt från dashboarden."
+      "subtitle": "Enligt allmänna dataskyddsförordningen (GDPR) har du särskilda rättigheter över dina personuppgifter. AEO Pulse tillhandahåller självbetjäningsverktyg för att utöva dessa rättigheter direkt från dashboarden."
     },
     "sub_processors": {
       "title": "Sub-Processors",
-      "subtitle": "AIO Pulse anlitar följande sub-processors från tredje part för att leverera tjänsten. Alla sub-processors är bundna av Data Processing Agreements (DPA) i enlighet med GDPR artikel 28."
+      "subtitle": "AEO Pulse anlitar följande sub-processors från tredje part för att leverera tjänsten. Alla sub-processors är bundna av Data Processing Agreements (DPA) i enlighet med GDPR artikel 28."
     }
   },
   "auth_pages": {
@@ -1550,7 +1550,7 @@
     },
     "register": {
       "title": "Skapa ditt konto",
-      "subtitle": "Kom igång med AIO Pulse",
+      "subtitle": "Kom igång med AEO Pulse",
       "full_name_label": "Fullständigt namn",
       "full_name_placeholder": "Ditt namn",
       "email_label": "E-post",
@@ -1580,7 +1580,7 @@
   "docs_ui": {
     "back_home": "Tillbaka till start",
     "title": "Dokumentation",
-    "subtitle": "Allt du behöver veta om att använda AIO Pulse.",
+    "subtitle": "Allt du behöver veta om att använda AEO Pulse.",
     "search_placeholder": "Sök i dokumentationen...",
     "result_singular": "{count} resultat hittat",
     "result_plural": "{count} resultat hittade",

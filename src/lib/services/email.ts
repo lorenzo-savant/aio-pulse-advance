@@ -22,7 +22,7 @@ const resend = {
   },
 } as unknown as Resend
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AIO Pulse <onboarding@resend.dev>'
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AEO Pulse <onboarding@resend.dev>'
 
 interface InvitationEmailParams {
   to: string
@@ -72,7 +72,7 @@ export async function sendInvitationEmail({
             <div class="title">Team Invitation</div>
           </div>
           
-          <p class="message">You've been invited to join <strong>${brandName}</strong> on AIO Pulse.</p>
+          <p class="message">You've been invited to join <strong>${brandName}</strong> on AEO Pulse.</p>
           
           <div class="details">
             <div class="detail-row">
@@ -94,7 +94,7 @@ export async function sendInvitationEmail({
           </div>
           
           <div class="footer">
-            <p>AIO Pulse - AI-Powered Brand Monitoring</p>
+            <p>AEO Pulse - AI-Powered Brand Monitoring</p>
           </div>
         </div>
       </body>
@@ -105,7 +105,7 @@ export async function sendInvitationEmail({
     await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `You've been invited to join ${brandName} on AIO Pulse`,
+      subject: `You've been invited to join ${brandName} on AEO Pulse`,
       html,
     })
     return { success: true }
@@ -147,7 +147,7 @@ export async function sendAlertEmail({
     visibility_change: 'Visibility Change',
   }
 
-  const subject = `[AIO Pulse] ${alertTypeLabels[alertType] || alertType}: ${brandName}`
+  const subject = `[AEO Pulse] ${alertTypeLabels[alertType] || alertType}: ${brandName}`
 
   const html = `
     <!DOCTYPE html>
@@ -179,7 +179,7 @@ export async function sendAlertEmail({
         <div class="container">
           <div class="header">
             <div class="logo">A</div>
-            <div class="title">AIO Pulse Alert</div>
+            <div class="title">AEO Pulse Alert</div>
           </div>
           
           <span class="alert-badge ${getAlertBadgeClass(alertType)}">${alertTypeLabels[alertType] || alertType}</span>
@@ -264,7 +264,7 @@ export async function sendWelcomeEmail({ to, name }: WelcomeEmailParams) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to AIO Pulse</title>
+  <title>Welcome to AEO Pulse</title>
 </head>
 <body style="margin:0;padding:0;background:#080d18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
@@ -273,13 +273,13 @@ export async function sendWelcomeEmail({ to, name }: WelcomeEmailParams) {
         <div style="width:32px;height:32px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;">
           <span style="color:white;font-size:16px;font-weight:900;">A</span>
         </div>
-        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AIO Pulse</span>
+        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AEO Pulse</span>
       </div>
       <p style="color:#64748b;font-size:13px;margin:0;">AI Search Visibility Platform</p>
     </div>
 
     <h1 style="color:#f8fafc;font-size:28px;font-weight:700;margin:0 0 16px 0;">
-      Welcome to AIO Pulse, ${name}! 🚀
+      Welcome to AEO Pulse, ${name}! 🚀
     </h1>
     <p style="color:#94a3b8;font-size:16px;margin:0 0 24px 0;line-height:1.6;">
       Your account has been created successfully. You're now ready to start monitoring your brand's visibility in AI-powered search results.
@@ -330,7 +330,7 @@ export async function sendWelcomeEmail({ to, name }: WelcomeEmailParams) {
         Need help? Reply to this email or visit our <a href="${appUrl}/docs" style="color:#6366f1;">docs</a>.
       </p>
       <p style="color:#334155;font-size:11px;margin:0;">
-        © ${new Date().getFullYear()} AIO Pulse. All rights reserved.
+        © ${new Date().getFullYear()} AEO Pulse. All rights reserved.
       </p>
     </div>
   </div>
@@ -342,7 +342,7 @@ export async function sendWelcomeEmail({ to, name }: WelcomeEmailParams) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `Welcome to AIO Pulse, ${name}!`,
+      subject: `Welcome to AEO Pulse, ${name}!`,
       html,
     })
     return { success: true }
@@ -379,7 +379,7 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
         <div style="width:32px;height:32px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;">
           <span style="color:white;font-size:16px;font-weight:900;">A</span>
         </div>
-        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AIO Pulse</span>
+        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AEO Pulse</span>
       </div>
       <p style="color:#64748b;font-size:13px;margin:0;">AI Search Visibility Platform</p>
     </div>
@@ -415,7 +415,7 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: PasswordRes
     await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      subject: 'Reset Your AIO Pulse Password',
+      subject: 'Reset Your AEO Pulse Password',
       html,
     })
     return { success: true }
@@ -471,7 +471,7 @@ export async function sendScheduledReportEmail({
             covering ${fromDate} to ${toDate}.
           </p>
           <p style="font-size: 14px; color: #94a3b8;">
-            This report was delivered automatically from AIO Pulse on the schedule you configured.
+            This report was delivered automatically from AEO Pulse on the schedule you configured.
             Manage your schedule in the dashboard under <em>Reports → Scheduled deliveries</em>.
           </p>
         </div>

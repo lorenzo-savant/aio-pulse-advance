@@ -56,14 +56,14 @@ const DOCS: DocGroup[] = [
     sections: [
       {
         id: 'what-is-aio-pulse',
-        title: 'What is AIO Pulse?',
-        content: `AIO Pulse is an AI Search Visibility Platform. It monitors how your brand appears when people query AI assistants like ChatGPT, Gemini, Perplexity, Claude, and Google AI Overviews about products and services in your industry.
+        title: 'What is AEO Pulse?',
+        content: `AEO Pulse is an AI Search Visibility Platform. It monitors how your brand appears when people query AI assistants like ChatGPT, Gemini, Perplexity, Claude, and Google AI Overviews about products and services in your industry.
 
-Traditional SEO tracks your position on Google. AIO Pulse tracks something different: whether AI assistants recommend your brand when users ask "What's the best accounting firm in Falun?" or "Which CRM should I use for a startup?"
+Traditional SEO tracks your position on Google. AEO Pulse tracks something different: whether AI assistants recommend your brand when users ask "What's the best accounting firm in Falun?" or "Which CRM should I use for a startup?"
 
 This matters because more people now use AI assistants instead of search engines to find services. If the AI doesn't mention your brand, you're invisible to that traffic.
 
-AIO Pulse delivers four core insights:
+AEO Pulse delivers four core insights:
 
 • Visibility — your AVI score (0-100) tells you how often and how prominently you appear across AI responses.
 
@@ -140,7 +140,7 @@ Brand Color — Used in dashboard charts and exported PDF reports for instant br
       {
         id: 'credits-and-plans',
         title: 'Credits, Plans, and What Costs What',
-        content: `AIO Pulse uses a credit system to make AI engine usage transparent.
+        content: `AEO Pulse uses a credit system to make AI engine usage transparent.
 
 How credits are consumed:
 
@@ -324,9 +324,9 @@ Dashboard → Citation Sources surfaces the sites AI engines cite when discussin
       {
         id: 'what-are-prompts',
         title: 'What Are Prompts?',
-        content: `Prompts are the questions AIO Pulse sends to AI engines on your behalf. They simulate what real customers might ask an AI assistant.
+        content: `Prompts are the questions AEO Pulse sends to AI engines on your behalf. They simulate what real customers might ask an AI assistant.
 
-If a customer looking for an accountant in Falun asks ChatGPT "What's the best accounting firm in Falun?", AIO Pulse sends the same question to ChatGPT, Gemini, Perplexity, and Claude, then analyzes whether your brand appears in each response.
+If a customer looking for an accountant in Falun asks ChatGPT "What's the best accounting firm in Falun?", AEO Pulse sends the same question to ChatGPT, Gemini, Perplexity, and Claude, then analyzes whether your brand appears in each response.
 
 The quality of your monitoring depends entirely on the prompts you create. Good prompts reflect real customer queries. The more prompts you have, the more comprehensive your coverage — aim for 30-50 prompts per brand.`,
       },
@@ -526,7 +526,7 @@ Every result is stored as a Monitoring Result row and rolled up into the daily S
       {
         id: 'supported-engines',
         title: 'Supported Engines & Models',
-        content: `AIO Pulse calls real AI engines with web search enabled — not memory-only responses.
+        content: `AEO Pulse calls real AI engines with web search enabled — not memory-only responses.
 
 Query engines (where your prompts go):
 
@@ -632,7 +632,7 @@ Common hallucination patterns:
 
 • Confusion with similarly-named brands
 
-AIO Pulse flags potential hallucinations with three severity levels:
+AEO Pulse flags potential hallucinations with three severity levels:
 
 • Low — Minor factual discrepancy, possibly outdated. Update your website.
 
@@ -739,7 +739,7 @@ The Gap Analysis tab shows questions where competitors are cited but you're not 
       {
         id: 'schema-export',
         title: 'Schema JSON-LD Export',
-        content: `For each tracked snippet, AIO Pulse generates the schema.org JSON-LD markup to add to your page.
+        content: `For each tracked snippet, AEO Pulse generates the schema.org JSON-LD markup to add to your page.
 
 Supported schema types:
 
@@ -755,7 +755,7 @@ Supported schema types:
 
 Click "Export Schema" on any snippet to download the JSON-LD ready to drop into your site's <script type="application/ld+json"> block.
 
-Re-validate your schema with Google's Rich Results Test after deployment — AIO Pulse runs its own validator but Google's is the source of truth for some engines.`,
+Re-validate your schema with Google's Rich Results Test after deployment — AEO Pulse runs its own validator but Google's is the source of truth for some engines.`,
       },
     ],
   },
@@ -1466,7 +1466,7 @@ Every webhook POST includes X-AIOPulse-Signature for HMAC-SHA256 verification. V
 
 Dashboard → Settings → Integrations → Google Search Console → Connect.
 
-Once connected, AIO Pulse pulls:
+Once connected, AEO Pulse pulls:
 
 • Branded search queries — Map AI mentions to GSC branded search volume
 
@@ -1531,7 +1531,7 @@ Recommendations from this view focus on entity verification, Wikidata edits, and
 
 GEO (Generative Engine Optimization) — Broader strategies to improve visibility in AI-generated responses: content depth, authority, structured data, citation strategy.
 
-AVI (AI Visibility Index) — Proprietary 0-100 composite score combining six weighted metrics. The primary KPI in AIO Pulse.
+AVI (AI Visibility Index) — Proprietary 0-100 composite score combining six weighted metrics. The primary KPI in AEO Pulse.
 
 Citation Rate — Percentage of monitored AI responses that mention your brand. Formula: (Mentions ÷ Total Responses) × 100.
 
@@ -1937,7 +1937,7 @@ export default function DocsPage() {
       {/* Footer */}
       <footer className="border-t border-nav-border bg-background py-8">
         <div className="mx-auto max-w-7xl px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} AIO Pulse. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} AEO Pulse. All rights reserved.</p>
         </div>
       </footer>
     </div>

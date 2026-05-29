@@ -1,4 +1,4 @@
-# Diagnostic Report — AIO Pulse
+# Diagnostic Report — AEO Pulse
 
 **Date**: 2026-05-25  
 **Branch**: main (00b5e3a)  

@@ -45,7 +45,7 @@ async function handleRequest(req: NextRequest): Promise<NextResponse> {
         alerts: '/api/alerts',
       },
     },
-    message: 'Welcome to AIO Pulse API. Visit /docs/api for documentation.',
+    message: 'Welcome to AEO Pulse API. Visit /docs/api for documentation.',
   })
 
   response.headers.set('X-API-Version', API_VERSION)

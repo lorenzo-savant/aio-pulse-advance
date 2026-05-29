@@ -1,6 +1,6 @@
 # Guide för Encryption Generator
 
-Praktisk guide för att generera, hantera och rotera de kryptografiska hemligheter som AIO Pulse använder.
+Praktisk guide för att generera, hantera och rotera de kryptografiska hemligheter som AEO Pulse använder.
 
 ---
 

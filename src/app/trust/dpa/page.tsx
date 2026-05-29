@@ -7,8 +7,8 @@ import { Ornament } from '@/components/Ornament'
 import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
-  title: 'Data Processing Agreement — AIO Pulse Trust Center',
-  description: 'Download the Data Processing Agreement (DPA) for AIO Pulse.',
+  title: 'Data Processing Agreement — AEO Pulse Trust Center',
+  description: 'Download the Data Processing Agreement (DPA) for AEO Pulse.',
 }
 
 export default async function DpaPage() {
@@ -74,12 +74,12 @@ export default async function DpaPage() {
               {
                 title: 'Parties',
                 content:
-                  'Data Controller: the customer (you). Data Processor: AIO Pulse (operated by Acasting S.r.l.).',
+                  'Data Controller: the customer (you). Data Processor: AEO Pulse (operated by Acasting S.r.l.).',
               },
               {
                 title: 'Scope',
                 content:
-                  'This DPA applies to all personal data processed by AIO Pulse on behalf of the customer in connection with the use of the AIO Pulse SaaS platform.',
+                  'This DPA applies to all personal data processed by AEO Pulse on behalf of the customer in connection with the use of the AEO Pulse SaaS platform.',
               },
               {
                 title: 'Legal Basis',
@@ -94,32 +94,32 @@ export default async function DpaPage() {
               {
                 title: 'Data Subject Rights',
                 content:
-                  'AIO Pulse will assist the customer in responding to data subject requests (access, rectification, erasure, portability) within 30 days.',
+                  'AEO Pulse will assist the customer in responding to data subject requests (access, rectification, erasure, portability) within 30 days.',
               },
               {
                 title: 'Sub-Processors',
                 content:
-                  'AIO Pulse engages sub-processors as listed in the Sub-Processors page. Customers will be notified 30 days before any new sub-processor is engaged.',
+                  'AEO Pulse engages sub-processors as listed in the Sub-Processors page. Customers will be notified 30 days before any new sub-processor is engaged.',
               },
               {
                 title: 'Security Measures',
                 content:
-                  'AIO Pulse implements technical and organizational measures as described in the Security Practices page, including encryption, RLS, RBAC, and audit logging.',
+                  'AEO Pulse implements technical and organizational measures as described in the Security Practices page, including encryption, RLS, RBAC, and audit logging.',
               },
               {
                 title: 'Data Breach Notification',
                 content:
-                  'AIO Pulse will notify the customer without undue delay (within 72 hours) upon becoming aware of a personal data breach.',
+                  'AEO Pulse will notify the customer without undue delay (within 72 hours) upon becoming aware of a personal data breach.',
               },
               {
                 title: 'Data Return/Deletion',
                 content:
-                  'Upon termination, AIO Pulse will return or delete all personal data within 30 days, unless EU or Member State law requires retention.',
+                  'Upon termination, AEO Pulse will return or delete all personal data within 30 days, unless EU or Member State law requires retention.',
               },
               {
                 title: 'Audits',
                 content:
-                  'Customers may request audit reports annually. AIO Pulse will provide relevant security certifications and audit results upon request.',
+                  'Customers may request audit reports annually. AEO Pulse will provide relevant security certifications and audit results upon request.',
               },
             ].map((item) => (
               <div key={item.title} className="rounded-xl border border-border bg-card p-5">

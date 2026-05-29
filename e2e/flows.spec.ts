@@ -7,7 +7,7 @@ test.describe('Critical User Flows', () => {
     test('analyze endpoint accepts valid request', async ({ request }) => {
       const response = await request.post(`${BASE_URL}/api/analyze`, {
         data: {
-          input: 'Test content for AIO optimization',
+          input: 'Test content for AEO optimization',
           mode: 'text',
         },
       })

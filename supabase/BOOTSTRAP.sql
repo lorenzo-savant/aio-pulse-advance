@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- AIO Pulse — Supabase Bootstrap (IDEMPOTENT)
+-- AEO Pulse — Supabase Bootstrap (IDEMPOTENT)
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Safe to run multiple times. No duplicates. No data loss.
 --

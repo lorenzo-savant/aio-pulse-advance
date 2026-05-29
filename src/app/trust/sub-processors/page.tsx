@@ -7,8 +7,8 @@ import { Ornament } from '@/components/Ornament'
 import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
-  title: 'Sub-Processors — AIO Pulse Trust Center',
-  description: 'Complete list of third-party sub-processors used by AIO Pulse.',
+  title: 'Sub-Processors — AEO Pulse Trust Center',
+  description: 'Complete list of third-party sub-processors used by AEO Pulse.',
 }
 
 const subProcessors = [

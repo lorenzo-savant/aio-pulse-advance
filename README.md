@@ -1,6 +1,6 @@
-# AIO Pulse
+# AEO Pulse
 
-[![AIO Pulse](https://img.shields.io/badge/AIO%20Pulse-SaaS%20Platform-brightgreen)](https://aio-pulse.com)
+[![AEO Pulse](https://img.shields.io/badge/AEO%20Pulse-SaaS%20Platform-brightgreen)](https://aio-pulse.com)
 
 **AI Visibility Index (AVI)** — Measure your brand's visibility across ChatGPT, Claude, Perplexity, Gemini, and Google AI Overviews.
 
@@ -173,4 +173,4 @@ See [00-mission-scope-rules.md](docs/enterprise-roadmap/00-mission-scope-rules.m
 
 ## License
 
-Proprietary — AIO Pulse SaaS. All rights reserved.
+Proprietary — AEO Pulse SaaS. All rights reserved.

@@ -1,5 +1,5 @@
 -- PATH: supabase/schema.sql
--- ─── AIO Pulse — Supabase Schema (v2 — Security Fix) ──────────────────────────
+-- ─── AEO Pulse — Supabase Schema (v2 — Security Fix) ──────────────────────────
 --
 -- CHANGES FROM v1:
 --   • Removed `service_all_brands` policy that bypassed all RLS rules.

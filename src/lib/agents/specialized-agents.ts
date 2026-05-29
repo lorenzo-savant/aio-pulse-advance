@@ -8,7 +8,7 @@ export class BrandMonitorAgent extends BaseAgent {
   readonly name = 'Brand Monitor'
   readonly description = 'Real-time brand health and visibility analysis'
   readonly optimalProvider: AIProviderId = 'perplexity'
-  readonly systemPrompt = `You are a Brand Monitoring Specialist for AIO Pulse Advance. Your role is to analyze brand health, visibility trends, and AI citation performance.
+  readonly systemPrompt = `You are a Brand Monitoring Specialist for AEO Pulse Advance. Your role is to analyze brand health, visibility trends, and AI citation performance.
 
 Key capabilities:
 - Analyze health score trends and identify patterns
@@ -49,7 +49,7 @@ export class CompetitorAnalystAgent extends BaseAgent {
   readonly name = 'Competitor Analyst'
   readonly description = 'Competitive positioning and gap analysis'
   readonly optimalProvider: AIProviderId = 'dataforseo'
-  readonly systemPrompt = `You are a Competitive Intelligence Analyst for AIO Pulse Advance. Your role is to analyze competitor positioning, identify market gaps, and provide strategic insights.
+  readonly systemPrompt = `You are a Competitive Intelligence Analyst for AEO Pulse Advance. Your role is to analyze competitor positioning, identify market gaps, and provide strategic insights.
 
 Key capabilities:
 - Compare brand visibility against competitors
@@ -89,7 +89,7 @@ export class KeywordExpertAgent extends BaseAgent {
   readonly name = 'Keyword Expert'
   readonly description = 'Search volume, trends, and intent analysis'
   readonly optimalProvider: AIProviderId = 'gemini'
-  readonly systemPrompt = `You are a Keyword Research Expert for AIO Pulse Advance. Your role is to analyze keyword performance, search intent, and optimization opportunities.
+  readonly systemPrompt = `You are a Keyword Research Expert for AEO Pulse Advance. Your role is to analyze keyword performance, search intent, and optimization opportunities.
 
 Key capabilities:
 - Analyze keyword search volume and competition
@@ -129,7 +129,7 @@ export class ReportBuilderAgent extends BaseAgent {
   readonly name = 'Report Builder'
   readonly description = 'Generate and customize performance reports'
   readonly optimalProvider: AIProviderId = 'claude'
-  readonly systemPrompt = `You are a Report Generation Specialist for AIO Pulse Advance. Your role is to create comprehensive, client-ready performance reports from brand data.
+  readonly systemPrompt = `You are a Report Generation Specialist for AEO Pulse Advance. Your role is to create comprehensive, client-ready performance reports from brand data.
 
 Key capabilities:
 - Generate executive summaries from raw metrics
@@ -169,7 +169,7 @@ export class AuditAgent extends BaseAgent {
   readonly name = 'Audit Expert'
   readonly description = 'SEO/AEO/E-E-A-T site audits with fix briefs'
   readonly optimalProvider: AIProviderId = 'claude'
-  readonly systemPrompt = `You are an SEO/AEO/E-E-A-T Audit Expert for AIO Pulse Advance, inspired by Stobo MCP and Barrett's GEO research framework.
+  readonly systemPrompt = `You are an SEO/AEO/E-E-A-T Audit Expert for AEO Pulse Advance, inspired by Stobo MCP and Barrett's GEO research framework.
 
 Key capabilities:
 - Analyze full site audits (30+ SEO checks, 7+ AEO checks, E-E-A-T signals)

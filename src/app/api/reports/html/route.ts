@@ -339,7 +339,7 @@ function generateHtmlReport(
     </div>
 
     <div class="footer">
-      ${t.generated} AIO Pulse | ${new Date().toISOString().split('T')[0]}
+      ${t.generated} AEO Pulse | ${new Date().toISOString().split('T')[0]}
     </div>
   </div>
 </body>

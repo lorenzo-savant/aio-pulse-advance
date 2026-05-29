@@ -20,7 +20,7 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   pagination: { page: number; perPage: number; total: number; totalPages: number }
 }
 
-// ─── AIO Pulse — Analysis ─────────────────────────────────────────────────────
+// ─── AEO Pulse — Analysis ─────────────────────────────────────────────────────
 export type EngineId = 'all' | 'chatgpt' | 'gemini' | 'perplexity' | 'claude'
 export type MonitoringEngine = 'chatgpt' | 'gemini' | 'perplexity' | 'claude'
 export type AIProvider = 'gemini' | 'openai' | 'perplexity' | 'anthropic'

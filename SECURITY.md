@@ -1,4 +1,4 @@
-# Security Assessment Report - AIO Pulse
+# Security Assessment Report - AEO Pulse
 
 **Date:** March 2026  
 **Assessment Level:** Comprehensive  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-AIO Pulse is a Next.js 14 + Supabase web application for AI search visibility monitoring. This security assessment covers the application's security controls, identifies vulnerabilities, and provides recommendations for improvement.
+AEO Pulse is a Next.js 14 + Supabase web application for AI search visibility monitoring. This security assessment covers the application's security controls, identifies vulnerabilities, and provides recommendations for improvement.
 
 ---
 

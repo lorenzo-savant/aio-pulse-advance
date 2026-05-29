@@ -1,4 +1,4 @@
-# Disaster Recovery Plan — AIO Pulse
+# Disaster Recovery Plan — AEO Pulse
 
 > "Disaster" = a failure mode that single-component runbooks
 > ([BACKUP_RESTORE.md](./BACKUP_RESTORE.md),

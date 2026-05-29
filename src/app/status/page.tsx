@@ -183,7 +183,7 @@ export default function StatusPage() {
       <main className="mx-auto max-w-4xl px-6 pb-24 pt-20">
         <header className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-black tracking-tight text-foreground md:text-5xl">
-            AIO Pulse Status
+            AEO Pulse Status
           </h1>
           <p className="mx-auto max-w-2xl text-base text-muted-foreground">
             Real-time service health. Polls our /api/health endpoint every 30 seconds. For incident

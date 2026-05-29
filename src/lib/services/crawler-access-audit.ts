@@ -2,7 +2,7 @@
 //
 // AI Crawler Access Audit — fetches `{brand_domain}/robots.txt`, parses
 // it, and reports which AI crawlers can actually reach the site. If
-// GPTBot is disallowed, NOTHING the rest of AIO Pulse measures about
+// GPTBot is disallowed, NOTHING the rest of AEO Pulse measures about
 // ChatGPT visibility is meaningful — the AI literally can't read the
 // site. Foundational health check.
 //
@@ -31,7 +31,7 @@ export interface AiBot {
   docs: string
 }
 
-/** Curated list of the AI bots that matter for AIO Pulse coverage.
+/** Curated list of the AI bots that matter for AEO Pulse coverage.
  *  Kept short and high-signal — adding every long-tail crawler floods
  *  the panel and operators stop reading. */
 export const AI_BOTS: AiBot[] = [

@@ -260,7 +260,7 @@ export const GEO_KNOWLEDGE: GeoKnowledge = {
       description:
         'AI engines parse structured data (JSON-LD, Schema.org) more reliably than unstructured HTML. Product, FAQ, HowTo, Article, and Organization schemas improve entity recognition and citation accuracy.',
       impact: 'Improved retrieval accuracy',
-      source: 'AIO GEO research compilation',
+      source: 'AEO GEO research compilation',
       applicableEngines: ['ChatGPT', 'Gemini', 'Google AI Overviews'],
     },
     {
@@ -269,7 +269,7 @@ export const GEO_KNOWLEDGE: GeoKnowledge = {
       description:
         'Experience, Expertise, Authoritativeness, Trustworthiness signals influence AI recommendations. Clear author credentials, publication dates, citations to primary sources, and corroboration across multiple trusted sites.',
       impact: 'Foundation for all GEO',
-      source: 'Google Search Central / AIO research',
+      source: 'Google Search Central / AEO research',
       applicableEngines: ['ChatGPT', 'Gemini', 'Claude', 'Perplexity', 'Google AI Overviews'],
     },
     {
@@ -278,7 +278,7 @@ export const GEO_KNOWLEDGE: GeoKnowledge = {
       description:
         'Content cited across multiple platforms (Wikipedia + Reddit + news + technical docs) creates compounding authority. AI engines cross-reference sources — a brand cited in Wikipedia AND discussed on Reddit is more likely to appear across all engines.',
       impact: 'Compounding cross-engine visibility',
-      source: 'AIO Pulse research — citation pattern analysis',
+      source: 'AEO Pulse research — citation pattern analysis',
       applicableEngines: ['ChatGPT', 'Gemini', 'Perplexity', 'Claude'],
     },
   ],

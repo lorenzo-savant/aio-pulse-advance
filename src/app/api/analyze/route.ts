@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
 }
 
 // ─── POST /api/analyze ────────────────────────────────────────────────────────
-// Analyzes text or URL content for AIO visibility.
+// Analyzes text or URL content for AEO visibility.
 // Rate limited: 20 requests per minute per IP.
 export async function POST(req: NextRequest) {
   // ── Rate limit ────────────────────────────────────────────────────────────

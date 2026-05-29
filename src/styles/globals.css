@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   AIO Pulse Design System v3.0 — Qvery-inspired Design System
+   AEO Pulse Design System v3.0 — Qvery-inspired Design System
    Unified Light & Dark Theme with OKLCH Colors
    ═══════════════════════════════════════════════════════════════════════════════ */
 
@@ -474,7 +474,7 @@
   }
 
   /* ─── Gradient Text — on-brand teal monochrome with subtle deep-teal stop ──
-     Coerente con la palette AIO Pulse (teal + ink). Niente viola fuori brand. */
+     Coerente con la palette AEO Pulse (teal + ink). Niente viola fuori brand. */
   .text-gradient {
     background: linear-gradient(135deg, oklch(0.62 0.18 178) 0%, oklch(0.32 0.1 200) 100%);
     -webkit-background-clip: text;
@@ -644,7 +644,7 @@
 
   /* ══════════════════════════════════════════════════════════════════════════
      QVERY COMPONENT CLASSES (light mode)
-     Extracted from AIO Pulse Marketing UI Kit
+     Extracted from AEO Pulse Marketing UI Kit
      ══════════════════════════════════════════════════════════════════════════ */
 
   /* ─── Typography ──────────────────────────────────── */
@@ -1087,7 +1087,7 @@
     opacity: 0.7;
   }
 
-  /* ─── AIO Pulse scroll-triggered reveal (custom easing, distinct from generic Framer-style) ── */
+  /* ─── AEO Pulse scroll-triggered reveal (custom easing, distinct from generic Framer-style) ── */
   .q-reveal {
     opacity: 0;
     transition:
@@ -1198,9 +1198,9 @@
     transition-delay: 0.39s;
   }
 
-  /* ─── AIO Pulse illustration treatment ──────────────────────────────────
+  /* ─── AEO Pulse illustration treatment ──────────────────────────────────
      Tints + saturates third-party SVG illustrations so they read as
-     "AIO Pulse" art rather than the original source. Applied via the
+     "AEO Pulse" art rather than the original source. Applied via the
      .aio-illustration class on <img> wrappers. */
   .aio-illustration {
     filter: hue-rotate(28deg) saturate(1.18) contrast(1.04)
@@ -1222,7 +1222,7 @@
       drop-shadow(0 20px 32px oklch(var(--color-accent) / 0.25));
   }
 
-  /* ─── AIO Pulse SVG ornaments (custom, not derived from third-party assets) ─── */
+  /* ─── AEO Pulse SVG ornaments (custom, not derived from third-party assets) ─── */
   .aio-ornament {
     width: 100%;
     height: 100%;
@@ -1274,7 +1274,7 @@
   }
 
   /* ──────────────────────────────────────────────────────────────────────
-   *  AIO Pulse site header navigation link
+   *  AEO Pulse site header navigation link
    *  hover: text turns to foreground (high contrast on bg) + accent
    *  underline slides in from left. The active page keeps a static
    *  underline so the user always knows where they are.
@@ -1319,7 +1319,7 @@
   }
 
   /* ──────────────────────────────────────────────────────────────────────
-   *  AIO PULSE LOGO — heartbeat (lub-dub) + radiating rings
+   *  AEO PULSE LOGO — heartbeat (lub-dub) + radiating rings
    *  This is the brand signature animation: the mark literally pulses.
    * ────────────────────────────────────────────────────────────────────── */
   .aio-logo {
@@ -1429,7 +1429,7 @@
   }
 
   /* ──────────────────────────────────────────────────────────────────────
-   *  AIO Pulse illustrations — shared animations for inline SVG art
+   *  AEO Pulse illustrations — shared animations for inline SVG art
    * ────────────────────────────────────────────────────────────────────── */
   .aio-illu {
     display: block;

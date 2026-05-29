@@ -1,4 +1,4 @@
-# Drill Log — AIO Pulse Production
+# Drill Log — AEO Pulse Production
 
 > Every quarter, run one disaster drill end-to-end. Document what
 > happened here. Update the relevant runbook with anything that didn't

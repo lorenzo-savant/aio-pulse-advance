@@ -1,6 +1,6 @@
 import type { EngineId, ModelId, AIProvider } from '@/types'
 
-export const APP_NAME = 'AIO Pulse'
+export const APP_NAME = 'AEO Pulse'
 export const APP_DESCRIPTION = 'Enterprise-grade AI Search Visibility & Optimization Platform'
 export const APP_URL = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
 
@@ -29,7 +29,7 @@ export const ENGINES: Array<{
     label: 'All Engines',
     color: 'bg-brand-500',
     accent: 'text-brand-400',
-    description: 'Universal AIO strategy across all platforms.',
+    description: 'Universal AEO strategy across all platforms.',
   },
   {
     id: 'chatgpt',
@@ -103,7 +103,7 @@ export const AI_PROVIDERS: Array<{
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 export const ANALYSIS_MODELS: Array<{ id: ModelId; label: string; provider: AIProvider }> = [
-  { id: 'default', label: 'AIO Pulse Standard (Gemini Flash)', provider: 'gemini' },
+  { id: 'default', label: 'AEO Pulse Standard (Gemini Flash)', provider: 'gemini' },
   { id: 'gemini-flash', label: 'Gemini 2.5 Flash', provider: 'gemini' },
   { id: 'gemini-pro', label: 'Gemini 2.5 Pro', provider: 'gemini' },
   { id: 'gpt-4o-mini', label: 'GPT-4o Mini', provider: 'openai' },

@@ -1,4 +1,4 @@
-# Backup & Restore — AIO Pulse
+# Backup & Restore — AEO Pulse
 
 > Supabase is the only stateful store we own. **If this document is wrong
 > when you need it, the company has a bad day.** Test it quarterly.

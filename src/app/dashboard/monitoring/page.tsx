@@ -151,16 +151,16 @@ function ResultCard({ result }: { result: MonitoringResult }) {
           {/* Hallucination flags */}
           {result.hallucination_flags.length > 0 && (
             <div>
-              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-red-700">
+              <p className="text-red-700 mb-2 text-[10px] font-black uppercase tracking-widest">
                 {t('hallucination_flags')}
               </p>
               <div className="space-y-2">
                 {result.hallucination_flags.map((flag, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2"
+                    className="border-red-500/20 bg-red-500/5 flex items-start gap-2 rounded-lg border px-3 py-2"
                   >
-                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
+                    <AlertTriangle className="text-red-400 mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <div className="text-xs">
                       <p className="text-red-300">"{flag.text}"</p>
                       <p className="mt-0.5 text-muted-foreground">
@@ -270,7 +270,7 @@ export default function MonitoringPage() {
       <JourneyGuide
         step={2}
         title="Run AI engine checks and watch results stream in"
-        lead="For every prompt, AIO Pulse sends the query to all 4 AI engines, captures their responses, and extracts brand mentions, sentiment, citations, and hallucinations."
+        lead="For every prompt, AEO Pulse sends the query to all 4 AI engines, captures their responses, and extracts brand mentions, sentiment, citations, and hallucinations."
         persistKey="monitoring"
         steps={[
           {

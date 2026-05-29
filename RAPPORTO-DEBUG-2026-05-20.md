@@ -1,4 +1,4 @@
-# REPORT DI DEBUG COMPLETO — AIO Pulse v2.1.0
+# REPORT DI DEBUG COMPLETO — AEO Pulse v2.1.0
 
 **Data**: 2026-05-20  
 **Commit**: Current HEAD  

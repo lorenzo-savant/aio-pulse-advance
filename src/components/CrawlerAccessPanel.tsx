@@ -2,7 +2,7 @@
 
 // "AI Crawler Access Audit" panel — fetches the brand's robots.txt and
 // reports which AI crawlers can actually reach it. Foundational health
-// check: if GPTBot is blocked, nothing else AIO Pulse measures about
+// check: if GPTBot is blocked, nothing else AEO Pulse measures about
 // ChatGPT visibility is meaningful. See lib/services/crawler-access-audit.ts
 // for the bot list + parser + rationale.
 
@@ -202,7 +202,7 @@ export function CrawlerAccessPanel({ brandId: brandIdProp }: { brandId?: string 
       <p className="mb-4 text-sm text-muted-foreground">
         Fetches your <code className="text-foreground">robots.txt</code> and checks which AI
         crawlers can actually reach the site. If GPTBot / PerplexityBot / ClaudeBot are blocked, the
-        brand is structurally invisible to those engines — every other AIO Pulse metric for that
+        brand is structurally invisible to those engines — every other AEO Pulse metric for that
         engine is capped.
       </p>
 
@@ -229,7 +229,7 @@ export function CrawlerAccessPanel({ brandId: brandIdProp }: { brandId?: string 
                 {summary.blocked} of {summary.totalBots} AI crawlers blocked
               </p>
               <p className="mt-1 text-rose-200/90">
-                Engines impacted: {summary.blockedEngines.join(', ')}. AIO Pulse cannot accurately
+                Engines impacted: {summary.blockedEngines.join(', ')}. AEO Pulse cannot accurately
                 measure visibility for these engines while the block is active.
               </p>
             </div>

@@ -1,4 +1,4 @@
-# AIO Pulse — Update Changelog v2.2.0
+# AEO Pulse — Update Changelog v2.2.0
 
 **Date:** May 20, 2026
 **Status:** SERP provider split (Brave primary + DataForSEO narrow scope), SerpApi removal, SERP response cache, cross-provider spending monitor
@@ -47,7 +47,7 @@ API strategy v2 finalized: **Brave Search is the primary SERP provider** (2k/mo 
 
 ---
 
-# AIO Pulse — Update Changelog v2.1.0
+# AEO Pulse — Update Changelog v2.1.0
 
 **Date:** May 20, 2026
 **Status:** Feature additions, bug fixes, test-suite repair, security hardening
@@ -159,7 +159,7 @@ Already-required vars (no change): Supabase, ≥1 of OpenAI/Gemini/Perplexity/An
 
 ---
 
-# AIO Pulse — Update Changelog v1.1.0
+# AEO Pulse — Update Changelog v1.1.0
 
 **Date:** March 12, 2026  
 **Status:** Bug Fixes & Improvements Applied  
@@ -450,7 +450,7 @@ This update:
 3. Follow `BUGFIX_DOCUMENTATION/IMPLEMENTATION_GUIDE.md`
 4. Deploy and verify
 
-Your AIO Pulse will be fully operational! 🚀
+Your AEO Pulse will be fully operational! 🚀
 
 ---
 

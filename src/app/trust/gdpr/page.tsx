@@ -7,8 +7,8 @@ import { Ornament } from '@/components/Ornament'
 import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
-  title: 'GDPR Rights — AIO Pulse Trust Center',
-  description: 'Your rights under GDPR and how to exercise them with AIO Pulse.',
+  title: 'GDPR Rights — AEO Pulse Trust Center',
+  description: 'Your rights under GDPR and how to exercise them with AEO Pulse.',
 }
 
 export default async function GdprPage() {

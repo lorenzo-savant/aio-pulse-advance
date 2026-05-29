@@ -279,7 +279,7 @@ function SidebarContent({
         </div>
         <div className="flex flex-col">
           <span className="text-[20px] font-extrabold tracking-tight text-foreground">
-            AIO Pulse
+            AEO Pulse
           </span>
           <span className="text-[10px] font-medium text-muted-foreground">FREE</span>
         </div>

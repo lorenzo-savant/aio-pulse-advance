@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
       <div className="relative z-10 flex flex-1 items-center justify-center pb-12">
         <Reveal direction="scale" delay={1} className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-4 text-center">
-            <Link href="/auth/login" aria-label="AIO Pulse">
+            <Link href="/auth/login" aria-label="AEO Pulse">
               <AioLogo size={48} markOnly />
             </Link>
             <div>
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
                 <p className="text-sm text-muted-foreground">{t('sent_body', { email })}</p>
                 <Link
                   href="/auth/login"
-                  className="hover:text-accent/80 mt-4 inline-flex items-center gap-2 text-sm font-semibold text-accent"
+                  className="hover:text-primary/80 mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary"
                 >
                   <ArrowLeft className="h-4 w-4" /> {t('back_to_sign_in')}
                 </Link>
@@ -113,7 +113,7 @@ export default function ForgotPasswordPage() {
                   <input
                     required
                     autoComplete="email"
-                    className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                    className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                     disabled={loading}
                     placeholder="you@company.com"
                     type="email"
@@ -140,7 +140,7 @@ export default function ForgotPasswordPage() {
                 <p className="text-center text-sm text-muted-foreground">
                   {t('remember_password')}{' '}
                   <Link
-                    className="hover:text-accent/80 font-semibold text-accent"
+                    className="hover:text-primary/80 font-semibold text-primary"
                     href="/auth/login"
                   >
                     {t('sign_in')}

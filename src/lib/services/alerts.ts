@@ -25,7 +25,7 @@ const resend = {
   },
 } as unknown as Resend
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AIO Pulse <onboarding@resend.dev>'
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AEO Pulse <onboarding@resend.dev>'
 
 // ─── Resend mailer ───────────────────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ function buildAlertEmail(event: AlertEvent, brand: Brand): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AIO Pulse Alert</title>
+  <title>AEO Pulse Alert</title>
 </head>
 <body style="margin:0;padding:0;background:#080d18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
@@ -96,7 +96,7 @@ function buildAlertEmail(event: AlertEvent, brand: Brand): string {
         <div style="width:32px;height:32px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;">
           <span style="color:white;font-size:16px;font-weight:900;">A</span>
         </div>
-        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AIO Pulse</span>
+        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AEO Pulse</span>
       </div>
       <p style="color:#64748b;font-size:13px;margin:0;">AI Search Visibility Platform</p>
     </div>
@@ -176,7 +176,7 @@ export async function dispatchAlert(
   if (rule.channels.includes('email') && rule.email) {
     const sent = await sendEmail({
       to: rule.email,
-      subject: `${event.title} — AIO Pulse Alert`,
+      subject: `${event.title} — AEO Pulse Alert`,
       html: buildAlertEmail(event, brand),
     })
     if (sent) channelsSent.push('email')

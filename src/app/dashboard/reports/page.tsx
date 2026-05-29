@@ -280,7 +280,7 @@ export default function ReportsPage() {
               <div className="flex items-center justify-between rounded-xl border border-border bg-card p-3">
                 <div>
                   <p className="text-text-secondary-ui text-sm font-bold">
-                    Show &quot;Powered by AIO Pulse&quot;
+                    Show &quot;Powered by AEO Pulse&quot;
                   </p>
                   <p className="text-[10px] text-muted-foreground">
                     Display a small attribution in the report footer
@@ -444,7 +444,7 @@ export default function ReportsPage() {
                 </div>
               ))}
               {settings.showPoweredBy && (
-                <p className="text-center text-[9px] text-muted-foreground">Powered by AIO Pulse</p>
+                <p className="text-center text-[9px] text-muted-foreground">Powered by AEO Pulse</p>
               )}
             </div>
           </Card>

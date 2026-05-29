@@ -17,7 +17,7 @@ const MOCK_ACASTING_BRAND: Brand = {
   description:
     'AI Visibility Index measurement platform. SaaS that measures how brands appear in ChatGPT, Gemini, Perplexity, and Claude responses. Italian company operating primarily in Sweden.',
   domain: 'acasting.ai',
-  aliases: ['Acasting S.r.l.', 'AIO Pulse Advance', 'AIO Pulse'],
+  aliases: ['Acasting S.r.l.', 'AEO Pulse Advance', 'AEO Pulse'],
   domains: ['acasting.ai', 'aiopulse.com'],
   competitors: ['Brand24', 'Mention', 'Determ', 'industry research'],
   industry: 'AI Visibility / SaaS / MarTech',

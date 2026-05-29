@@ -227,7 +227,7 @@ export function buildAeoReportJson(params: {
       report_date:
         new Date().toISOString().split('T')[0] ?? new Date().toISOString().substring(0, 10),
       report_version: '1.0',
-      generated_by: 'AIO Pulse',
+      generated_by: 'AEO Pulse',
       date_range_days: dateRangeDays,
       completeness_score: completeness,
       trigger,

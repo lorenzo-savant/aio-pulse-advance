@@ -1,4 +1,4 @@
-# AIO Pulse Advance — Deployment Handoff (2026-05-29)
+# AEO Pulse Advance — Deployment Handoff (2026-05-29)
 
 > Status efter deploy-session. Skriven för teamet (Rebecca + Lorenzo).
 > Live: **https://aeo-pulse.savantmedia.se**
@@ -7,7 +7,7 @@
 
 ## 1. Sammanfattning
 
-AIO Pulse (advance) är klonad, deployad till Vercel och live på en egen subdomän
+AEO Pulse (advance) är klonad, deployad till Vercel och live på en egen subdomän
 med giltigt SSL. Appen fungerar (DB + rate limiting connected). Cron-jobben är
 registrerade men kräver en kodfix innan de kör skarpt (se §5 — Lorenzos del).
 

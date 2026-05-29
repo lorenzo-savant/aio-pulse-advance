@@ -1,4 +1,4 @@
-# Säkerhets- och kritikalitetsrapport — AIO Pulse Advance
+# Säkerhets- och kritikalitetsrapport — AEO Pulse Advance
 
 **Datum:** 2026-05-18
 **Analyserad branch:** `fase-0/T02-T06-residual-cleanup`

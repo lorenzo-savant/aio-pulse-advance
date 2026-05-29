@@ -1,4 +1,4 @@
-# AIO Pulse — Operations Runbooks
+# AEO Pulse — Operations Runbooks
 
 This directory is the **single source of truth** for production operations.
 If you are responding to an incident, restoring a backup, or rotating a

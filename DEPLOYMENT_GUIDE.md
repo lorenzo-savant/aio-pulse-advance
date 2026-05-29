@@ -1,8 +1,8 @@
-# AIO Pulse — Deployment & Environment Setup Guide
+# AEO Pulse — Deployment & Environment Setup Guide
 
 ## 🎯 Quick Start
 
-This guide shows you how to deploy AIO Pulse to Vercel with all required environment variables.
+This guide shows you how to deploy AEO Pulse to Vercel with all required environment variables.
 
 ---
 
@@ -10,7 +10,7 @@ This guide shows you how to deploy AIO Pulse to Vercel with all required environ
 
 - Vercel account: https://vercel.com
 - Supabase account: https://supabase.com
-- Your AIO Pulse project connected to GitHub
+- Your AEO Pulse project connected to GitHub
 
 ---
 
@@ -37,7 +37,7 @@ This guide shows you how to deploy AIO Pulse to Vercel with all required environ
 ### Step 2: Add Environment Variables to Vercel
 
 1. Go to https://vercel.com/dashboard
-2. Click your **AIO Pulse** project
+2. Click your **AEO Pulse** project
 3. Click **Settings** (top navigation)
 4. Click **Environment Variables** (left sidebar)
 
@@ -356,7 +356,7 @@ You'll know the deployment is successful when:
 
 ## 🎉 You're Done!
 
-Your AIO Pulse is now deployed to production with all fixes applied.
+Your AEO Pulse is now deployed to production with all fixes applied.
 
 For detailed information, see the documentation in `BUGFIX_DOCUMENTATION/` folder.
 

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 interface AioLogoProps {
   /** Size in px for the mark. Wordmark scales accordingly. */
   size?: number
-  /** Hide the "AIO PULSE" wordmark and render only the mark. */
+  /** Hide the "AEO PULSE" wordmark and render only the mark. */
   markOnly?: boolean
   /** Color tint for the wordmark. Defaults to `text-foreground`. */
   textClassName?: string
@@ -13,7 +13,7 @@ interface AioLogoProps {
 }
 
 /**
- * AIO Pulse logo. The mark is a heartbeat-driven waveform inside a ring of
+ * AEO Pulse logo. The mark is a heartbeat-driven waveform inside a ring of
  * concentric pulse waves — it visually "beats" (lub-dub) once per cycle, which
  * is the core brand metaphor.
  */
@@ -63,7 +63,7 @@ export function AioLogo({ size = 36, markOnly = false, textClassName, className 
           )}
           style={{ fontSize: size * 0.5 }}
         >
-          AIO<span className="aio-logo__word-accent">Pulse</span>
+          AEO<span className="aio-logo__word-accent">Pulse</span>
         </span>
       )}
     </span>

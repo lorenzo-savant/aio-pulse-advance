@@ -1,6 +1,6 @@
 # Feature Memory Archive
 
-This directory is the **single source of truth** for every user-facing feature in AIO Pulse. Each MD file documents one feature with the same trilingual structure so anyone (future devs, support, marketing, the user themselves) can answer "what does X do, what feeds it, what does it produce" without reading source.
+This directory is the **single source of truth** for every user-facing feature in AEO Pulse. Each MD file documents one feature with the same trilingual structure so anyone (future devs, support, marketing, the user themselves) can answer "what does X do, what feeds it, what does it produce" without reading source.
 
 Per-feature template (each file follows this exact layout):
 

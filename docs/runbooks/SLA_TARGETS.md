@@ -1,6 +1,6 @@
-# SLA Targets — AIO Pulse
+# SLA Targets — AEO Pulse
 
-> These targets are the contract for what "production" means on AIO Pulse.
+> These targets are the contract for what "production" means on AEO Pulse.
 > Customers see commercial SLAs derived from these; engineering uses them
 > as the threshold for alerts, escalation, and incident severity.
 

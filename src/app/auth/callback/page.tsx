@@ -86,7 +86,7 @@ function AuthCallbackContent() {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background px-6">
       <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" />
-      <div className="bg-accent/15 pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
+      <div className="bg-primary/15 pointer-events-none absolute left-1/2 top-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
 
       <div className="relative z-10 w-full max-w-sm text-center">
         <div className="mb-8 flex justify-center">
@@ -96,7 +96,7 @@ function AuthCallbackContent() {
         <div className="glass rounded-2xl p-8">
           {status === 'loading' && (
             <>
-              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-accent" />
+              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-primary" />
               <h2 className="mb-2 text-xl font-bold text-foreground">{t('verifying_title')}</h2>
               <p className="text-sm text-muted-foreground">{message}</p>
             </>
@@ -121,7 +121,7 @@ function AuthCallbackContent() {
               <p className="mb-4 text-sm text-muted-foreground">{message}</p>
               <a
                 href="/auth/login"
-                className="hover:bg-accent-hover inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground transition-all"
+                className="hover:bg-primary/90 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-all"
               >
                 {t('back_to_login')}
               </a>
@@ -138,7 +138,7 @@ export default function AuthCallbackPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-background">
-          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }
     >

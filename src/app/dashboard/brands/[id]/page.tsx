@@ -882,7 +882,7 @@ export default function BrandDetailPage() {
           )}
         </div>
         <p className="mb-4 text-sm text-muted-foreground">
-          Customize how your brand appears in PDF reports. Leave empty to use default AIO Pulse
+          Customize how your brand appears in PDF reports. Leave empty to use default AEO Pulse
           branding.
         </p>
         {isEditing ? (
@@ -938,7 +938,7 @@ export default function BrandDetailPage() {
             <div className="bg-secondary/50 rounded-xl border border-border p-4">
               <p className="mb-1 text-xs text-muted-foreground">Report Brand Name</p>
               <p className="font-medium text-foreground">
-                {brand?.report_brand_name || 'AIO Pulse (default)'}
+                {brand?.report_brand_name || 'AEO Pulse (default)'}
               </p>
             </div>
             <div className="bg-secondary/50 rounded-xl border border-border p-4">
@@ -1091,7 +1091,7 @@ export default function BrandDetailPage() {
                         size="sm"
                         onClick={() => handleRemoveInvite(invite.id)}
                         aria-label="Cancel invitation"
-                        className="text-muted-foreground hover:text-red-400"
+                        className="hover:text-red-400 text-muted-foreground"
                       >
                         <X className="h-4 w-4" aria-hidden="true" />
                       </Button>
@@ -1140,7 +1140,7 @@ export default function BrandDetailPage() {
                             size="sm"
                             onClick={() => handleRemoveMember(member.id, member.email)}
                             aria-label="Remove team member"
-                            className="text-muted-foreground hover:text-red-400"
+                            className="hover:text-red-400 text-muted-foreground"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </Button>
@@ -1459,7 +1459,7 @@ export default function BrandDetailPage() {
                           competitors: f.competitors.filter((x) => x !== c),
                         }))
                       }
-                      className="text-muted-foreground hover:text-red-400"
+                      className="hover:text-red-400 text-muted-foreground"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -1499,7 +1499,7 @@ export default function BrandDetailPage() {
                           aliases: f.aliases.filter((x) => x !== a),
                         }))
                       }
-                      className="text-muted-foreground hover:text-red-400"
+                      className="hover:text-red-400 text-muted-foreground"
                     >
                       <X className="h-3 w-3" />
                     </button>

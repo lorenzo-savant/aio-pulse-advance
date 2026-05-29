@@ -159,8 +159,8 @@ function LoginForm() {
     <div className="relative flex min-h-screen flex-col">
       <div className="absolute inset-0 bg-background">
         <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40" />
-        <div className="bg-accent/20 absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full blur-[120px]" />
-        <div className="bg-accent/10 absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]" />
+        <div className="bg-primary/20 absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full blur-[120px]" />
+        <div className="bg-primary/10 absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]" />
         <div className="pointer-events-none absolute -left-24 top-1/3 h-[280px] w-[280px] opacity-25">
           <Ornament variant="orbit" />
         </div>
@@ -241,7 +241,7 @@ function LoginForm() {
                     onClick={() => setLoginMode('password')}
                     className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
                       loginMode === 'password'
-                        ? 'shadow-accent/25 bg-accent text-white shadow-lg'
+                        ? 'shadow-primary/25 bg-primary text-primary-foreground shadow-lg'
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
@@ -252,7 +252,7 @@ function LoginForm() {
                     onClick={() => setLoginMode('magic')}
                     className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
                       loginMode === 'magic'
-                        ? 'shadow-accent/25 bg-accent text-white shadow-lg'
+                        ? 'shadow-primary/25 bg-primary text-primary-foreground shadow-lg'
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
@@ -269,7 +269,7 @@ function LoginForm() {
                       <input
                         required
                         autoComplete="email"
-                        className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                        className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                         disabled={loading}
                         placeholder="you@company.com"
                         type="email"
@@ -286,7 +286,7 @@ function LoginForm() {
                         <input
                           required
                           autoComplete="current-password"
-                          className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                          className="w-full rounded-xl border border-input bg-input px-4 py-3 pr-11 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                           disabled={loading}
                           placeholder="••••••••"
                           type={showPw ? 'text' : 'password'}
@@ -320,7 +320,7 @@ function LoginForm() {
                         {t('remember_me')}
                       </label>
                       <Link
-                        className="hover:text-accent/80 text-sm font-medium text-accent transition-colors"
+                        className="hover:text-primary/80 text-sm font-medium text-primary transition-colors"
                         href="/auth/forgot-password"
                       >
                         {t('forgot_password')}
@@ -354,7 +354,7 @@ function LoginForm() {
                       <input
                         required
                         autoComplete="email"
-                        className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-accent focus:ring-1 focus:ring-accent"
+                        className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                         disabled={loading}
                         placeholder="you@company.com"
                         type="email"
@@ -388,7 +388,7 @@ function LoginForm() {
                 <p className="mt-8 text-center text-sm text-muted-foreground">
                   {t('no_account')}{' '}
                   <Link
-                    className="hover:text-accent/80 font-semibold text-accent transition-colors"
+                    className="hover:text-primary/80 font-semibold text-primary transition-colors"
                     href="/auth/register"
                   >
                     {t('create_one')}
@@ -400,11 +400,11 @@ function LoginForm() {
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
             {t('terms_prefix')}{' '}
-            <Link className="hover:text-accent/80 text-accent" href="#">
+            <Link className="hover:text-primary/80 text-primary" href="/trust">
               {t('terms')}
             </Link>{' '}
             {t('and')}{' '}
-            <Link className="hover:text-accent/80 text-accent" href="#">
+            <Link className="hover:text-primary/80 text-primary" href="/trust/gdpr">
               {t('privacy')}
             </Link>
           </p>
@@ -419,7 +419,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-background">
-          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }
     >

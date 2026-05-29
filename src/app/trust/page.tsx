@@ -16,10 +16,10 @@ import { Ornament } from '@/components/Ornament'
 import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
-  title: 'Trust Center — AIO Pulse',
-  description: 'Security, compliance, and data protection information for AIO Pulse.',
+  title: 'Trust Center — AEO Pulse',
+  description: 'Security, compliance, and data protection information for AEO Pulse.',
   openGraph: {
-    title: 'Trust Center — AIO Pulse',
+    title: 'Trust Center — AEO Pulse',
     description: 'Security, compliance, and data protection information.',
     type: 'website',
   },

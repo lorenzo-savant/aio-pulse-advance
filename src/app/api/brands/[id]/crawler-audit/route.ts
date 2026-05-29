@@ -1,7 +1,7 @@
 // PATH: src/app/api/brands/[id]/crawler-audit/route.ts
 //
 // GET → fetch `{brand_domain}/robots.txt`, parse it, return per-bot
-// access verdicts for the AI crawlers AIO Pulse cares about (GPTBot,
+// access verdicts for the AI crawlers AEO Pulse cares about (GPTBot,
 // PerplexityBot, ClaudeBot, Google-Extended, etc.). If any of these
 // are blocked, the brand's AI visibility is structurally capped.
 

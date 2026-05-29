@@ -1,4 +1,4 @@
-# AIO Pulse — Instruktioner för coding agents (Cursor / Claude Code / andra)
+# AEO Pulse — Instruktioner för coding agents (Cursor / Claude Code / andra)
 
 > **Projektets ingång för AI-agenter.** Läs detta innan du gör några ändringar.
 
@@ -6,7 +6,7 @@
 
 ## 1. Projektets identitet
 
-**AIO Pulse** är en proprietär SaaS som mäter **AI Visibility Index** (AVI) genom att programmatiskt anropa de ledande LLM:erna (ChatGPT, Claude, Perplexity, Gemini) och generativa SERP:er (Google AI Overviews).
+**AEO Pulse** är en proprietär SaaS som mäter **AI Visibility Index** (AVI) genom att programmatiskt anropa de ledande LLM:erna (ChatGPT, Claude, Perplexity, Gemini) och generativa SERP:er (Google AI Overviews).
 
 - Stack: Next.js 14 (App Router), TypeScript strict, Tailwind v3, Prisma + Supabase Postgres, Stripe, Sentry, Vitest, Playwright, Upstash Redis
 - Aktuell version: 2.0.0
@@ -15,7 +15,7 @@
 
 ## 2. Den här fasens uppdrag (Q2-Q3 2026)
 
-Förvandla AIO Pulse från "production-grade boilerplate" till **kommersiell SaaS säljbar till SMB och mid-market** på 10-14 veckor.
+Förvandla AEO Pulse från "production-grade boilerplate" till **kommersiell SaaS säljbar till SMB och mid-market** på 10-14 veckor.
 
 **Målsegment**: marknadsföringsbyråer, SMB ($199-499/månad), prosumer ($49-99/månad), mid-market-team via founder-led sales med custom-offerter.
 
@@ -172,7 +172,7 @@ När du startar en session på detta projekt:
 
 ## 13. Kundkontext
 
-AIO Pulse är även det centrala mätverktyget för **Acasting-strategin** (kund Q1 2026) — `~/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/`. Acasting blir SaaS:ens **första verkliga kommersiella deployment**, så:
+AEO Pulse är även det centrala mätverktyget för **Acasting-strategin** (kund Q1 2026) — `~/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/`. Acasting blir SaaS:ens **första verkliga kommersiella deployment**, så:
 
 - Direkt feedback från Acasting-founder om produktluckor = prioritet i roadmapen
 - De 60 frågorna i [query-inventory.md](file:///c:/Users/loren/Desktop/dev-projects/seo-parasite-strategy-aeo-geo-aio/seo-parasite-strategy/06-assets/query-inventory.md) är de första riktiga prompterna att seeda i produktion

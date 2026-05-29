@@ -121,7 +121,7 @@
     "required_field": "This field is required"
   },
   "sidebar": {
-    "title": "AIO Pulse",
+    "title": "AEO Pulse",
     "sections": {
       "overview": {
         "label": "Overview"
@@ -209,7 +209,7 @@
     "skipped_step": "Skipped"
   },
   "onboarding": {
-    "page_title": "Welcome to AIO Pulse",
+    "page_title": "Welcome to AEO Pulse",
     "page_subtitle": "Set up your first brand in just a few steps",
     "steps": {
       "welcome": "Welcome",
@@ -218,7 +218,7 @@
       "launch": "Launch"
     },
     "welcome_screen": {
-      "title": "Welcome to AIO Pulse",
+      "title": "Welcome to AEO Pulse",
       "subtitle": "Let's set up your first brand for AI visibility monitoring. This takes about 2 minutes.",
       "add_brand": "Add your brand",
       "add_brand_desc": "Name, domain, competitors",
@@ -331,7 +331,7 @@
     },
     "journey_guide": {
       "title": "Add the brand you want to track",
-      "lead": "A brand is who you're monitoring. AIO Pulse will ask AI engines questions about it to measure your visibility.",
+      "lead": "A brand is who you're monitoring. AEO Pulse will ask AI engines questions about it to measure your visibility.",
       "steps": {
         "click_new_brand": "Click \"New Brand\"",
         "click_new_brand_desc": "Top-right button on this page.",
@@ -380,7 +380,7 @@
     },
     "white_label": {
       "title": "White-label Report Settings",
-      "subtitle": "Customize how your brand appears in PDF reports. Leave empty to use default AIO Pulse branding.",
+      "subtitle": "Customize how your brand appears in PDF reports. Leave empty to use default AEO Pulse branding.",
       "report_brand_name": "Report Brand Name",
       "report_brand_name_placeholder": "Your Company Name",
       "primary_color": "Primary Color (Hex)",
@@ -1403,7 +1403,7 @@
       }
     },
     "capabilities": {
-      "title": "Powered by AIO Pulse",
+      "title": "Powered by AEO Pulse",
       "subtitle": "Three integrated engines that work together to give you complete AI visibility intelligence — from citation tracking to health monitoring.",
       "items": {
         "aeo": {
@@ -1422,7 +1422,7 @@
     },
     "industries": {
       "title": "Trusted across industries",
-      "subtitle": "From agencies optimizing multi-brand portfolios to enterprises protecting their AI reputation — AIO Pulse delivers actionable visibility data for every sector.",
+      "subtitle": "From agencies optimizing multi-brand portfolios to enterprises protecting their AI reputation — AEO Pulse delivers actionable visibility data for every sector.",
       "labels": {
         "travel": "Travel",
         "ecommerce": "Ecommerce",
@@ -1494,7 +1494,7 @@
     "back_to_home": "Back to Home",
     "hub": {
       "title": "Trust Center",
-      "subtitle": "AIO Pulse is built with security and compliance at its core. Here you will find everything you need to evaluate our security posture.",
+      "subtitle": "AEO Pulse is built with security and compliance at its core. Here you will find everything you need to evaluate our security posture.",
       "compliance_status": "Compliance Status",
       "security_practices": "Security Practices",
       "sub_processors": "Sub-Processors",
@@ -1507,19 +1507,19 @@
     },
     "security": {
       "title": "Security Practices",
-      "subtitle": "A detailed overview of the security controls and practices implemented across AIO Pulse. Our security posture is reviewed quarterly and audited annually."
+      "subtitle": "A detailed overview of the security controls and practices implemented across AEO Pulse. Our security posture is reviewed quarterly and audited annually."
     },
     "dpa": {
       "title": "Data Processing Agreement",
-      "subtitle": "This Data Processing Agreement (DPA) governs the processing of personal data by AIO Pulse on behalf of its customers, in compliance with the EU General Data Protection Regulation (GDPR)."
+      "subtitle": "This Data Processing Agreement (DPA) governs the processing of personal data by AEO Pulse on behalf of its customers, in compliance with the EU General Data Protection Regulation (GDPR)."
     },
     "gdpr": {
       "title": "Your GDPR Rights",
-      "subtitle": "Under the General Data Protection Regulation (GDPR), you have specific rights regarding your personal data. AIO Pulse provides self-serve tools to exercise these rights directly from your dashboard."
+      "subtitle": "Under the General Data Protection Regulation (GDPR), you have specific rights regarding your personal data. AEO Pulse provides self-serve tools to exercise these rights directly from your dashboard."
     },
     "sub_processors": {
       "title": "Sub-Processors",
-      "subtitle": "AIO Pulse engages the following third-party sub-processors to deliver our service. All sub-processors are bound by Data Processing Agreements (DPAs) that comply with GDPR Article 28."
+      "subtitle": "AEO Pulse engages the following third-party sub-processors to deliver our service. All sub-processors are bound by Data Processing Agreements (DPAs) that comply with GDPR Article 28."
     }
   },
   "auth_pages": {
@@ -1550,7 +1550,7 @@
     },
     "register": {
       "title": "Create your account",
-      "subtitle": "Get started with AIO Pulse",
+      "subtitle": "Get started with AEO Pulse",
       "full_name_label": "Full Name",
       "full_name_placeholder": "Your Name",
       "email_label": "Email",
@@ -1580,7 +1580,7 @@
   "docs_ui": {
     "back_home": "Back to Home",
     "title": "Documentation",
-    "subtitle": "Everything you need to know about using AIO Pulse.",
+    "subtitle": "Everything you need to know about using AEO Pulse.",
     "search_placeholder": "Search documentation...",
     "result_singular": "{count} result found",
     "result_plural": "{count} results found",

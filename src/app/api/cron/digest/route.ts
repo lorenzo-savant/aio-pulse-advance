@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const fromEmail = process.env['RESEND_FROM_EMAIL'] || 'AIO Pulse <onboarding@resend.dev>'
+  const fromEmail = process.env['RESEND_FROM_EMAIL'] || 'AEO Pulse <onboarding@resend.dev>'
 
   if (!process.env.RESEND_API_KEY) {
     logger.warn('RESEND_API_KEY not set, skipping digest', { source: 'digest' })
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AIO Pulse Weekly Digest</title>
+  <title>AEO Pulse Weekly Digest</title>
 </head>
 <body style="margin:0;padding:0;background:#080d18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
         <div style="width:32px;height:32px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;">
           <span style="color:white;font-size:16px;font-weight:900;">A</span>
         </div>
-        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AIO Pulse</span>
+        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AEO Pulse</span>
       </div>
       <p style="color:#64748b;font-size:13px;margin:0;">AI Search Visibility Platform</p>
     </div>
@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
     <!-- Footer -->
     <div style="margin-top:40px;padding-top:20px;border-top:1px solid #1f2937;text-align:center;">
       <p style="color:#64748b;font-size:12px;margin:0;">
-        Sent by <a href="${process.env['NEXT_PUBLIC_APP_URL'] || 'https://aio-pulse.com'}" style="color:#6366f1;">AIO Pulse</a>
+        Sent by <a href="${process.env['NEXT_PUBLIC_APP_URL'] || 'https://aio-pulse.com'}" style="color:#6366f1;">AEO Pulse</a>
       </p>
       <p style="color:#475569;font-size:11px;margin:8px 0 0 0;">
         Manage your alert preferences in Settings
@@ -223,7 +223,7 @@ export async function POST(req: NextRequest) {
         await resend.emails.send({
           from: fromEmail,
           to: userEmail,
-          subject: `📊 AIO Pulse Weekly Digest — ${fromDate} to ${toDate}`,
+          subject: `📊 AEO Pulse Weekly Digest — ${fromDate} to ${toDate}`,
           html,
         })
         sentCount++

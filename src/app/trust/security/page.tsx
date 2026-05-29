@@ -19,8 +19,8 @@ import { Ornament } from '@/components/Ornament'
 import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
-  title: 'Security Practices — AIO Pulse Trust Center',
-  description: 'Detailed security practices and controls implemented by AIO Pulse.',
+  title: 'Security Practices — AEO Pulse Trust Center',
+  description: 'Detailed security practices and controls implemented by AEO Pulse.',
 }
 
 const practices = [
@@ -36,7 +36,7 @@ const practices = [
     title: 'Encryption in Transit',
     status: 'Active',
     detail:
-      "All communications between clients and AIO Pulse are encrypted using TLS 1.3 via Vercel's edge network. HSTS is enforced. No data is transmitted over unencrypted channels.",
+      "All communications between clients and AEO Pulse are encrypted using TLS 1.3 via Vercel's edge network. HSTS is enforced. No data is transmitted over unencrypted channels.",
   },
   {
     icon: Key,
@@ -164,7 +164,7 @@ export default async function SecurityPage() {
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="mb-3 text-lg font-semibold">Responsible Disclosure</h2>
           <p className="text-sm text-muted-foreground">
-            If you discover a security vulnerability in AIO Pulse, please report it responsibly to{' '}
+            If you discover a security vulnerability in AEO Pulse, please report it responsibly to{' '}
             <a href="mailto:security@aio-pulse.com" className="text-primary underline">
               security@aio-pulse.com
             </a>

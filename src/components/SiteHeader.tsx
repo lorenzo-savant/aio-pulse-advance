@@ -74,7 +74,7 @@ export function SiteHeader({
           scrolled ? 'py-2.5' : 'py-4',
         )}
       >
-        <Link href="/" aria-label="AIO Pulse" className="shrink-0">
+        <Link href="/" aria-label="AEO Pulse" className="shrink-0">
           <AioLogo size={scrolled ? 32 : 36} />
         </Link>
 

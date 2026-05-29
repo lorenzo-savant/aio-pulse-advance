@@ -5,7 +5,7 @@ export interface GlossaryTerm {
   category: string
   trademark: boolean
   // Source / attribution fields are optional — entries originating from the
-  // upstream CC BY 4.0 glossary carry them; AIO-Pulse-local terms don't need to.
+  // upstream CC BY 4.0 glossary carry them; AEO-Pulse-local terms don't need to.
   authorUrl?: string
   organizationUrl?: string
   mediaUrl?: string

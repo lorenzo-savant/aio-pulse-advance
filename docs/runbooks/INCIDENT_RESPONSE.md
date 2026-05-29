@@ -1,4 +1,4 @@
-# Incident Response — AIO Pulse
+# Incident Response — AEO Pulse
 
 > Production is broken. This document gets you from "alert fires" to
 > "incident resolved + post-mortem written" without thinking. Don't deviate

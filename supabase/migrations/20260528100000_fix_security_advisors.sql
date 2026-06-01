@@ -68,16 +68,21 @@ do $$ begin
 end $$;
 
 -- ─── 2. Explicit deny-by-default policies (intent over absence) ──────────────
--- to_regclass guards prevent the ::regclass cast from throwing on a DB that
--- lacks the table.
+-- IMPORTANT: use to_regclass() for the policy-existence lookup too, NOT a
+-- 'public.X'::regclass literal cast. A literal ::regclass is constant-folded
+-- at PLAN time (before the enclosing IF can short-circuit), so it throws
+-- "relation does not exist" on a DB lacking the table even when the guard is
+-- false. to_regclass() returns NULL instead. (These CRM tables —
+-- knowledge_chunks/plans/scrape_jobs — live in savantdatabas, not AEO Pulse.)
 
 -- knowledge_chunks: RAG/embedding storage, only service-role reads/writes
-do $$ begin
-  if to_regclass('public.knowledge_chunks') is not null
+do $$
+declare rel oid := to_regclass('public.knowledge_chunks');
+begin
+  if rel is not null
      and not exists (
        select 1 from pg_policy
-       where polrelid = 'public.knowledge_chunks'::regclass
-         and polname = 'knowledge_chunks_service_only'
+       where polrelid = rel and polname = 'knowledge_chunks_service_only'
      ) then
     create policy knowledge_chunks_service_only
       on public.knowledge_chunks
@@ -86,18 +91,18 @@ do $$ begin
 end $$;
 
 -- plans: pricing tier reference table, readable by anyone (anonymous + logged-in)
-do $$ begin
-  if to_regclass('public.plans') is not null then
+do $$
+declare rel oid := to_regclass('public.plans');
+begin
+  if rel is not null then
     if not exists (
-      select 1 from pg_policy
-      where polrelid = 'public.plans'::regclass and polname = 'plans_public_read'
+      select 1 from pg_policy where polrelid = rel and polname = 'plans_public_read'
     ) then
       create policy plans_public_read
         on public.plans for select to anon, authenticated using (true);
     end if;
     if not exists (
-      select 1 from pg_policy
-      where polrelid = 'public.plans'::regclass and polname = 'plans_service_write'
+      select 1 from pg_policy where polrelid = rel and polname = 'plans_service_write'
     ) then
       create policy plans_service_write
         on public.plans for all to service_role using (true) with check (true);
@@ -106,12 +111,13 @@ do $$ begin
 end $$;
 
 -- scrape_jobs: background queue, only the worker (service-role) touches them
-do $$ begin
-  if to_regclass('public.scrape_jobs') is not null
+do $$
+declare rel oid := to_regclass('public.scrape_jobs');
+begin
+  if rel is not null
      and not exists (
        select 1 from pg_policy
-       where polrelid = 'public.scrape_jobs'::regclass
-         and polname = 'scrape_jobs_service_only'
+       where polrelid = rel and polname = 'scrape_jobs_service_only'
      ) then
     create policy scrape_jobs_service_only
       on public.scrape_jobs

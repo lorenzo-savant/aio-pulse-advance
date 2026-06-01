@@ -69,6 +69,24 @@ export async function POST(req: NextRequest) {
 
     // Default path — single snapshot per brand for today.
     const report = await precomputeAllGeoSnapshots()
+
+    // Migration not yet applied: respond 200 (the cron ran correctly; there's
+    // simply nothing to do yet) with a clear flag, so uptime/alerting doesn't
+    // treat a pending migration as a failing cron.
+    if (report.migrationPending) {
+      logger.warn('GEO analysis cron: snapshots table missing, run skipped', {
+        service: 'cron-geo-analysis',
+      })
+      return NextResponse.json({
+        success: true,
+        mode: 'skipped',
+        reason: 'migration_pending',
+        message:
+          'geo_score_snapshots table not found — apply migration 20260529000000 to enable GEO snapshots.',
+        durationMs: Date.now() - startedAt,
+      })
+    }
+
     return NextResponse.json({
       success: true,
       mode: 'snapshot',

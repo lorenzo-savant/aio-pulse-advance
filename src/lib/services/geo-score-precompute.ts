@@ -53,6 +53,13 @@ export interface PrecomputeRunReport {
   alertsDispatched: number
   snapshots: SnapshotResult[]
   errors: Array<{ brandId: string; error: string }>
+  /**
+   * True when the geo_score_snapshots table is absent on this DB (migration
+   * 20260529000000 not yet applied). The run is a no-op rather than a
+   * per-brand failure storm — the cron returns cleanly so logs/alerts stay
+   * quiet until the migration lands. See geoSnapshotsTableExists.
+   */
+  migrationPending?: boolean
 }
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
@@ -360,6 +367,35 @@ export async function precomputeGeoSnapshotForBrand(
   }
 }
 
+// ─── Migration preflight ──────────────────────────────────────────────────────
+//
+// The geo-analysis cron is scheduled in vercel.json but the target table
+// (geo_score_snapshots, migration 20260529000000) may not yet be applied on a
+// drifted prod DB. Probing once up front lets the run degrade to a clean no-op
+// instead of failing on the upsert for EVERY brand (a log/alert storm that
+// looks like a broken cron when it's really just a pending migration).
+
+export async function geoSnapshotsTableExists(
+  db: NonNullable<ReturnType<typeof createServerClient>>,
+): Promise<boolean> {
+  // HEAD select is the cheapest existence probe; we only care about the error
+  // code, not the rows. Postgres 42P01 = undefined_table; PostgREST surfaces a
+  // missing table as PGRST205 / a message mentioning the relation.
+  const { error } = await (db as any)
+    .from('geo_score_snapshots')
+    .select('id', { count: 'exact', head: true })
+    .limit(1)
+  if (!error) return true
+  const code = (error.code as string) || ''
+  const msg = (error.message as string) || ''
+  if (code === '42P01' || code === 'PGRST205' || /geo_score_snapshots/i.test(msg)) {
+    return false
+  }
+  // Unknown error (permissions, transient) — assume present and let the normal
+  // path surface the real error rather than silently skipping the run.
+  return true
+}
+
 // ─── All-brands path ─────────────────────────────────────────────────────────
 
 export async function precomputeAllGeoSnapshots(
@@ -374,6 +410,23 @@ export async function precomputeAllGeoSnapshots(
       alertsDispatched: 0,
       snapshots: [],
       errors: [{ brandId: '*', error: 'Database not configured' }],
+    }
+  }
+
+  // Preflight: bail cleanly if the snapshots table isn't there yet.
+  if (!(await geoSnapshotsTableExists(db))) {
+    logger.warn('GEO precompute skipped — geo_score_snapshots table missing', {
+      service: 'geo-precompute',
+      hint: 'Apply migration 20260529000000_add_geo_score_snapshots.sql to this database.',
+    })
+    return {
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      alertsDispatched: 0,
+      snapshots: [],
+      errors: [],
+      migrationPending: true,
     }
   }
 

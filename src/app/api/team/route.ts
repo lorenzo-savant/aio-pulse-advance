@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
   // Verify user owns the brand
   const { data: brand } = await db
     .from('brands')
-    .select('id, name, user_id')
+    .select('id, name, user_id, language')
     .eq('id', brand_id)
     .single()
 
@@ -233,23 +233,33 @@ export async function POST(req: NextRequest) {
     // non-critical
   }
 
-  try {
-    await sendInvitationEmail({
-      to: email,
-      brandName: brand?.name || 'AEO Pulse',
-      inviterName: inviterDisplayName,
-      role: invitation?.role || role,
-      acceptUrl,
+  const emailResult = await sendInvitationEmail({
+    to: email,
+    brandName: brand?.name || 'AEO Pulse',
+    inviterName: inviterDisplayName,
+    role: invitation?.role || role,
+    acceptUrl,
+    lang: (brand as { language?: string | null })?.language ?? undefined,
+  })
+
+  // The invitation row IS created regardless (so it shows under "pending" and
+  // the link works), but we must NOT claim the email was sent when Resend
+  // rejected it — otherwise a misconfigured sender domain looks like success.
+  if (!emailResult.success) {
+    logger.error('Invitation email failed', { source: 'team', email, error: emailResult.error })
+    return NextResponse.json({
+      success: true,
+      data: invitation,
+      emailSent: false,
+      message: `Invitation created, but the email could not be sent: ${emailResult.error}. The invite link is still valid — you can copy it from the pending list or resend once email is configured.`,
     })
-    logger.info('Invitation sent', { source: 'team', email })
-  } catch (emailErr) {
-    logger.error('Email error', { source: 'team', error: String(emailErr) })
-    // Don't fail the request if email fails
   }
 
+  logger.info('Invitation sent', { source: 'team', email })
   return NextResponse.json({
     success: true,
     data: invitation,
+    emailSent: true,
     message: `Invitation sent to ${email}`,
   })
 }

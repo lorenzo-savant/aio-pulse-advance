@@ -46,7 +46,11 @@
     --secondary: var(--surface-100);
     --secondary-foreground: var(--surface-800);
     --muted: var(--surface-100);
-    --muted-foreground: var(--surface-500); /* #A3AED0 */
+    /* Secondary text (labels, placeholders, "remember me", subtitles). Was
+       surface-500 (oklch 0.57) which sits below WCAG AA contrast on the white
+       card — the auth forms read as washed-out grey. Darkened to ~0.46 for a
+       legible ~4.7:1 against #FFF while keeping the cool brand tint. */
+    --muted-foreground: 0.46 0.02 235;
     --accent: var(--surface-100);
     --accent-foreground: var(--surface-800);
     --destructive: 0.55 0.22 25;

@@ -2,6 +2,7 @@ import type { AlertEvent, AlertRule, Brand, MonitoringResult } from '@/types'
 import { Resend } from 'resend'
 import { deliverWebhook, buildWebhookPayload } from './webhook-delivery'
 import { logger } from '@/lib/logger'
+import { renderAlertEmail, normalizeLang } from './email-templates'
 
 // Lazy init — Resend constructor throws when called with undefined/placeholder.
 // Keeping this lazy means modules that import alerts.ts (e.g. /api/monitoring)
@@ -42,12 +43,25 @@ async function sendEmail(payload: EmailPayload): Promise<boolean> {
   }
 
   try {
-    await resend.emails.send({
+    // Resend surfaces failures in result.error (it does not throw), so check
+    // it explicitly — otherwise a rejected send (unverified domain, etc.)
+    // looks like success and the alert is silently lost.
+    const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: payload.to,
       subject: payload.subject,
       html: payload.html,
     })
+    if ((result as { error?: { message?: string } | null }).error) {
+      const msg =
+        (result as { error?: { message?: string } | null }).error?.message || 'unknown error'
+      logger.error('Alert email rejected by Resend', {
+        service: 'alerts',
+        to: payload.to,
+        error: msg,
+      })
+      return false
+    }
     return true
   } catch (error) {
     logger.error('Resend email error', { service: 'alerts', error })
@@ -56,95 +70,21 @@ async function sendEmail(payload: EmailPayload): Promise<boolean> {
 }
 
 // ─── Email template ───────────────────────────────────────────────────────────
+// Delegates to the shared brand-coherent template (light theme, teal wordmark,
+// sv/it/en) keyed on the brand's language. Returns subject + html so the
+// dispatcher uses one localized subject too.
 
-function buildAlertEmail(event: AlertEvent, brand: Brand): string {
-  const from = process.env['NEXT_PUBLIC_APP_URL'] ?? 'https://aio-pulse.com'
-  const typeEmoji: Record<string, string> = {
-    mention_new: '🎯',
-    mention_lost: '⚠️',
-    sentiment_drop: '📉',
-    sentiment_spike: '📈',
-    competitor_ahead: '🏆',
-    hallucination: '🚨',
-    visibility_change: '👁️',
-  }
-  const emoji = typeEmoji[event.type] ?? '🔔'
-  const severityColor: Record<string, string> = {
-    mention_new: '#10b981',
-    mention_lost: '#f59e0b',
-    sentiment_drop: '#ef4444',
-    sentiment_spike: '#10b981',
-    competitor_ahead: '#f59e0b',
-    hallucination: '#ef4444',
-    visibility_change: '#6366f1',
-  }
-  const color = severityColor[event.type] ?? '#6366f1'
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AEO Pulse Alert</title>
-</head>
-<body style="margin:0;padding:0;background:#080d18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
-
-    <!-- Header -->
-    <div style="margin-bottom:32px;">
-      <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <div style="width:32px;height:32px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-          <span style="color:white;font-size:16px;font-weight:900;">A</span>
-        </div>
-        <span style="color:#e2e8f0;font-size:18px;font-weight:700;">AEO Pulse</span>
-      </div>
-      <p style="color:#64748b;font-size:13px;margin:0;">AI Search Visibility Platform</p>
-    </div>
-
-    <!-- Alert Card -->
-    <div style="background:#0f172a;border:1px solid ${color}40;border-radius:16px;padding:28px;margin-bottom:24px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-        <span style="font-size:28px;">${emoji}</span>
-        <div>
-          <p style="margin:0;font-size:11px;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;color:${color};">
-            ${event.type.replace(/_/g, ' ')}
-          </p>
-          <h1 style="margin:4px 0 0;font-size:22px;font-weight:900;color:#f1f5f9;line-height:1.2;">
-            ${event.title}
-          </h1>
-        </div>
-      </div>
-
-      <p style="color:#94a3b8;font-size:15px;line-height:1.6;margin:0 0 20px;">
-        ${event.message}
-      </p>
-
-      <!-- Brand pill -->
-      <div style="display:inline-flex;align-items:center;gap:8px;background:${brand.color}15;border:1px solid ${brand.color}30;border-radius:999px;padding:6px 14px;">
-        <div style="width:8px;height:8px;border-radius:50%;background:${brand.color};"></div>
-        <span style="color:${brand.color};font-size:13px;font-weight:700;">${brand.name}</span>
-      </div>
-    </div>
-
-    <!-- CTA -->
-    <div style="text-align:center;margin-bottom:32px;">
-      <a href="${from}/dashboard/monitoring" style="display:inline-block;background:#6366f1;color:white;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:700;font-size:15px;">
-        View in Dashboard →
-      </a>
-    </div>
-
-    <!-- Footer -->
-    <div style="border-top:1px solid #1e293b;padding-top:20px;text-align:center;">
-      <p style="color:#475569;font-size:12px;margin:0 0 8px;">
-        You received this alert because you set up monitoring for <strong style="color:#64748b;">${brand.name}</strong>.
-      </p>
-      <a href="${from}/dashboard/alerts" style="color:#6366f1;font-size:12px;text-decoration:none;">
-        Manage alert settings
-      </a>
-    </div>
-  </div>
-</body>
-</html>`
+function buildAlertEmail(event: AlertEvent, brand: Brand): { subject: string; html: string } {
+  const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'https://aeo-pulse.savantmedia.se'
+  return renderAlertEmail({
+    lang: normalizeLang((brand as { language?: string | null }).language),
+    brandName: brand.name,
+    alertType: event.type,
+    title: event.title,
+    message: event.message,
+    data: event.data as Record<string, unknown> | undefined,
+    appUrl,
+  })
 }
 
 // ─── Webhook sender (with HMAC signing, retry, and delivery logging) ─────────
@@ -174,11 +114,8 @@ export async function dispatchAlert(
 
   // Email
   if (rule.channels.includes('email') && rule.email) {
-    const sent = await sendEmail({
-      to: rule.email,
-      subject: `${event.title} — AEO Pulse Alert`,
-      html: buildAlertEmail(event, brand),
-    })
+    const { subject, html } = buildAlertEmail(event, brand)
+    const sent = await sendEmail({ to: rule.email, subject, html })
     if (sent) channelsSent.push('email')
   }
 

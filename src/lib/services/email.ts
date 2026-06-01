@@ -1,6 +1,12 @@
 // PATH: src/lib/services/email.ts
 import { Resend } from 'resend'
 import { logger } from '@/lib/logger'
+import {
+  renderInvitationEmail,
+  renderAlertEmail,
+  normalizeLang,
+  type EmailLang,
+} from './email-templates'
 
 // Lazy init — see alerts.ts for rationale
 let _resend: Resend | null = null
@@ -30,6 +36,8 @@ interface InvitationEmailParams {
   inviterName: string
   role: string
   acceptUrl: string
+  /** Recipient language; falls back to 'en'. */
+  lang?: string
 }
 
 export async function sendInvitationEmail({
@@ -38,80 +46,37 @@ export async function sendInvitationEmail({
   inviterName,
   role,
   acceptUrl,
-}: InvitationEmailParams) {
+  lang,
+}: InvitationEmailParams): Promise<{ success: boolean; error?: string }> {
   if (!process.env.RESEND_API_KEY) {
     logger.warn('Resend not configured, skipping invitation email', { service: 'email' })
     return { success: false, error: 'Resend not configured' }
   }
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; padding: 40px; }
-          .container { max-width: 600px; margin: 0 auto; background: #1e293b; border-radius: 12px; padding: 32px; }
-          .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-          .logo { width: 40px; height: 40px; background: #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
-          .title { font-size: 20px; font-weight: 600; color: white; }
-          .message { font-size: 16px; line-height: 1.6; margin-bottom: 24px; }
-          .details { background: #0f172a; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
-          .detail-row { padding: 8px 0; border-bottom: 1px solid #334155; }
-          .detail-row:last-child { border-bottom: none; }
-          .detail-label { color: #94a3b8; }
-          .detail-value { color: #e2e8f0; font-weight: 500; }
-          .button { display: inline-block; background: #6366f1; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500; margin-bottom: 24px; }
-          .footer { text-align: center; color: #64748b; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">A</div>
-            <div class="title">Team Invitation</div>
-          </div>
-          
-          <p class="message">You've been invited to join <strong>${brandName}</strong> on AEO Pulse.</p>
-          
-          <div class="details">
-            <div class="detail-row">
-              <span class="detail-label">Invited by:</span>
-              <span class="detail-value">${inviterName}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Role:</span>
-              <span class="detail-value">${role}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Brand:</span>
-              <span class="detail-value">${brandName}</span>
-            </div>
-          </div>
-          
-          <div style="text-align: center;">
-            <a href="${acceptUrl}" class="button">Accept Invitation</a>
-          </div>
-          
-          <div class="footer">
-            <p>AEO Pulse - AI-Powered Brand Monitoring</p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `
+  const language: EmailLang = normalizeLang(lang)
+  const { subject, html } = renderInvitationEmail({
+    lang: language,
+    brandName,
+    inviterName,
+    role,
+    acceptUrl,
+  })
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to,
-      subject: `You've been invited to join ${brandName} on AEO Pulse`,
-      html,
-    })
+    // Resend returns errors in `result.error` (it does NOT throw on a rejected
+    // send), so a try/catch alone silently swallows e.g. "domain not verified"
+    // or "you can only send to your own address". Check the field explicitly.
+    const result = await resend.emails.send({ from: FROM_EMAIL, to, subject, html })
+    if (result.error) {
+      const msg = result.error.message || String(result.error)
+      logger.error('Invitation email rejected by Resend', { service: 'email', to, error: msg })
+      return { success: false, error: msg }
+    }
     return { success: true }
   } catch (error) {
-    logger.error('Error sending invitation email', { service: 'email', error })
-    return { success: false, error }
+    const msg = error instanceof Error ? error.message : String(error)
+    logger.error('Error sending invitation email', { service: 'email', to, error: msg })
+    return { success: false, error: msg }
   }
 }
 
@@ -122,6 +87,8 @@ interface AlertEmailParams {
   title: string
   message: string
   data?: Record<string, unknown>
+  /** Recipient language; falls back to 'en'. */
+  lang?: string
 }
 
 export async function sendAlertEmail({
@@ -131,118 +98,37 @@ export async function sendAlertEmail({
   title,
   message,
   data,
-}: AlertEmailParams) {
+  lang,
+}: AlertEmailParams): Promise<{ success: boolean; error?: string }> {
   if (!process.env.RESEND_API_KEY) {
     logger.warn('Resend not configured, skipping alert email', { service: 'email' })
     return { success: false, error: 'Resend not configured' }
   }
 
-  const alertTypeLabels: Record<string, string> = {
-    mention_new: 'New Mention',
-    mention_lost: 'Mention Lost',
-    sentiment_drop: 'Sentiment Drop',
-    sentiment_spike: 'Positive Spike',
-    competitor_ahead: 'Competitor Leading',
-    hallucination: 'Hallucination Detected',
-    visibility_change: 'Visibility Change',
-  }
-
-  const subject = `[AEO Pulse] ${alertTypeLabels[alertType] || alertType}: ${brandName}`
-
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; padding: 40px; }
-          .container { max-width: 600px; margin: 0 auto; background: #1e293b; border-radius: 12px; padding: 32px; }
-          .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-          .logo { width: 40px; height: 40px; background: #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
-          .title { font-size: 20px; font-weight: 600; color: white; }
-          .alert-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
-          .alert-mention { background: #10b98120; color: #10b981; }
-          .alert-danger { background: #ef444420; color: #ef4444; }
-          .alert-warning { background: #f59e0b20; color: #f59e0b; }
-          .alert-info { background: #3b82f620; color: #3b82f6; }
-          .message { font-size: 16px; line-height: 1.6; margin-bottom: 24px; }
-          .data { background: #0f172a; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
-          .data-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #334155; }
-          .data-row:last-child { border-bottom: none; }
-          .data-label { color: #94a3b8; }
-          .data-value { color: #e2e8f0; font-weight: 500; }
-          .footer { text-align: center; color: #64748b; font-size: 12px; margin-top: 24px; }
-          .button { display: inline-block; background: #6366f1; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">A</div>
-            <div class="title">AEO Pulse Alert</div>
-          </div>
-          
-          <span class="alert-badge ${getAlertBadgeClass(alertType)}">${alertTypeLabels[alertType] || alertType}</span>
-          
-          <h2 style="color: white; margin-bottom: 16px;">${title}</h2>
-          
-          <p class="message">${message}</p>
-          
-          ${
-            data
-              ? `
-          <div class="data">
-            ${Object.entries(data)
-              .map(
-                ([key, value]) => `
-              <div class="data-row">
-                <span class="data-label">${formatLabel(key)}</span>
-                <span class="data-value">${String(value)}</span>
-              </div>
-            `,
-              )
-              .join('')}
-          </div>
-          `
-              : ''
-          }
-          
-          <div style="text-align: center;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/alerts" class="button">View in Dashboard</a>
-          </div>
-          
-          <div class="footer">
-            <p>You're receiving this because you have an active alert rule for ${brandName}.</p>
-            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/settings" style="color: #6366f1;">Manage alerts</a></p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const { subject, html } = renderAlertEmail({
+    lang: normalizeLang(lang),
+    brandName,
+    alertType,
+    title,
+    message,
+    data,
+    appUrl,
+  })
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to,
-      subject,
-      html,
-    })
+    const result = await resend.emails.send({ from: FROM_EMAIL, to, subject, html })
+    if (result.error) {
+      const msg = result.error.message || String(result.error)
+      logger.error('Alert email rejected by Resend', { service: 'email', to, error: msg })
+      return { success: false, error: msg }
+    }
     return { success: true }
   } catch (error) {
-    logger.error('Error sending alert email', { service: 'email', error })
-    return { success: false, error }
+    const msg = error instanceof Error ? error.message : String(error)
+    logger.error('Error sending alert email', { service: 'email', to, error: msg })
+    return { success: false, error: msg }
   }
-}
-
-function getAlertBadgeClass(alertType: string): string {
-  if (['mention_new', 'sentiment_spike'].includes(alertType)) return 'alert-mention'
-  if (['sentiment_drop', 'hallucination', 'mention_lost'].includes(alertType)) return 'alert-danger'
-  if (['competitor_ahead', 'visibility_change'].includes(alertType)) return 'alert-warning'
-  return 'alert-info'
-}
-
-function formatLabel(key: string): string {
-  return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
 }
 
 interface WelcomeEmailParams {

@@ -15,107 +15,130 @@
 -- 3) Trigger function set_senast_andrad() has a mutable search_path —
 --    fixable by binding search_path with `SET` so a malicious user can't
 --    shadow `now()` via a temp schema search trick.
+--
+-- CROSS-PROJECT SAFETY (2026-06-01): the objects below originate from the
+-- savantdatabas CRM project (companies/contacts/knowledge_chunks/plans/
+-- scrape_jobs/set_senast_andrad). This repo's `origin` fans out to multiple
+-- Supabase DBs (incl. AEO Pulse "aio advance", which has NONE of these
+-- tables). Every statement is now guarded by to_regclass so the migration is
+-- a clean no-op where a target object is absent, instead of aborting the whole
+-- `supabase db push` on `relation "public.companies" does not exist` and
+-- blocking later migrations (e.g. geo_score_snapshots).
 
 -- ─── 1. Views: SECURITY DEFINER → SECURITY INVOKER ────────────────────────────
+-- Only (re)create where the base tables exist.
 
-drop view if exists public.companies_active;
-create view public.companies_active
-  with (security_invoker = true) as
-select
-  id,
-  schema_version,
-  organisationsnummer,
-  domain,
-  foretagsnamn,
-  bolagsnamn,
-  antal_anstallda,
-  storlek_kategori,
-  storlek_manuell,
-  adress_gata,
-  postnummer,
-  stad,
-  region,
-  land,
-  reception_telefon,
-  email_info,
-  sok_fler_kontakter,
-  interna_anteckningar,
-  arkiverad,
-  arkiverad_datum,
-  arkiverad_av,
-  license_label,
-  skapad_datum,
-  senast_andrad
-from public.companies
-where not arkiverad;
+do $$ begin
+  if to_regclass('public.companies') is not null then
+    execute 'drop view if exists public.companies_active';
+    execute $v$
+      create view public.companies_active
+        with (security_invoker = true) as
+      select
+        id, schema_version, organisationsnummer, domain, foretagsnamn,
+        bolagsnamn, antal_anstallda, storlek_kategori, storlek_manuell,
+        adress_gata, postnummer, stad, region, land, reception_telefon,
+        email_info, sok_fler_kontakter, interna_anteckningar, arkiverad,
+        arkiverad_datum, arkiverad_av, license_label, skapad_datum, senast_andrad
+      from public.companies
+      where not arkiverad
+    $v$;
+  else
+    raise notice 'skip companies_active: public.companies not present';
+  end if;
 
-drop view if exists public.companies_verification_summary;
-create view public.companies_verification_summary
-  with (security_invoker = true) as
-select
-  c.id as company_id,
-  count(k.id) as kontakter_total,
-  count(k.id) filter (where k.verifierad) as kontakter_verifierade,
-  bool_or(k.verifierad) as har_verifierad_kontakt
-from public.companies c
-  left join public.contacts k on k.company_id = c.id
-group by c.id;
+  if to_regclass('public.companies') is not null
+     and to_regclass('public.contacts') is not null then
+    execute 'drop view if exists public.companies_verification_summary';
+    execute $v$
+      create view public.companies_verification_summary
+        with (security_invoker = true) as
+      select
+        c.id as company_id,
+        count(k.id) as kontakter_total,
+        count(k.id) filter (where k.verifierad) as kontakter_verifierade,
+        bool_or(k.verifierad) as har_verifierad_kontakt
+      from public.companies c
+        left join public.contacts k on k.company_id = c.id
+      group by c.id
+    $v$;
+  else
+    raise notice 'skip companies_verification_summary: companies/contacts not present';
+  end if;
+end $$;
 
 -- ─── 2. Explicit deny-by-default policies (intent over absence) ──────────────
+-- to_regclass guards prevent the ::regclass cast from throwing on a DB that
+-- lacks the table.
 
 -- knowledge_chunks: RAG/embedding storage, only service-role reads/writes
 do $$ begin
-  if not exists (select 1 from pg_policy where polrelid = 'public.knowledge_chunks'::regclass and polname = 'knowledge_chunks_service_only') then
+  if to_regclass('public.knowledge_chunks') is not null
+     and not exists (
+       select 1 from pg_policy
+       where polrelid = 'public.knowledge_chunks'::regclass
+         and polname = 'knowledge_chunks_service_only'
+     ) then
     create policy knowledge_chunks_service_only
       on public.knowledge_chunks
-      for all
-      to service_role
-      using (true)
-      with check (true);
+      for all to service_role using (true) with check (true);
   end if;
 end $$;
 
 -- plans: pricing tier reference table, readable by anyone (anonymous + logged-in)
 do $$ begin
-  if not exists (select 1 from pg_policy where polrelid = 'public.plans'::regclass and polname = 'plans_public_read') then
-    create policy plans_public_read
-      on public.plans
-      for select
-      to anon, authenticated
-      using (true);
-  end if;
-  if not exists (select 1 from pg_policy where polrelid = 'public.plans'::regclass and polname = 'plans_service_write') then
-    create policy plans_service_write
-      on public.plans
-      for all
-      to service_role
-      using (true)
-      with check (true);
+  if to_regclass('public.plans') is not null then
+    if not exists (
+      select 1 from pg_policy
+      where polrelid = 'public.plans'::regclass and polname = 'plans_public_read'
+    ) then
+      create policy plans_public_read
+        on public.plans for select to anon, authenticated using (true);
+    end if;
+    if not exists (
+      select 1 from pg_policy
+      where polrelid = 'public.plans'::regclass and polname = 'plans_service_write'
+    ) then
+      create policy plans_service_write
+        on public.plans for all to service_role using (true) with check (true);
+    end if;
   end if;
 end $$;
 
 -- scrape_jobs: background queue, only the worker (service-role) touches them
 do $$ begin
-  if not exists (select 1 from pg_policy where polrelid = 'public.scrape_jobs'::regclass and polname = 'scrape_jobs_service_only') then
+  if to_regclass('public.scrape_jobs') is not null
+     and not exists (
+       select 1 from pg_policy
+       where polrelid = 'public.scrape_jobs'::regclass
+         and polname = 'scrape_jobs_service_only'
+     ) then
     create policy scrape_jobs_service_only
       on public.scrape_jobs
-      for all
-      to service_role
-      using (true)
-      with check (true);
+      for all to service_role using (true) with check (true);
   end if;
 end $$;
 
 -- ─── 3. Function: pin search_path ────────────────────────────────────────────
+-- Only relevant to the CRM project that owns the companies tables. Guard on
+-- companies so we don't create an orphan CRM trigger function on AEO Pulse.
 
-create or replace function public.set_senast_andrad()
-returns trigger
-language plpgsql
-security invoker
-set search_path = public, pg_temp
-as $$
-begin
-  new.senast_andrad := now();
-  return new;
-end;
-$$;
+do $$ begin
+  if to_regclass('public.companies') is not null then
+    execute $fn$
+      create or replace function public.set_senast_andrad()
+      returns trigger
+      language plpgsql
+      security invoker
+      set search_path = public, pg_temp
+      as $body$
+      begin
+        new.senast_andrad := now();
+        return new;
+      end;
+      $body$
+    $fn$;
+  else
+    raise notice 'skip set_senast_andrad: public.companies not present';
+  end if;
+end $$;

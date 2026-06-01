@@ -73,6 +73,7 @@ export async function fetchPAAQuestions(
     },
     () =>
       withDataforseoQuota(PAA_COST_CENTS, async () => {
+        // (closure below returns PAAQuestion[]; cached only when non-empty)
         const response = await provider.execute({
           prompt: keyword,
           // The DataForSEOProvider class accepts free-form model config via a
@@ -112,5 +113,11 @@ export async function fetchPAAQuestions(
         }
         return out
       }),
+    undefined, // use the default 24h TTL for the 'paa' endpoint
+    // Don't persist empty results: an empty PAA array is usually a transient
+    // miss (DFS hiccup / box not surfaced this run), and caching it for 24h
+    // would make every retry return empty without re-hitting the API. Only
+    // cache when we actually got questions.
+    { shouldCache: (questions) => questions.length > 0 },
   ).then((all) => all.slice(0, max))
 }

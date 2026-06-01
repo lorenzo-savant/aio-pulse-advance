@@ -102,6 +102,31 @@ describe('withSerpCache', () => {
     expect(b).toBe('fresh')
   })
 
+  it('shouldCache predicate receives the result and does not alter the return value', async () => {
+    // No-DB path here, so we can't assert the write was skipped; we assert the
+    // predicate is consulted with the real result and the value still returns.
+    const shouldCache = vi.fn((r: string[]) => r.length > 0)
+
+    const empty = await withSerpCache<string[]>(
+      { provider: 'dataforseo', endpoint: 'paa', params: { keyword: 'no-box' } },
+      async () => [],
+      undefined,
+      { shouldCache },
+    )
+    expect(empty).toEqual([])
+    expect(shouldCache).toHaveBeenCalledWith([])
+    expect(shouldCache).toHaveLastReturnedWith(false)
+
+    const full = await withSerpCache<string[]>(
+      { provider: 'dataforseo', endpoint: 'paa', params: { keyword: 'has-box' } },
+      async () => ['q1', 'q2'],
+      undefined,
+      { shouldCache },
+    )
+    expect(full).toEqual(['q1', 'q2'])
+    expect(shouldCache).toHaveLastReturnedWith(true)
+  })
+
   it('upstream errors propagate AND clear the inflight entry', async () => {
     const upstream = vi.fn().mockRejectedValue(new Error('boom'))
     await expect(

@@ -179,11 +179,17 @@ async function writeCache<T>(
  * `ttlSeconds` — override the per-endpoint default. Pass 0 to bypass the
  *   db cache entirely (memory dedup still applies). Pass a negative number
  *   to also bypass memory dedup (escape hatch for forced refresh).
+ *
+ * `options.shouldCache` — predicate gating the db write. Defaults to "always
+ *   cache". Use it to AVOID persisting empty/negative results: e.g. an empty
+ *   PAA array is usually a transient miss (DFS hiccup, rate limit) and caching
+ *   it for 24h would poison every retry. Memory dedup still applies regardless.
  */
 export async function withSerpCache<T>(
   key: SerpCacheKey,
   call: () => Promise<T>,
   ttlSeconds?: number,
+  options?: { shouldCache?: (result: T) => boolean },
 ): Promise<T> {
   const ttl = ttlSeconds ?? DEFAULT_TTL_SECONDS[key.endpoint]
 
@@ -210,7 +216,8 @@ export async function withSerpCache<T>(
       }
 
       const result = await call()
-      if (ttl > 0) {
+      const shouldCache = options?.shouldCache ? options.shouldCache(result) : true
+      if (ttl > 0 && shouldCache) {
         await writeCache(key.provider, key.endpoint, queryHash, key.params, result, ttl)
       }
       return result

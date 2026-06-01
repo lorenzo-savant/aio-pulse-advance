@@ -138,15 +138,39 @@ export class DataForSEOProvider extends BaseProvider {
 
     const response = data as {
       tasks?: Array<{
+        status_code?: number
+        status_message?: string
         result?: Array<{
           se_type?: string
           items?: SerpItem[]
         }>
       }>
       status_code?: number
+      status_message?: string
     }
 
-    const taskResult = response.tasks?.[0]?.result?.[0]
+    // DataForSEO signals success at TWO levels: the top-level status_code and
+    // each task's own status_code. 20000 = "Ok". A task can fail (e.g. 40501
+    // invalid field, 40207 insufficient balance, rate limit) while the HTTP
+    // status is still 200 — without this check that surfaces as an empty
+    // result, indistinguishable from "no PAA box". Fail loudly instead so the
+    // caller can show the real cause rather than a misleading "no questions".
+    const task = response.tasks?.[0]
+    const taskStatus = task?.status_code
+    if (taskStatus != null && taskStatus !== 20000) {
+      return {
+        success: false,
+        provider: this.id,
+        error: `DataForSEO task error ${taskStatus}: ${task?.status_message || 'unknown'}`,
+        aiOverviews: [],
+        peopleAlsoAsk: [],
+        organicResults: [],
+        searchResultCount: 0,
+        latencyMs: 0,
+      }
+    }
+
+    const taskResult = task?.result?.[0]
     const items = taskResult?.items || []
 
     const aiOverviews: DataForSEOResult['aiOverviews'] = []

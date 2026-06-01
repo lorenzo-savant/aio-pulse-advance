@@ -13,7 +13,11 @@ import type { Json } from '@/types/database'
 //   - Gap detection  → Brave Search (free 2k/mo primary index)
 // See dataforseo-paa.ts + brave-search.ts for the underlying providers.
 import { fetchPAAQuestions, isDataforseoPaaAvailable, type PAAQuestion } from './dataforseo-paa'
-import { checkDomainRanksForQuestion } from './brave-search'
+import {
+  checkDomainRanksForQuestion,
+  fetchPAAQuestions as fetchBravePAAQuestions,
+  isBraveSearchAvailable,
+} from './brave-search'
 import { analyzeResponseForBrand } from './ai-router'
 import { calculateProviderCost } from './cost-calculator'
 
@@ -162,14 +166,59 @@ export async function runAEOGeneration(input: AEOSnippetInput): Promise<AEOSnipp
   const errors: string[] = []
   let costTotal = 0
 
-  // 1) Fetch PAA
+  // 1) Fetch PAA — DataForSEO first (real Google PAA box). If it errors or
+  // returns nothing, fall back to Brave's `faq` component (free tier, 8k/mo),
+  // which aggregates similar People-Also-Ask signals. This both rescues the
+  // "no PAA from Google" case and finally puts the free Brave quota to use.
   let paa: PAAQuestion[] = []
+  let paaSource: 'dataforseo' | 'brave' | null = null
+  let dfsError: string | null = null
   try {
     paa = await fetchPAAQuestions(input.keyword, language, maxQuestions)
+    if (paa.length > 0) paaSource = 'dataforseo'
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    await db.from('aeo_runs').update({ status: 'failed', error: msg }).eq('id', runId)
-    throw e
+    // A hard DFS failure (task error, balance, etc.) is NOT fatal anymore —
+    // record it and let Brave try. Only throw if Brave also can't help.
+    dfsError = e instanceof Error ? e.message : String(e)
+    logger.warn('DataForSEO PAA failed, will try Brave fallback', {
+      service: 'aeo-snippets',
+      keyword: input.keyword,
+      error: dfsError,
+    })
+  }
+
+  if (paa.length === 0 && isBraveSearchAvailable()) {
+    try {
+      const bravePaa = await fetchBravePAAQuestions(input.keyword, language, maxQuestions)
+      if (bravePaa.length > 0) {
+        paa = bravePaa
+        paaSource = 'brave'
+        logger.info('PAA recovered via Brave fallback', {
+          service: 'aeo-snippets',
+          keyword: input.keyword,
+          count: bravePaa.length,
+        })
+      }
+    } catch (e) {
+      const braveMsg = e instanceof Error ? e.message : String(e)
+      logger.warn('Brave PAA fallback also failed', {
+        service: 'aeo-snippets',
+        keyword: input.keyword,
+        error: braveMsg,
+      })
+      // If DFS threw AND Brave threw, there's no data path left — fail the run
+      // with a combined message so the operator sees both causes.
+      if (dfsError) {
+        const combined = `PAA unavailable — DataForSEO: ${dfsError}; Brave: ${braveMsg}`
+        await db.from('aeo_runs').update({ status: 'failed', error: combined }).eq('id', runId)
+        throw new Error(combined)
+      }
+    }
+  } else if (paa.length === 0 && dfsError) {
+    // DFS errored and Brave isn't configured — surface the real DFS error
+    // rather than a misleading "no questions".
+    await db.from('aeo_runs').update({ status: 'failed', error: dfsError }).eq('id', runId)
+    throw new Error(dfsError)
   }
 
   if (paa.length === 0) {
@@ -177,13 +226,16 @@ export async function runAEOGeneration(input: AEOSnippetInput): Promise<AEOSnipp
       .from('aeo_runs')
       .update({ status: 'completed', questions_count: 0, cost_credits: 0 })
       .eq('id', runId)
+    const noPaaMsg = isBraveSearchAvailable()
+      ? 'No People-Also-Ask questions found for this keyword (tried Google via DataForSEO and Brave).'
+      : 'No People-Also-Ask questions returned for this keyword.'
     return {
       runId,
       items: [],
       schemaJsonLd: buildFAQPageJsonLd([]),
       costCredits: 0,
       gapCount: 0,
-      errors: ['No PAA questions returned for this keyword'],
+      errors: [noPaaMsg],
       suggestions: suggestSeedVariations(input.keyword, language),
     }
   }
@@ -288,6 +340,7 @@ export async function runAEOGeneration(input: AEOSnippetInput): Promise<AEOSnipp
     questions: items.length,
     gaps: gapCount,
     errors: errors.length,
+    paaSource,
   })
 
   return { runId, items, schemaJsonLd, costCredits, gapCount, errors }

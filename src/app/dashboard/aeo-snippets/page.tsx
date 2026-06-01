@@ -70,6 +70,22 @@ interface DataforseoQuota {
 
 type GapFilter = 'all' | 'covered' | 'gap' | 'unknown'
 
+// Soft heuristic for the seed-quality hint (#3). Google only shows a
+// People-Also-Ask box for informational/question queries — not for brand
+// names or single words. We don't block Generate; we just nudge.
+function weakSeedHint(keyword: string, brandName?: string | null): string | null {
+  const k = keyword.trim()
+  if (k.length < 2) return null
+  const words = k.split(/\s+/)
+  if (words.length === 1) {
+    return 'Single words rarely trigger a Google "People Also Ask" box. Try a question or topic, e.g. "vad är …", "how does … work".'
+  }
+  if (brandName && k.toLowerCase() === brandName.trim().toLowerCase()) {
+    return 'Brand names rarely have a "People Also Ask" box. Try an informational topic your audience searches for instead.'
+  }
+  return null
+}
+
 export default function AEOSnippetsPage() {
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
@@ -85,6 +101,9 @@ export default function AEOSnippetsPage() {
   const [error, setError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [bundleCopied, setBundleCopied] = useState(false)
+  // Seed reformulations returned by the API when Google had no PAA box for
+  // the keyword. Rendered as click-to-retry chips next to the error.
+  const [suggestions, setSuggestions] = useState<string[]>([])
 
   // Run form
   const [keywordInput, setKeywordInput] = useState('')
@@ -158,9 +177,14 @@ export default function AEOSnippetsPage() {
       // sees their input clear and nothing new in the list — looking like
       // a silent failure. Show the server's `errors` array so the cause is
       // visible.
-      const runResult = json.data as { items?: unknown[]; errors?: string[] } | undefined
+      const runResult = json.data as
+        | { items?: unknown[]; errors?: string[]; suggestions?: string[] }
+        | undefined
       const items = runResult?.items ?? []
       const apiErrors = runResult?.errors ?? []
+      // Capture seed reformulations the server proposes when the PAA box was
+      // empty, so we can offer click-to-retry chips below the error.
+      setSuggestions(items.length === 0 ? (runResult?.suggestions ?? []) : [])
       let pendingError: string | null = null
       if (items.length === 0 && apiErrors.length > 0) {
         pendingError = apiErrors.join(' • ')
@@ -321,7 +345,31 @@ export default function AEOSnippetsPage() {
         </div>
       </div>
 
-      {error && <Card className="border-red-500/30 bg-red-500/5 p-4 text-red-400">{error}</Card>}
+      {error && (
+        <Card className="border-red-500/30 bg-red-500/5 p-4">
+          <p className="text-red-400">{error}</p>
+          {suggestions.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Try instead:
+              </span>
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  className="bg-brand/10 border-brand/40 hover:bg-brand/20 rounded-full border px-3 py-1 text-xs text-brand transition-colors"
+                  onClick={() => {
+                    setKeywordInput(s)
+                    setError(null)
+                    setSuggestions([])
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Run form */}
       <Card className="p-5">
@@ -391,6 +439,12 @@ export default function AEOSnippetsPage() {
             <code className="rounded bg-secondary px-1">castingplattform Sverige</code>,{' '}
             <code className="rounded bg-secondary px-1">marknadsföringsbyrå Stockholm</code>, or{' '}
             <code className="rounded bg-secondary px-1">best running shoes for flat feet</code>.
+          </p>
+        )}
+        {keywordInput.trim() && !running && weakSeedHint(keywordInput, selectedBrand?.name) && (
+          <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-400">
+            <HelpCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            {weakSeedHint(keywordInput, selectedBrand?.name)}
           </p>
         )}
         {(braveQuota || dataforseoQuota) && (

@@ -43,6 +43,44 @@ export interface AEOSnippetRunResult {
   costCredits: number
   gapCount: number
   errors: string[]
+  /**
+   * Populated ONLY when Google returned no People-Also-Ask box for the seed
+   * (items empty). These are informational-style reformulations the operator
+   * can click to retry — Google surfaces PAA for question/topic queries, not
+   * for brand names or single words. See suggestSeedVariations.
+   */
+  suggestions?: string[]
+}
+
+/**
+ * Build a few informational-style reformulations of a seed keyword for when
+ * Google returns no PAA box. Pure string templating — no API calls, no cost.
+ * Strips an existing leading question word so we don't double up
+ * ("what is what is X"), then applies per-language question/topic templates.
+ */
+export function suggestSeedVariations(keyword: string, language: 'en' | 'it' | 'sv'): string[] {
+  const stripLeading: Record<'en' | 'it' | 'sv', RegExp> = {
+    en: /^(what (is|are)|how (do|does|to)|why|best)\s+/i,
+    it: /^(cos['’ ]?è|cosa è|come (funziona|scegliere)|perché|migliore)\s+/i,
+    sv: /^(vad är|hur (fungerar|väljer man|gör man)|varför|bästa)\s+/i,
+  }
+  const base = keyword
+    .trim()
+    .replace(/\?+$/, '')
+    .replace(stripLeading[language], '')
+    .trim()
+    .toLowerCase()
+  if (!base) return []
+
+  const templates: Record<'en' | 'it' | 'sv', string[]> = {
+    en: [`what is ${base}`, `how does ${base} work`, `${base} benefits`, `best ${base}`],
+    it: [`cos'è ${base}`, `come funziona ${base}`, `${base} vantaggi`, `migliore ${base}`],
+    sv: [`vad är ${base}`, `hur fungerar ${base}`, `${base} fördelar`, `bästa ${base}`],
+  }
+  const original = keyword.trim().toLowerCase()
+  return Array.from(new Set(templates[language]))
+    .filter((v) => v !== original)
+    .slice(0, 4)
 }
 
 const LANG_INSTRUCTION: Record<'en' | 'it' | 'sv', string> = {
@@ -146,6 +184,7 @@ export async function runAEOGeneration(input: AEOSnippetInput): Promise<AEOSnipp
       costCredits: 0,
       gapCount: 0,
       errors: ['No PAA questions returned for this keyword'],
+      suggestions: suggestSeedVariations(input.keyword, language),
     }
   }
 

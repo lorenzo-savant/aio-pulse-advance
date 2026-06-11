@@ -10,6 +10,7 @@ import {
   getModelPricing,
   getProviderFromModel,
 } from '@/lib/services/credit-calculator'
+import { creditEstimateSchema, firstZodMessage } from '@/lib/validations'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -37,23 +38,18 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  let body: {
-    model?: string
-    messages?: Array<{ role: string; content: string }>
-    inputTokens?: number
-    outputTokens?: number
-  }
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
 
-  const { model, messages, inputTokens, outputTokens } = body
-
-  if (!model) {
-    return err('model is required', 400)
+  const parsed = creditEstimateSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return err(firstZodMessage(parsed.error), 400)
   }
+  const { model, messages, inputTokens, outputTokens } = parsed.data
 
   const pricing = getModelPricing(model)
   if (!pricing) {

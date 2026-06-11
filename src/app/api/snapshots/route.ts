@@ -1,9 +1,16 @@
 // PATH: src/app/api/snapshots/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
+
+const snapshotsCreateSchema = z.object({
+  brand_id: z.string().min(1, 'brand_id is required'),
+  date: z.string().max(40).optional(),
+})
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -20,16 +27,15 @@ export async function POST(req: NextRequest) {
     return err('Authentication failed')
   }
 
-  let body: { brand_id?: string; date?: string }
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
-
-  if (!body.brand_id) {
-    return err('brand_id is required', 400)
-  }
+  const parsed = snapshotsCreateSchema.safeParse(rawBody)
+  if (!parsed.success) return err(firstZodMessage(parsed.error), 400)
+  const body = parsed.data
 
   // Verify brand access using the safe verifyBrandAccess (no report_* columns)
   const brand = await verifyBrandAccess(body.brand_id, userId)

@@ -23,7 +23,7 @@ vi.mock('@/lib/ratelimit', () => ({
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-import { safeRedirect, buildCspHeader, middleware } from '@/middleware'
+import { safeRedirect, buildCspHeader, resolveAllowedOrigin, middleware } from '@/middleware'
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { checkRateLimit } from '@/lib/ratelimit'
@@ -167,11 +167,72 @@ describe('buildCspHeader', () => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
+// resolveAllowedOrigin — env-derived CORS allowlist
+// ═══════════════════════════════════════════════════════════════════════════
+describe('resolveAllowedOrigin', () => {
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = 'https://app.example.com'
+    delete process.env.CORS_ALLOWED_ORIGINS
+  })
+
+  it('returns null when no Origin header is present (same-origin / server-side)', () => {
+    expect(resolveAllowedOrigin(null)).toBeNull()
+  })
+
+  it('allows the NEXT_PUBLIC_APP_URL origin', () => {
+    expect(resolveAllowedOrigin('https://app.example.com')).toBe('https://app.example.com')
+  })
+
+  it('rejects an unknown origin', () => {
+    expect(resolveAllowedOrigin('https://evil.com')).toBeNull()
+  })
+
+  it('rejects a path/query mismatch on the same host (compares origin only)', () => {
+    // URL.origin strips path, so a bare origin still matches; a different port
+    // must NOT match.
+    expect(resolveAllowedOrigin('https://app.example.com:8443')).toBeNull()
+  })
+
+  it('allows extra origins from CORS_ALLOWED_ORIGINS (comma-separated, trimmed)', () => {
+    process.env.CORS_ALLOWED_ORIGINS = ' https://admin.example.com , https://www.example.com '
+    expect(resolveAllowedOrigin('https://admin.example.com')).toBe('https://admin.example.com')
+    expect(resolveAllowedOrigin('https://www.example.com')).toBe('https://www.example.com')
+  })
+
+  it('allows https Vercel preview deployments (*.vercel.app)', () => {
+    expect(resolveAllowedOrigin('https://my-branch-abc123.vercel.app')).toBe(
+      'https://my-branch-abc123.vercel.app',
+    )
+  })
+
+  it('rejects http (non-https) vercel.app origins', () => {
+    expect(resolveAllowedOrigin('http://my-branch.vercel.app')).toBeNull()
+  })
+
+  it('rejects a lookalike host that merely contains vercel.app', () => {
+    expect(resolveAllowedOrigin('https://vercel.app.evil.com')).toBeNull()
+  })
+
+  it('does not throw on a malformed origin string', () => {
+    expect(resolveAllowedOrigin('not a url')).toBeNull()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
 // middleware() — integration tests
 // ═══════════════════════════════════════════════════════════════════════════
 describe('middleware', () => {
   function makeRequest(path: string): NextRequest {
     return new NextRequest(new URL(path, 'http://localhost:3000'))
+  }
+
+  function makeApiRequest(path: string, init: { method?: string; origin?: string }): NextRequest {
+    const headers = new Headers()
+    if (init.origin) headers.set('origin', init.origin)
+    return new NextRequest(new URL(path, 'http://localhost:3000'), {
+      method: init.method ?? 'GET',
+      headers,
+    })
   }
 
   it('sets CSP header on every response', async () => {
@@ -326,5 +387,54 @@ describe('middleware', () => {
     expect(res.status).toBe(307)
     const location = res.headers.get('location') || ''
     expect(location).toContain('/auth/login')
+  })
+
+  // CORS — env-derived allowlist on /api/* (replaces the static vercel.json header)
+  describe('CORS', () => {
+    beforeEach(() => {
+      process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000'
+      delete process.env.CORS_ALLOWED_ORIGINS
+    })
+
+    it('answers an OPTIONS preflight with 204 and the allowed origin', async () => {
+      const res = await middleware(
+        makeApiRequest('/api/brands', { method: 'OPTIONS', origin: 'http://localhost:3000' }),
+      )
+      expect(res.status).toBe(204)
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3000')
+      expect(res.headers.get('Access-Control-Allow-Methods')).toContain('POST')
+      expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
+    })
+
+    it('sets ACAO on a normal /api request from an allowed origin', async () => {
+      const res = await middleware(
+        makeApiRequest('/api/brands', { origin: 'http://localhost:3000' }),
+      )
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3000')
+      expect(res.headers.get('Vary')).toContain('Origin')
+    })
+
+    it('omits ACAO for a disallowed origin', async () => {
+      const res = await middleware(makeApiRequest('/api/brands', { origin: 'https://evil.com' }))
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBeNull()
+    })
+
+    it('omits ACAO when there is no Origin header (same-origin)', async () => {
+      const res = await middleware(makeApiRequest('/api/brands', {}))
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBeNull()
+    })
+
+    it('echoes ACAO on a 429 rate-limit response for an allowed origin', async () => {
+      vi.mocked(checkRateLimit).mockResolvedValueOnce({
+        success: false,
+        remaining: 0,
+        resetAt: Date.now() + 30_000,
+      })
+      const res = await middleware(
+        makeApiRequest('/api/brands', { origin: 'http://localhost:3000' }),
+      )
+      expect(res.status).toBe(429)
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3000')
+    })
   })
 })

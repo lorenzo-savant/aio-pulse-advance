@@ -11,7 +11,9 @@
 // No new API key needed.
 
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { requireUser } from '@/lib/api-auth'
+import { firstZodMessage } from '@/lib/validations'
 import { isPerplexityAvailable } from '@/lib/services/perplexity'
 import { simulateEngineResponse } from '@/lib/services/ai-router'
 import { safeFetch } from '@/lib/utils/safe-fetch'
@@ -19,6 +21,12 @@ import { scoreFanoutCoverage, exportFanoutAsFAQ } from '@/lib/utils/query-fanout
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
+
+const fanoutBodySchema = z.object({
+  url: z.string().max(2048),
+  topic: z.string().max(500).optional(),
+  maxQuestions: z.coerce.number().optional(),
+})
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -28,12 +36,15 @@ export async function POST(req: NextRequest) {
   const auth = await requireUser(req)
   if (auth instanceof NextResponse) return auth
 
-  let body: { url?: string; topic?: string; maxQuestions?: number }
+  let rawBody: unknown
   try {
-    body = (await req.json()) as typeof body
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
+  const parsed = fanoutBodySchema.safeParse(rawBody)
+  if (!parsed.success) return err(firstZodMessage(parsed.error), 400)
+  const body = parsed.data
   const url = (body.url || '').trim()
   if (!url) return err('url is required', 400)
   const maxQuestions = Math.min(10, Math.max(3, Number(body.maxQuestions) || 8))

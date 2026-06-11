@@ -1,21 +1,26 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 
-interface ClientErrorEvent {
-  name: string
-  message: string
-  stack?: string
-  timestamp: string
-  url: string
-  userAgent: string
-  userId?: string
-  brandId?: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  tags?: Record<string, string>
-}
+// Unauthenticated client beacon — validate the shape, but stay lenient:
+// `.catch('low')` keeps a malformed/absent severity from rejecting an otherwise
+// useful error report. Field-level sanitisation (truncation, UUID checks) still
+// runs below as defence-in-depth against log poisoning.
+const clientErrorSchema = z.object({
+  name: z.string().min(1),
+  message: z.string().min(1),
+  stack: z.string().optional(),
+  timestamp: z.string().optional(),
+  url: z.string().optional(),
+  userAgent: z.string().optional(),
+  userId: z.string().optional(),
+  brandId: z.string().optional(),
+  severity: z.enum(['low', 'medium', 'high', 'critical']).catch('low'),
+  tags: z.record(z.string(), z.unknown()).optional(),
+})
 
 export async function POST(req: NextRequest) {
   const clientIp = getClientIp(req.headers)
@@ -29,11 +34,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const event: ClientErrorEvent = await req.json()
-
-    if (!event.name || !event.message) {
+    const parsed = clientErrorSchema.safeParse(await req.json())
+    if (!parsed.success) {
       return NextResponse.json({ success: false, message: 'Invalid error event' }, { status: 400 })
     }
+    const event = parsed.data
 
     // ── M-6: this is an UNAUTHENTICATED client beacon. Treat all body fields
     // as hostile to prevent log / observability poisoning.
@@ -53,7 +58,7 @@ export async function POST(req: NextRequest) {
       typeof event.brandId === 'string' && UUID_RE.test(event.brandId) ? event.brandId : null
 
     // Cap tags to an object/array with at most ~20 entries; drop otherwise.
-    let safeTags: ClientErrorEvent['tags'] | undefined
+    let safeTags: Record<string, string> | undefined
     if (event.tags && typeof event.tags === 'object') {
       const entries = Object.entries(event.tags as Record<string, unknown>)
       if (entries.length <= 20) {

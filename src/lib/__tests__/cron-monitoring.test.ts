@@ -458,8 +458,11 @@ describe('Cron auth — monitoring route', () => {
     vi.restoreAllMocks()
   })
 
-  it('returns 500 when CRON_SECRET_TOKEN is not set', async () => {
+  it('returns 500 when neither cron secret is set', async () => {
+    // verifyCronAuth accepts EITHER CRON_SECRET (Vercel-native) or
+    // CRON_SECRET_TOKEN (legacy app name). "Misconfigured" means BOTH absent.
     delete process.env.CRON_SECRET_TOKEN
+    delete process.env.CRON_SECRET
     const { POST } = await import('@/app/api/cron/monitoring/route')
     const req = new NextRequest('http://localhost/api/cron/monitoring', {
       method: 'POST',
@@ -469,6 +472,24 @@ describe('Cron auth — monitoring route', () => {
     expect(res.status).toBe(500)
     const body = await res.json()
     expect(body.message).toBe('Server misconfigured')
+  })
+
+  it('authorizes with Vercel-native CRON_SECRET alone (no CRON_SECRET_TOKEN)', async () => {
+    // Vercel injects `Authorization: Bearer <CRON_SECRET>`. The app must accept
+    // it even when the legacy CRON_SECRET_TOKEN is unset. Auth passing surfaces
+    // as 503 here because supabase is mocked unconfigured (not 401/500).
+    delete process.env.CRON_SECRET_TOKEN
+    process.env.CRON_SECRET = 'vercel-native-secret'
+    const { createServerClient } = await import('@/lib/supabase')
+    vi.mocked(createServerClient).mockReturnValue(null as any)
+
+    const { POST } = await import('@/app/api/cron/monitoring/route')
+    const req = new NextRequest('http://localhost/api/cron/monitoring', {
+      method: 'POST',
+      headers: { authorization: 'Bearer vercel-native-secret' },
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(503)
   })
 
   it('returns 401 when Authorization header is missing', async () => {
@@ -524,13 +545,14 @@ describe('Cron auth — weekly review route', () => {
     vi.restoreAllMocks()
   })
 
-  // verifyCronAuth deliberately distinguishes "server misconfigured" (no
-  // CRON_SECRET_TOKEN set → 500) from "unauthorized" (token mismatch → 401),
-  // see src/lib/cron-auth.ts. The 500 surfaces a real ops bug rather than
-  // silently masking it as a 401. The companion test for the monitoring
-  // route (earlier in this file) also expects 500 — keep them consistent.
-  it('returns 500 when CRON_SECRET_TOKEN is not set', async () => {
+  // verifyCronAuth deliberately distinguishes "server misconfigured" (no cron
+  // secret set at all → 500) from "unauthorized" (token mismatch → 401), see
+  // src/lib/cron-auth.ts. The 500 surfaces a real ops bug rather than silently
+  // masking it as a 401. The companion test for the monitoring route (earlier
+  // in this file) also expects 500 — keep them consistent.
+  it('returns 500 when neither cron secret is set', async () => {
     delete process.env.CRON_SECRET_TOKEN
+    delete process.env.CRON_SECRET
     const { POST } = await import('@/app/api/cron/weekly-review/route')
     const req = new NextRequest('http://localhost/api/cron/weekly-review', {
       method: 'POST',

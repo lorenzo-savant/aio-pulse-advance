@@ -73,6 +73,66 @@ function applyCspHeaders(response: NextResponse, nonce: string): NextResponse {
 }
 
 /**
+ * Resolve the `Access-Control-Allow-Origin` value for an `/api/*` request.
+ *
+ * The allowlist is DERIVED FROM CONFIG, not hardcoded, so changing the
+ * deployment domain (or running a preview deployment) doesn't silently break
+ * CORS — the failure mode the old static `vercel.json` header had, where it
+ * was pinned to a single domain (`https://aio-pulse.com`) that wasn't even the
+ * live one.
+ *
+ * Sources, in order:
+ *  - `NEXT_PUBLIC_APP_URL`  — the canonical app origin (already required)
+ *  - `CORS_ALLOWED_ORIGINS` — optional, comma-separated extra origins
+ *  - `*.vercel.app`         — Vercel preview deployments (https only)
+ *
+ * Returns the request's Origin when it's allowed (echoing the exact caller, so
+ * the response stays compatible with credentialed requests), or null when it
+ * isn't — in which case no ACAO header is sent and the browser blocks the
+ * cross-origin read.
+ */
+export function resolveAllowedOrigin(requestOrigin: string | null): string | null {
+  if (!requestOrigin) return null
+
+  const allowed = new Set<string>()
+  const add = (raw: string | undefined) => {
+    if (!raw) return
+    try {
+      allowed.add(new URL(raw).origin)
+    } catch {
+      // Ignore malformed config entries rather than throwing in the hot path.
+    }
+  }
+
+  add(process.env.NEXT_PUBLIC_APP_URL)
+  for (const o of (process.env.CORS_ALLOWED_ORIGINS ?? '').split(',')) add(o.trim())
+
+  if (allowed.has(requestOrigin)) return requestOrigin
+
+  // Vercel preview deployments: https://<branch>-<project>-<scope>.vercel.app
+  try {
+    const { protocol, hostname } = new URL(requestOrigin)
+    if (protocol === 'https:' && hostname.endsWith('.vercel.app')) return requestOrigin
+  } catch {
+    // Not a valid URL → not allowed.
+  }
+
+  return null
+}
+
+/** Set the CORS headers on an `/api/*` response for an allowed origin. No-op
+ *  when `allowedOrigin` is null (disallowed / same-origin request). */
+function applyCorsHeaders(response: NextResponse, allowedOrigin: string | null): void {
+  if (!allowedOrigin) return
+  response.headers.set('Access-Control-Allow-Origin', allowedOrigin)
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  // append (not set) so we don't clobber a Vary that other middleware logic
+  // may have added; Origin must be in Vary because ACAO varies per caller.
+  response.headers.append('Vary', 'Origin')
+}
+
+/**
  * Paths where the URL itself carries a secret (invitation tokens, magic links,
  * etc.) — we lock the Referrer-Policy down so the secret never leaks via the
  * Referer header when the user clicks a third-party link on the landed page.
@@ -117,6 +177,17 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/api/')) {
+    const allowedOrigin = resolveAllowedOrigin(request.headers.get('origin'))
+
+    // CORS preflight: answer immediately with the negotiated headers, before
+    // any auth/rate-limit work. No route defines its own OPTIONS handler, so
+    // short-circuiting here is safe. Browsers send OPTIONS without credentials.
+    if (request.method === 'OPTIONS') {
+      const preflight = new NextResponse(null, { status: 204 })
+      applyCorsHeaders(preflight, allowedOrigin)
+      return applyCspHeaders(preflight, nonce)
+    }
+
     const identifier = getClientIp(request.headers)
     const { success, remaining, resetAt } = await checkRateLimit(identifier, 100, 60_000)
 
@@ -132,12 +203,14 @@ export async function middleware(request: NextRequest) {
           headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)) },
         },
       )
+      applyCorsHeaders(rateLimitResponse, allowedOrigin)
       return applyCspHeaders(rateLimitResponse, nonce)
     }
 
     supabaseResponse.headers.set('X-RateLimit-Limit', '100')
     supabaseResponse.headers.set('X-RateLimit-Remaining', String(remaining))
     supabaseResponse.headers.set('X-RateLimit-Reset', String(Math.ceil(resetAt / 1000)))
+    applyCorsHeaders(supabaseResponse, allowedOrigin)
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {

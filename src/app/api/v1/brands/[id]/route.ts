@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { hashApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
+import { publicBrandUpdateSchema, firstZodMessage } from '@/lib/validations'
 
 const BRAND_COLS =
   'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
@@ -85,12 +86,21 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return errorResponse('Invalid JSON body', 400)
   }
 
+  // SECURITY: never pass the raw body to .update(). publicBrandUpdateSchema
+  // strips system columns (id, user_id, slug, *_at, organization_id,
+  // workspace_id), so a caller cannot reassign ownership or identity. Only the
+  // validated, user-editable fields below are persisted.
+  const parsed = publicBrandUpdateSchema.safeParse(body)
+  if (!parsed.success) {
+    return errorResponse(firstZodMessage(parsed.error), 422)
+  }
+
   const db = createServerClient()
   if (!db) return errorResponse('Database not configured', 503)
 
   const { data, error } = await db
     .from('brands')
-    .update(body as Record<string, unknown>)
+    .update(parsed.data as Record<string, unknown>)
     .eq('id', id)
     .eq('user_id', userId)
     .select(BRAND_COLS)

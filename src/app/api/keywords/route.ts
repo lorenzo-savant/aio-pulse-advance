@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
@@ -7,6 +8,10 @@ import { logger } from '@/lib/logger'
 import { trackKeywords } from '@/lib/services/keyword-tracker'
 
 export const dynamic = 'force-dynamic'
+
+const keywordsRefreshSchema = z.object({
+  brand_id: z.string().min(1, 'brand_id is required'),
+})
 
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req)
@@ -107,12 +112,12 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const body = await req.json().catch(() => ({}))
-  const brandId = body.brand_id
-
-  if (!brandId) {
+  const parsed = keywordsRefreshSchema.safeParse(await req.json().catch(() => ({})))
+  if (!parsed.success) {
     return NextResponse.json({ success: false, message: 'brand_id is required' }, { status: 400 })
   }
+  const brandId = parsed.data.brand_id
+
   if (!(await verifyBrandAccess(brandId, userId))) {
     return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
   }

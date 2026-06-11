@@ -2,9 +2,17 @@
 // Credits API — GET balance, POST add/deduct
 
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+
+const creditsMutationSchema = z.object({
+  action: z.enum(['add', 'deduct']),
+  amount: z.number().positive(),
+  description: z.string().max(500).optional(),
+})
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -102,21 +110,21 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  let body: { action?: string; amount?: number; description?: string }
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
 
-  const { action, amount, description } = body
-  if (!action || !amount || amount <= 0) {
-    return err('action (add/deduct) and positive amount are required', 400)
+  const parsed = creditsMutationSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return err(
+      firstZodMessage(parsed.error, 'action (add/deduct) and positive amount are required'),
+      400,
+    )
   }
-
-  if (action !== 'add' && action !== 'deduct') {
-    return err('action must be "add" or "deduct"', 400)
-  }
+  const { action, amount, description } = parsed.data
 
   try {
     const creditAmount = action === 'deduct' ? -amount : amount

@@ -23,7 +23,7 @@ in the same PR.**
 | `RESEND_API_KEY`                 | Vercel env                         | Transactional email              | YYYY-MM-DD   | + 365 d       |
 | `UPSTASH_REDIS_REST_URL`         | Vercel env                         | Rate limit + cache               | YYYY-MM-DD   | N/A (URL)     |
 | `UPSTASH_REDIS_REST_TOKEN`       | Vercel env                         | Rate limit + cache               | YYYY-MM-DD   | + 180 d       |
-| `CRON_SECRET_TOKEN`              | Vercel env                         | `/api/cron/*` auth               | YYYY-MM-DD   | + 90 d        |
+| `CRON_SECRET` (+ legacy `_TOKEN`) | Vercel env                       | `/api/cron/*` auth               | YYYY-MM-DD   | + 90 d        |
 | `SENTRY_AUTH_TOKEN`              | Vercel env (build only)            | Source map upload                | YYYY-MM-DD   | + 365 d       |
 | `GSC_CLIENT_ID` + `_SECRET`      | Vercel env                         | Google Search Console OAuth      | YYYY-MM-DD   | + 365 d       |
 
@@ -100,11 +100,20 @@ If you confirm the roll before deploying the new secret to Vercel,
 expect 5-15 min of webhook 400s. Stripe will auto-retry, so no data is
 lost, but billing UX will lag.
 
-### CRON_SECRET_TOKEN
+### CRON_SECRET / CRON_SECRET_TOKEN
 
-Generate with `openssl rand -base64 32`. Vercel cron config uses the
-`Authorization: Bearer ...` header — no Vercel-side config change needed,
-just the env var.
+Generate with `openssl rand -base64 32`. Vercel automatically injects
+`Authorization: Bearer <CRON_SECRET>` into cron invocations **only when the
+env var is named exactly `CRON_SECRET`** — the literal name is what triggers
+the auto-injection. `verifyCronAuth` (`src/lib/cron-auth.ts`) accepts EITHER
+`CRON_SECRET` or the legacy `CRON_SECRET_TOKEN`.
+
+To rotate, the simplest correct path is to set **`CRON_SECRET`** in Vercel and
+leave it as the single source of truth — no second var to keep in sync. If you
+must keep `CRON_SECRET_TOKEN` (e.g. external schedulers that call
+`/api/cron/*` directly with that value), then **both vars must hold the same
+value**: Vercel still only auto-injects the one named `CRON_SECRET`, so
+rotating `CRON_SECRET_TOKEN` alone will silently 401 every Vercel cron.
 
 ### GitHub Actions secrets
 

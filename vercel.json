@@ -50,29 +50,6 @@
       "schedule": "0 */6 * * *"
     }
   ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://aio-pulse.com"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        },
-        {
-          "key": "Vary",
-          "value": "Origin"
-        }
-      ]
-    }
-  ],
   "rewrites": [
     {
       "source": "/health",

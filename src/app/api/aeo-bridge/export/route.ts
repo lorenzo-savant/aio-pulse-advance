@@ -1,19 +1,26 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { getCurrentUserId, AuthError } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 import { createServerClient } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { aggregateBrandData, buildAeoReportJson, sendToAeo } from '@/lib/aeo-bridge'
+import { firstZodMessage } from '@/lib/validations'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-interface ExportRequestBody {
-  brandId: string
-  clientDomain: string
-  dateRangeDays?: number
-}
+const aeoBridgeExportSchema = z.object({
+  brandId: z.string().min(1, 'brandId is required'),
+  clientDomain: z.string().min(3, 'clientDomain must be at least 3 characters').max(255),
+  dateRangeDays: z
+    .number()
+    .int()
+    .min(1, 'dateRangeDays must be between 1 and 365')
+    .max(365, 'dateRangeDays must be between 1 and 365')
+    .optional(),
+})
 
 export async function POST(req: NextRequest) {
   let userId: string
@@ -39,32 +46,21 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  let body: ExportRequestBody
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return NextResponse.json({ success: false, message: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { brandId, clientDomain, dateRangeDays = 30 } = body
-
-  if (!brandId || typeof brandId !== 'string') {
-    return NextResponse.json({ success: false, message: 'brandId is required' }, { status: 400 })
-  }
-
-  if (!clientDomain || typeof clientDomain !== 'string' || clientDomain.length < 3) {
+  const parsed = aeoBridgeExportSchema.safeParse(rawBody)
+  if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: 'clientDomain must be at least 3 characters' },
+      { success: false, message: firstZodMessage(parsed.error) },
       { status: 400 },
     )
   }
-
-  if (dateRangeDays < 1 || dateRangeDays > 365) {
-    return NextResponse.json(
-      { success: false, message: 'dateRangeDays must be between 1 and 365' },
-      { status: 400 },
-    )
-  }
+  const { brandId, clientDomain, dateRangeDays = 30 } = parsed.data
 
   const db = createServerClient()
   if (!db) {

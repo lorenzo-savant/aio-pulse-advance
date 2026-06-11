@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { verifyWebhook } from '@/lib/services/public-api'
+import { webhookVerifySchema, firstZodMessage } from '@/lib/validations'
 
 export async function POST(req: NextRequest) {
   let body: unknown
@@ -9,18 +10,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { payload, signature, secret } = body as {
-    payload?: string
-    signature?: string
-    secret?: string
-  }
-
-  if (!payload || !signature || !secret) {
+  const parsed = webhookVerifySchema.safeParse(body)
+  if (!parsed.success) {
     return NextResponse.json(
-      { success: false, error: 'Missing payload, signature, or secret' },
+      {
+        success: false,
+        error: firstZodMessage(parsed.error, 'Missing payload, signature, or secret'),
+      },
       { status: 400 },
     )
   }
+  const { payload, signature, secret } = parsed.data
 
   const isValid = verifyWebhook(payload, signature, secret)
 

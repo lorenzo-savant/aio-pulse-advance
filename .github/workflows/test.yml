@@ -120,10 +120,10 @@ jobs:
     # Runs `npm audit --audit-level=moderate`. PRs that introduce a moderate+
     # advisory get a red check. Use `npm run security:audit:fix` locally to
     # resolve, or pin a known-good version if no fix is available yet.
-    # `continue-on-error: true` so the check is informational during the
-    # ramp — flip to false once the dependency tree is clean to enforce
-    # blocking. Drop the flag when ready.
-    continue-on-error: true
+    # BLOCKING: the dependency tree is clean (0 advisories as of 2026-06), so
+    # this gate now enforces "don't regress". If a new advisory has no fix
+    # available yet, add a documented override in package.json rather than
+    # re-introducing continue-on-error.
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -139,6 +139,62 @@ jobs:
 
       - name: Run npm audit
         run: npm run security:audit
+
+  policy-audit:
+    name: RLS & Zod Coverage
+    runs-on: ubuntu-latest
+    # Static audits over supabase/migrations and src/app/api. Both scripts are
+    # dependency-free (node:fs only) and need NO secrets or DB — so we skip
+    # `npm ci` entirely for speed.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: RLS coverage (blocking)
+        # --strict: fail the build if any `CREATE TABLE` in the migration repo
+        # lacks a matching `ENABLE ROW LEVEL SECURITY`. Coverage is 51/51, so
+        # this enforces "don't ship a table without RLS" going forward.
+        run: npm run check:rls -- --strict
+
+      - name: Zod coverage (blocking)
+        # --strict: every non-exempt write handler must runtime-validate its
+        # body. Coverage is 56/56 (16 routes are exempt in the script: cron,
+        # the Stripe webhook, no-body triggers). This now enforces "don't ship
+        # an unvalidated write handler". To intentionally exempt a new one, add
+        # it to EXEMPT_SUFFIXES in scripts/audit-zod-coverage.mjs with a reason.
+        run: npm run check:zod -- --strict
+
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    # Scans the committed working tree (NOT git history) for leaked secrets so
+    # a new commit can't introduce an API key / token. `--no-git` keeps the
+    # scan deterministic on the current files and avoids tripping on any
+    # pre-existing history. INFORMATIONAL during the ramp (mirrors the
+    # security-audit pattern this repo already uses): once a green run confirms
+    # the tree is clean, drop `continue-on-error` to make it blocking.
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION=8.21.2
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Scan working tree for secrets
+        # --no-git: scan files as they are on disk (node_modules isn't installed
+        # in this job, so only repo files are scanned). --redact hides matched
+        # values from the log so CI output never echoes a real secret.
+        run: gitleaks detect --no-git --redact --verbose
 
   unit-tests:
     name: Unit Tests

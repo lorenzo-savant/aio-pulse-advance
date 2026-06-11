@@ -2,14 +2,23 @@
 // API endpoint for orchestrated multi-provider queries
 
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { asUntyped } from '@/lib/supabase-untyped'
 import { queryOrchestrator } from '@/lib/services/query-orchestrator'
 import { calculateOrchestratedCost } from '@/lib/services/cost-calculator'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { firstZodMessage } from '@/lib/validations'
 import { checkRateLimit } from '@/lib/ratelimit'
 import type { MonitoringEngine } from '@/types'
 import { logger } from '@/lib/logger'
+
+const orchestrateBodySchema = z.object({
+  prompt: z.string().min(1, 'prompt is required').max(10_000),
+  brand_id: z.string().max(100).optional(),
+  engines: z.array(z.string().max(40)).min(1).max(10).optional(),
+  use_cache: z.boolean().optional(),
+})
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -37,23 +46,23 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  let body: {
-    prompt?: string
-    brand_id?: string
-    engines?: string[]
-    use_cache?: boolean
-  }
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
 
-  const { prompt, brand_id, engines = ['chatgpt', 'gemini', 'perplexity'], use_cache = true } = body
-
-  if (!prompt) {
-    return err('prompt is required', 400)
+  const parsed = orchestrateBodySchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return err(firstZodMessage(parsed.error), 400)
   }
+  const {
+    prompt,
+    brand_id,
+    engines = ['chatgpt', 'gemini', 'perplexity'],
+    use_cache = true,
+  } = parsed.data
 
   // Verify brand access if brand_id provided
   if (brand_id) {

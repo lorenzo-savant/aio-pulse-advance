@@ -7,6 +7,7 @@
 // Both are scoped to brands the caller can access via verifyBrandAccess.
 
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
@@ -15,6 +16,10 @@ import { auditBrandMentions, getAuditStats, type BrandContext } from '@/lib/serv
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
+
+const homonymAuditBodySchema = z.object({
+  limit: z.number().finite().optional(),
+})
 
 interface Params {
   params: Promise<{ id: string }>
@@ -108,9 +113,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   // larger backlog at once. Default 50 keeps a manual run snappy.
   let limit = 50
   try {
-    const body = (await req.json()) as { limit?: number } | undefined
-    if (body?.limit && Number.isFinite(body.limit)) {
-      limit = Math.min(200, Math.max(1, Math.floor(body.limit)))
+    const parsed = homonymAuditBodySchema.safeParse(await req.json())
+    if (parsed.success && parsed.data.limit && Number.isFinite(parsed.data.limit)) {
+      limit = Math.min(200, Math.max(1, Math.floor(parsed.data.limit)))
     }
   } catch {
     // Empty body is fine; default limit applies.

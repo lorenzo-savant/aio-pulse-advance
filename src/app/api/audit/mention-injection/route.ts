@@ -26,7 +26,9 @@
 // arbitrary brands.
 
 import { NextResponse, type NextRequest } from 'next/server'
+import { z } from 'zod'
 import { requireUser, rateLimitGate, isValidHttpUrl } from '@/lib/api-auth'
+import { firstZodMessage } from '@/lib/validations'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { safeFetch, SsrfError } from '@/lib/utils/safe-fetch'
 import { logger } from '@/lib/logger'
@@ -40,6 +42,23 @@ export const dynamic = 'force-dynamic'
 const MAX_URLS = 25
 const FETCH_TIMEOUT_MS = 8_000
 const MAX_TOPICS = 50
+
+const mentionInjectionBodySchema = z.object({
+  brandId: z.string().min(1, 'brandId is required'),
+  topics: z.array(z.string()).min(1, 'topics must be a non-empty string array'),
+  urls: z.array(z.string()).optional(),
+  pages: z
+    .array(
+      z.object({
+        url: z.string(),
+        title: z.string().nullable().optional(),
+        text: z.string().optional(),
+        html: z.string().optional(),
+      }),
+    )
+    .optional(),
+  limit: z.number().optional(),
+})
 
 function err(message: string, status = 400) {
   return NextResponse.json({ success: false, message }, { status })
@@ -87,31 +106,20 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimitGate(req, 'audit-mention-injection', 10)
   if (limited) return limited
 
-  let body: unknown
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body')
   }
-  if (!body || typeof body !== 'object') return err('Invalid JSON body')
+  const parsed = mentionInjectionBodySchema.safeParse(rawBody)
+  if (!parsed.success) return err(firstZodMessage(parsed.error))
+  const { brandId, topics, urls, pages, limit } = parsed.data
 
-  const { brandId, topics, urls, pages, limit } = body as {
-    brandId?: unknown
-    topics?: unknown
-    urls?: unknown
-    pages?: unknown
-    limit?: unknown
-  }
-
-  if (typeof brandId !== 'string' || !brandId) return err('brandId is required')
-
-  const cleanedTopics =
-    Array.isArray(topics) && topics.length > 0
-      ? topics
-          .filter((t): t is string => typeof t === 'string' && t.trim().length > 0)
-          .map((t) => t.trim())
-          .slice(0, MAX_TOPICS)
-      : []
+  const cleanedTopics = topics
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+    .slice(0, MAX_TOPICS)
   if (cleanedTopics.length === 0) return err('topics must be a non-empty string array')
 
   const brand = await verifyBrandAccess(brandId, userId)

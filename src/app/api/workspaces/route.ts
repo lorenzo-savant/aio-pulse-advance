@@ -1,11 +1,19 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
+import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import { logAudit } from '@/lib/services/audit-log'
 import { getUserOrganizations, checkOrgPermission } from '@/lib/services/organization-auth'
 import { createWorkspace } from '@/lib/services/workspace-auth'
+
+const workspaceCreateSchema = z.object({
+  name: z.string().min(1, 'name, slug, and organizationId required').max(120),
+  slug: z.string().min(1, 'name, slug, and organizationId required').max(120),
+  organizationId: z.string().min(1, 'name, slug, and organizationId required'),
+})
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,15 +66,11 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth
     const { userId } = auth
 
-    const body = await request.json()
-    const { name, slug, organizationId } = body
-
-    if (!name || !slug || !organizationId) {
-      return NextResponse.json(
-        { error: 'name, slug, and organizationId required' },
-        { status: 400 },
-      )
+    const parsed = workspaceCreateSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: firstZodMessage(parsed.error) }, { status: 400 })
     }
+    const { name, slug, organizationId } = parsed.data
 
     if (!(await checkOrgPermission(userId, organizationId, 'manage_workspaces'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

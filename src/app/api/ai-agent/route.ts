@@ -10,6 +10,7 @@ import { getCostTracker } from '@/lib/cost-monitor'
 import { requireUser, rateLimitGate } from '@/lib/api-auth'
 import { SsrfError } from '@/lib/utils/safe-fetch'
 import { logger } from '@/lib/logger'
+import { aiAgentMessageSchema, firstZodMessage } from '@/lib/validations'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,12 +38,15 @@ export async function POST(req: NextRequest) {
   if (limited) return limited
 
   try {
-    const body = await req.json()
-    const { message, agentId, brandId, context, conversationId } = body
-
-    if (!message) {
-      return NextResponse.json({ error: 'Message required' }, { status: 400 })
+    const rawBody = await req.json()
+    const parsed = aiAgentMessageSchema.safeParse(rawBody)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: firstZodMessage(parsed.error, 'Message required') },
+        { status: 400 },
+      )
     }
+    const { message, agentId, brandId, context, conversationId } = parsed.data
 
     const agent = getAgent(agentId || 'brand_monitor')
     if (!agent) {
@@ -66,9 +70,10 @@ export async function POST(req: NextRequest) {
         /(?:audit|check|scan|analyze)\s+(?:this\s+)?(?:site|article|page|url)?[:\s]+(https?:\/\/[^\s]+)/i,
       ) || message.match(/(https?:\/\/[^\s]+)/i)
 
-    if (urlMatch) {
-      const url = urlMatch[1]
-
+    // urlMatch[1] is the capture group; under noUncheckedIndexedAccess it's
+    // string | undefined, so guard on the extracted url rather than the match.
+    const url = urlMatch?.[1]
+    if (url) {
       if (message.toLowerCase().includes('audit') || message.toLowerCase().includes('scan')) {
         const isArticle =
           message.toLowerCase().includes('article') ||
@@ -122,7 +127,9 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    let currentConversationId = conversationId
+    // createConversation returns string | null; conversationId from the body is
+    // string | undefined. Widen so both assignments below type-check.
+    let currentConversationId: string | null | undefined = conversationId
 
     if (!currentConversationId) {
       currentConversationId = await createConversation(

@@ -1,9 +1,11 @@
 // PATH: src/app/api/recommendations/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { callLLM } from '@/lib/services/prompt-generator-ai'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { rateLimitGate } from '@/lib/api-auth'
+import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import { buildGlossaryContext } from '@/lib/data/glossary'
 import {
@@ -75,14 +77,17 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimitGate(req, `recommendations:${userId}`, 10)
   if (limited) return limited
 
-  let body: { brand_id?: string }
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
-
-  if (!body.brand_id) return err('brand_id is required', 400)
+  const parsedBody = z
+    .object({ brand_id: z.string().min(1, 'brand_id is required') })
+    .safeParse(rawBody)
+  if (!parsedBody.success) return err(firstZodMessage(parsedBody.error), 400)
+  const body = parsedBody.data
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)

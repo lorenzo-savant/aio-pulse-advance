@@ -109,3 +109,165 @@ export const searchSchema = z.object({
 })
 
 export type SearchInput = z.infer<typeof searchSchema>
+
+// ─── Public API (/api/v1/*) ────────────────────────────────────────────────
+//
+// These guard the externally-reachable, API-key-authenticated surface. Zod's
+// default object stripping is load-bearing here: a brand row has system columns
+// (id, user_id, slug, created_at, organization_id, workspace_id, ...) that a
+// caller must never set. By listing ONLY the user-editable fields, `safeParse`
+// silently drops everything else — closing the mass-assignment hole where
+// `db.from('brands').update(body)` previously trusted the raw request body.
+
+const brandColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'color must be a 6-digit hex like #6366f1')
+const brandStringArray = z.array(z.string().max(255)).max(100)
+
+export const publicBrandCreateSchema = z.object({
+  name: z.string().trim().min(1, 'name is required').max(120),
+  description: z.string().max(2000).nullish(),
+  domain: z.string().max(255).nullish(),
+  aliases: brandStringArray.nullish(),
+  domains: brandStringArray.nullish(),
+  competitors: brandStringArray.nullish(),
+  industry: z.string().max(120).nullish(),
+  language: z.string().min(2).max(12).nullish(),
+  color: brandColor.nullish(),
+})
+
+export type PublicBrandCreateInput = z.infer<typeof publicBrandCreateSchema>
+
+export const publicBrandUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    description: z.string().max(2000).nullish(),
+    domain: z.string().max(255).nullish(),
+    aliases: brandStringArray.nullish(),
+    domains: brandStringArray.nullish(),
+    competitors: brandStringArray.nullish(),
+    industry: z.string().max(120).nullish(),
+    language: z.string().min(2).max(12).nullish(),
+    color: brandColor.nullish(),
+    is_active: z.boolean().nullish(),
+  })
+  // After stripping non-allowlisted keys, require at least one real field so a
+  // body of only system columns (now stripped to {}) is rejected, not no-op'd.
+  .refine((d) => Object.keys(d).length > 0, { message: 'Provide at least one field to update' })
+
+export type PublicBrandUpdateInput = z.infer<typeof publicBrandUpdateSchema>
+
+export const webhookVerifySchema = z.object({
+  payload: z.string().min(1, 'payload is required').max(100_000),
+  signature: z.string().min(1, 'signature is required').max(2048),
+  secret: z.string().min(1, 'secret is required').max(2048),
+})
+
+export type WebhookVerifyInput = z.infer<typeof webhookVerifySchema>
+
+export const creditEstimateSchema = z
+  .object({
+    model: z.string().min(1, 'model is required').max(100),
+    messages: z
+      .array(z.object({ role: z.string().max(40), content: z.string().max(100_000) }))
+      .max(500)
+      .optional(),
+    inputTokens: z.number().int().nonnegative().max(10_000_000).optional(),
+    outputTokens: z.number().int().nonnegative().max(10_000_000).optional(),
+  })
+  .refine(
+    (d) =>
+      (d.messages && d.messages.length > 0) ||
+      (typeof d.inputTokens === 'number' && typeof d.outputTokens === 'number'),
+    { message: 'Either messages[] or inputTokens + outputTokens required' },
+  )
+
+export type CreditEstimateInput = z.infer<typeof creditEstimateSchema>
+
+/** First human-readable message from a ZodError, for terse API error bodies. */
+export function firstZodMessage(error: z.ZodError, fallback = 'Invalid request body'): string {
+  return error.issues[0]?.message ?? fallback
+}
+
+// ─── Internal write handlers (LLM-cost / billing / RBAC surfaces) ───────────
+
+// AI agent chat: `message` is the cost-bearing field (it's forwarded to an LLM
+// and scanned for an audit URL), so cap its length. `context` is an internal
+// blob the UI assembles and the handler reads with optional chaining — left as
+// `any` so we don't impose a structural contract we'd have to keep in sync.
+export const aiAgentMessageSchema = z.object({
+  message: z.string().trim().min(1, 'Message required').max(10_000),
+  agentId: z.string().max(100).optional(),
+  brandId: z.string().max(100).optional(),
+  conversationId: z.string().max(100).optional(),
+  context: z.any().optional(),
+})
+
+export type AiAgentMessageInput = z.infer<typeof aiAgentMessageSchema>
+
+// credits/use: `engines` drives the credit cost calc — bound the array so a
+// malformed body can't balloon the deduction loop.
+export const creditsUseSchema = z.object({
+  engines: z.array(z.string().max(40)).min(1).max(10).optional(),
+  provider: z.string().max(40).optional(),
+  brand_id: z.string().max(100).optional(),
+  query_id: z.string().max(100).optional(),
+})
+
+export type CreditsUseInput = z.infer<typeof creditsUseSchema>
+
+// journey/analyze: each turn's `prompt` feeds downstream analysis. id/timestamp
+// default so callers that omit them (the old handler never required them) keep
+// working while the output stays structurally a JourneyTurn.
+export const journeyAnalyzeSchema = z.object({
+  turns: z
+    .array(
+      z.object({
+        id: z.string().max(200).optional().default(''),
+        prompt: z
+          .string()
+          .min(1, 'Each turn must have a prompt string')
+          .max(8000, 'Turn prompt too long (max 8000 chars)'),
+        response: z.string().max(50_000).optional(),
+        timestamp: z.number().optional().default(0),
+      }),
+    )
+    .min(1, 'turns array is required and must not be empty')
+    .max(50, 'Too many turns (max 50)'),
+  brandDomain: z.string().max(255).optional(),
+})
+
+export type JourneyAnalyzeInput = z.infer<typeof journeyAnalyzeSchema>
+
+// workflows (create mode): the enum replaces the handler's manual validTypes
+// check. userId is taken from the session, never the body, so it's absent here.
+export const workflowCreateSchema = z.object({
+  type: z.enum([
+    'monitoring_run',
+    'brand_setup',
+    'alert_evaluation',
+    'data_export',
+    'health_score_calc',
+  ]),
+  brandId: z.string().max(100).optional(),
+  promptId: z.string().max(100).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+})
+
+export type WorkflowCreateInput = z.infer<typeof workflowCreateSchema>
+
+// workspace members (RBAC): validate the target userId + role shape. The
+// authorization (canManageMembers, last-owner protection) stays in the handler.
+const workspaceRole = z.enum(['owner', 'admin', 'editor', 'viewer'])
+
+export const workspaceMemberAddSchema = z.object({
+  userId: z.string().min(1, 'userId and workspaceId required').max(100),
+  role: workspaceRole.optional(),
+})
+
+export type WorkspaceMemberAddInput = z.infer<typeof workspaceMemberAddSchema>
+
+export const workspaceMemberRoleSchema = z.object({
+  userId: z.string().min(1, 'userId, role, and workspaceId required').max(100),
+  role: workspaceRole,
+})
+
+export type WorkspaceMemberRoleInput = z.infer<typeof workspaceMemberRoleSchema>

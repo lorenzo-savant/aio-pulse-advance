@@ -1,12 +1,19 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { auditSite, auditArticle } from '@/lib/audit/site-audit'
 import { requireUser, rateLimitGate, isValidHttpUrl } from '@/lib/api-auth'
+import { firstZodMessage } from '@/lib/validations'
 import { SsrfError } from '@/lib/utils/safe-fetch'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
+
+const auditBodySchema = z.object({
+  url: z.string().refine(isValidHttpUrl, 'A valid http(s) URL is required'),
+  type: z.enum(['site', 'article']).default('site'),
+})
 
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req)
@@ -16,12 +23,11 @@ export async function POST(req: NextRequest) {
   if (limited) return limited
 
   try {
-    const body = await req.json()
-    const { url, type = 'site' } = body
-
-    if (!isValidHttpUrl(url)) {
-      return NextResponse.json({ error: 'A valid http(s) URL is required' }, { status: 400 })
+    const parsed = auditBodySchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: firstZodMessage(parsed.error) }, { status: 400 })
     }
+    const { url, type } = parsed.data
 
     const result = type === 'article' ? await auditArticle(url) : await auditSite(url)
     return NextResponse.json({ audit: result })

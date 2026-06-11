@@ -5,6 +5,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { creditsUseSchema, firstZodMessage } from '@/lib/validations'
 
 // Loose RPC shape — the generated Database type's rpc<> overloads gate by a
 // fixed name union that doesn't include consume_free_query / deduct_credits.
@@ -58,19 +59,18 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  let body: {
-    engines?: string[]
-    provider?: string
-    brand_id?: string
-    query_id?: string
-  }
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
 
-  const { engines = ['chatgpt'], provider, brand_id, query_id } = body
+  const parsed = creditsUseSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return err(firstZodMessage(parsed.error), 400)
+  }
+  const { engines = ['chatgpt'], provider, brand_id, query_id } = parsed.data
 
   try {
     // Check user's subscription status

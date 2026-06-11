@@ -1,10 +1,49 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { AuthError, getCurrentUserId } from '@/lib/supabase'
 import { getCostTracker, getCostAnalytics, BudgetManager } from '@/lib/cost-monitor'
+import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
+
+// Discriminated on `action`, fully typed so the parsed object matches the
+// cost-tracker's CostLogInput / estimateCost signatures without casts.
+const costMonitorPostSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('log'),
+    provider: z.string().max(60),
+    brandId: z.string().max(100).optional(),
+    agentType: z.string().max(60).optional(),
+    conversationId: z.string().max(100).optional(),
+    inputTokens: z.number().int().nonnegative(),
+    outputTokens: z.number().int().nonnegative(),
+    costUsd: z.number().nonnegative(),
+    costCredits: z.number().nonnegative(),
+    latencyMs: z.number().optional(),
+    endpoint: z.string().max(200).optional(),
+    success: z.boolean(),
+    errorMessage: z.string().max(2000).optional(),
+    cached: z.boolean().optional(),
+    model: z.string().max(100).optional(),
+  }),
+  z.object({
+    action: z.literal('estimate'),
+    provider: z.string().max(60),
+    inputTokens: z.number().int().nonnegative(),
+    outputTokens: z.number().int().nonnegative(),
+    model: z.string().max(100).optional(),
+  }),
+])
+
+const costMonitorPutSchema = z.object({
+  brandId: z.string().max(100).nullish(),
+  monthlyLimitUsd: z.number().optional(),
+  dailyLimitUsd: z.number().nullish(),
+  alertThreshold: z.number().optional(),
+  providerLimits: z.record(z.string(), z.number()).optional(),
+})
 
 export async function GET(request: NextRequest) {
   let userId: string
@@ -82,30 +121,30 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json()
-    const { action, ...data } = body
+    const parsed = costMonitorPostSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: firstZodMessage(parsed.error, 'Invalid action') },
+        { status: 400 },
+      )
+    }
+    const input = parsed.data
 
-    if (action === 'log') {
+    if (input.action === 'log') {
+      const { action: _action, ...logInput } = input
       const tracker = getCostTracker()
-      const log = await tracker.logCost({
-        userId,
-        ...data,
-      })
+      const log = await tracker.logCost({ userId, ...logInput })
       return NextResponse.json({ log })
     }
 
-    if (action === 'estimate') {
-      const tracker = getCostTracker()
-      const estimate = await tracker.estimateCost(
-        data.provider,
-        data.inputTokens,
-        data.outputTokens,
-        data.model,
-      )
-      return NextResponse.json({ estimate })
-    }
-
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    const tracker = getCostTracker()
+    const estimate = await tracker.estimateCost(
+      input.provider,
+      input.inputTokens,
+      input.outputTokens,
+      input.model,
+    )
+    return NextResponse.json({ estimate })
   } catch (err) {
     logger.error('cost-monitor: POST failed', { err })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -127,8 +166,11 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    const body = await request.json()
-    const { brandId, ...budgetData } = body
+    const parsed = costMonitorPutSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: firstZodMessage(parsed.error) }, { status: 400 })
+    }
+    const { brandId, ...budgetData } = parsed.data
 
     const budgetManager = new BudgetManager()
     const budget = await budgetManager.updateBudget(userId, brandId || null, budgetData)

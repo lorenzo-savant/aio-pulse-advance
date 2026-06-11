@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { workflowCreateSchema, firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import type { WorkflowExecution, WorkflowStatus, WorkflowType } from '@/types'
 import type { Json } from '@/types/database'
@@ -379,32 +380,14 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Create mode: POST /api/workflows  { type, brandId, promptId, ... } ───
-    const body = await request.json()
-    const { type, brandId, promptId, metadata } = body as CreateWorkflowInput
-
-    if (!type) {
+    const parsed = workflowCreateSchema.safeParse(await request.json())
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, message: 'Workflow type is required' },
+        { success: false, message: firstZodMessage(parsed.error, 'Workflow type is required') },
         { status: 400 },
       )
     }
-
-    const validTypes: WorkflowType[] = [
-      'monitoring_run',
-      'brand_setup',
-      'alert_evaluation',
-      'data_export',
-      'health_score_calc',
-    ]
-    if (!validTypes.includes(type)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Invalid workflow type. Must be one of: ${validTypes.join(', ')}`,
-        },
-        { status: 400 },
-      )
-    }
+    const { type, brandId, promptId, metadata } = parsed.data
 
     // A workflow scoped to a brand requires access to that brand.
     if (brandId && !(await verifyBrandAccess(brandId, userId))) {

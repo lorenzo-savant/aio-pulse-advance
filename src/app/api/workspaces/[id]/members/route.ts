@@ -5,6 +5,11 @@ import { requireUser } from '@/lib/api-auth'
 import { logger } from '@/lib/logger'
 import { logAudit } from '@/lib/services/audit-log'
 import {
+  workspaceMemberAddSchema,
+  workspaceMemberRoleSchema,
+  firstZodMessage,
+} from '@/lib/validations'
+import {
   addWorkspaceMember,
   getWorkspaceMembers,
   updateWorkspaceMemberRole,
@@ -57,12 +62,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { userId: actorId } = auth
 
     const { id: workspaceId } = await params
-    const body = await request.json()
-    const { userId: targetUserId, role } = body
-
-    if (!targetUserId || !workspaceId) {
-      return NextResponse.json({ error: 'userId and workspaceId required' }, { status: 400 })
+    const parsed = workspaceMemberAddSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: firstZodMessage(parsed.error) }, { status: 400 })
     }
+    const { userId: targetUserId, role } = parsed.data
 
     if (!(await canManageMembers(actorId, workspaceId))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -103,12 +107,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const { userId: actorId } = auth
 
     const { id: workspaceId } = await params
-    const body = await request.json()
-    const { userId: targetUserId, role } = body
-
-    if (!targetUserId || !role || !workspaceId) {
-      return NextResponse.json({ error: 'userId, role, and workspaceId required' }, { status: 400 })
+    const parsed = workspaceMemberRoleSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: firstZodMessage(parsed.error) }, { status: 400 })
     }
+    const { userId: targetUserId, role } = parsed.data
 
     if (!(await canManageMembers(actorId, workspaceId))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

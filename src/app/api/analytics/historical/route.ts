@@ -2,6 +2,7 @@
 // Historical Analytics API - Get historical data with trends and comparisons
 
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import {
   getHistoricalAnalytics,
@@ -10,7 +11,13 @@ import {
 } from '@/lib/services/analytics-service'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
+
+const analyticsHistoricalSchema = z.object({
+  brand_id: z.string().max(100).optional(),
+  generate_all: z.boolean().optional(),
+})
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -126,14 +133,15 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  let body: { brand_id?: string; generate_all?: boolean }
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
-
-  const { brand_id, generate_all } = body
+  const parsed = analyticsHistoricalSchema.safeParse(rawBody)
+  if (!parsed.success) return err(firstZodMessage(parsed.error), 400)
+  const { brand_id, generate_all } = parsed.data
 
   if (generate_all) {
     // Generate snapshots for all user's brands

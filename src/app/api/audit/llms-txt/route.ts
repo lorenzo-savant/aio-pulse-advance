@@ -1,11 +1,20 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { generateLlmstxt } from '@/lib/audit/generators'
 import { requireUser, rateLimitGate, isValidHttpUrl } from '@/lib/api-auth'
+import { firstZodMessage } from '@/lib/validations'
 import { SsrfError } from '@/lib/utils/safe-fetch'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
+
+const llmsTxtBodySchema = z.object({
+  url: z.string().refine(isValidHttpUrl, 'A valid http(s) URL is required'),
+  includePaths: z.array(z.string().max(2048)).max(100).optional(),
+  excludePaths: z.array(z.string().max(2048)).max(100).optional(),
+  maxUrls: z.number().int().positive().max(1000).optional(),
+})
 
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req)
@@ -15,18 +24,17 @@ export async function POST(req: NextRequest) {
   if (limited) return limited
 
   try {
-    const body = await req.json()
-    const { url, includePaths, excludePaths, maxUrls } = body
-
-    if (!isValidHttpUrl(url)) {
-      return NextResponse.json({ error: 'A valid http(s) URL is required' }, { status: 400 })
+    const parsed = llmsTxtBodySchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: firstZodMessage(parsed.error) }, { status: 400 })
     }
+    const { url, includePaths, excludePaths, maxUrls } = parsed.data
 
     const llmstxt = await generateLlmstxt({
       siteUrl: url,
-      includePaths: Array.isArray(includePaths) ? includePaths.slice(0, 100) : [],
-      excludePaths: Array.isArray(excludePaths) ? excludePaths.slice(0, 100) : [],
-      maxUrls: typeof maxUrls === 'number' ? maxUrls : 200,
+      includePaths: includePaths ?? [],
+      excludePaths: excludePaths ?? [],
+      maxUrls: maxUrls ?? 200,
     })
 
     return NextResponse.json({ llmstxt })

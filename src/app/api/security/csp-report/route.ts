@@ -1,27 +1,29 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
-interface CSPReport {
-  'csp-report'?: {
-    'blocked-uri': string
-    'document-uri': string
-    referrer: string
-    'violated-directive': string
-    'effective-directive': string
-    'original-policy': string
-  }
-}
+// Browsers control this payload shape and field presence varies across engines,
+// so every inner field is optional — we only require the `csp-report` envelope.
+const cspReportSchema = z.object({
+  'csp-report': z.object({
+    'blocked-uri': z.string().optional(),
+    'document-uri': z.string().optional(),
+    referrer: z.string().optional(),
+    'violated-directive': z.string().optional(),
+    'effective-directive': z.string().optional(),
+    'original-policy': z.string().optional(),
+  }),
+})
 
 export async function POST(req: NextRequest) {
   try {
-    const report: CSPReport = await req.json()
-    const cspReport = report['csp-report']
-
-    if (!cspReport) {
+    const parsed = cspReportSchema.safeParse(await req.json())
+    if (!parsed.success) {
       return NextResponse.json({ success: false, message: 'Invalid CSP report' }, { status: 400 })
     }
+    const cspReport = parsed.data['csp-report']
 
     const logEntry = {
       type: 'csp_violation',

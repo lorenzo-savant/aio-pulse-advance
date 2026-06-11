@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { hashApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
+import { publicBrandCreateSchema, firstZodMessage } from '@/lib/validations'
 
 const BRAND_LIST_COLS =
   'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
@@ -78,12 +79,14 @@ export async function POST(req: NextRequest) {
     return errorResponse('Invalid JSON body', 400)
   }
 
-  const { name, description, domain, aliases, domains, competitors, industry, language, color } =
-    body as Record<string, unknown>
-
-  if (!name || typeof name !== 'string') {
-    return errorResponse('name is required', 422)
+  // Runtime-validate the body. Zod strips any non-allowlisted keys (e.g.
+  // user_id, id, slug, *_at), so only the columns below ever reach the insert.
+  const parsed = publicBrandCreateSchema.safeParse(body)
+  if (!parsed.success) {
+    return errorResponse(firstZodMessage(parsed.error), 422)
   }
+  const { name, description, domain, aliases, domains, competitors, industry, language, color } =
+    parsed.data
 
   const slug = name
     .toLowerCase()

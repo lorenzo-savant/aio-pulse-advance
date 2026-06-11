@@ -1,8 +1,25 @@
 // PATH: src/app/api/scans/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { parsePaginationParams, paginatedResponse } from '@/lib/api-utils'
+import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
+
+const scanCreateSchema = z.object({
+  brand_id: z.string().max(100).optional(),
+  source: z.string().max(4000).optional(),
+  type: z.string().max(60).optional(),
+  summary: z.string().max(8000).optional(),
+  visibility_score: z.number().optional(),
+  engine: z.string().max(60).optional(),
+  model: z.string().max(100).optional(),
+  intent: z.string().max(100).optional(),
+  intent_confidence: z.number().optional(),
+  content_type: z.string().max(100).optional(),
+  tone: z.string().max(100).optional(),
+  reading_level: z.string().max(100).optional(),
+})
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -91,12 +108,15 @@ export async function POST(req: NextRequest) {
     return err('Authentication failed')
   }
 
-  let body: any
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
+  const parsed = scanCreateSchema.safeParse(rawBody)
+  if (!parsed.success) return err(firstZodMessage(parsed.error), 400)
+  const body = parsed.data
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)

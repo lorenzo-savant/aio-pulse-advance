@@ -7,14 +7,20 @@
 //   reuses the existing Perplexity integration via the router.
 
 import { type NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { simulateEngineResponse } from '@/lib/services/ai-router'
 import { isPerplexityAvailable } from '@/lib/services/perplexity'
 import { relatedQuestionsToPromptSuggestions } from '@/lib/services/prompt-suggestions'
+import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import type { Brand, BrandLanguage } from '@/types'
 
 export const dynamic = 'force-dynamic'
+
+const promptSuggestionsSchema = z.object({
+  brandId: z.string().min(1, 'brandId is required'),
+})
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -29,14 +35,15 @@ export async function POST(req: NextRequest) {
     return err('Authentication failed', 401)
   }
 
-  let body: { brandId?: string }
+  let rawBody: unknown
   try {
-    body = (await req.json()) as { brandId?: string }
+    rawBody = await req.json()
   } catch {
     return err('Invalid JSON body', 400)
   }
-  const brandId = body.brandId
-  if (!brandId) return err('brandId is required', 400)
+  const parsed = promptSuggestionsSchema.safeParse(rawBody)
+  if (!parsed.success) return err(firstZodMessage(parsed.error), 400)
+  const brandId = parsed.data.brandId
 
   if (!isPerplexityAvailable()) {
     // No PERPLEXITY_API_KEY → related_questions are unavailable. Return an empty

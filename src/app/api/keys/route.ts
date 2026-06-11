@@ -1,12 +1,25 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
+import { firstZodMessage } from '@/lib/validations'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { encryptSecret } from '@/lib/crypto/secret-box'
 import { logger } from '@/lib/logger'
 
 const ALLOWED_PROVIDERS = ['openai', 'gemini', 'perplexity', 'anthropic'] as const
+
+const keyCreateSchema = z.object({
+  provider: z.enum(ALLOWED_PROVIDERS),
+  apiKey: z.string().min(8, 'Invalid API key').max(512, 'Invalid API key'),
+  label: z.string().max(120).optional(),
+})
+
+const keyPatchSchema = z.object({
+  id: z.string().min(1, 'id and isActive required'),
+  isActive: z.boolean(),
+})
 
 function rateLimited(resetAt: number): NextResponse {
   return NextResponse.json(
@@ -62,31 +75,21 @@ export async function POST(req: NextRequest) {
   const rateCheck = await checkRateLimit(`keys-mut:${ip}`, 10, 60_000)
   if (!rateCheck.success) return rateLimited(rateCheck.resetAt)
 
-  let body: unknown
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return NextResponse.json({ success: false, message: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { provider, apiKey, label } = body as {
-    provider?: string
-    apiKey?: string
-    label?: string
-  }
-
-  if (!provider || !apiKey) {
+  const parsed = keyCreateSchema.safeParse(rawBody)
+  if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: 'Provider and API key required' },
+      { success: false, message: firstZodMessage(parsed.error, 'Provider and API key required') },
       { status: 400 },
     )
   }
-  if (!ALLOWED_PROVIDERS.includes(provider as (typeof ALLOWED_PROVIDERS)[number])) {
-    return NextResponse.json({ success: false, message: 'Unsupported provider' }, { status: 400 })
-  }
-  if (typeof apiKey !== 'string' || apiKey.length < 8 || apiKey.length > 512) {
-    return NextResponse.json({ success: false, message: 'Invalid API key' }, { status: 400 })
-  }
+  const { provider, apiKey, label } = parsed.data
 
   const supabase = createServerClient()
   if (!supabase) {
@@ -160,20 +163,21 @@ export async function PATCH(req: NextRequest) {
   const rateCheck = await checkRateLimit(`keys-mut:${ip}`, 10, 60_000)
   if (!rateCheck.success) return rateLimited(rateCheck.resetAt)
 
-  let body: unknown
+  let rawBody: unknown
   try {
-    body = await req.json()
+    rawBody = await req.json()
   } catch {
     return NextResponse.json({ success: false, message: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { id, isActive } = body as { id?: string; isActive?: boolean }
-  if (!id || typeof isActive !== 'boolean') {
+  const parsed = keyPatchSchema.safeParse(rawBody)
+  if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: 'id and isActive required' },
+      { success: false, message: firstZodMessage(parsed.error, 'id and isActive required') },
       { status: 400 },
     )
   }
+  const { id, isActive } = parsed.data
 
   const supabase = createServerClient()
   if (!supabase) {

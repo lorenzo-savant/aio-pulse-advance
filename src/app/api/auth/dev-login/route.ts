@@ -9,13 +9,16 @@ export async function POST() {
     return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
   }
 
-  const demoEmail = process.env.NEXT_PUBLIC_DEMO_EMAIL
-  const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD
+  // Server-only secrets — NOT prefixed NEXT_PUBLIC_, so they are never inlined
+  // into the client bundle. This route is the only reader and is hard-blocked
+  // in production above.
+  const demoEmail = process.env.DEMO_EMAIL
+  const demoPassword = process.env.DEMO_PASSWORD
 
   if (!demoEmail || !demoPassword) {
     return NextResponse.json(
       {
-        error: 'Set NEXT_PUBLIC_DEMO_EMAIL and NEXT_PUBLIC_DEMO_PASSWORD in .env.local',
+        error: 'Set DEMO_EMAIL and DEMO_PASSWORD in .env.local',
       },
       { status: 400 },
     )

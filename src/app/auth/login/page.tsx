@@ -24,19 +24,16 @@ function LoginForm() {
 
   const isDev = process.env.NODE_ENV === 'development'
 
-  // Dev-only auto-fill: reads credentials from .env.local at build time, NEVER
-  // falls back to a hardcoded string (which would be visible in the bundled JS
-  // and flagged as a secret by scanners like GitGuardian). If you want the
-  // auto-fill, set NEXT_PUBLIC_DEMO_EMAIL + NEXT_PUBLIC_DEMO_PASSWORD in
-  // .env.local; if you don't, the form just stays empty.
-  const devDemoEmail = isDev ? process.env.NEXT_PUBLIC_DEMO_EMAIL || '' : ''
-  const devDemoPassword = isDev ? process.env.NEXT_PUBLIC_DEMO_PASSWORD || '' : ''
-
-  const defaultEmail = devDemoEmail || emailParam || ''
-  const defaultPassword = devDemoPassword
+  // No demo credentials are read on the client. The previous NEXT_PUBLIC_DEMO_*
+  // auto-fill inlined the demo password into the shipped JS bundle (visible to
+  // anyone, and a footgun if those vars were ever set in a prod environment).
+  // Dev sign-in now goes solely through the server-only "Developer Bypass"
+  // button below → POST /api/auth/dev-login, which reads DEMO_EMAIL /
+  // DEMO_PASSWORD server-side (never exposed to the browser).
+  const defaultEmail = emailParam || ''
 
   const [email, setEmail] = useState(defaultEmail)
-  const [password, setPassword] = useState(defaultPassword)
+  const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)

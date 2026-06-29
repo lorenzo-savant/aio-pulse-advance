@@ -1082,7 +1082,11 @@ export default function BrandDetailPage() {
                           <p className="text-sm text-foreground">{invite.email}</p>
                           <p className="text-xs text-muted-foreground">
                             Invited as {invite.role} • Expires{' '}
-                            {new Date(invite.expires_at).toLocaleDateString()}
+                            {new Date(invite.expires_at).toLocaleDateString(undefined, {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
                           </p>
                         </div>
                       </div>

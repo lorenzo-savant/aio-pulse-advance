@@ -102,3 +102,6 @@ supabase/.temp/
 test-results/
 playwright-report/
 .gstack/
+
+.vercel
+.env*

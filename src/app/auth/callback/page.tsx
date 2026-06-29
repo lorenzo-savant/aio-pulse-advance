@@ -28,9 +28,12 @@ function AuthCallbackContent() {
       }
 
       if (tokenHash && type) {
+        // Verify with the hashed token (not the raw OTP), so the confirm/recovery
+        // link also works when opened on a different device/browser than signup —
+        // unlike the PKCE `{{ .ConfirmationURL }}` flow, which needs the original
+        // browser's code_verifier. `email` is kept only for the post-success redirect.
         const { error } = await supabase.auth.verifyOtp({
-          email: email || '',
-          token: tokenHash,
+          token_hash: tokenHash,
           type: type as 'email_change' | 'recovery' | 'signup' | 'magiclink',
         })
 

@@ -96,7 +96,10 @@ coverage/
 *.rej
 
 # ─── Dev artifacts ───────────────────────────────────────────────────────────
-.claude/
+# .claude holds local Claude Code state (keep ignored), but DO version shared
+# project skills committed under .claude/skills/.
+.claude/*
+!.claude/skills/
 .supabase/
 supabase/.temp/
 test-results/

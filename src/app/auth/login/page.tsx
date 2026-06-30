@@ -44,6 +44,25 @@ function LoginForm() {
     confirmed ? 'Email confirmed! Please sign in.' : null,
   )
 
+  // After sign-in, resume a pending team invite (the token is stashed in
+  // sessionStorage by /team/accept before it bounces an unauthenticated invitee
+  // here — this survives the register → confirm → login round-trip too) or an
+  // explicit, internal ?redirect= target. Falls back to the dashboard.
+  function postLoginDestination(): string {
+    if (typeof window !== 'undefined') {
+      const pendingToken = sessionStorage.getItem('pending_invite_token')
+      if (pendingToken) {
+        sessionStorage.removeItem('pending_invite_token')
+        return `/team/accept?token=${encodeURIComponent(pendingToken)}`
+      }
+    }
+    const redirect = searchParams.get('redirect')
+    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+      return redirect
+    }
+    return '/dashboard'
+  }
+
   async function handleDevBypass() {
     setLoading(true)
     setError(null)
@@ -104,7 +123,7 @@ function LoginForm() {
         return
       }
 
-      router.push('/dashboard')
+      router.push(postLoginDestination())
       router.refresh()
     } catch (err) {
       console.error('[login] Unexpected error:', err)

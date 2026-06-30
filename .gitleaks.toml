@@ -1,0 +1,18 @@
+# gitleaks configuration for AIO Pulse.
+#
+# Extends the default ruleset, but allowlists the placeholder values in
+# .env.example. Those "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." strings are just
+# the public JWT header prefix (it decodes to {"alg":"HS256","typ":"JWT"} — the
+# same header every Supabase key carries) followed by an ellipsis: a fill-in
+# template, not a real secret. Without this allowlist gitleaks' generic-api-key
+# rule trips on their entropy on every run (.env.example:55-56).
+title = "AIO Pulse gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Template placeholders in env example files are not real secrets"
+paths = [
+  '''\.env\.example$''',
+]

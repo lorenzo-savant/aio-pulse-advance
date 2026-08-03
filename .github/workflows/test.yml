@@ -220,7 +220,6 @@ jobs:
     # several current findings need a product decision before deletion (see
     # docs/enterprise-roadmap/05-hardening-2026-08.md, P5), so this must not
     # block until that list is resolved.
-    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -235,7 +234,13 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Run knip
-        run: npm run check:deadcode
+        # Report-only: the findings go to the log and to a warning annotation,
+        # but the check stays green. `continue-on-error` at job level was the
+        # wrong tool — the job is excused from failing the RUN, yet the check
+        # still reports red on the PR, which reads as a real regression.
+        run: |
+          npm run check:deadcode || \
+            echo "::warning title=Dead code::knip reported findings — see this job's log. Informational until the P5 list in docs/enterprise-roadmap/05-hardening-2026-08.md is resolved."
 
   unit-tests:
     name: Unit Tests

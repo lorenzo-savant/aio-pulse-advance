@@ -119,6 +119,16 @@ function LoginForm() {
         return
       }
 
+      // Claim any invitation addressed to this verified email. The token path
+      // through browser storage cannot survive confirming the email on another
+      // device, so this is what actually connects a collaborator. Best-effort:
+      // a failure here must never block the sign-in itself.
+      try {
+        await fetch('/api/invitations/claim', { method: 'POST' })
+      } catch {
+        /* non-blocking */
+      }
+
       router.push(postLoginDestination())
       router.refresh()
     } catch (err) {

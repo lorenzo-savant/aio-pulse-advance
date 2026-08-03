@@ -23,8 +23,11 @@ export function maskEmail(email: string): string {
   return `${local[0]}${'•'.repeat(Math.min(local.length - 1, 8))}${domain}`
 }
 
-function err(message: string, status = 500) {
-  return NextResponse.json({ success: false, message }, { status })
+function err(message: string, status = 500, code?: string) {
+  return NextResponse.json(
+    { success: false, message, ...(code ? { error: code } : {}) },
+    { status },
+  )
 }
 
 const acceptSchema = z.object({
@@ -113,11 +116,13 @@ export async function POST(req: NextRequest) {
     // invited address is MASKED: whoever holds this token may not be the
     // intended recipient (a forwarded email, a shared link), so the full
     // address must not be disclosed to them.
+    // A machine-readable code so the UI can offer "sign out and switch"
+    // rather than making the visitor parse prose and find their own way out.
     return err(
       `This invitation was issued for ${maskEmail(String(invitation.email))}, ` +
-        `but you are signed in as ${callerEmail ?? 'an unknown account'}. ` +
-        `Sign out and sign in with the invited address, then open the link again.`,
+        `but you are signed in as ${callerEmail ?? 'an unknown account'}.`,
       403,
+      'EMAIL_MISMATCH',
     )
   }
 

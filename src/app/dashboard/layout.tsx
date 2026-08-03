@@ -44,6 +44,18 @@ function DashboardInitializer({ children }: DashboardLayoutProps) {
 
       if (userId) {
         setUserId(userId)
+
+        // Claim any invitation addressed to this verified email before loading
+        // the workspace, so a collaborator sees the shared brand on this very
+        // render instead of after a sign-out/sign-in cycle. Covers the account
+        // that was created but never made it back to the accept link.
+        // Best-effort: the dashboard must render regardless.
+        try {
+          await fetch('/api/invitations/claim', { method: 'POST' })
+        } catch {
+          /* non-blocking */
+        }
+
         await loadScanHistory()
       }
     }

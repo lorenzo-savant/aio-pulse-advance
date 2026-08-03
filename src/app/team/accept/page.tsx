@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { savePendingInvite, takePendingInvite } from '@/lib/pending-invite'
+import { savePendingInvite, takePendingInvite, hasPendingInvite } from '@/lib/pending-invite'
 
 function AcceptContent() {
   const t = useTranslations('team_accept')
@@ -22,6 +22,11 @@ function AcceptContent() {
   // Context for the signed-out landing screen. Without this an invitee who has
   // no account is bounced to a sign-in form with no clue which address to use
   // — the dead end that left every invitation unaccepted.
+  // Set when the refusal was "you are signed in as the wrong account" — the
+  // only failure the visitor can resolve themselves.
+  const [wrongAccount, setWrongAccount] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+
   const [invite, setInvite] = useState<{
     brandName: string | null
     maskedEmail: string
@@ -52,6 +57,9 @@ function AcceptContent() {
     if (outcomeSettled.current) return
 
     if (!token) {
+      // A stashed token is about to be restored by the effect above — stay on
+      // the loading state instead of flashing a red error for one frame.
+      if (hasPendingInvite()) return
       setStatus('error')
       setMessage(t('invalid_token'))
       return
@@ -112,6 +120,14 @@ function AcceptContent() {
           setStatus('success')
           setMessage(data.message)
         } else {
+          // Signed in with the wrong account — by far the most common refusal,
+          // and the one the visitor can actually fix. Keep the token so the
+          // flow can resume after they switch accounts, and offer the switch
+          // instead of leaving them to work it out.
+          if (data.error === 'EMAIL_MISMATCH') {
+            savePendingInvite(token!)
+            setWrongAccount(true)
+          }
           setStatus('error')
           setMessage(data.message || 'Failed to accept invitation')
         }
@@ -125,6 +141,21 @@ function AcceptContent() {
     // router is stable across renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
+
+  // Sign out, then land back on /team/accept with no token in the URL. The
+  // restore effect picks the stashed token out of localStorage and the
+  // signed-out screen offers both doors — sign in, or create the account.
+  async function handleSwitchAccount() {
+    setSigningOut(true)
+    try {
+      const supabase = createSupabaseBrowserClient()
+      await supabase?.auth.signOut()
+    } catch {
+      // Even if sign-out fails, sending them onward is better than a dead end.
+    }
+    // Full reload so no stale session state survives in memory.
+    window.location.href = '/team/accept'
+  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background p-4">
@@ -217,12 +248,31 @@ function AcceptContent() {
               <XCircle className="text-red-400 mx-auto h-12 w-12" />
               <h2 className="mt-4 text-xl font-bold text-foreground">{t('error_title')}</h2>
               <p className="mt-2 text-muted-foreground">{message}</p>
-              <div className="mt-6 flex justify-center gap-3">
-                <Button variant="outline" onClick={() => router.push('/auth/login')}>
-                  {t('sign_in')}
-                </Button>
-                <Button onClick={() => router.push('/dashboard')}>{t('go_to_dashboard')}</Button>
-              </div>
+
+              {wrongAccount ? (
+                <>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Sign out and continue with the invited address. If it has no account yet,
+                    you&apos;ll be able to create one — the invitation is kept either way.
+                  </p>
+                  <div className="mt-6 flex flex-col gap-3">
+                    <Button disabled={signingOut} onClick={handleSwitchAccount}>
+                      {signingOut ? 'Signing out…' : 'Sign out and continue'}
+                      {!signingOut && <ArrowRight className="ml-2 h-4 w-4" />}
+                    </Button>
+                    <Button variant="outline" onClick={() => router.push('/dashboard')}>
+                      {t('go_to_dashboard')}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-6 flex justify-center gap-3">
+                  <Button variant="outline" onClick={() => router.push('/auth/login')}>
+                    {t('sign_in')}
+                  </Button>
+                  <Button onClick={() => router.push('/dashboard')}>{t('go_to_dashboard')}</Button>
+                </div>
+              )}
             </>
           )}
         </div>

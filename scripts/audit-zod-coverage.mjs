@@ -68,6 +68,11 @@ const EXEMPT_SUFFIXES = [
   // and read NO request body — there is nothing to validate.
   'api/providers/route.ts',
   'api/providers/health/route.ts',
+  // Claims pending invitations for the SIGNED-IN user's verified email.
+  // Reads NO request body at all — every input comes from the session, so
+  // there is nothing for a schema to validate. The trust boundary is the
+  // verified email, enforced in the handler.
+  'api/invitations/claim/route.ts',
   // Dev-only credential bootstrap: takes no body, hard-blocked in production.
   'api/auth/dev-login/route.ts',
 ]

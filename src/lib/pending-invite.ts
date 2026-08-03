@@ -85,6 +85,22 @@ export function takePendingInvite(): string | null {
   }
 }
 
+/**
+ * Non-consuming check. Used to suppress the "invalid link" state during the
+ * brief render where the URL has no token yet but a stashed one is about to
+ * be restored — otherwise the visitor sees a red error flash on the way back
+ * from signing out.
+ */
+export function hasPendingInvite(): boolean {
+  if (!canUseStorage()) return false
+  try {
+    if (window.localStorage.getItem(KEY)) return true
+    return Boolean(window.sessionStorage.getItem(LEGACY_KEY))
+  } catch {
+    return false
+  }
+}
+
 /** Where to send the user once they are authenticated. */
 export function pendingInviteDestination(): string | null {
   const token = takePendingInvite()

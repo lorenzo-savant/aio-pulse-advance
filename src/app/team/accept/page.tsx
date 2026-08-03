@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, ArrowRight, Mail } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { savePendingInvite, takePendingInvite } from '@/lib/pending-invite'
 
 function AcceptContent() {
   const t = useTranslations('team_accept')
@@ -15,15 +16,26 @@ function AcceptContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'needs-auth'>('loading')
   const [message, setMessage] = useState(t('accepting_message'))
+
+  // Context for the signed-out landing screen. Without this an invitee who has
+  // no account is bounced to a sign-in form with no clue which address to use
+  // — the dead end that left every invitation unaccepted.
+  const [invite, setInvite] = useState<{
+    brandName: string | null
+    maskedEmail: string
+    role: string
+    usable: boolean
+    expired: boolean
+    alreadyUsed: boolean
+  } | null>(null)
 
   useEffect(() => {
     if (!token && typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('pending_invite_token')
+      const saved = takePendingInvite()
       if (saved) {
-        sessionStorage.removeItem('pending_invite_token')
-        router.replace(`/team/accept?token=${saved}`)
+        router.replace(`/team/accept?token=${encodeURIComponent(saved)}`)
       }
     }
   }, [token, router])
@@ -58,11 +70,20 @@ function AcceptContent() {
       } = await supabase.auth.getSession()
 
       if (!session) {
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('pending_invite_token', token || '')
+        // Do NOT bounce straight to sign-in. An invitee may have no account at
+        // all, and a login form gives them nowhere to go. Stash the token, then
+        // show both doors — sign in, or create the account — with the invited
+        // address on screen so they know which one to use.
+        savePendingInvite(token || '')
+        outcomeSettled.current = true
+        try {
+          const res = await fetch(`/api/invitations/preview?token=${encodeURIComponent(token!)}`)
+          const data = await res.json()
+          if (data.success) setInvite(data.data)
+        } catch {
+          // Preview is decoration; the two buttons still work without it.
         }
-        const loginUrl = `/auth/login?redirect=${encodeURIComponent(`/team/accept?token=${token}`)}`
-        router.push(loginUrl)
+        setStatus('needs-auth')
         return
       }
 
@@ -117,6 +138,66 @@ function AcceptContent() {
               <Loader2 className="mx-auto h-12 w-12 animate-spin text-accent" />
               <h2 className="mt-4 text-xl font-bold text-foreground">{t('accepting_title')}</h2>
               <p className="mt-2 text-muted-foreground">{message}</p>
+            </>
+          )}
+
+          {status === 'needs-auth' && (
+            <>
+              <Mail className="mx-auto h-12 w-12 text-accent" />
+              <h2 className="mt-4 text-xl font-bold text-foreground">
+                {invite?.brandName
+                  ? `You've been invited to ${invite.brandName}`
+                  : "You've been invited to collaborate"}
+              </h2>
+
+              {invite && !invite.usable ? (
+                <p className="mt-2 text-muted-foreground">
+                  {invite.expired
+                    ? 'This invitation has expired. Ask the workspace owner to send a new one.'
+                    : 'This invitation has already been used.'}
+                </p>
+              ) : (
+                <>
+                  <p className="mt-2 text-muted-foreground">
+                    {invite ? (
+                      <>
+                        It was issued for{' '}
+                        <span className="font-semibold text-foreground">{invite.maskedEmail}</span>
+                        {invite.role ? ` as ${invite.role}` : ''}. Use that address to continue — an
+                        invitation only works for the account it was sent to.
+                      </>
+                    ) : (
+                      'Sign in with the invited address, or create an account for it, to accept.'
+                    )}
+                  </p>
+
+                  <div className="mt-6 flex flex-col gap-3">
+                    <Button
+                      onClick={() =>
+                        router.push(
+                          `/auth/register?redirect=${encodeURIComponent(`/team/accept?token=${token}`)}`,
+                        )
+                      }
+                    >
+                      Create an account <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        router.push(
+                          `/auth/login?redirect=${encodeURIComponent(`/team/accept?token=${token}`)}`,
+                        )
+                      }
+                    >
+                      I already have an account
+                    </Button>
+                  </div>
+
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    We&apos;ll bring you straight back here once you&apos;re signed in.
+                  </p>
+                </>
+              )}
             </>
           )}
 

@@ -30,6 +30,12 @@ const AUTH_GATES = [
 // decision, not a convenience.
 const PUBLIC_ALLOWLIST: Record<string, string> = {
   'health/route.ts': 'Public health/uptime probe — no tenant data returned.',
+  'invitations/preview/route.ts':
+    'Invitation landing context for a visitor who has no account yet — auth is ' +
+    'impossible by definition here. Read-only (consumes nothing, changes no ' +
+    "status), requires the token already in the visitor's URL, masks the " +
+    'invited email, returns an identical response for unknown and used tokens ' +
+    'so existence cannot be probed, and is rate-limited to 20/min per IP.',
   'errors/route.ts': 'Public client-error beacon — body sanitized, no tenant reads.',
   'security/csp-report/route.ts': 'Public CSP-violation beacon — write-only, sanitized.',
   'auth/dev-login/route.ts': 'Dev-only; hard 403 in production (NODE_ENV gate).',

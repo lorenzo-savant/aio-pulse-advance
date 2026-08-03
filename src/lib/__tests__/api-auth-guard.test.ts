@@ -36,6 +36,11 @@ const PUBLIC_ROUTES = new Set<string>([
   'billing/webhook/route.ts', // Stripe webhook — authenticated by Stripe signature
   'errors/route.ts', // client error beacon — intentionally unauth, input-sanitized
   'health/route.ts', // public health/readiness probe — no tenant data
+  // Invitation landing context for a visitor with no account yet — auth is
+  // impossible here by definition. Read-only, needs the token already in the
+  // visitor's URL, masks the invited email, answers identically for unknown
+  // and used tokens so existence can't be probed, rate-limited 20/min per IP.
+  'invitations/preview/route.ts',
   'security/csp-report/route.ts', // CSP violation collector — public by spec
   'auth/dev-login/route.ts', // dev-only demo login — early-returns 403 in production (NODE_ENV check)
 ])

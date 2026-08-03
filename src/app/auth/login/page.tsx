@@ -12,6 +12,7 @@ import { loginSchema } from '@/lib/validations'
 import { Reveal } from '@/components/Reveal'
 import { Ornament } from '@/components/Ornament'
 import { SiteHeader } from '@/components/SiteHeader'
+import { pendingInviteDestination } from '@/lib/pending-invite'
 
 function LoginForm() {
   const t = useTranslations('auth_pages.login')
@@ -49,13 +50,8 @@ function LoginForm() {
   // here — this survives the register → confirm → login round-trip too) or an
   // explicit, internal ?redirect= target. Falls back to the dashboard.
   function postLoginDestination(): string {
-    if (typeof window !== 'undefined') {
-      const pendingToken = sessionStorage.getItem('pending_invite_token')
-      if (pendingToken) {
-        sessionStorage.removeItem('pending_invite_token')
-        return `/team/accept?token=${encodeURIComponent(pendingToken)}`
-      }
-    }
+    const pending = pendingInviteDestination()
+    if (pending) return pending
     const redirect = searchParams.get('redirect')
     if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
       return redirect

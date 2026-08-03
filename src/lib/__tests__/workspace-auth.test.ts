@@ -7,7 +7,7 @@ import {
   logAudit,
   isWorkspaceOwner,
   canManageMembers,
-  canEditBrand,
+  canEditBrandsInWorkspace,
   canViewBrand,
   canViewAudit,
   type Role,
@@ -114,8 +114,8 @@ describe('workspace-auth permissions', () => {
       expect(result).toBe(false)
     })
 
-    it('canEditBrand returns false when supabase not configured', async () => {
-      const result = await canEditBrand('user-1', 'ws-1')
+    it('canEditBrandsInWorkspace returns false when supabase not configured', async () => {
+      const result = await canEditBrandsInWorkspace('user-1', 'ws-1')
       expect(result).toBe(false)
     })
 

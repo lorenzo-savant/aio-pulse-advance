@@ -2,21 +2,21 @@ import { describe, it, expect } from 'vitest'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
 
-const skipIfNoServer = async () => {
+// Probe once at collection time. When no dev server is listening the suite
+// is reported as SKIPPED instead of silently passing without assertions.
+const serverUp = await (async (): Promise<boolean> => {
   try {
     const response = await fetch(`${BASE_URL}/api/health`, { method: 'HEAD' })
-    return !response.ok
+    return response.ok
   } catch {
-    return true
+    return false
   }
-}
+})()
 
-describe('API Health Endpoint', () => {
+const describeApi = describe.skipIf(!serverUp)
+
+describeApi('API Health Endpoint', () => {
   it('GET /api/health returns 200 with the correct structure', async () => {
-    if (await skipIfNoServer()) {
-      return
-    }
-
     const response = await fetch(`${BASE_URL}/api/health`)
 
     expect(response.status).toBe(200)
@@ -32,10 +32,6 @@ describe('API Health Endpoint', () => {
   })
 
   it('response includes timestamp, version, runtime, and services fields', async () => {
-    if (await skipIfNoServer()) {
-      return
-    }
-
     const response = await fetch(`${BASE_URL}/api/health`)
     const data = await response.json()
 

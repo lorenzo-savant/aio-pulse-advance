@@ -22,6 +22,12 @@ interface HealthPayload {
   region: string
   runtime: string
   responseTime: number
+  /**
+   * True when credit metering is disabled (AIO_UNLIMITED_CREDITS). Reported
+   * unconditionally — including in production — because unmetered LLM spend
+   * is exactly the state an operator must never discover by accident.
+   */
+  unlimitedCredits: boolean
   services: {
     database: ServiceProbe
     rate_limit: ServiceProbe
@@ -143,6 +149,22 @@ export async function GET() {
 
   const overall = aggregateStatus([database, rate_limit, billing, email, ai_providers])
 
+  // Dynamic import: this route runs on the edge runtime, and the credits
+  // service pulls in the Supabase client. Importing it lazily keeps that out
+  // of the edge bundle while still reusing the single source of truth for the
+  // flag (including its production guard) rather than re-reading the env here.
+  const { isUnlimitedCreditsMode } = await import('@/lib/services/credits')
+  const unlimitedCreditsActive = isUnlimitedCreditsMode()
+
+  // The endpoint is public (rewritten to /health, polled by /status and by
+  // uptime monitors). Probe `note` strings carry env-var names and raw
+  // upstream error text — useful locally, but reconnaissance material on a
+  // public deploy (they enumerate exactly which secrets are unset). Strip
+  // them in production; per-service status/latency is all monitors need.
+  const isProd = process.env.NODE_ENV === 'production' || process.env['VERCEL_ENV'] === 'production'
+  const sanitize = <T extends ServiceProbe>(probe: T): T =>
+    isProd ? { ...probe, note: undefined } : probe
+
   const payload: HealthPayload = {
     status: overall,
     timestamp: new Date().toISOString(),
@@ -150,12 +172,13 @@ export async function GET() {
     region: process.env['VERCEL_REGION'] || 'unknown',
     runtime: 'edge',
     responseTime: Date.now() - start,
+    unlimitedCredits: unlimitedCreditsActive,
     services: {
-      database,
-      rate_limit,
-      billing,
-      email,
-      ai_providers,
+      database: sanitize(database),
+      rate_limit: sanitize(rate_limit),
+      billing: sanitize(billing),
+      email: sanitize(email),
+      ai_providers: sanitize(ai_providers),
     },
   }
 

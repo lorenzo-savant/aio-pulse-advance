@@ -22,7 +22,25 @@ import { cleanCitations, groundCitationsViaBrave } from './citation-grounding'
 import { detectBrandMention, extractUrlsFromText } from './brand-mention'
 import { lexicalSentiment, sentimentAgreement } from './sentiment-lexicon'
 import type { LexiconLabel, ConflictLevel } from './sentiment-lexicon'
+import { withLlmCache } from './llm-cache'
 import { logger } from '@/lib/logger'
+
+// TTL for the ANALYSIS pass only (see runMonitoringCheck). The simulation
+// pass is never persisted — re-running a scan must sample the engine afresh.
+//
+// Parsed explicitly rather than with `Number(x) || default`: falsy-zero
+// coercion made `=0` mean 3600 (so the cache could not be switched off) and
+// `=-1` mean 0 (so the documented full-bypass became coalescing-only) —
+// exactly inverting the contract llm-cache.ts declares. 0 disables the Redis
+// layer, a negative value bypasses every layer.
+function parseAnalysisTtl(): number {
+  const raw = process.env['AIO_ANALYSIS_CACHE_TTL_SECONDS']
+  if (raw === undefined || raw.trim() === '') return 3600
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : 3600
+}
+
+const ANALYSIS_CACHE_TTL_SECONDS = parseAnalysisTtl()
 
 function parseJson<T>(raw: string): T {
   const cleaned = raw
@@ -192,19 +210,51 @@ export async function runMonitoringCheck(
   const language: PromptLang =
     (brand.language as BrandLanguage) || (prompt.language as BrandLanguage) || 'en'
 
+  // PASS 1 — engine simulation. This IS the measurement, so it is never
+  // persisted to cache (ttl 0): a re-run must sample the engine afresh.
+  // The wrapper still coalesces concurrent identical calls, which is the
+  // double-spend guard for a double-clicked run or a cron overlapping a
+  // manual one — same data, one invoice line.
   const {
     text: responseText,
     provider: simulationProvider,
     citations: engineCitations = [],
-  } = await routerSimulate(prompt.text, engine, language, brand)
+  } = await withLlmCache(
+    {
+      surface: 'monitoring',
+      engine,
+      scope: brand.id,
+      payload: { prompt: prompt.text, language },
+    },
+    () => routerSimulate(prompt.text, engine, language, brand),
+  )
   logger.info('Engine simulation completed', {
     service: 'monitoring',
     engine,
     provider: simulationProvider,
   })
 
+  // PASS 2 — analysis of the text produced above. A pure derivation of
+  // (responseText, brand, promptText): identical input MUST yield identical
+  // output, so it is safe to persist. Different scans produce different
+  // responseText and therefore a different key — no false sharing. This
+  // halves the LLM spend of a monitoring run on repeated/identical answers.
   const analysisPrompt = buildAnalysisPrompt(responseText, brand, prompt.text)
-  const { text: analysisRaw, provider: analysisProvider } = await routerAnalyze(analysisPrompt)
+  const { text: analysisRaw, provider: analysisProvider } = await withLlmCache(
+    {
+      surface: 'analysis',
+      engine,
+      scope: brand.id,
+      payload: { analysisPrompt },
+    },
+    () => routerAnalyze(analysisPrompt),
+    {
+      ttlSeconds: ANALYSIS_CACHE_TTL_SECONDS,
+      // Never persist an empty completion — it would poison every retry
+      // for the whole TTL and surface as a parse failure downstream.
+      shouldCache: (r) => ((r as { text?: string }).text ?? '').trim().length > 0,
+    },
+  )
   logger.info('Brand analysis completed', {
     service: 'monitoring',
     engine,

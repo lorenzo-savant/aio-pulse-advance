@@ -140,6 +140,20 @@ describe('buildCspHeader', () => {
     expect(csp).toContain("frame-ancestors 'none'")
   })
 
+  it('locks down base-uri, object-src and form-action', () => {
+    const csp = buildCspHeader('n')
+    expect(csp).toContain("base-uri 'self'")
+    expect(csp).toContain("object-src 'none'")
+    expect(csp).toContain("form-action 'self'")
+  })
+
+  it('keeps script-src nonce-locked (no unsafe-inline for scripts)', () => {
+    const csp = buildCspHeader('n')
+    const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'))
+    expect(scriptSrc).toBeDefined()
+    expect(scriptSrc).not.toContain("'unsafe-inline'")
+  })
+
   it('allows supabase connect-src', () => {
     const csp = buildCspHeader('n')
     expect(csp).toContain('https://*.supabase.co')

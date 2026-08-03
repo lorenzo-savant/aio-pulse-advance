@@ -1,4 +1,5 @@
 import { safeFetch } from '@/lib/utils/safe-fetch'
+import { cached as cachedResponse } from '@/lib/response-cache'
 import { analyseZeroClickVulnerability } from '@/lib/utils/zero-click-vulnerability'
 import { analyseIntentLength } from '@/lib/utils/intent-length'
 import { checkComparisonTable } from '@/lib/utils/comparison-table-check'
@@ -439,8 +440,14 @@ interface PsiData {
   inpMs?: number
 }
 
+// Two-tier cache. L1 is this per-process Map (sub-millisecond, but on
+// serverless each lambda has its own, so fleet-wide hit rate was ~0 while
+// the PageSpeed quota was consumed as if uncached). L2 is Redis, shared
+// across the whole fleet and across deploys — that is the tier that
+// actually protects the quota.
 const PSI_CACHE = new Map<string, { data: PsiData | null; expiresAt: number }>()
-const PSI_CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
+const PSI_CACHE_TTL_SECONDS = 60 * 60 // 1 hour
+const PSI_CACHE_TTL_MS = PSI_CACHE_TTL_SECONDS * 1000
 const PSI_CACHE_MAX = 200
 
 function psiCacheGet(url: string): PsiData | null | undefined {
@@ -465,9 +472,26 @@ async function fetchPageSpeedInsights(url: string): Promise<PsiData | null> {
   const apiKey = process.env['PAGESPEED_API_KEY']
   if (!apiKey) return null // no key → skip (see comment above)
 
-  const cached = psiCacheGet(url)
-  if (cached !== undefined) return cached
+  // L1 — per-process.
+  const memHit = psiCacheGet(url)
+  if (memHit !== undefined) return memHit
 
+  // L2 — Redis, shared fleet-wide. The value is wrapped in an envelope so a
+  // cached NEGATIVE result (null = PSI failed for this URL) is preserved:
+  // a bare null read back from Redis is indistinguishable from a miss, and
+  // losing it would reopen the retry-storm this cache exists to prevent.
+  const envelope = await cachedResponse<{ v: PsiData | null }>(
+    { key: `psi:${url}`, ttlSeconds: PSI_CACHE_TTL_SECONDS },
+    async () => ({ v: await fetchPsiFromApi(url, apiKey) }),
+  )
+  psiCacheSet(url, envelope.v)
+  return envelope.v
+}
+
+// Raw PSI call. Caching (both tiers) is the caller's job — a null return
+// here IS a cacheable negative result: it stops a broken URL from
+// retry-storming the PageSpeed quota for the whole TTL.
+async function fetchPsiFromApi(url: string, apiKey: string): Promise<PsiData | null> {
   const params = new URLSearchParams({
     url,
     strategy: 'mobile',
@@ -479,10 +503,7 @@ async function fetchPageSpeedInsights(url: string): Promise<PsiData | null> {
       `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`,
       { timeout: 25000 },
     )
-    if (!res.ok) {
-      psiCacheSet(url, null) // cache the failure too, don't retry-storm
-      return null
-    }
+    if (!res.ok) return null
     const data = (await res.json().catch(() => null)) as {
       lighthouseResult?: {
         categories?: { performance?: { score?: number | null } }
@@ -490,19 +511,14 @@ async function fetchPageSpeedInsights(url: string): Promise<PsiData | null> {
       }
     } | null
     const perf = data?.lighthouseResult?.categories?.performance
-    if (!perf) {
-      psiCacheSet(url, null)
-      return null
-    }
+    if (!perf) return null
     const a = data?.lighthouseResult?.audits ?? {}
-    const result: PsiData = {
+    return {
       performanceScore: Math.round((perf.score ?? 0) * 100),
       lcpMs: a['largest-contentful-paint']?.numericValue,
       clsValue: a['cumulative-layout-shift']?.numericValue,
       inpMs: a['interaction-to-next-paint']?.numericValue,
     }
-    psiCacheSet(url, result)
-    return result
   } catch {
     return null
   }

@@ -10,12 +10,16 @@
 
 import { createServerClient } from '@/lib/supabase'
 import { gradeFor, type GeoGrade } from '@/lib/services/geo-score'
+import { safeFetch } from '@/lib/utils/safe-fetch'
 import { logger } from '@/lib/logger'
 
 async function checkLlmsTxt(domain: string): Promise<boolean> {
   try {
     const url = domain.startsWith('http') ? `${domain}/llms.txt` : `https://${domain}/llms.txt`
-    const res = await fetch(url, {
+    // safeFetch, not fetch: row.url passed SSRF validation at audit time, but
+    // this call re-resolves the hostname — without the guard a DNS rebind
+    // could point it at localhost/metadata and use the boolean as an oracle.
+    const res = await safeFetch(url, {
       method: 'HEAD',
       signal: AbortSignal.timeout(5_000),
     })

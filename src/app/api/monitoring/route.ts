@@ -11,6 +11,8 @@ import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/servic
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 import { trackKeywords } from '@/lib/services/keyword-tracker'
 import { checkRateLimit } from '@/lib/ratelimit'
+import { consumeCreditsForQuery } from '@/lib/services/credits'
+import { INACTIVE_MEMBER_STATUSES } from '@/lib/authorize'
 import type { Brand, Prompt, MonitoringResult, AlertRule } from '@/types'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -92,12 +94,16 @@ export async function POST(req: NextRequest) {
   const isBrandOwner = brandOwnerId === requestUserId
   const isPromptOwner = promptOwnerId === requestUserId
 
-  // Also check team membership
+  // Also check team membership. The status filter was MISSING here, so a
+  // merely invited (still pending) or declined user passed as a team member
+  // and could spend the brand owner's credits — the opposite failure from the
+  // brand list, which allowlisted a status no row ever has.
   const { data: membership } = await db
     .from('team_members')
     .select('id')
     .eq('brand_id', brand.id)
     .eq('user_id', userId)
+    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
     .single()
 
   const isTeamMember = !!membership
@@ -137,39 +143,32 @@ export async function POST(req: NextRequest) {
   logger.debug('Checking credits for engines', { source: 'monitoring', engines })
 
   try {
-    const creditRes = await fetch(new URL('/api/credits/use', req.url).toString(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: req.headers.get('authorization') || '',
-        Cookie: req.headers.get('cookie') || '',
-      },
-      body: JSON.stringify({
-        engines,
-        brand_id: brand.id,
-        query_id: prompt.id,
-      }),
+    // Direct service call. This used to be a self-HTTP fetch to
+    // /api/credits/use that forwarded the caller's cookie/authorization and
+    // derived the origin from the inbound Host header — double invocation,
+    // second rate-limit token, and a header-forwarding hazard.
+    const creditDecision = await consumeCreditsForQuery(requestUserId, {
+      engines,
+      brandId: brand.id,
+      queryId: prompt.id,
     })
+    logger.debug('Credit check result', { source: 'monitoring', creditDecision })
 
-    const creditData = await creditRes.json()
-    logger.debug('Credit check result', { source: 'monitoring', creditData })
-
-    if (!creditData.success || !creditData.data?.allowed) {
+    if (!creditDecision.allowed) {
       return NextResponse.json(
         {
           success: false,
-          message: creditData.message || 'Insufficient credits',
+          message: creditDecision.message || 'Insufficient credits',
           error: 'INSUFFICIENT_CREDITS',
           data: {
-            cost: creditData.data?.cost,
-            balance: creditData.data?.balance,
+            cost: creditDecision.cost,
           },
         },
         { status: 402 },
       )
     }
 
-    logger.debug('Credits approved', { source: 'monitoring', data: creditData.data })
+    logger.debug('Credits approved', { source: 'monitoring', data: creditDecision })
   } catch (creditErr) {
     logger.error('Credit check failed', { source: 'monitoring', error: String(creditErr) })
     // Fail closed: never run paid LLM work if the credit gate could not be

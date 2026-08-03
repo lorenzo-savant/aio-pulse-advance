@@ -9,6 +9,7 @@ import { withDerivedAliases } from '@/lib/brand-aliases'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 import { logAudit } from '@/lib/services/audit-log'
+import { INACTIVE_MEMBER_STATUSES } from '@/lib/authorize'
 import { getCurrentOrganization } from '@/lib/services/organization-auth'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -68,11 +69,16 @@ async function getUserBrandIds(
 
   const ownedIds = ((ownedBrands ?? []) as Array<{ id: string }>).map((b) => b.id)
 
+  // THIS is what made team collaboration silently useless: the filter
+  // allowlisted 'accepted', but the invitation-accept route writes 'active',
+  // so `teamIds` was ALWAYS empty. An invited colleague accepted the
+  // invitation, got a real membership row, and still saw zero brands.
+  // See INACTIVE_MEMBER_STATUSES for the two live vocabularies.
   const { data: teamMemberships } = await db
     .from('team_members')
     .select('brand_id')
     .eq('user_id', userId)
-    .eq('status', 'accepted')
+    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
 
   const teamIds = ((teamMemberships ?? []) as Array<{ brand_id: string }>).map((m) => m.brand_id)
 

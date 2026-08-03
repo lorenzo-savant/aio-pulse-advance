@@ -21,6 +21,11 @@ import type { Brand } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
+// 25 schedules × (4 queries + PDF generation + email + 2 writes) runs well
+// past the Vercel default timeout — declare the ceiling explicitly so a
+// long sweep isn't killed mid-delivery.
+export const maxDuration = 300
+
 interface ScheduleRow {
   id: string
   user_id: string

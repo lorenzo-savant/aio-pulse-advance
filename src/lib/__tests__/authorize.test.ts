@@ -24,6 +24,10 @@ function buildChain(table: string) {
       return chain
     },
     in: () => chain,
+    // `.not('status','in',…)` is a DENYLIST — it excludes rows rather than
+    // identifying one, so it must not take part in the lookup key. Rows placed
+    // in queryResults represent memberships that already passed the filter.
+    not: () => chain,
     single: () => {
       // Try exact key first, then table-only fallback
       const key = resultKey(table, filters)
@@ -100,9 +104,7 @@ describe('verifyBrandAccess', () => {
       error: { message: 'not found' },
     }
     // Team membership succeeds
-    queryResults[
-      resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })
-    ] = {
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID })] = {
       data: { brand_id: BRAND_ID },
       error: null,
     }
@@ -161,9 +163,7 @@ describe('verifyBrandAccess', () => {
       data: null,
       error: { message: 'not found' },
     }
-    queryResults[
-      resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })
-    ] = {
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID })] = {
       data: { brand_id: BRAND_ID },
       error: null,
     }
@@ -223,9 +223,7 @@ describe('verifyBrandOwnership', () => {
       error: null,
     }
     // team membership would succeed — but should not be checked
-    queryResults[
-      resultKey('team_members', { brand_id: BRAND_ID, user_id: OTHER_USER, status: 'accepted' })
-    ] = {
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: OTHER_USER })] = {
       data: { brand_id: BRAND_ID },
       error: null,
     }
@@ -412,9 +410,7 @@ describe('canEditBrand', () => {
       data: { user_id: 'someone-else' },
       error: null,
     }
-    queryResults[
-      resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })
-    ] = {
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID })] = {
       data: { role: 'editor' },
       error: null,
     }
@@ -427,9 +423,7 @@ describe('canEditBrand', () => {
       data: { user_id: 'someone-else' },
       error: null,
     }
-    queryResults[
-      resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID, status: 'accepted' })
-    ] = {
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID })] = {
       data: { role: 'owner' },
       error: null,
     }
@@ -485,10 +479,13 @@ describe('getAccessibleBrandIds', () => {
           return { select: () => ({ eq: () => ({ data: ownedBrands, error: null }) }) }
         }
         if (table === 'team_members') {
+          // The membership query filters with `.not('status','in',…)` — a
+          // denylist that excludes pending/declined rows. `teamMemberships`
+          // represents what survives it.
           return {
             select: () => ({
               eq: (_f: string, _v: string) => ({
-                eq: () => ({ data: teamMemberships, error: null }),
+                not: () => ({ data: teamMemberships, error: null }),
               }),
             }),
           }
@@ -531,10 +528,11 @@ describe('getAccessibleBrandIds', () => {
     expect(result).toEqual([])
   })
 
-  it('deduplication is not applied (caller responsibility)', async () => {
-    // If same brand is owned AND team member, both appear
+  it('deduplicates a brand that is both owned and a team membership', async () => {
+    // Same brand owned AND team member → one ID, so downstream .in()
+    // filters never receive duplicates.
     const db = createMockDb([{ id: 'b1' }], [{ brand_id: 'b1' }])
     const result = await getAccessibleBrandIds(db, USER_ID)
-    expect(result).toEqual(['b1', 'b1'])
+    expect(result).toEqual(['b1'])
   })
 })

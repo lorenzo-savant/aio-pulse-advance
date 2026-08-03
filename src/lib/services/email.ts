@@ -387,30 +387,7 @@ export async function sendScheduledReportEmail({
   }
 }
 
-export async function sendWebhookNotification(
-  webhookUrl: string,
-  payload: Record<string, unknown>,
-) {
-  try {
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...payload,
-        source: 'aio-pulse',
-        timestamp: new Date().toISOString(),
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Webhook returned ${response.status}`)
-    }
-
-    return { success: true }
-  } catch (error) {
-    logger.error('Webhook notification error', { service: 'email', error })
-    return { success: false, error }
-  }
-}
+// NOTE: outbound webhook delivery lives in src/lib/services/webhook-delivery.ts
+// (HMAC-signed, SSRF-guarded via safeFetch). A dead sendWebhookNotification
+// duplicate with a raw fetch() used to live here — deleted so nobody wires
+// up the unguarded variant by mistake.

@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { GLOSSARY_TERMS, getTerm, getTermsByCategory } from '@/lib/data/glossary'
+import { withApiHandler } from '@/lib/api-utils'
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler('glossary', async (req: NextRequest) => {
   const { searchParams } = new URL(req.url)
   const slug = searchParams.get('slug')
   const category = searchParams.get('category')
@@ -23,4 +24,4 @@ export async function GET(req: NextRequest) {
     data: GLOSSARY_TERMS,
     categories: [...new Set(GLOSSARY_TERMS.map((t) => t.category))],
   })
-}
+})

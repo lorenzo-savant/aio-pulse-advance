@@ -1,30 +1,31 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { API_VERSION, getApiVersion, getDeprecationWarning, API_VERSIONS } from '@/lib/api-version'
+import { withApiHandler } from '@/lib/api-utils'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler('v1', async (req: NextRequest) => {
   return handleRequest(req)
-}
+})
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler('v1', async (req: NextRequest) => {
   return handleRequest(req)
-}
+})
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = withApiHandler('v1', async (req: NextRequest) => {
   return handleRequest(req)
-}
+})
 
-export async function PUT(req: NextRequest) {
+export const PUT = withApiHandler('v1', async (req: NextRequest) => {
   return handleRequest(req)
-}
+})
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = withApiHandler('v1', async (req: NextRequest) => {
   return handleRequest(req)
-}
+})
 
 async function handleRequest(req: NextRequest): Promise<NextResponse> {
   const version = getApiVersion(req)

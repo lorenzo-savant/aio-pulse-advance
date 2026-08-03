@@ -1,8 +1,33 @@
 import { createHash, createHmac, timingSafeEqual } from 'crypto'
 import { checkRateLimit, type RateLimitResult } from '@/lib/ratelimit'
+import { createServerClient } from '@/lib/supabase'
 
 export function hashApiKey(key: string): string {
   return createHash('sha256').update(key).digest('hex')
+}
+
+/**
+ * Resolve a public-API key (X-API-Key header) to its owning user id.
+ * Returns null for unknown/revoked keys or when the DB is unavailable.
+ *
+ * Single definition on purpose: this used to be copy-pasted verbatim into
+ * all four /api/v1 routes, so a revocation-check fix in one would silently
+ * miss the other three.
+ */
+export async function verifyApiKey(apiKey: string): Promise<string | null> {
+  const keyHash = hashApiKey(apiKey)
+  const db = createServerClient()
+  if (!db) return null
+
+  const { data, error } = await db
+    .from('user_api_keys')
+    .select('user_id, is_active')
+    .eq('encrypted_key', keyHash)
+    .eq('is_active', true)
+    .single()
+
+  if (error || !data) return null
+  return data.user_id
 }
 
 export function verifyWebhook(payload: string, signature: string, secret: string): boolean {

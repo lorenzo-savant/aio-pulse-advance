@@ -20,7 +20,8 @@ const AUTH_GATES = [
   'requireUser', // session gate — src/lib/api-auth
   'getCurrentUserId', // session gate — src/lib/supabase (used directly)
   'verifyCronAuth', // cron-secret gate — src/lib/cron-auth
-  'hashApiKey', // v1 public-API key gate — src/lib/services/public-api
+  'verifyApiKey', // v1 public-API key gate — src/lib/services/public-api
+  'hashApiKey', // legacy spelling of the v1 key gate (inlined hash+lookup)
   'constructEvent', // Stripe webhook signature verification
 ] as const
 

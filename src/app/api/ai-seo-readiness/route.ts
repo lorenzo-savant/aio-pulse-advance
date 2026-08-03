@@ -7,10 +7,11 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { computeReadinessReport } from '@/lib/services/ai-seo-readiness'
+import { withApiHandler } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler('ai-seo-readiness', async (req: NextRequest) => {
   const auth = await requireUser(req)
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
@@ -25,4 +26,4 @@ export async function GET(req: NextRequest) {
 
   const report = await computeReadinessReport(brandId)
   return NextResponse.json({ success: true, data: report, timestamp: Date.now() })
-}
+})

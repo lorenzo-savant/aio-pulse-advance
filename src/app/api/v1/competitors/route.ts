@@ -1,22 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { hashApiKey, publicApiRateLimit } from '@/lib/services/public-api'
+import { verifyApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
-
-async function verifyApiKey(apiKey: string): Promise<string | null> {
-  const keyHash = hashApiKey(apiKey)
-  const db = createServerClient()
-  if (!db) return null
-
-  const { data, error } = await db
-    .from('user_api_keys')
-    .select('user_id, is_active')
-    .eq('encrypted_key', keyHash)
-    .eq('is_active', true)
-    .single()
-
-  if (error || !data) return null
-  return data.user_id
-}
+import { withApiHandler } from '@/lib/api-utils'
 
 function successResponse(data: unknown) {
   return NextResponse.json({ success: true, data, timestamp: Date.now() })
@@ -34,7 +19,7 @@ function rateLimitResponse(resetAt: number) {
   )
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler('v1/competitors', async (req: NextRequest) => {
   const apiKey = req.headers.get('X-API-Key')
   if (!apiKey) return errorResponse('Missing X-API-Key header', 401)
 
@@ -80,4 +65,4 @@ export async function GET(req: NextRequest) {
 
   if (error) return errorResponse(error.message)
   return successResponse(data || [])
-}
+})

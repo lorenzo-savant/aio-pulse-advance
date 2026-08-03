@@ -4,19 +4,32 @@ import { isOpenAIAvailable, callOpenAI } from '@/lib/services/openai'
 import { isPerplexityAvailable, callPerplexity } from '@/lib/services/perplexity'
 import { isAnthropicAvailable, callAnthropic } from '@/lib/services/anthropic'
 import { callGemini } from '@/lib/services/gemini'
-import { getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireUser } from '@/lib/api-auth'
+import { checkRateLimit } from '@/lib/ratelimit'
+import { logger } from '@/lib/logger'
 
 const TEST_PROMPT = 'What is AI? Answer in 2 sentences.'
 
+// ─── POST /api/providers — live connectivity probe against all 4 LLMs ───────
+// Each invocation spends 4 paid provider calls, so on top of auth it carries
+// a tight per-user limit. Raw provider error strings can leak account/quota
+// detail — they are logged server-side and replaced with a generic label.
 export async function POST(req: NextRequest) {
-  let userId: string
-  try {
-    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
-  } catch (e) {
-    if (e instanceof AuthError)
-      return NextResponse.json({ success: false, message: e.message }, { status: 401 })
-    return NextResponse.json({ success: false, message: 'Authentication failed' }, { status: 401 })
+  const auth = await requireUser(req)
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
+
+  const rl = await checkRateLimit(`providers-test:${userId}`, 3, 60_000)
+  if (!rl.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      },
+    )
   }
+
   const results: Record<
     string,
     { status: string; error?: string; response?: string; latency?: number }
@@ -40,9 +53,14 @@ export async function POST(req: NextRequest) {
         latency: Date.now() - start,
       }
     } catch (error) {
+      logger.warn('Provider test failed', {
+        source: 'providers',
+        provider: name,
+        error: error instanceof Error ? error.message : String(error),
+      })
       results[name] = {
         status: 'error',
-        error: error instanceof Error ? error.message : String(error),
+        error: 'Provider request failed — see server logs',
         latency: Date.now() - start,
       }
     }

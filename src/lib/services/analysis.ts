@@ -10,7 +10,9 @@ import { callPerplexity } from './perplexity'
 import { callAnthropic } from './anthropic'
 import { logger } from '@/lib/logger'
 
-function repairTruncatedJson(raw: string): string {
+// Exported for tests: services.test.ts previously asserted against an inline
+// COPY of this function, which could pass while the real one drifted.
+export function repairTruncatedJson(raw: string): string {
   let s = raw.trim()
   const quoteCount = (s.match(/(?<!\\)"/g) || []).length
   if (quoteCount % 2 !== 0) s += '"'

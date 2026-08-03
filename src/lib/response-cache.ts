@@ -37,7 +37,7 @@ function getRedis(): Redis | null {
 
 const CACHE_PREFIX = 'aio-pulse:rc:'
 
-export interface CacheOptions {
+export interface CacheOptions<T = unknown> {
   /** Cache key — MUST include every input that changes the response. */
   key: string
   /** TTL in seconds. Default 300 (5 minutes). */
@@ -48,6 +48,17 @@ export interface CacheOptions {
    * the response shape changes.
    */
   version?: string
+  /**
+   * Gate the WRITE. Return false to compute-and-return without persisting.
+   *
+   * Use it for anything that represents a FAILURE or a not-yet-populated
+   * state. Caching those is the classic footgun: a two-second DB blip gets
+   * frozen into the response for the whole TTL, and no refresh can clear it
+   * because the cache is serving the error it recorded.
+   *
+   * Defaults to "always cache" to preserve existing call-site behaviour.
+   */
+  shouldCache?: (value: T) => boolean
 }
 
 /**
@@ -59,7 +70,7 @@ export interface CacheOptions {
  *       () => computeAvi(brandId),
  *     )
  */
-export async function cached<T>(opts: CacheOptions, compute: () => Promise<T>): Promise<T> {
+export async function cached<T>(opts: CacheOptions<T>, compute: () => Promise<T>): Promise<T> {
   const redis = getRedis()
   const fullKey = `${CACHE_PREFIX}${opts.version ?? 'v1'}:${opts.key}`
 
@@ -78,7 +89,7 @@ export async function cached<T>(opts: CacheOptions, compute: () => Promise<T>): 
 
   const value = await compute()
 
-  if (redis) {
+  if (redis && (opts.shouldCache ? opts.shouldCache(value) : true)) {
     try {
       await redis.set(fullKey, value, { ex: opts.ttlSeconds ?? 300 })
     } catch (e) {

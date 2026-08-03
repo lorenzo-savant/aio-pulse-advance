@@ -5,6 +5,13 @@ import { createServerClient } from '@/lib/supabase'
 import { generateWeeklyReview } from '@/lib/services/weekly-review'
 import { verifyCronAuth } from '@/lib/cron-auth'
 
+// Each brand costs an LLM call + 2 writes, run serially. Without an explicit
+// cap the route inherits the Vercel default and dies mid-loop with no resume.
+export const maxDuration = 300
+
+// Hard bound per run; growth beyond this needs a queue, not a bigger number.
+const MAX_BRANDS_PER_RUN = 100
+
 export async function POST(req: NextRequest) {
   const cronError = verifyCronAuth(req)
   if (cronError) return cronError
@@ -19,6 +26,7 @@ export async function POST(req: NextRequest) {
     .select('id, name, user_id')
     .eq('is_active', true)
     .is('deleted_at', null)
+    .limit(MAX_BRANDS_PER_RUN)
 
   if (!brands?.length) {
     return NextResponse.json({ message: 'No active brands', reviewsGenerated: 0 })

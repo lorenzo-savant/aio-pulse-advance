@@ -1,6 +1,8 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { requireUser } from '@/lib/api-auth'
+import { checkRateLimit } from '@/lib/ratelimit'
 import { generatePrompts } from '@/lib/services/prompt-generator'
 import type { Locale } from '@/lib/services/prompt-generator'
 import { augmentWithAiPrompts } from '@/lib/services/prompt-generator-ai'
@@ -20,6 +22,25 @@ const schema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  // Auth required: with `withAi` this route spends paid LLM tokens, and both
+  // callers (brands/new, PromptGeneratorPanel) live inside the dashboard.
+  const auth = await requireUser(req)
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
+
+  // Per-user throttle — the AI augmentation path fans out to Groq/Gemini/
+  // OpenAI, so the global 100/min IP limit alone is not a cost control.
+  const rl = await checkRateLimit(`prompts-gen-industry:${userId}`, 10, 60_000)
+  if (!rl.success) {
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded. Try again later.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      },
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()

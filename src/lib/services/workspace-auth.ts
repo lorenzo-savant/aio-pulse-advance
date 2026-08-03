@@ -175,7 +175,14 @@ export async function canManageMembers(userId: string, workspaceId: string): Pro
   return checkPermission(userId, workspaceId, 'manage_members')
 }
 
-export async function canEditBrand(userId: string, workspaceId: string): Promise<boolean> {
+// Renamed from canEditBrand: src/lib/authorize.ts exports a same-named
+// helper with the argument order SWAPPED — canEditBrand(brandId, userId) —
+// which made the pair a live authz footgun for whoever imported the wrong
+// one. The workspace-scoped name states exactly what is being checked.
+export async function canEditBrandsInWorkspace(
+  userId: string,
+  workspaceId: string,
+): Promise<boolean> {
   return checkPermission(userId, workspaceId, 'edit_brand')
 }
 

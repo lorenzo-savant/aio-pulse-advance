@@ -14,6 +14,7 @@ import { verifyBrandAccess } from '@/lib/authorize'
 import { createServerClient } from '@/lib/supabase'
 import { buildDivergenceReport } from '@/lib/utils/claim-divergence'
 import { logger } from '@/lib/logger'
+import { withApiHandler } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,7 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler('claim-divergence', async (req: NextRequest) => {
   const auth = await requireUser(req)
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
@@ -94,4 +95,4 @@ export async function GET(req: NextRequest) {
     },
     timestamp: Date.now(),
   })
-}
+})

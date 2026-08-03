@@ -5,6 +5,17 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  # Weekly sweep: `npm audit` only sees the tree at merge time, so an
+  # advisory published after the last merge would otherwise go unnoticed
+  # until the next PR. Monday 06:00 UTC.
+  schedule:
+    - cron: '0 6 * * 1'
+
+# Superseded pushes to the same ref cancel their in-flight runs — a rebased
+# PR was previously burning a full parallel matrix per push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint-and-typecheck:
@@ -26,8 +37,13 @@ jobs:
         # Without this flag, npm ci refuses with 'Missing: @swc/helpers@0.5.21'.
         run: npm ci --legacy-peer-deps
 
-      - name: Run ESLint
-        run: npm run lint
+      - name: Run ESLint (ratchet)
+        # --max-warnings is a RATCHET, not a target. The repo's rule #1
+        # ("zero `as any`") is a `warn` rule, so a plain `eslint .` can never
+        # fail on it — 129 `as any` accumulated under a green check. The cap
+        # is pinned to the current count: new warnings fail the build, and
+        # every cleanup PR should LOWER the number in package.json.
+        run: npm run lint:ci
 
       - name: Run TypeScript type check
         run: npm run type-check
@@ -175,10 +191,9 @@ jobs:
     # Scans the committed working tree (NOT git history) for leaked secrets so
     # a new commit can't introduce an API key / token. `--no-git` keeps the
     # scan deterministic on the current files and avoids tripping on any
-    # pre-existing history. INFORMATIONAL during the ramp (mirrors the
-    # security-audit pattern this repo already uses): once a green run confirms
-    # the tree is clean, drop `continue-on-error` to make it blocking.
-    continue-on-error: true
+    # pre-existing history. BLOCKING since 2026-08: the tree is clean (the
+    # env-template false positives were cleared in 70f8b88), so this now
+    # enforces "don't leak a secret" rather than merely reporting one.
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -195,6 +210,32 @@ jobs:
         # in this job, so only repo files are scanned). --redact hides matched
         # values from the log so CI output never echoes a real secret.
         run: gitleaks detect --no-git --redact --verbose
+
+  dead-code:
+    name: Dead Code (knip)
+    runs-on: ubuntu-latest
+    # INFORMATIONAL. `check:deadcode` existed in package.json but was never
+    # wired to CI, which is how 57 unused exports + 54 unused types piled up
+    # unnoticed. Surfacing the count on every PR stops the accumulation;
+    # several current findings need a product decision before deletion (see
+    # docs/enterprise-roadmap/05-hardening-2026-08.md, P5), so this must not
+    # block until that list is resolved.
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run knip
+        run: npm run check:deadcode
 
   unit-tests:
     name: Unit Tests
@@ -215,8 +256,11 @@ jobs:
         # Without this flag, npm ci refuses with 'Missing: @swc/helpers@0.5.21'.
         run: npm ci --legacy-peer-deps
 
-      - name: Run unit tests
-        run: npm test -- --run
+      - name: Run unit tests (with coverage)
+        # --coverage actually produces ./coverage/coverage-final.json — the
+        # upload step below used to reference a file this job never generated,
+        # making the codecov upload a permanent no-op.
+        run: npm test -- --run --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

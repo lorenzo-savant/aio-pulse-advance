@@ -91,6 +91,11 @@ export async function GET(req: NextRequest) {
   defaultFrom.setDate(defaultFrom.getDate() - 30)
   const fromDate = from || defaultFrom.toISOString().split('T')[0]
 
+  // Safety bound. The from/to window already limits this in normal use (a
+  // 30-day chart), but the range is caller-supplied — without a cap a single
+  // request can ask for the entire history of a brand.
+  const MAX_SNAPSHOT_ROWS = 2000
+
   let query = db
     .from('citation_snapshots')
     .select('*')
@@ -98,6 +103,7 @@ export async function GET(req: NextRequest) {
     .gte('scan_date', fromDate)
     .lte('scan_date', to)
     .order('scan_date', { ascending: true })
+    .limit(MAX_SNAPSHOT_ROWS)
 
   if (engine !== 'all') {
     query = query.eq('engine', engine)

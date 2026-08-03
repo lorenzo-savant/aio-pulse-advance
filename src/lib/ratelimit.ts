@@ -35,7 +35,10 @@ export interface RateLimitResult {
 // ─── Redis client (lazy initialized) ────────────────────────────────────────
 
 let redisClient: Redis | null = null
-let redisRatelimit: Ratelimit | null = null
+// One Ratelimit instance per (limit, windowMs) config. A single shared
+// instance would silently apply the FIRST caller's limits to every route
+// in the warm lambda — e.g. a 3/min endpoint running at 30/min.
+const redisRatelimits = new Map<string, Ratelimit>()
 
 function getRedisClient(): Redis | null {
   if (redisClient) return redisClient
@@ -55,19 +58,24 @@ function getRedisClient(): Redis | null {
 }
 
 function getRatelimit(limit: number, windowMs: number): Ratelimit | null {
-  if (redisRatelimit) return redisRatelimit
+  const cacheKey = `${limit}:${windowMs}`
+  const cached = redisRatelimits.get(cacheKey)
+  if (cached) return cached
 
   const redis = getRedisClient()
   if (!redis) return null
 
-  redisRatelimit = new Ratelimit({
+  // The config is part of the Redis prefix so counters for different
+  // (limit, window) configs never share sliding-window keys.
+  const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(limit, `${windowMs}ms`),
     analytics: true,
-    prefix: 'aio-pulse:rl',
+    prefix: `aio-pulse:rl:${cacheKey}`,
   })
+  redisRatelimits.set(cacheKey, ratelimit)
 
-  return redisRatelimit
+  return ratelimit
 }
 
 // ─── In-memory store (dev / fallback) ─────────────────────────────────────────

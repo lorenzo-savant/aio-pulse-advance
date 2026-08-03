@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getAllIndustryPresets } from '@/lib/services/prompt-generator'
+import { withApiHandler } from '@/lib/api-utils'
 
-export async function GET() {
+export const GET = withApiHandler('industries', async () => {
   const presets = getAllIndustryPresets()
   const result = presets.map((p) => ({
     id: p.id,
@@ -11,4 +12,4 @@ export async function GET() {
     seedKeywords: p.seedKeywords,
   }))
   return NextResponse.json({ success: true, data: result })
-}
+})

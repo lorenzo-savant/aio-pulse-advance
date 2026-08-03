@@ -316,9 +316,15 @@ async function rerunWorkflowExecution(
   if (cookie) headers.cookie = cookie
   if (authz) headers.authorization = authz
 
+  // Trusted origin only: request.nextUrl.origin derives from the inbound
+  // Host header — a forged Host would send the caller's session cookie to
+  // an attacker origin. Fall back to the request origin only when the env
+  // is not configured (local dev).
+  const trustedOrigin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
+
   let res: Response
   try {
-    res = await fetch(new URL('/api/monitoring', request.nextUrl.origin), {
+    res = await fetch(new URL('/api/monitoring', trustedOrigin), {
       method: 'POST',
       headers,
       body: JSON.stringify({ prompt_id: row.prompt_id }),

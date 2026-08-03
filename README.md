@@ -4,8 +4,8 @@
 
 **AI Visibility Index (AVI)** — Measure your brand's visibility across ChatGPT, Claude, Perplexity, Gemini, and Google AI Overviews.
 
-- **Stack**: Next.js 14 (App Router), TypeScript (strict), Tailwind CSS v3, Prisma + Supabase Postgres, Stripe, Sentry, Vitest, Playwright, Upstash Redis
-- **Version**: 2.0.0
+- **Stack**: Next.js 16 (App Router), React 18, TypeScript (strict), Tailwind CSS v3, Supabase Postgres, Stripe, Sentry, Vitest, Playwright, Upstash Redis
+- **Version**: 2.1.0
 - **Status**: Production-ready foundation → transitioning to **SMB/prosumer + enterprise-lite** ($49–499/mo SMB + custom mid-market deals up to ~€50k ARR)
 
 ---
@@ -13,22 +13,22 @@
 ## Quick Start
 
 ```bash
-# Install dependencies
-pnpm install
+# Install dependencies (CI uses npm ci --legacy-peer-deps)
+npm install --legacy-peer-deps
 
 # Run development server
-pnpm dev            # http://localhost:3000
+npm run dev         # http://localhost:3000
 
 # Quality gate (must pass before every commit)
-pnpm type-check     # tsc --noEmit
-pnpm lint
-pnpm format         # Prettier
-pnpm test           # Vitest unit + integration
-pnpm test:e2e       # Playwright (run before PR, not before commit)
+npm run type-check  # tsc --noEmit
+npm run lint
+npm run format      # Prettier
+npm test -- --run   # Vitest unit + integration
+npm run test:e2e    # Playwright (run before PR, not before commit)
 
 # Build for production
-pnpm build
-pnpm start          # production-mode locally
+npm run build
+npm run start       # production-mode locally
 ```
 
 See [ENVIRONMENTS.md](ENVIRONMENTS.md) for environment variable configuration.
@@ -100,8 +100,8 @@ To target a different market without code changes, set any of:
 ## Architecture
 
 ```
-Client (Next.js 14 App Router)
-  ├── Server Components (React 19)
+Client (Next.js 16 App Router)
+  ├── Server Components (React 18)
   ├── API Routes → Route Handlers
   │     ├── src/app/api/*/route.ts     (HTTP layer, Zod validation)
   │     └── src/lib/services/*.ts      (business logic, pure functions)
@@ -166,7 +166,7 @@ See [00-mission-scope-rules.md](docs/enterprise-roadmap/00-mission-scope-rules.m
 2. Open [task-tracker.md](docs/enterprise-roadmap/task-tracker.md) and pick a **Ready** task
 3. Create branch: `git checkout -b fase-N/<task-id>-<slug>`
 4. Implement following coding standards
-5. Run `pnpm type-check && pnpm lint && pnpm test`
+5. Run `npm run type-check && npm run lint && npm test -- --run`
 6. Open PR with DoD checklist from task doc
 
 ---

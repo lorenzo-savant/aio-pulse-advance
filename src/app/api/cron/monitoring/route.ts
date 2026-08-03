@@ -139,6 +139,17 @@ async function updateWorkflowStep(
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 min (Vercel Pro) or 60s (Hobby)
 
+// Prompts processed per cron run. Engines fan out in PARALLEL per prompt
+// (see below), so one prompt costs roughly one LLM round-trip of wall-clock,
+// not four — that is what allows a cap above the old hardcoded 3. Tunable
+// without a deploy via CRON_MONITORING_MAX_PROMPTS, clamped to 1–20 so a
+// typo can't blow the maxDuration budget. Scaling beyond this cap needs a
+// real job queue (see docs/enterprise-roadmap), not a bigger number.
+const MAX_PROMPTS_PER_RUN = Math.min(
+  20,
+  Math.max(1, Number(process.env['CRON_MONITORING_MAX_PROMPTS']) || 6),
+)
+
 export async function POST(req: NextRequest) {
   const cronError = verifyCronAuth(req)
   if (cronError) return cronError
@@ -168,7 +179,7 @@ export async function POST(req: NextRequest) {
       .or(
         `last_run_at.is.null,and(run_frequency.eq.hourly,last_run_at.lte.${oneHourAgo}),and(run_frequency.eq.daily,last_run_at.lte.${oneDayAgo}),and(run_frequency.eq.weekly,last_run_at.lte.${oneWeekAgo})`,
       )
-      .limit(3) // Process max 10 prompts per cron run to stay within timeout
+      .limit(MAX_PROMPTS_PER_RUN)
 
     if (promptsError) {
       logger.error('Error fetching prompts', { source: 'cron', error: String(promptsError) })
@@ -230,11 +241,34 @@ export async function POST(req: NextRequest) {
         .eq('brand_id', brand.id)
         .eq('is_active', true)
 
-      for (const engine of engines) {
-        try {
-          await new Promise((r) => setTimeout(r, 2000))
+      // Fan out the LLM calls in parallel — engines are independent, and the
+      // manual /api/monitoring path already runs them with Promise.all. The
+      // old serial loop here (2s sleep + sequential awaits) made each prompt
+      // cost ~4× the wall-clock, which is why the run cap had to sit at 3.
+      // DB writes + alert evaluation stay serial below to keep their
+      // ordering semantics unchanged.
+      const engineOutcomes = await Promise.allSettled(
+        engines.map((engine) => runMonitoringCheck(prompt, brand, engine, prompt.user_id)),
+      )
 
-          const resultData = await runMonitoringCheck(prompt, brand, engine, prompt.user_id)
+      for (let i = 0; i < engines.length; i++) {
+        const engine = engines[i]!
+        const outcome = engineOutcomes[i]!
+        if (outcome.status === 'rejected') {
+          const msg =
+            outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason)
+          logger.error('Engine failed for prompt', {
+            source: 'cron',
+            engine,
+            prompt: prompt.text.slice(0, 50),
+            error: msg,
+          })
+          results.push({ promptId: prompt.id, engine, success: false, error: msg })
+          hasErrors = true
+          continue
+        }
+        try {
+          const resultData = outcome.value
 
           const insertPayload = {
             ...resultData,
@@ -316,7 +350,7 @@ export async function POST(req: NextRequest) {
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
-          logger.error('Engine failed for prompt', {
+          logger.error('Engine post-processing failed for prompt', {
             source: 'cron',
             engine,
             prompt: prompt.text.slice(0, 50),

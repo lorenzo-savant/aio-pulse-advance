@@ -55,12 +55,9 @@ const EXEMPT_SUFFIXES = [
   'api/billing/webhook/route.ts',
   // API root: POST/PATCH/PUT/DELETE all return version info; no body is read.
   'api/v1/route.ts',
-  // Sentry demo endpoint: intentionally throws; not a real input handler.
-  'api/sentry-example-api/route.ts',
   // Provider test/health triggers: authenticated POSTs that run fixed probes
   // and read NO request body — there is nothing to validate.
   'api/providers/route.ts',
-  'api/providers/test/route.ts',
   'api/providers/health/route.ts',
   // Dev-only credential bootstrap: takes no body, hard-blocked in production.
   'api/auth/dev-login/route.ts',

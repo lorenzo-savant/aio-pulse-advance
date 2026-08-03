@@ -16,6 +16,7 @@ import { verifyBrandAccess } from '@/lib/authorize'
 import { createServerClient } from '@/lib/supabase'
 import { buildEditorialOutletLeaderboard } from '@/lib/utils/editorial-outlets'
 import { logger } from '@/lib/logger'
+import { withApiHandler } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +24,7 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler('editorial-outlets', async (req: NextRequest) => {
   const auth = await requireUser(req)
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
@@ -82,4 +83,4 @@ export async function GET(req: NextRequest) {
     data: { ...leaderboard, filters: { days, limit } },
     timestamp: Date.now(),
   })
-}
+})

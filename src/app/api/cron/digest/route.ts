@@ -4,6 +4,14 @@ import { Resend } from 'resend'
 import { verifyCronAuth } from '@/lib/cron-auth'
 import { logger } from '@/lib/logger'
 
+// Without an explicit cap this route inherits the Vercel default and gets
+// killed mid-loop on larger tenants — work already sent is not resumable.
+export const maxDuration = 300
+
+// Hard bound on how many brands one digest run processes. Growth beyond this
+// needs a queue (see docs/enterprise-roadmap), not a bigger number here.
+const MAX_BRANDS_PER_RUN = 500
+
 // Lazy init — see src/lib/services/alerts.ts for rationale
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY
@@ -55,12 +63,13 @@ export async function POST(req: NextRequest) {
     const fromDate = weekAgo.toISOString().split('T')[0]
     const toDate = today.toISOString().split('T')[0]
 
-    // Get all active brands with alert email
+    // Get active brands with alert email (bounded — see MAX_BRANDS_PER_RUN)
     const { data: brands } = (await db
       .from('brands')
       .select('id, name, user_id, email')
       .eq('is_active', true)
-      .not('email', 'is', null)) as { data: BrandData[] | null }
+      .not('email', 'is', null)
+      .limit(MAX_BRANDS_PER_RUN)) as { data: BrandData[] | null }
 
     if (!brands || brands.length === 0) {
       return NextResponse.json({ success: true, message: 'No brands with alerts' })
@@ -89,29 +98,32 @@ export async function POST(req: NextRequest) {
       }
 
       for (const brand of userBrands) {
-        // Get snapshots for the week
-        const { data: snapshots } = (await db
-          .from('citation_snapshots')
-          .select('scan_date, citation_count, citation_rate, avg_visibility')
-          .eq('brand_id', brand.id)
-          .eq('engine', 'all')
-          .gte('scan_date', fromDate)
-          .lte('scan_date', toDate)
-          .order('scan_date', { ascending: true })) as { data: SnapshotData[] | null }
-
-        // Get monitoring results count
-        const { count: totalScans } = await db
-          .from('monitoring_results')
-          .select('*', { count: 'exact', head: true })
-          .eq('brand_id', brand.id)
-          .gte('created_at', weekAgo.toISOString())
-
-        const { count: mentionedCount } = await db
-          .from('monitoring_results')
-          .select('*', { count: 'exact', head: true })
-          .eq('brand_id', brand.id)
-          .eq('brand_mentioned', true)
-          .gte('created_at', weekAgo.toISOString())
+        // The three per-brand queries are independent — run them together
+        // instead of serially (3 round-trips → 1 wall-clock hop per brand).
+        const [snapshotsRes, totalScansRes, mentionedCountRes] = await Promise.all([
+          db
+            .from('citation_snapshots')
+            .select('scan_date, citation_count, citation_rate, avg_visibility')
+            .eq('brand_id', brand.id)
+            .eq('engine', 'all')
+            .gte('scan_date', fromDate)
+            .lte('scan_date', toDate)
+            .order('scan_date', { ascending: true }),
+          db
+            .from('monitoring_results')
+            .select('*', { count: 'exact', head: true })
+            .eq('brand_id', brand.id)
+            .gte('created_at', weekAgo.toISOString()),
+          db
+            .from('monitoring_results')
+            .select('*', { count: 'exact', head: true })
+            .eq('brand_id', brand.id)
+            .eq('brand_mentioned', true)
+            .gte('created_at', weekAgo.toISOString()),
+        ])
+        const snapshots = snapshotsRes.data as SnapshotData[] | null
+        const { count: totalScans } = totalScansRes
+        const { count: mentionedCount } = mentionedCountRes
 
         // Calculate mention rate
         const mentionRate =

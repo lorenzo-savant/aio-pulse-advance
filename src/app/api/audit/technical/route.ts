@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { runTechnicalAudit } from '@/lib/services/technical-seo-audit'
 import { logger } from '@/lib/logger'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { checkRateLimit } from '@/lib/ratelimit'
 import type { Json } from '@/types/database'
 import { formatValidationError } from '@/lib/format-validation-error'
 
@@ -20,60 +21,11 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
-async function checkRateLimit(
-  key: string,
-  limit: number,
-  windowSecs: number,
-): Promise<{
-  success: boolean
-  remaining: number
-  resetAt: number
-}> {
-  const db = createServerClient()
-  if (!db) return { success: true, remaining: limit, resetAt: Date.now() + windowSecs * 1000 }
-
-  try {
-    const now = Date.now()
-    const windowMs = windowSecs * 1000
-    const windowStart = now - windowMs
-
-    const { data, error } = await db
-      .from('rate_limits')
-      .select('count, last_request')
-      .eq('key', key)
-      .single()
-
-    if (error && error.code !== 'PGRST116') {
-      return { success: true, remaining: limit, resetAt: now + windowMs }
-    }
-
-    if (!data || data.last_request < windowStart) {
-      await db.from('rate_limits').upsert(
-        {
-          key,
-          count: 1,
-          last_request: now,
-        },
-        { onConflict: 'key' },
-      )
-
-      return { success: true, remaining: limit - 1, resetAt: now + windowMs }
-    }
-
-    if (data.count >= limit) {
-      return { success: false, remaining: 0, resetAt: data.last_request + windowMs }
-    }
-
-    await db
-      .from('rate_limits')
-      .update({ count: data.count + 1, last_request: now })
-      .eq('key', key)
-
-    return { success: true, remaining: limit - data.count - 1, resetAt: now + windowSecs * 1000 }
-  } catch {
-    return { success: true, remaining: limit, resetAt: Date.now() + windowSecs * 1000 }
-  }
-}
+// Rate limiting uses the shared Upstash-backed limiter (fail-closed in
+// production). This route used to carry a private DB-backed limiter on the
+// rate_limits table: non-atomic (SELECT→UPDATE lost updates under
+// concurrency), fail-OPEN on every error path — the exact inverse of the
+// shared policy — and 2-3 extra DB round-trips per request.
 
 export async function POST(req: NextRequest) {
   let userId: string
@@ -85,7 +37,7 @@ export async function POST(req: NextRequest) {
     return err('Authentication failed')
   }
 
-  const rl = await checkRateLimit(`audit:${userId}`, 5, 60)
+  const rl = await checkRateLimit(`audit:${userId}`, 5, 60_000)
   if (!rl.success) {
     return NextResponse.json(
       {

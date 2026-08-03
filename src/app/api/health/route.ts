@@ -143,6 +143,15 @@ export async function GET() {
 
   const overall = aggregateStatus([database, rate_limit, billing, email, ai_providers])
 
+  // The endpoint is public (rewritten to /health, polled by /status and by
+  // uptime monitors). Probe `note` strings carry env-var names and raw
+  // upstream error text — useful locally, but reconnaissance material on a
+  // public deploy (they enumerate exactly which secrets are unset). Strip
+  // them in production; per-service status/latency is all monitors need.
+  const isProd = process.env.NODE_ENV === 'production' || process.env['VERCEL_ENV'] === 'production'
+  const sanitize = <T extends ServiceProbe>(probe: T): T =>
+    isProd ? { ...probe, note: undefined } : probe
+
   const payload: HealthPayload = {
     status: overall,
     timestamp: new Date().toISOString(),
@@ -151,11 +160,11 @@ export async function GET() {
     runtime: 'edge',
     responseTime: Date.now() - start,
     services: {
-      database,
-      rate_limit,
-      billing,
-      email,
-      ai_providers,
+      database: sanitize(database),
+      rate_limit: sanitize(rate_limit),
+      billing: sanitize(billing),
+      email: sanitize(email),
+      ai_providers: sanitize(ai_providers),
     },
   }
 

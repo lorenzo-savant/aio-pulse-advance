@@ -25,9 +25,8 @@ export function safeRedirect(url: string, fallback = '/dashboard'): string {
 
 /**
  * Generate a nonce-based Content-Security-Policy header value.
- * The nonce replaces 'unsafe-inline' for script-src in modern browsers.
- * 'unsafe-inline' is kept as a fallback for older browsers — it is ignored
- * when a nonce or hash is present (per CSP Level 2+).
+ * script-src is nonce-locked (no 'unsafe-inline'); in dev, 'unsafe-eval' is
+ * added because React Fast Refresh needs it.
  */
 export function buildCspHeader(nonce: string): string {
   const isDev = process.env.NODE_ENV === 'development'
@@ -43,6 +42,11 @@ export function buildCspHeader(nonce: string): string {
     "img-src 'self' data: https://*.supabase.co https://*.vercel.app",
     "font-src 'self' data:",
     "frame-ancestors 'none'",
+    // Injection hardening: forbid <base href> retargeting, plugin content,
+    // and form posts to foreign origins (credential-exfil via injected forms).
+    "base-uri 'self'",
+    "object-src 'none'",
+    "form-action 'self'",
     // Violation reporting — the /api/security/csp-report endpoint persists
     // each violation for review. Without this directive, the CSP report
     // endpoint (which already exists) would never receive anything.

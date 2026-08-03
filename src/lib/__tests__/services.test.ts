@@ -1,42 +1,7 @@
 import { describe, it, expect } from 'vitest'
+import { repairTruncatedJson } from '@/lib/services/analysis'
 
 describe('JSON Repair Utility', () => {
-  const repairTruncatedJson = (raw: string): string => {
-    let s = raw.trim()
-    const quoteCount = (s.match(/(?<!\\)"/g) || []).length
-    if (quoteCount % 2 !== 0) s += '"'
-    s = s.replace(/,\s*"[^"]*"\s*:\s*$/, '')
-    s = s.replace(/,\s*"[^"]*"?\s*$/, '')
-    s = s.replace(/,\s*$/, '')
-    const stack: string[] = []
-    let inString = false
-    let escaped = false
-    for (let i = 0; i < s.length; i++) {
-      const ch = s[i]
-      if (escaped) {
-        escaped = false
-        continue
-      }
-      if (ch === '\\' && inString) {
-        escaped = true
-        continue
-      }
-      if (ch === '"') {
-        inString = !inString
-        continue
-      }
-      if (inString) continue
-      if (ch === '{') stack.push('}')
-      else if (ch === '[') stack.push(']')
-      else if (ch === '}' || ch === ']') {
-        if (stack.length > 0 && stack[stack.length - 1] === ch) stack.pop()
-      }
-    }
-    s = s.replace(/,\s*$/, '')
-    while (stack.length > 0) s += stack.pop()
-    return s
-  }
-
   it('parses valid JSON', () => {
     const input = '{"visibilityScore": 85, "intent": "Informational"}'
     const result = JSON.parse(repairTruncatedJson(input))

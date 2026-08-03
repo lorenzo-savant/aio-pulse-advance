@@ -531,10 +531,11 @@ describe('getAccessibleBrandIds', () => {
     expect(result).toEqual([])
   })
 
-  it('deduplication is not applied (caller responsibility)', async () => {
-    // If same brand is owned AND team member, both appear
+  it('deduplicates a brand that is both owned and a team membership', async () => {
+    // Same brand owned AND team member → one ID, so downstream .in()
+    // filters never receive duplicates.
     const db = createMockDb([{ id: 'b1' }], [{ brand_id: 'b1' }])
     const result = await getAccessibleBrandIds(db, USER_ID)
-    expect(result).toEqual(['b1', 'b1'])
+    expect(result).toEqual(['b1'])
   })
 })

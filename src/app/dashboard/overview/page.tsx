@@ -10,7 +10,7 @@ import { PageTransition, StaggerGrid, StaggerItem } from '@/components/ui/Motion
 import { StrikingDistancePanel } from '@/components/StrikingDistancePanel'
 import { BrandedSearchPanel } from '@/components/BrandedSearchPanel'
 import { CannibalizationPanel } from '@/components/CannibalizationPanel'
-import { useRealtime } from '@/lib/hooks/use-realtime'
+import { useRealtime } from '@/hooks/use-realtime'
 import {
   TrendingUp,
   TrendingDown,

@@ -51,11 +51,14 @@ export async function GET(req: NextRequest) {
   }
 
   const isOwner = String(brand.user_id) === userId
+  // Only ACCEPTED members may read the roster — a pending/declined row must
+  // not grant visibility into the team or its outstanding invitations.
   const { data: teamMembership } = await db
     .from('team_members')
     .select('id')
     .eq('brand_id', brandId)
     .eq('user_id', userId)
+    .eq('status', 'accepted')
     .single()
 
   if (!isOwner && !teamMembership) {
@@ -84,7 +87,7 @@ export async function GET(req: NextRequest) {
   // Load display names from profiles (best effort)
   let profileMap: Record<string, string> = {}
   if (members && members.length > 0) {
-    const userIds = members.map((m: any) => m.user_id).filter(Boolean)
+    const userIds = members.map((m) => m.user_id).filter((id): id is string => Boolean(id))
     if (userIds.length > 0) {
       try {
         const { data: profiles } = await db
@@ -93,7 +96,7 @@ export async function GET(req: NextRequest) {
           .in('id', userIds)
         if (profiles) {
           profileMap = Object.fromEntries(
-            profiles.map((p: any) => [p.id, p.full_name || p.email || p.id]),
+            profiles.map((p) => [p.id, p.full_name || p.email || p.id]),
           )
         }
       } catch {
@@ -102,15 +105,17 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const enrichedMembers = (members || []).map((m: any) => ({
+  const enrichedMembers = (members || []).map((m) => ({
     ...m,
-    display_name: profileMap[m.user_id] || m.email,
+    display_name: (m.user_id ? profileMap[m.user_id] : undefined) || m.email,
   }))
 
-  // Get pending invitations (filter by status='pending')
+  // Get pending invitations (filter by status='pending').
+  // Columns are enumerated — never select('*') here: the row contains the
+  // single-use invitation `token`, which must not be exposed to the roster.
   const { data: invitations } = await db
     .from('brand_invitations')
-    .select('*')
+    .select('id, brand_id, email, role, status, invited_by, created_at, expires_at')
     .eq('brand_id', brandId)
     .eq('status', 'pending')
     .gt('expires_at', new Date().toISOString())

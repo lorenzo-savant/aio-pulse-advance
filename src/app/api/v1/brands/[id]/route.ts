@@ -1,26 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { hashApiKey, publicApiRateLimit } from '@/lib/services/public-api'
+import { verifyApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
 import { publicBrandUpdateSchema, firstZodMessage } from '@/lib/validations'
 
 const BRAND_COLS =
   'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
-
-async function verifyApiKey(apiKey: string): Promise<string | null> {
-  const keyHash = hashApiKey(apiKey)
-  const db = createServerClient()
-  if (!db) return null
-
-  const { data, error } = await db
-    .from('user_api_keys')
-    .select('user_id, is_active')
-    .eq('encrypted_key', keyHash)
-    .eq('is_active', true)
-    .single()
-
-  if (error || !data) return null
-  return data.user_id
-}
 
 function successResponse(data: unknown) {
   return NextResponse.json({ success: true, data, timestamp: Date.now() })

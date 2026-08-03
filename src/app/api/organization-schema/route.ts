@@ -27,6 +27,7 @@ import {
   emitBrandKnowledgeGraph,
 } from '@/lib/utils/organization-schema'
 import type { LlmsInput } from '@/lib/services/llms-generator'
+import { withApiHandler } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +35,7 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler('organization-schema', async (req: NextRequest) => {
   const auth = await requireUser(req)
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
@@ -118,4 +119,4 @@ export async function GET(req: NextRequest) {
       'Cache-Control': 'private, max-age=300',
     },
   })
-}
+})

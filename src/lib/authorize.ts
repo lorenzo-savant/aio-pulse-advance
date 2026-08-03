@@ -212,17 +212,17 @@ export async function getAccessibleBrandIds(
 ): Promise<string[]> {
   if (!db) return []
 
-  const { data: ownedBrands } = await db.from('brands').select('id').eq('user_id', userId)
+  // Independent queries — run together; this helper sits on the hot path of
+  // most authenticated list endpoints.
+  const [{ data: ownedBrands }, { data: teamMemberships }] = await Promise.all([
+    db.from('brands').select('id').eq('user_id', userId),
+    db.from('team_members').select('brand_id').eq('user_id', userId).eq('status', 'accepted'),
+  ])
 
   const ownedIds = (ownedBrands || []).map((b) => b.id)
-
-  const { data: teamMemberships } = await db
-    .from('team_members')
-    .select('brand_id')
-    .eq('user_id', userId)
-    .eq('status', 'accepted')
-
   const teamIds = (teamMemberships || []).map((m) => m.brand_id)
 
-  return [...ownedIds, ...teamIds]
+  // De-dup: an owner who is also listed as a team member must not produce
+  // duplicate IDs for downstream .in() filters.
+  return [...new Set([...ownedIds, ...teamIds])]
 }

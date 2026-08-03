@@ -32,6 +32,45 @@ export const CREDIT_COSTS: Record<string, number> = {
 /** Free queries per day (free tier). */
 export const FREE_QUERIES_PER_DAY = 10
 
+/**
+ * Unlimited-credits mode — for internal / pre-revenue environments where the
+ * quota is noise rather than a control.
+ *
+ * Enabling it makes every query allowed at zero cost: no free-tier counter is
+ * consumed, no balance is deducted, and no DB round-trip is made. That last
+ * point is deliberate — an internal environment stays usable even when the
+ * credit tables or RPCs are unhealthy.
+ *
+ * TWO locks, because a stray env var here means unlimited spend on someone
+ * else's paid LLM keys:
+ *
+ *   1. `AIO_UNLIMITED_CREDITS=true` turns it on.
+ *   2. In production it ALSO requires
+ *      `AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION=true`. Without that second
+ *      acknowledgement the flag is IGNORED and loudly logged, so copying a
+ *      staging env file onto prod cannot silently disable billing.
+ *
+ * Default is off. The state is reported by /api/health so it is never a
+ * surprise.
+ */
+export function isUnlimitedCreditsMode(): boolean {
+  if (process.env['AIO_UNLIMITED_CREDITS'] !== 'true') return false
+
+  const isProd = process.env.NODE_ENV === 'production' || process.env['VERCEL_ENV'] === 'production'
+
+  if (isProd && process.env['AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION'] !== 'true') {
+    logger.error(
+      'AIO_UNLIMITED_CREDITS is set in a PRODUCTION environment and was IGNORED. ' +
+        'Set AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION=true to acknowledge unmetered spend, ' +
+        'or remove AIO_UNLIMITED_CREDITS.',
+      { source: 'credits' },
+    )
+    return false
+  }
+
+  return true
+}
+
 /** Infrastructure failure (DB unavailable, RPC error). Callers must fail
  *  closed: never run paid LLM work when the gate could not be evaluated. */
 export class CreditServiceError extends Error {
@@ -49,6 +88,12 @@ export interface ConsumeCreditsInput {
 }
 
 export type CreditDecision =
+  | {
+      allowed: true
+      cost: number
+      type: 'unlimited'
+      message: string
+    }
   | {
       allowed: true
       cost: number
@@ -86,10 +131,27 @@ export async function consumeCreditsForQuery(
   userId: string,
   input: ConsumeCreditsInput,
 ): Promise<CreditDecision> {
+  const engines = input.engines && input.engines.length > 0 ? input.engines : ['chatgpt']
+
+  // Unlimited mode short-circuits BEFORE any DB access, so an internal
+  // environment keeps working even if the credit tables or RPCs are broken.
+  // Logged every time: unmetered spend must never be silent.
+  if (isUnlimitedCreditsMode()) {
+    logger.warn('Credit check bypassed — unlimited-credits mode is enabled', {
+      source: 'credits',
+      engines: engines.join(','),
+      brandId: input.brandId ?? null,
+    })
+    return {
+      allowed: true,
+      cost: 0,
+      type: 'unlimited',
+      message: 'Unlimited mode — no credits consumed',
+    }
+  }
+
   const db = createServerClient()
   if (!db) throw new CreditServiceError('Database not configured')
-
-  const engines = input.engines && input.engines.length > 0 ? input.engines : ['chatgpt']
 
   // Check user's subscription status
   const { data: subscription, error: subError } = await db

@@ -77,26 +77,28 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    return NextResponse.json({
-      success: true,
-      data:
-        decision.type === 'free'
-          ? {
-              allowed: true,
-              cost: 0,
-              type: 'free',
-              remaining: decision.remaining,
-              message: decision.message,
-            }
-          : {
-              allowed: true,
-              cost: decision.cost,
-              type: 'paid',
-              balance: decision.balance,
-              message: decision.message,
-            },
-      timestamp: Date.now(),
-    })
+    let data: Record<string, unknown>
+    if (decision.type === 'unlimited') {
+      data = { allowed: true, cost: 0, type: 'unlimited', message: decision.message }
+    } else if (decision.type === 'free') {
+      data = {
+        allowed: true,
+        cost: 0,
+        type: 'free',
+        remaining: decision.remaining,
+        message: decision.message,
+      }
+    } else {
+      data = {
+        allowed: true,
+        cost: decision.cost,
+        type: 'paid',
+        balance: decision.balance,
+        message: decision.message,
+      }
+    }
+
+    return NextResponse.json({ success: true, data, timestamp: Date.now() })
   } catch (error) {
     if (error instanceof CreditServiceError) {
       return err(

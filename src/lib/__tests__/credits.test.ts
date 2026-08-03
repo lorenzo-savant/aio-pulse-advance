@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // Money logic. This service decides whether a user may run a paid LLM query
 // and how much they are charged, so every branch below is a real financial
@@ -17,6 +17,7 @@ import {
   CreditServiceError,
   CREDIT_COSTS,
   FREE_QUERIES_PER_DAY,
+  isUnlimitedCreditsMode,
 } from '../services/credits'
 
 /**
@@ -291,5 +292,93 @@ describe('credits service', () => {
       const d = await consumeCreditsForQuery('u1', { engines: ['gemini'] })
       expect(d.type).toBe('free')
     })
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Unlimited-credits mode (internal environments)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('unlimited-credits mode', () => {
+  // NODE_ENV is typed read-only, so it goes through vi.stubEnv (auto-restored
+  // by unstubAllEnvs) rather than a direct assignment.
+  const KEYS = [
+    'AIO_UNLIMITED_CREDITS',
+    'AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION',
+    'VERCEL_ENV',
+  ] as const
+  const saved: Record<string, string | undefined> = {}
+
+  beforeEach(() => {
+    for (const k of KEYS) saved[k] = process.env[k]
+    for (const k of KEYS) delete process.env[k]
+    createServerClientMock.mockReset()
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    for (const k of KEYS) {
+      if (saved[k] === undefined) delete process.env[k]
+      else process.env[k] = saved[k]
+    }
+  })
+
+  it('is OFF by default — the flag must be opt-in', () => {
+    expect(isUnlimitedCreditsMode()).toBe(false)
+  })
+
+  it('is ON outside production when the flag is set', () => {
+    process.env['AIO_UNLIMITED_CREDITS'] = 'true'
+    expect(isUnlimitedCreditsMode()).toBe(true)
+  })
+
+  it('only accepts the exact string "true"', () => {
+    for (const v of ['1', 'yes', 'TRUE', '']) {
+      process.env['AIO_UNLIMITED_CREDITS'] = v
+      expect(isUnlimitedCreditsMode()).toBe(false)
+    }
+  })
+
+  it('is IGNORED in production without the explicit acknowledgement', () => {
+    // The scenario this guards: a staging .env copied onto prod would
+    // otherwise silently disable billing on paid LLM keys.
+    process.env['AIO_UNLIMITED_CREDITS'] = 'true'
+    vi.stubEnv('NODE_ENV', 'production')
+    expect(isUnlimitedCreditsMode()).toBe(false)
+  })
+
+  it('is IGNORED when VERCEL_ENV is production, even if NODE_ENV is not', () => {
+    process.env['AIO_UNLIMITED_CREDITS'] = 'true'
+    process.env['VERCEL_ENV'] = 'production'
+    expect(isUnlimitedCreditsMode()).toBe(false)
+  })
+
+  it('is ON in production ONLY with the second acknowledgement', () => {
+    process.env['AIO_UNLIMITED_CREDITS'] = 'true'
+    vi.stubEnv('NODE_ENV', 'production')
+    process.env['AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION'] = 'true'
+    expect(isUnlimitedCreditsMode()).toBe(true)
+  })
+
+  it('the acknowledgement alone does NOT enable anything', () => {
+    process.env['AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION'] = 'true'
+    expect(isUnlimitedCreditsMode()).toBe(false)
+  })
+
+  it('allows the query at zero cost without touching the database', async () => {
+    process.env['AIO_UNLIMITED_CREDITS'] = 'true'
+    // No client is configured at all: if the service reached the DB this throws.
+    createServerClientMock.mockReturnValue(null)
+
+    const d = await consumeCreditsForQuery('u1', { engines: ['chatgpt', 'claude'] })
+
+    expect(d).toMatchObject({ allowed: true, cost: 0, type: 'unlimited' })
+    expect(createServerClientMock).not.toHaveBeenCalled()
+  })
+
+  it('still fails closed when the mode is off and the DB is unavailable', async () => {
+    createServerClientMock.mockReturnValue(null)
+    await expect(consumeCreditsForQuery('u1', { engines: ['gemini'] })).rejects.toThrow(
+      CreditServiceError,
+    )
   })
 })

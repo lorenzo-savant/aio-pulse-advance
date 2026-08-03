@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -28,7 +28,17 @@ function AcceptContent() {
     }
   }, [token, router])
 
+  // Guards against the effect re-running after the token is stripped from the
+  // URL below. Next patches window.history.replaceState so external history
+  // changes flow back into useSearchParams — so the strip flips `token` to
+  // null, re-runs this effect, and the `!token` branch overwrites the real
+  // outcome with "Invalid invitation link. No token provided." The invite was
+  // accepted; only the UI reported failure.
+  const outcomeSettled = useRef(false)
+
   useEffect(() => {
+    if (outcomeSettled.current) return
+
     if (!token) {
       setStatus('error')
       setMessage(t('invalid_token'))
@@ -64,6 +74,9 @@ function AcceptContent() {
         })
 
         const data = await res.json()
+
+        // Settle BEFORE stripping the URL — the strip re-triggers this effect.
+        outcomeSettled.current = true
 
         // Whether the call succeeded or failed, the token has now been
         // consumed (or attempted). Strip it from the URL via history

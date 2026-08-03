@@ -11,6 +11,7 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'react-hot-toast'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
+import { headers } from 'next/headers'
 import '@/styles/globals.css'
 import { APP_NAME, APP_DESCRIPTION, APP_URL } from '@/lib/constants'
 
@@ -95,6 +96,14 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   const locale = await getLocale()
   const messages = await getMessages()
 
+  // next-themes injects a bare inline <script> before paint to apply the
+  // stored theme (anti-FOUC). Next nonces the scripts it emits itself, but not
+  // this one — and with `script-src 'self' 'nonce-…'` and no 'unsafe-inline',
+  // the browser refuses it: the theme is not applied until hydration, so a
+  // dark-mode user gets a flash of light UI on every navigation.
+  // The middleware puts the per-request nonce on the `x-nonce` request header.
+  const nonce = (await headers()).get('x-nonce') ?? undefined
+
   return (
     <html
       suppressHydrationWarning
@@ -132,7 +141,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Analytics />
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem nonce={nonce}>
             {children}
             <Toaster
               position="top-right"

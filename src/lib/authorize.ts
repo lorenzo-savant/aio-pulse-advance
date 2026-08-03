@@ -1,6 +1,24 @@
 import { createServerClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
+/**
+ * Membership statuses that must NOT grant access to a brand.
+ *
+ * Two vocabularies exist for `team_members.status` and both are live:
+ *   - `TeamStatus` (src/types/index.ts) declares 'pending' | 'accepted' | 'declined'
+ *   - the ONLY writer of the table — src/app/api/invitations/accept/route.ts —
+ *     inserts 'active'
+ *
+ * Every access check used to allowlist 'accepted', which no row ever has, so
+ * team membership granted nothing: an invited collaborator could accept an
+ * invitation and still see none of the brand they were invited to. Denylisting
+ * the two states that must never grant access is correct under either
+ * vocabulary and stays correct once the data is normalised.
+ *
+ * PostgREST `not.in` syntax — the value is a parenthesised literal list.
+ */
+export const INACTIVE_MEMBER_STATUSES = '("pending","declined")'
+
 // Base columns that always exist and are needed for access checks
 const BRAND_BASE_COLS =
   'id, name, slug, competitors, aliases, domain, color, description, industry, language'
@@ -85,7 +103,7 @@ export async function verifyBrandAccess(
     .select('brand_id')
     .eq('brand_id', brandId)
     .eq('user_id', userId)
-    .eq('status', 'accepted')
+    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
     .single()
 
   if (membership) {
@@ -196,7 +214,7 @@ export async function canEditBrand(brandId: string, userId: string): Promise<boo
     .select('role')
     .eq('brand_id', brandId)
     .eq('user_id', userId)
-    .eq('status', 'accepted')
+    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
     .in('role', ['owner', 'editor'])
     .single()
 
@@ -212,11 +230,20 @@ export async function getAccessibleBrandIds(
 ): Promise<string[]> {
   if (!db) return []
 
-  // Independent queries — run together; this helper sits on the hot path of
-  // most authenticated list endpoints.
+  // NOTE: this helper currently has NO production callers — /api/brands has
+  // its own inline copy of the same union. An earlier comment here claimed it
+  // "sits on the hot path of most authenticated list endpoints", which was
+  // simply untrue. Kept because the inline copy should collapse into it, but
+  // do not assume it is exercised.
+  //
+  // Independent queries — run together.
   const [{ data: ownedBrands }, { data: teamMemberships }] = await Promise.all([
     db.from('brands').select('id').eq('user_id', userId),
-    db.from('team_members').select('brand_id').eq('user_id', userId).eq('status', 'accepted'),
+    db
+      .from('team_members')
+      .select('brand_id')
+      .eq('user_id', userId)
+      .not('status', 'in', INACTIVE_MEMBER_STATUSES),
   ])
 
   const ownedIds = (ownedBrands || []).map((b) => b.id)

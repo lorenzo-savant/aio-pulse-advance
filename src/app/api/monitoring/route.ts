@@ -12,6 +12,7 @@ import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 import { trackKeywords } from '@/lib/services/keyword-tracker'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { consumeCreditsForQuery } from '@/lib/services/credits'
+import { INACTIVE_MEMBER_STATUSES } from '@/lib/authorize'
 import type { Brand, Prompt, MonitoringResult, AlertRule } from '@/types'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -93,12 +94,16 @@ export async function POST(req: NextRequest) {
   const isBrandOwner = brandOwnerId === requestUserId
   const isPromptOwner = promptOwnerId === requestUserId
 
-  // Also check team membership
+  // Also check team membership. The status filter was MISSING here, so a
+  // merely invited (still pending) or declined user passed as a team member
+  // and could spend the brand owner's credits — the opposite failure from the
+  // brand list, which allowlisted a status no row ever has.
   const { data: membership } = await db
     .from('team_members')
     .select('id')
     .eq('brand_id', brand.id)
     .eq('user_id', userId)
+    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
     .single()
 
   const isTeamMember = !!membership

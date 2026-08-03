@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { cached } from '@/lib/response-cache'
+import { logger } from '@/lib/logger'
 
 const EMPTY_AVI = {
   avi: 0,
@@ -52,8 +53,17 @@ export async function GET(req: NextRequest) {
   // (every 6-8h), but the dashboard polls this endpoint on every refresh —
   // a 5 min cache collapses that to one DB round-trip per lifetime. The key
   // encodes user + brand (personalized data).
-  const payload = await cached(
-    { key: `avi:${userId}:${brandId ?? 'all'}`, ttlSeconds: 300 },
+  const payload = await cached<typeof EMPTY_AVI & { date?: string | null }>(
+    {
+      key: `avi:${userId}:${brandId ?? 'all'}`,
+      ttlSeconds: 300,
+      // Never persist the empty payload. It is returned both for a genuine
+      // "no scans yet" AND (via the guard below) for a transient DB failure —
+      // freezing either into Redis pins the product's headline metric at 0 for
+      // the full TTL, unfixable by refresh. A brand whose first scan just
+      // landed would keep reading 0 for five minutes.
+      shouldCache: (v) => v !== EMPTY_AVI,
+    },
     async () => {
       // Get latest health score
       let query = db
@@ -69,7 +79,16 @@ export async function GET(req: NextRequest) {
 
       const { data: latest, error: latestError } = await query
 
-      if (latestError || !latest?.length) {
+      // A DB failure is NOT "this brand has no data" — surface it so the
+      // outage is visible, and let shouldCache keep it out of Redis.
+      if (latestError) {
+        logger.error('AVI query failed', {
+          source: 'analytics/avi',
+          err: latestError.message,
+        })
+        return EMPTY_AVI
+      }
+      if (!latest?.length) {
         return EMPTY_AVI
       }
 

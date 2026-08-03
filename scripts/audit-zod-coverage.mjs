@@ -30,7 +30,16 @@ function walk(dir) {
   return out
 }
 
-const WRITE_VERB = /export\s+async\s+function\s+(POST|PATCH|PUT|DELETE)\b/
+// Matches BOTH handler idioms:
+//   export async function POST(req) { … }
+//   export const POST = withApiHandler('src', async (req) => { … })
+// The second form was introduced by the withApiHandler rollout. While this
+// regex only knew the first, converted files were skipped entirely (before
+// the exemption check), so the gate reported 56/56 while silently measuring
+// less — a future write handler in the const form would have shipped with no
+// schema past `--strict`.
+const WRITE_VERB =
+  /export\s+(?:async\s+function\s+(?:POST|PATCH|PUT|DELETE)\b|const\s+(?:POST|PATCH|PUT|DELETE)\s*=)/
 // Heuristics: any of these patterns in the file is "good enough" to call the
 // handler validated. We don't try to verify the schema is correct — just that
 // the developer reached for a runtime validator.

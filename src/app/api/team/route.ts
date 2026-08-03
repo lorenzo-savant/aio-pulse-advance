@@ -51,14 +51,22 @@ export async function GET(req: NextRequest) {
   }
 
   const isOwner = String(brand.user_id) === userId
-  // Only ACCEPTED members may read the roster — a pending/declined row must
-  // not grant visibility into the team or its outstanding invitations.
+  // Only an ACTIVE membership may read the roster — a pending or declined row
+  // must not grant visibility into the team or its outstanding invitations.
+  //
+  // Two vocabularies exist in the codebase and we must accept both:
+  //   - `TeamStatus` (src/types/index.ts) declares 'pending'|'accepted'|'declined'
+  //   - the ONLY writer of this table, src/app/api/invitations/accept/route.ts:144,
+  //     inserts 'active'
+  // Filtering on 'accepted' alone therefore 403s every real collaborator.
+  // Denylisting the two states that must NOT grant access is correct under
+  // either vocabulary, and stays correct if the data is later normalised.
   const { data: teamMembership } = await db
     .from('team_members')
     .select('id')
     .eq('brand_id', brandId)
     .eq('user_id', userId)
-    .eq('status', 'accepted')
+    .not('status', 'in', '("pending","declined")')
     .single()
 
   if (!isOwner && !teamMembership) {
@@ -212,7 +220,10 @@ export async function POST(req: NextRequest) {
       },
       { onConflict: 'brand_id,email' },
     )
-    .select()
+    // Enumerate columns — a bare .select() returns the single-use `token`.
+    // The GET path above was fixed for this; the POST path was not, so the
+    // token was still reaching the client on every invite creation.
+    .select('id, brand_id, email, role, status, invited_by, created_at, expires_at')
     .single()
 
   if (inviteError) {

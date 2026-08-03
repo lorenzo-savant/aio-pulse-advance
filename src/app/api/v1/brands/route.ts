@@ -1,11 +1,16 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { verifyApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
-import { parsePaginationParams } from '@/lib/api-utils'
+import { parsePaginationParams, getPaginationHeaders } from '@/lib/api-utils'
 import { publicBrandCreateSchema, firstZodMessage } from '@/lib/validations'
 
 const BRAND_LIST_COLS =
   'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
+
+// Safety ceiling for the un-paginated legacy response. High enough that no
+// real account hits it today, low enough that the response cannot grow
+// without bound. Truncation is signalled via X-Pagination-Truncated.
+const HARD_MAX_BRANDS = 1000
 
 function successResponse(data: unknown) {
   return NextResponse.json({ success: true, data, timestamp: Date.now() })
@@ -36,38 +41,62 @@ export async function GET(req: NextRequest) {
   const db = createServerClient()
   if (!db) return errorResponse('Database not configured', 503)
 
-  // Bounded + paginated. This used to return EVERY brand for the user, so
-  // response size grew without limit — on a public API that is a contract.
-  // Defaults keep the existing shape for small accounts (data stays a plain
-  // array); `pagination` is additive so existing integrators don't break.
+  // Pagination is OPT-IN. An earlier revision made it the default (limit 50),
+  // which silently truncated `data` for any integrator with more brands than
+  // that — HTTP 200, no error, 70 rows just missing. `data` was previously
+  // complete, so capping it by default is a breaking contract change however
+  // "additive" the extra `pagination` object looks.
+  //
+  // Callers that pass `page` or `limit` get a bounded, paginated response
+  // plus X-Pagination-* headers. Callers that pass neither keep the historical
+  // full list, with a safety ceiling so the response cannot grow unbounded.
   const { searchParams } = new URL(req.url)
-  const { page, limit, offset } = parsePaginationParams(searchParams, {
-    defaultLimit: 50,
-    maxLimit: 200,
-  })
+  const paginationRequested = searchParams.has('page') || searchParams.has('limit')
 
-  const { data, error, count } = await db
+  let query = db
     .from('brands')
     .select(BRAND_LIST_COLS, { count: 'exact' })
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1)
 
+  const { page, limit, offset } = parsePaginationParams(searchParams, {
+    defaultLimit: HARD_MAX_BRANDS,
+    maxLimit: HARD_MAX_BRANDS,
+  })
+
+  query = query.range(offset, offset + limit - 1)
+
+  const { data, error, count } = await query
   if (error) return errorResponse(error.message)
 
-  const total = count ?? data?.length ?? 0
-  return NextResponse.json({
-    success: true,
-    data: data || [],
-    pagination: {
-      page,
-      perPage: limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-      hasMore: offset + limit < total,
+  const rows = data || []
+  const total = count ?? rows.length
+
+  if (!paginationRequested) {
+    // Legacy shape, unchanged. Warn in the headers if the safety ceiling
+    // actually truncated — silence here is what makes truncation dangerous.
+    const headers = getPaginationHeaders(total, 1, HARD_MAX_BRANDS)
+    if (total > rows.length) {
+      headers['X-Pagination-Truncated'] = 'true'
+    }
+    return NextResponse.json({ success: true, data: rows, timestamp: Date.now() }, { headers })
+  }
+
+  return NextResponse.json(
+    {
+      success: true,
+      data: rows,
+      pagination: {
+        page,
+        perPage: limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: offset + limit < total,
+      },
+      timestamp: Date.now(),
     },
-    timestamp: Date.now(),
-  })
+    { headers: getPaginationHeaders(total, page, limit) },
+  )
 }
 
 export async function POST(req: NextRequest) {

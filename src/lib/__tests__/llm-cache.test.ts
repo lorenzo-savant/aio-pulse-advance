@@ -149,14 +149,43 @@ describe('llm-cache', () => {
     })
 
     it('ttl > 0 writes the result with the requested expiry on a miss', async () => {
+      const key = { surface: 'analysis', engine: 'chatgpt', payload: { p: 'q' } } as const
       const call = vi.fn(async () => 'fresh-answer')
-      const result = await withLlmCache(
-        { surface: 'analysis', engine: 'chatgpt', payload: { p: 'q' } },
-        call,
-        { ttlSeconds: 1800 },
-      )
+      const result = await withLlmCache(key, call, { ttlSeconds: 1800 })
       expect(result).toBe('fresh-answer')
-      expect(redisSet).toHaveBeenCalledWith(expect.any(String), 'fresh-answer', { ex: 1800 })
+      // The key must CONTAIN the content hash. Asserting expect.any(String)
+      // here is what let a mutation that drops the hash from the Redis key
+      // pass the whole suite — i.e. cross-tenant cache bleed would have been
+      // undetectable. Pin the actual key instead.
+      expect(redisSet).toHaveBeenCalledWith(
+        expect.stringContaining(hashLlmKey(key)),
+        'fresh-answer',
+        { ex: 1800 },
+      )
+    })
+
+    it('reads and writes the SAME key, and that key carries the content hash', async () => {
+      const key = {
+        surface: 'analysis',
+        engine: 'chatgpt',
+        scope: 'brand-1',
+        payload: { p: 'q' },
+      } as const
+      await withLlmCache(key, async () => 'v', { ttlSeconds: 60 })
+
+      const readKey = redisGet.mock.calls[0]?.[0] as string
+      const writeKey = redisSet.mock.calls[0]?.[0] as string
+      expect(readKey).toBe(writeKey)
+      expect(readKey).toContain(hashLlmKey(key))
+    })
+
+    it('gives two tenants DIFFERENT Redis keys for the same prompt', async () => {
+      const base = { surface: 'analysis', engine: 'chatgpt', payload: { p: 'same' } } as const
+      await withLlmCache({ ...base, scope: 'brand-A' }, async () => 'a', { ttlSeconds: 60 })
+      await withLlmCache({ ...base, scope: 'brand-B' }, async () => 'b', { ttlSeconds: 60 })
+
+      const [keyA, keyB] = redisSet.mock.calls.map((c) => c[0] as string)
+      expect(keyA).not.toBe(keyB)
     })
 
     it('negative ttl bypasses every layer including coalescing', async () => {

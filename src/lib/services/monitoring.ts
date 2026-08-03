@@ -27,10 +27,20 @@ import { logger } from '@/lib/logger'
 
 // TTL for the ANALYSIS pass only (see runMonitoringCheck). The simulation
 // pass is never persisted — re-running a scan must sample the engine afresh.
-const ANALYSIS_CACHE_TTL_SECONDS = Math.max(
-  0,
-  Number(process.env['AIO_ANALYSIS_CACHE_TTL_SECONDS']) || 3600,
-)
+//
+// Parsed explicitly rather than with `Number(x) || default`: falsy-zero
+// coercion made `=0` mean 3600 (so the cache could not be switched off) and
+// `=-1` mean 0 (so the documented full-bypass became coalescing-only) —
+// exactly inverting the contract llm-cache.ts declares. 0 disables the Redis
+// layer, a negative value bypasses every layer.
+function parseAnalysisTtl(): number {
+  const raw = process.env['AIO_ANALYSIS_CACHE_TTL_SECONDS']
+  if (raw === undefined || raw.trim() === '') return 3600
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : 3600
+}
+
+const ANALYSIS_CACHE_TTL_SECONDS = parseAnalysisTtl()
 
 function parseJson<T>(raw: string): T {
   const cleaned = raw

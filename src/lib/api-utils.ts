@@ -75,11 +75,17 @@ export function parsePaginationParams(
   const maxLimit = options.maxLimit ?? 100
   const defaultLimit = options.defaultLimit ?? 20
 
-  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'))
-  const limit = Math.min(
-    maxLimit,
-    Math.max(1, parseInt(searchParams.get('limit') ?? String(defaultLimit))),
-  )
+  // NaN guard: `parseInt('all')` is NaN, and every comparison with NaN is
+  // false, so Math.min/Math.max propagate it straight into `.range()` —
+  // `?limit=all` on a public endpoint would build `range(NaN, NaN)`. Fall
+  // back to the defaults for anything non-numeric.
+  const parse = (raw: string | null, fallback: number): number => {
+    const n = parseInt(raw ?? '', 10)
+    return Number.isFinite(n) ? n : fallback
+  }
+
+  const page = Math.max(1, parse(searchParams.get('page'), 1))
+  const limit = Math.min(maxLimit, Math.max(1, parse(searchParams.get('limit'), defaultLimit)))
   const offset = (page - 1) * limit
 
   return { page, limit, offset }

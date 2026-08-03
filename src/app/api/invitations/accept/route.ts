@@ -5,6 +5,24 @@ import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { formatValidationError } from '@/lib/format-validation-error'
 
+/**
+ * Mask an address for display to a token holder who may not be the intended
+ * recipient: keep the first character and the full domain, hide the rest.
+ * `rebecca@savantmedia.se` → `r••••••@savantmedia.se`
+ *
+ * The domain stays visible on purpose — it is what lets the real recipient
+ * recognise which of their accounts to use, and it is already implied by the
+ * workspace they were invited to.
+ */
+export function maskEmail(email: string): string {
+  const at = email.lastIndexOf('@')
+  if (at < 1) return '•••'
+  const local = email.slice(0, at)
+  const domain = email.slice(at)
+  if (local.length <= 1) return `${local}${'•'.repeat(3)}${domain}`
+  return `${local[0]}${'•'.repeat(Math.min(local.length - 1, 8))}${domain}`
+}
+
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
@@ -90,7 +108,17 @@ export async function POST(req: NextRequest) {
   const callerEmail = authUser?.user?.email?.toLowerCase() ?? null
   if (!callerEmail || callerEmail !== String(invitation.email).toLowerCase()) {
     logger.warn('Invitation email mismatch', { source: 'invitations' })
-    return err('This invitation was issued for a different email address', 403)
+    // Name both sides, or the recipient has no way to act on the refusal —
+    // the common case is simply being signed in as the wrong account. The
+    // invited address is MASKED: whoever holds this token may not be the
+    // intended recipient (a forwarded email, a shared link), so the full
+    // address must not be disclosed to them.
+    return err(
+      `This invitation was issued for ${maskEmail(String(invitation.email))}, ` +
+        `but you are signed in as ${callerEmail ?? 'an unknown account'}. ` +
+        `Sign out and sign in with the invited address, then open the link again.`,
+      403,
+    )
   }
 
   const { data: brand } = await db

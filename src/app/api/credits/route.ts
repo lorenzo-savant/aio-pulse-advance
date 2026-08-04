@@ -7,12 +7,43 @@ import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
+import { getPlatformMode } from '@/lib/platform-mode'
 
 const creditsMutationSchema = z.object({
   action: z.enum(['add', 'deduct']),
   amount: z.number().positive(),
   description: z.string().max(500).optional(),
 })
+
+/**
+ * May this caller CREATE credits?
+ *
+ * This handler used to authenticate the caller and then insert whatever amount
+ * they asked for onto their own balance. Authentication is not authorisation:
+ * every user of the product is authenticated, so the check that existed
+ * permitted exactly the people it needed to stop.
+ *
+ * Granting is an internal operation. Stripe is not in service, so there is no
+ * legitimate self-service path to more credits at all, and the honest rule is
+ * "developers and named internal accounts only":
+ *
+ *   1. the process runs in unlimited mode — development, and already refused
+ *      in production unless explicitly acknowledged (see platform-mode.ts); or
+ *   2. the caller is listed in AIO_INTERNAL_USER_IDS.
+ *
+ * Deducting is not gated: spending your own balance down is not a privilege,
+ * and the ledger refuses to overdraw.
+ */
+function mayGrantCredits(userId: string): boolean {
+  if (getPlatformMode() === 'unlimited') return true
+
+  const allowlist = (process.env['AIO_INTERNAL_USER_IDS'] ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+
+  return allowlist.includes(userId)
+}
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -126,17 +157,44 @@ export async function POST(req: NextRequest) {
   }
   const { action, amount, description } = parsed.data
 
-  try {
-    const creditAmount = action === 'deduct' ? -amount : amount
-
-    const { error: insertError } = await db.from('credits').insert({
-      user_id: userId,
-      amount: creditAmount,
-      source: action === 'add' ? 'manual_add' : 'manual_deduct',
-      description: description || `${action} ${amount} credits`,
+  if (action === 'add' && !mayGrantCredits(userId)) {
+    logger.warn('Refused an attempt to grant credits', {
+      source: 'credits',
+      userId,
+      amount,
     })
+    return err('Credits cannot be granted from this endpoint.', 403)
+  }
 
-    if (insertError) throw insertError
+  try {
+    if (action === 'deduct') {
+      // Through the RPC, never a direct insert. deduct_credits takes
+      // pg_advisory_xact_lock and re-reads the balance inside it
+      // (20260518130000_atomic_credit_deduction.sql:49) — that migration exists
+      // because a read-then-insert lets concurrent requests double-spend. This
+      // handler was a third writer that silently opted out of the fix.
+      const { data: newBalance, error: rpcError } = await db.rpc('deduct_credits', {
+        p_user_id: userId,
+        p_amount: amount,
+        p_description: description || `deduct ${amount} credits`,
+      })
+
+      if (rpcError) throw rpcError
+
+      // The RPC returns NULL rather than raising when the balance is short.
+      if (newBalance === null) {
+        return err('Insufficient credits', 402)
+      }
+    } else {
+      const { error: insertError } = await db.from('credits').insert({
+        user_id: userId,
+        amount,
+        source: 'manual_add',
+        description: description || `add ${amount} credits`,
+      })
+
+      if (insertError) throw insertError
+    }
 
     // Fetch updated balance
     const { data: credits } = await db.from('credits').select('amount').eq('user_id', userId)

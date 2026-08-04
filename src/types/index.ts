@@ -260,7 +260,13 @@ export interface MonitoringResult {
   sentiment_aspects: SentimentAspect[]
   cited_urls: string[]
   competitor_mentions: CompetitorMention[]
-  has_hallucination: boolean
+  /**
+   * null = nothing assessed this result. Distinct from `false`, which means a
+   * check ran and found nothing. The column is nullable in the database; the
+   * type used to erase that, so an unassessed row was indistinguishable from a
+   * verified-clean one.
+   */
+  has_hallucination: boolean | null
   hallucination_flags: HallucinationFlag[]
   created_at: string
   prompt?: Prompt

@@ -177,8 +177,10 @@ export function shouldTriggerAlert(rule: AlertRule, ctx: AlertTriggerContext): b
     }
 
     case 'hallucination':
+      // `=== true` on purpose: null means nothing assessed this result, and an
+      // alert must fire on a finding, never on the absence of a check.
       return (
-        result.has_hallucination &&
+        result.has_hallucination === true &&
         result.hallucination_flags.some(
           (f) => !condition.threshold || ['medium', 'high'].includes(f.severity),
         )

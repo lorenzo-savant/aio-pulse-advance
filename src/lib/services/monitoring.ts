@@ -51,7 +51,7 @@ function parseJson<T>(raw: string): T {
 }
 
 // ─── Zod schema per validare la risposta AI ───────────────────────────────────
-const analysisOutputSchema = z.object({
+export const analysisOutputSchema = z.object({
   brand_mentioned: z.boolean(),
   mention_position: z.number().int().positive().nullable().optional(),
   mention_count: z.number().int().min(0).default(0),
@@ -71,7 +71,14 @@ const analysisOutputSchema = z.object({
     )
     .optional()
     .default([]),
-  has_hallucination: z.boolean().default(false),
+  // NOT `.default(false)`. A model returning valid JSON without this key — the
+  // commonest LLM omission — used to produce a row recorded as verified clean,
+  // indistinguishable from one the model actually assessed. Absent stays absent;
+  // the column is nullable, so NULL means "not assessed".
+  //
+  // Worth stating plainly: this is the ANALYSIS model grading itself, not the
+  // fact-checker. `detectHallucinations` is never called by this pipeline.
+  has_hallucination: z.boolean().nullable().optional(),
   hallucination_flags: z
     .array(
       z.object({
@@ -322,7 +329,9 @@ export async function runMonitoringCheck(
     sentiment_aspects: analysis.sentiment_aspects as SentimentAspect[],
     cited_urls: citedUrls,
     competitor_mentions: analysis.competitor_mentions as CompetitorMention[],
-    has_hallucination: analysis.has_hallucination,
+    // `?? null` rather than `?? false`: an omitted key means the model did not
+    // assess it, and the column is nullable so we can say so.
+    has_hallucination: analysis.has_hallucination ?? null,
     hallucination_flags: analysis.hallucination_flags as HallucinationFlag[],
   }
 }
@@ -458,7 +467,8 @@ export interface AVIInput {
   sentimentScore: number
   recommendationRate: number
   positionAvg: number
-  hallucinationIndex: number
+  /** null when no result in the set carried an assessment. */
+  hallucinationIndex: number | null
 }
 
 /**
@@ -482,7 +492,12 @@ export function calculateAVI(input: AVIInput): number {
     hallucinationIndex,
   } = input
   const sentimentNorm = ((Math.max(-1, Math.min(1, sentimentScore)) + 1) / 2) * 100
-  const antiHallucination = Math.max(0, 100 - hallucinationIndex)
+
+  // A hallucination index of null means nothing assessed it — which is not the
+  // same as assessing it and finding none. Treated like an absent position: the
+  // component drops out rather than awarding its full 10 points by default.
+  const hasHallucination = hallucinationIndex != null
+  const antiHallucination = hasHallucination ? Math.max(0, 100 - hallucinationIndex) : 0
 
   // `positionAvg <= 0` is the "never positioned" sentinel the cron writes. It
   // used to normalise to 50 — a fabricated midpoint that made an unmeasured
@@ -499,16 +514,16 @@ export function calculateAVI(input: AVIInput): number {
     : 0
 
   let raw =
-    citationRate * 0.2 +
-    mentionFrequency * 0.2 +
-    sentimentNorm * 0.15 +
-    recommendationRate * 0.2 +
-    antiHallucination * 0.1
-  let weight = 0.85
+    citationRate * 0.2 + mentionFrequency * 0.2 + sentimentNorm * 0.15 + recommendationRate * 0.2
+  let weight = 0.75
 
   if (hasPosition) {
     raw += positionNorm * 0.15
-    weight = 1
+    weight += 0.15
+  }
+  if (hasHallucination) {
+    raw += antiHallucination * 0.1
+    weight += 0.1
   }
 
   return Math.min(100, Math.max(0, Math.round((raw / weight) * 10) / 10))
@@ -520,7 +535,8 @@ export function calculateAVIFromResults(
     visibility_score: number
     sentiment_score: number | null
     cited_urls: string[]
-    has_hallucination: boolean
+    /** null when nothing assessed this result. */
+    has_hallucination: boolean | null
     mention_position?: number | null
   }>,
 ): { avi: number; components: AVIInput } {
@@ -566,7 +582,11 @@ export function calculateAVIFromResults(
     (r) => (r.sentiment_score ?? 0) >= POSITIVE_SENTIMENT_THRESHOLD,
   )
   const cited = results.filter((r) => r.cited_urls && r.cited_urls.length > 0)
-  const hallucinated = results.filter((r) => r.has_hallucination)
+  // The index is a rate over results that were ASSESSED. Counting unassessed
+  // rows in the denominator dilutes it toward zero, which reads as "cleaner"
+  // exactly when less checking happened.
+  const assessedForHallucination = results.filter((r) => r.has_hallucination != null)
+  const hallucinated = assessedForHallucination.filter((r) => r.has_hallucination)
   const positionsValid = mentioned
     .map((r) => r.mention_position)
     .filter((p): p is number => p != null && p > 0)
@@ -583,7 +603,10 @@ export function calculateAVIFromResults(
       positionsValid.length > 0
         ? positionsValid.reduce((a, p) => a + p, 0) / positionsValid.length
         : 0,
-    hallucinationIndex: (hallucinated.length / total) * 100,
+    hallucinationIndex:
+      assessedForHallucination.length > 0
+        ? (hallucinated.length / assessedForHallucination.length) * 100
+        : null,
   }
   return { avi: calculateAVI(components), components }
 }
@@ -674,9 +697,14 @@ export function calculateCompetitorAVI(
           ? ((5 - components.positionAvg) / 4) * 100 * COMPONENT_WEIGHTS.positionAvg
           : 0,
     },
+    // An unassessed index contributes nothing, so it can never be reported as
+    // the weakest component — there is no measurement to call weak.
     {
       key: 'hallucinationIndex',
-      value: (100 - components.hallucinationIndex) * COMPONENT_WEIGHTS.hallucinationIndex,
+      value:
+        components.hallucinationIndex == null
+          ? Number.POSITIVE_INFINITY
+          : (100 - components.hallucinationIndex) * COMPONENT_WEIGHTS.hallucinationIndex,
     },
   ]
 
@@ -722,7 +750,8 @@ export function buildSentimentHeatmap(
     sentiment_score: number | null
     visibility_score: number
     cited_urls: string[]
-    has_hallucination: boolean
+    /** null when nothing assessed this result. */
+    has_hallucination: boolean | null
     mention_position?: number | null
   }>,
 ): SentimentHeatmap {
@@ -939,7 +968,8 @@ const RECOMMENDATION_RULES: Array<{
     component: 'positionAvg',
   },
   {
-    condition: (i) => i.aviComponents.hallucinationIndex > 20,
+    // Never recommend fixing hallucinations off an index nobody measured.
+    condition: (i) => (i.aviComponents.hallucinationIndex ?? 0) > 20,
     title: 'Riduci allucinazioni',
     description: () =>
       'Alto indice di allucinazioni. Verifica e correggi le informazioni generate inaccurate.',

@@ -120,7 +120,9 @@ export async function POST(req: NextRequest) {
         email: invitation.email,
         role: invitation.role,
         invited_by: userId,
-        status: 'active',
+        // See the note in accept/route.ts: the CHECK constraint only permits
+        // 'pending' | 'accepted' | 'declined'. 'active' is rejected.
+        status: 'accepted',
       })
 
       if (memberError) {
@@ -132,7 +134,9 @@ export async function POST(req: NextRequest) {
           .eq('id', invitation.id)
         logger.error('Failed to create membership while claiming invitation', {
           source: 'invitations',
-          error: String(memberError),
+          error: memberError.message,
+          code: memberError.code,
+          brandId: invitation.brand_id,
         })
         continue
       }

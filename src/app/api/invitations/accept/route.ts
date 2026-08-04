@@ -174,7 +174,15 @@ export async function POST(req: NextRequest) {
     email: invitation.email,
     role: invitation.role,
     invited_by: invitation.invited_by,
-    status: 'active',
+    // MUST be 'accepted'. The column is
+    //   status text NOT NULL DEFAULT 'pending'
+    //     CHECK (status IN ('pending','accepted','declined'))
+    // (20260412000100_fix_schema_types.sql:235). This insert used to pass
+    // 'active', which the CHECK rejects — so EVERY acceptance failed, the
+    // rollback below put the invitation back to pending, and team_members
+    // stayed empty across every invitation ever sent. The failure was
+    // invisible because the caller only ever saw a generic message.
+    status: 'accepted',
   })
 
   if (memberError) {
@@ -185,7 +193,11 @@ export async function POST(req: NextRequest) {
       .eq('id', invitation.id)
     logger.error('Failed to add team member after claim', {
       source: 'invitations',
-      error: String(memberError),
+      // Log the DB message itself — the constraint violation that hid this
+      // bug for months was swallowed into a generic string.
+      error: memberError.message,
+      code: memberError.code,
+      brandId: invitation.brand_id,
     })
     return err('Failed to accept invitation')
   }

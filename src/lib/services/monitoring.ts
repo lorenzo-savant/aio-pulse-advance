@@ -442,6 +442,16 @@ Respond ONLY with valid JSON (no markdown):
 
 // ─── AVI Formula ─────────────────────────────────────────────────────────────
 
+/**
+ * How warm an answer must be about the brand before it counts as a
+ * recommendation rather than a mention.
+ *
+ * Above zero on purpose: "not negative" is not an endorsement, and being listed
+ * neutrally among ten competitors should not score as one. Exported so a report
+ * can state the rule it is claiming.
+ */
+export const POSITIVE_SENTIMENT_THRESHOLD = 0.25
+
 export interface AVIInput {
   citationRate: number
   mentionFrequency: number
@@ -501,6 +511,13 @@ export function calculateAVIFromResults(
     }
 
   const mentioned = results.filter((r) => r.brand_mentioned)
+  // A recommendation is a mention the answer speaks well of. This used to be
+  // `mentioned` again — byte-identical to mentionFrequency on the line below —
+  // so the AVI declared six components but carried five signals, and mention
+  // frequency drove 40% of the score under two names.
+  const recommended = mentioned.filter(
+    (r) => (r.sentiment_score ?? 0) >= POSITIVE_SENTIMENT_THRESHOLD,
+  )
   const cited = results.filter((r) => r.cited_urls && r.cited_urls.length > 0)
   const hallucinated = results.filter((r) => r.has_hallucination)
   const positionsValid = mentioned
@@ -514,7 +531,7 @@ export function calculateAVIFromResults(
       mentioned.length > 0
         ? mentioned.reduce((a, r) => a + (r.sentiment_score ?? 0), 0) / mentioned.length
         : 0,
-    recommendationRate: (mentioned.length / total) * 100,
+    recommendationRate: (recommended.length / total) * 100,
     positionAvg:
       positionsValid.length > 0
         ? positionsValid.reduce((a, p) => a + p, 0) / positionsValid.length

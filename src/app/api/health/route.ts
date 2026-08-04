@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getPlatformMode, type PlatformMode } from '@/lib/platform-mode'
 
 // Edge runtime is fine here — every probe is HTTP-only (no node-only deps).
 // Disable any Next caching so a heavy upstream incident is reflected in /health
@@ -23,9 +24,16 @@ interface HealthPayload {
   runtime: string
   responseTime: number
   /**
-   * True when credit metering is disabled (AIO_UNLIMITED_CREDITS). Reported
-   * unconditionally — including in production — because unmetered LLM spend
-   * is exactly the state an operator must never discover by accident.
+   * Which of the two modes this process is running in — see
+   * `src/lib/platform-mode.ts`. Reported unconditionally, including in
+   * production: "which mode am I in" is the first question during an incident.
+   */
+  mode: PlatformMode
+  /**
+   * True when credit metering is disabled. Equivalent to `mode === 'unlimited'`
+   * and kept because this is a public payload that monitors already read.
+   * Reported unconditionally — unmetered LLM spend is exactly the state an
+   * operator must never discover by accident.
    */
   unlimitedCredits: boolean
   services: {
@@ -149,12 +157,12 @@ export async function GET() {
 
   const overall = aggregateStatus([database, rate_limit, billing, email, ai_providers])
 
-  // Dynamic import: this route runs on the edge runtime, and the credits
-  // service pulls in the Supabase client. Importing it lazily keeps that out
-  // of the edge bundle while still reusing the single source of truth for the
-  // flag (including its production guard) rather than re-reading the env here.
-  const { isUnlimitedCreditsMode } = await import('@/lib/services/credits')
-  const unlimitedCreditsActive = isUnlimitedCreditsMode()
+  // Imported statically: platform-mode depends on nothing but the logger, so
+  // unlike the credits service (which drags in the Supabase client) it is safe
+  // in the edge bundle. Still the single source of truth for the mode and its
+  // production guard — never re-read the env here.
+  const platformMode = getPlatformMode()
+  const unlimitedCreditsActive = platformMode === 'unlimited'
 
   // The endpoint is public (rewritten to /health, polled by /status and by
   // uptime monitors). Probe `note` strings carry env-var names and raw
@@ -172,6 +180,7 @@ export async function GET() {
     region: process.env['VERCEL_REGION'] || 'unknown',
     runtime: 'edge',
     responseTime: Date.now() - start,
+    mode: platformMode,
     unlimitedCredits: unlimitedCreditsActive,
     services: {
       database: sanitize(database),

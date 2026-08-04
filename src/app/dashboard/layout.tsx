@@ -20,6 +20,11 @@ const Breadcrumb = dynamic(
   { ssr: false },
 )
 
+const PlatformModeBanner = dynamic(
+  () => import('@/components/layout/PlatformModeBanner').then((m) => m.PlatformModeBanner),
+  { ssr: false },
+)
+
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
@@ -76,6 +81,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <div className="flex flex-1 flex-col overflow-hidden lg:pl-[300px]">
           <div className="px-4 pt-2 md:px-8 xl:px-10">
+            <PlatformModeBanner />
             <TopBar />
           </div>
           <main className="flex-1 overflow-y-auto px-4 pb-8 pt-1 md:px-8 xl:px-10">

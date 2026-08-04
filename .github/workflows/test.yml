@@ -59,6 +59,11 @@ jobs:
     # Requires SUPABASE_DB_URL (a connection string with read access) as
     # a repo secret. Without it the job soft-skips so forks/branches
     # without backend access don't get false reds. See docs/DECISIONS.md.
+    #
+    # `gen types` only introspects pg_catalog, so give this a dedicated
+    # READ-ONLY Postgres role rather than the `postgres` superuser — the
+    # connection string lands in CI logs' blast radius, and nothing this
+    # job does needs write access.
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
     steps:
@@ -280,13 +285,18 @@ jobs:
     # Next server boots unconfigured and every backend-dependent test times out
     # (~34 min of red on main — the failure this guard fixes). We detect the
     # secrets and turn the job into a green no-op when they're absent, on EVERY
-    # branch (this supersedes the old `security/*`-only skip). Wire the three
-    # repo secrets (Settings → Secrets and variables → Actions) to enable the
-    # real run.
+    # branch (this supersedes the old `security/*`-only skip).
+    #
+    # These are a SEPARATE secret set from the build job's on purpose. E2E drives
+    # a real browser through register / invite flows, so it must never touch the
+    # production project — and when both jobs read the same three secret names,
+    # arming the build gate silently arms Playwright against production too.
+    # Point these at a throwaway Supabase project (or a Supabase branch).
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_KEY }}
+      PRODUCTION_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
     steps:
       - name: Detect backend secrets
         id: secrets
@@ -295,7 +305,20 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=E2E skipped::Supabase secrets not set on this repo — E2E is a no-op. Add NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_KEY in Settings → Secrets to enable it."
+            echo "::notice title=E2E skipped::No E2E backend configured — E2E is a no-op. Add E2E_SUPABASE_URL, E2E_SUPABASE_ANON_KEY and E2E_SUPABASE_SERVICE_KEY (a NON-PRODUCTION project) in Settings → Secrets to enable it."
+          fi
+
+      - name: Refuse to run against production
+        if: steps.secrets.outputs.configured == 'true'
+        # Belt and braces for the one mistake here that cannot be undone:
+        # pasting the production values into the E2E secrets. The build job
+        # holds the real NEXT_PUBLIC_SUPABASE_URL, so an exact match proves the
+        # E2E backend IS production. Fail loudly rather than register test users
+        # in it.
+        run: |
+          if [ -n "${PRODUCTION_SUPABASE_URL}" ] && [ "${NEXT_PUBLIC_SUPABASE_URL}" = "${PRODUCTION_SUPABASE_URL}" ]; then
+            echo "::error title=E2E pointed at production::E2E_SUPABASE_URL matches the production NEXT_PUBLIC_SUPABASE_URL. Point E2E at a throwaway project or a Supabase branch."
+            exit 1
           fi
 
       - name: Checkout code
@@ -344,6 +367,13 @@ jobs:
     # no-op until they're wired, then builds for real. Placeholder values are
     # deliberately NOT injected — statically-rendered pages may fetch at build
     # time and would fail confusingly against a fake backend.
+    #
+    # Arming this gate costs no secret exposure: the detect step below requires
+    # only the two NEXT_PUBLIC_* values, and those already ship inside the
+    # browser bundle. SUPABASE_SERVICE_KEY is passed through if set but is NOT
+    # required to arm the job — leave it unset until a red build proves the
+    # build actually needs it, rather than handing CI the privileged key on
+    # spec. Build-time access to production is read-only.
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

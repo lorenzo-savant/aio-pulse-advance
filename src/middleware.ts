@@ -146,6 +146,28 @@ function isTokenBearingPath(pathname: string): boolean {
   return TOKEN_BEARING_PATHS.some((p) => pathname.startsWith(p))
 }
 
+/**
+ * Build a redirect that PRESERVES the session cookies Supabase just refreshed.
+ *
+ * `supabase.auth.getUser()` rotates the refresh token and writes the new pair
+ * onto `supabaseResponse` through the `setAll` hook. Returning a bare
+ * `NextResponse.redirect()` discards them, so the browser keeps a refresh
+ * token the server has already consumed. The next request then fails auth and
+ * bounces to /auth/login — which, on a retry that does authenticate, bounces
+ * straight back to /dashboard, where the refresh rotates and is lost again.
+ * That is the ERR_TOO_MANY_REDIRECTS loop: two correct-looking rules feeding
+ * each other because the session state flaps between them.
+ *
+ * Every redirect issued AFTER getUser() must go through here.
+ */
+function redirectWithSession(url: URL, supabaseResponse: NextResponse): NextResponse {
+  const redirect = NextResponse.redirect(url)
+  for (const cookie of supabaseResponse.cookies.getAll()) {
+    redirect.cookies.set(cookie)
+  }
+  return redirect
+}
+
 const protectedRoutes = ['/dashboard']
 const authRoutes = ['/auth/login', '/auth/register']
 const publicApiRoutes: string[] = []
@@ -256,13 +278,14 @@ export async function middleware(request: NextRequest) {
   if (!user && isProtectedRoute) {
     const url = new URL('/auth/login', request.url)
     url.searchParams.set('redirect', safeRedirect(pathname))
-    const redirectResponse = NextResponse.redirect(url)
-    return applyCspHeaders(redirectResponse, nonce)
+    return applyCspHeaders(redirectWithSession(url, supabaseResponse), nonce)
   }
 
   if (user && isAuthRoute) {
-    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
-    return applyCspHeaders(redirectResponse, nonce)
+    return applyCspHeaders(
+      redirectWithSession(new URL('/dashboard', request.url), supabaseResponse),
+      nonce,
+    )
   }
 
   // MFA enforcement on sensitive sub-routes. We use Supabase's Authenticator
@@ -279,14 +302,14 @@ export async function middleware(request: NextRequest) {
         // Enrolled but not stepped up in this session → challenge required.
         const url = new URL('/auth/mfa', request.url)
         url.searchParams.set('redirect', safeRedirect(pathname))
-        return applyCspHeaders(NextResponse.redirect(url), nonce)
+        return applyCspHeaders(redirectWithSession(url, supabaseResponse), nonce)
       }
       if (aal && aal.currentLevel === 'aal1' && aal.nextLevel === 'aal1') {
         // No factors enrolled at all → send to setup. The setup page itself
         // is in MFA_SETUP_EXCEPTIONS so this isn't a redirect loop.
         const url = new URL('/dashboard/org/security/mfa', request.url)
         url.searchParams.set('reason', 'required')
-        return applyCspHeaders(NextResponse.redirect(url), nonce)
+        return applyCspHeaders(redirectWithSession(url, supabaseResponse), nonce)
       }
     } catch {
       // MFA API failure shouldn't lock people out — fail open here. If MFA

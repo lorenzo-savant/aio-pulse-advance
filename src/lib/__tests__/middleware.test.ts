@@ -27,6 +27,8 @@ import { safeRedirect, buildCspHeader, resolveAllowedOrigin, middleware } from '
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { checkRateLimit } from '@/lib/ratelimit'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 // ---------------------------------------------------------------------------
 // Env setup
@@ -450,5 +452,39 @@ describe('middleware', () => {
       expect(res.status).toBe(429)
       expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3000')
     })
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Session-preserving redirects — the ERR_TOO_MANY_REDIRECTS guard
+// ═══════════════════════════════════════════════════════════════════════════
+describe('middleware redirects preserve the refreshed session', () => {
+  const source = readFileSync(join(process.cwd(), 'src/middleware.ts'), 'utf8')
+
+  // The loop: getUser() rotates the refresh token and writes the new pair onto
+  // `supabaseResponse`. A bare NextResponse.redirect() throws those cookies
+  // away, so the browser keeps a token the server already consumed — auth then
+  // fails, /dashboard bounces to /auth/login, a retry authenticates and bounces
+  // back, and the rotation loses the cookies again. Two correct-looking rules
+  // feeding each other.
+  it('every redirect after getUser goes through redirectWithSession', () => {
+    // Everything from the Supabase client construction onwards is "after
+    // getUser" for this purpose.
+    const afterAuth = source.slice(source.indexOf('const supabase = createServerClient'))
+    expect(afterAuth).not.toMatch(/NextResponse\.redirect\(/)
+    expect(afterAuth).toMatch(/redirectWithSession\(/)
+  })
+
+  it('redirectWithSession copies the response cookies onto the redirect', () => {
+    const helper = source.slice(source.indexOf('function redirectWithSession'))
+    expect(helper.slice(0, 400)).toMatch(/supabaseResponse\.cookies\.getAll\(\)/)
+    expect(helper.slice(0, 400)).toMatch(/redirect\.cookies\.set\(/)
+  })
+
+  it('both halves of the potential loop are still present and gated', () => {
+    // If either rule is ever removed the guard above becomes meaningless, so
+    // assert the pair explicitly.
+    expect(source).toMatch(/!user && isProtectedRoute/)
+    expect(source).toMatch(/user && isAuthRoute/)
   })
 })

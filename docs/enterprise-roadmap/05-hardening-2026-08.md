@@ -131,10 +131,25 @@ attivi. Resta:
   `geo-score-precompute.ts` (8), `budget-manager.ts` (8), `agent-memory.ts` (7).
 - ⬜ Coverage thresholds in `vitest.config.ts` — ora che la CI genera davvero
   il report (#23), misurare la baseline e pinnarla.
-- ⬜ Wire dei secret GitHub (`SUPABASE_DB_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`): finché mancano,
-  i job **build**, **e2e** e **migration-drift** sono no-op verdi — tre gate
-  spenti. È l'intervento CI a più alto valore rimasto, e non richiede codice.
+- ⬜ Wire dei secret GitHub: finché mancano, i job **build**, **e2e** e
+  **migration-drift** sono no-op verdi — tre gate spenti. Verificato il
+  2026-08-04: `gh secret list` restituisce `[]`.
+
+  I set sono **separati** dal 2026-08-04. Prima condividevano gli stessi tre
+  nomi, quindi armare **build** avrebbe puntato Playwright su **produzione**
+  senza dirlo. Ordine di attivazione:
+  1. `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` → arma
+     **build**. Esposizione nulla: viaggiano già dentro il bundle browser.
+     Lasciare `SUPABASE_SERVICE_KEY` non impostato finché una build rossa non
+     dimostra che serve davvero.
+  2. `SUPABASE_DB_URL` → arma **migration-drift**. Usare un ruolo Postgres
+     **read-only** dedicato, non `postgres`: `gen types` legge solo pg_catalog.
+     Attenzione: con i due workaround di P6 ancora aperti questo gate può
+     partire rosso — è il suo lavoro.
+  3. `E2E_SUPABASE_URL` / `E2E_SUPABASE_ANON_KEY` / `E2E_SUPABASE_SERVICE_KEY`
+     → arma **e2e**, e devono puntare a un progetto Supabase usa-e-getta (o a
+     un branch Supabase). Il job si rifiuta di partire se l'URL coincide con
+     quello di produzione.
 
 ### P8 — Frontend (performance percepita)
 - 52/58 pagine sono `'use client'` con waterfall fetch client-side;

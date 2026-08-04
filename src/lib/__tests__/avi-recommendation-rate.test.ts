@@ -84,9 +84,12 @@ describe('AVI — recommendationRate measures recommendation, not mention', () =
     expect(components.recommendationRate).toBe(50)
   })
 
-  it('treats a missing sentiment as not a recommendation', () => {
+  it('cannot classify a mention whose sentiment is missing', () => {
+    // This asserted 0 when first written, which repeated the mistake it was
+    // meant to fix one scale down: "no reading" is not "not recommended", it is
+    // not classifiable. With every mention unreadable there is no rate to report.
     const { components } = calculateAVIFromResults([result({ sentiment_score: null })])
 
-    expect(components.recommendationRate).toBe(0)
+    expect(components.recommendationRate).toBeNull()
   })
 })

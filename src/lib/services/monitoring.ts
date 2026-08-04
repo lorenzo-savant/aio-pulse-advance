@@ -307,6 +307,25 @@ export async function runMonitoringCheck(
     citedUrls = (await groundCitationsViaBrave(prompt.text, language)).citations
   }
 
+  // Second opinion on the sentiment, from the deterministic lexicon. It carries
+  // 35% of the AVI once recommendationRate is counted, and until now nothing
+  // checked it. A flat contradiction refuses the number rather than correcting
+  // it — see resolveSentiment.
+  const sentimentReading = resolveSentiment(
+    analysis.sentiment as SentimentLabel,
+    Math.min(1, Math.max(-1, analysis.sentiment_score)),
+    responseText,
+  )
+  if (sentimentReading.conflict === 'strong') {
+    logger.warn('Sentiment refused — lexicon contradicts the model', {
+      service: 'monitoring',
+      engine,
+      brand: brand.name,
+      modelLabel: analysis.sentiment,
+      modelScore: analysis.sentiment_score,
+    })
+  }
+
   // Keep visibility consistent with the deterministic mention: if the brand IS
   // mentioned but the model scored 0, floor it so the row isn't self-contradictory.
   let visibility = Math.min(100, Math.max(0, analysis.visibility_score))
@@ -325,7 +344,7 @@ export async function runMonitoringCheck(
     mention_type: det.mentionType as MentionType,
     visibility_score: visibility,
     sentiment: analysis.sentiment as SentimentLabel,
-    sentiment_score: Math.min(1, Math.max(-1, analysis.sentiment_score)),
+    sentiment_score: sentimentReading.score,
     sentiment_aspects: analysis.sentiment_aspects as SentimentAspect[],
     cited_urls: citedUrls,
     competitor_mentions: analysis.competitor_mentions as CompetitorMention[],
@@ -461,11 +480,19 @@ Respond ONLY with valid JSON (no markdown):
  */
 export const POSITIVE_SENTIMENT_THRESHOLD = 0.25
 
+/**
+ * Every component may be null, and null always means the same thing: nothing
+ * measured it. A null component drops out of the score and its weight is shared
+ * by the ones that were measured, so absence never stands in as a midpoint.
+ */
 export interface AVIInput {
   citationRate: number
   mentionFrequency: number
-  sentimentScore: number
-  recommendationRate: number
+  /** null when no mention carried a usable sentiment reading. */
+  sentimentScore: number | null
+  /** null when no mention could be classified as recommended or not. */
+  recommendationRate: number | null
+  /** 0 is the "never positioned" sentinel the cron writes. */
   positionAvg: number
   /** null when no result in the set carried an assessment. */
   hallucinationIndex: number | null
@@ -482,6 +509,37 @@ export interface AVIInput {
  */
 export const POSITION_SCALE_MAX = 20
 
+/**
+ * Reconciles the model's sentiment against the deterministic lexicon.
+ *
+ * The lexicon (`sentiment-lexicon.ts`) is trilingual, tested, and was already
+ * imported here — but only `analyzeSentiment` used it, and only
+ * `/api/sentiment` calls that. The pipeline that writes the database scored
+ * sentiment with no second opinion at all, which matters more than it looks:
+ * after the recommendation fix, sentiment drives 35% of the AVI (15% directly,
+ * 20% through `recommendationRate`).
+ *
+ * `sentimentAgreement` reports `strong` only for OPPOSITE polarity with at least
+ * two lexicon hits. On that, the score is refused rather than corrected — the
+ * claim is not "the model is wrong", it is "these two disagree flatly, so
+ * nothing here is measured well enough to put in a score". A null score drops
+ * the component out of the AVI instead of standing in as neutral.
+ *
+ * The label is left as the model reported it: it is descriptive, and readers can
+ * see it. The number is what enters the arithmetic, and that is what gets held
+ * to a higher bar.
+ */
+export function resolveSentiment(
+  label: SentimentLabel,
+  score: number,
+  responseText: string,
+): { score: number | null; conflict: ConflictLevel } {
+  const lex = lexicalSentiment(responseText)
+  const { conflict } = sentimentAgreement(label as LexiconLabel, lex)
+
+  return { score: conflict === 'strong' ? null : score, conflict }
+}
+
 export function calculateAVI(input: AVIInput): number {
   const {
     citationRate,
@@ -491,41 +549,44 @@ export function calculateAVI(input: AVIInput): number {
     positionAvg,
     hallucinationIndex,
   } = input
-  const sentimentNorm = ((Math.max(-1, Math.min(1, sentimentScore)) + 1) / 2) * 100
+  // One rule for every component: a null contributes nothing and claims no
+  // weight, so the score is always "of what was actually measured". Absence is
+  // never a midpoint, and never a verdict.
+  //
+  // `positionAvg <= 0` is the "never positioned" sentinel the cron writes; it
+  // used to normalise to a fabricated 50, which made an unmeasured position
+  // score better than a measured late one.
+  const parts: Array<{ value: number; weight: number }> = [
+    { value: citationRate, weight: 0.2 },
+    { value: mentionFrequency, weight: 0.2 },
+  ]
 
-  // A hallucination index of null means nothing assessed it — which is not the
-  // same as assessing it and finding none. Treated like an absent position: the
-  // component drops out rather than awarding its full 10 points by default.
-  const hasHallucination = hallucinationIndex != null
-  const antiHallucination = hasHallucination ? Math.max(0, 100 - hallucinationIndex) : 0
-
-  // `positionAvg <= 0` is the "never positioned" sentinel the cron writes. It
-  // used to normalise to 50 — a fabricated midpoint that made an unmeasured
-  // position score better than a measured late one. Absence is not a verdict:
-  // the component drops out and its weight is shared by what WAS measured, so
-  // a missing reading lands between the best and worst real ones instead of at
-  // an invented middle.
-  const hasPosition = positionAvg > 0
-  const positionNorm = hasPosition
-    ? Math.max(
+  if (sentimentScore != null) {
+    parts.push({
+      value: ((Math.max(-1, Math.min(1, sentimentScore)) + 1) / 2) * 100,
+      weight: 0.15,
+    })
+  }
+  if (recommendationRate != null) {
+    parts.push({ value: recommendationRate, weight: 0.2 })
+  }
+  if (positionAvg > 0) {
+    parts.push({
+      value: Math.max(
         0,
         Math.min(100, ((POSITION_SCALE_MAX - positionAvg) / (POSITION_SCALE_MAX - 1)) * 100),
-      )
-    : 0
-
-  let raw =
-    citationRate * 0.2 + mentionFrequency * 0.2 + sentimentNorm * 0.15 + recommendationRate * 0.2
-  let weight = 0.75
-
-  if (hasPosition) {
-    raw += positionNorm * 0.15
-    weight += 0.15
+      ),
+      weight: 0.15,
+    })
   }
-  if (hasHallucination) {
-    raw += antiHallucination * 0.1
-    weight += 0.1
+  if (hallucinationIndex != null) {
+    parts.push({ value: Math.max(0, 100 - hallucinationIndex), weight: 0.1 })
   }
 
+  const weight = parts.reduce((sum, p) => sum + p.weight, 0)
+  if (weight === 0) return 0
+
+  const raw = parts.reduce((sum, p) => sum + p.value * p.weight, 0)
   return Math.min(100, Math.max(0, Math.round((raw / weight) * 10) / 10))
 }
 
@@ -578,7 +639,11 @@ export function calculateAVIFromResults(
   // `mentioned` again — byte-identical to mentionFrequency on the line below —
   // so the AVI declared six components but carried five signals, and mention
   // frequency drove 40% of the score under two names.
-  const recommended = mentioned.filter(
+  // A disputed reading (see resolveSentiment) is stored as null. It cannot be
+  // classified as recommended or not, so it is excluded from the signal rather
+  // than counted as "not recommended" — which would be a verdict.
+  const mentionedWithSentiment = mentioned.filter((r) => r.sentiment_score != null)
+  const recommended = mentionedWithSentiment.filter(
     (r) => (r.sentiment_score ?? 0) >= POSITIVE_SENTIMENT_THRESHOLD,
   )
   const cited = results.filter((r) => r.cited_urls && r.cited_urls.length > 0)
@@ -595,10 +660,14 @@ export function calculateAVIFromResults(
     citationRate: (cited.length / total) * 100,
     mentionFrequency: (mentioned.length / total) * 100,
     sentimentScore:
-      mentioned.length > 0
-        ? mentioned.reduce((a, r) => a + (r.sentiment_score ?? 0), 0) / mentioned.length
-        : 0,
-    recommendationRate: (recommended.length / total) * 100,
+      mentionedWithSentiment.length > 0
+        ? mentionedWithSentiment.reduce((a, r) => a + (r.sentiment_score ?? 0), 0) /
+          mentionedWithSentiment.length
+        : null,
+    // Denominator stays `total` so this remains comparable with
+    // mentionFrequency; it is null only when nothing could be classified at all.
+    recommendationRate:
+      mentionedWithSentiment.length > 0 ? (recommended.length / total) * 100 : null,
     positionAvg:
       positionsValid.length > 0
         ? positionsValid.reduce((a, p) => a + p, 0) / positionsValid.length
@@ -682,13 +751,21 @@ export function calculateCompetitorAVI(
       key: 'mentionFrequency',
       value: components.mentionFrequency * COMPONENT_WEIGHTS.mentionFrequency,
     },
+    // Infinity for an unmeasured component: nothing that was never measured can
+    // be the "weakest" one, and the report must not tell a client to fix it.
     {
       key: 'sentimentScore',
-      value: ((components.sentimentScore + 1) / 2) * 100 * COMPONENT_WEIGHTS.sentimentScore,
+      value:
+        components.sentimentScore == null
+          ? Number.POSITIVE_INFINITY
+          : ((components.sentimentScore + 1) / 2) * 100 * COMPONENT_WEIGHTS.sentimentScore,
     },
     {
       key: 'recommendationRate',
-      value: components.recommendationRate * COMPONENT_WEIGHTS.recommendationRate,
+      value:
+        components.recommendationRate == null
+          ? Number.POSITIVE_INFINITY
+          : components.recommendationRate * COMPONENT_WEIGHTS.recommendationRate,
     },
     {
       key: 'positionAvg',
@@ -932,7 +1009,9 @@ const RECOMMENDATION_RULES: Array<{
     component: 'mentionFrequency',
   },
   {
-    condition: (i) => i.aviComponents.sentimentScore < 0,
+    // Never advise on a reading that does not exist: null must not satisfy any
+    // of these thresholds.
+    condition: (i) => (i.aviComponents.sentimentScore ?? 0) < 0,
     title: 'Migliora sentiment',
     description: () =>
       'Il sentiment medio è negativo. Affronta le recensioni negative e rafforza la comunicazione positiva.',
@@ -941,7 +1020,10 @@ const RECOMMENDATION_RULES: Array<{
     component: 'sentimentScore',
   },
   {
-    condition: (i) => i.aviComponents.sentimentScore >= 0 && i.aviComponents.sentimentScore < 0.5,
+    condition: (i) =>
+      i.aviComponents.sentimentScore != null &&
+      i.aviComponents.sentimentScore >= 0 &&
+      i.aviComponents.sentimentScore < 0.5,
     title: 'Incrementa sentiment positivo',
     description: () =>
       'Il sentiment è neutra. Amplifica i messaggi positivi per migliorare la percezione del brand.',
@@ -950,7 +1032,8 @@ const RECOMMENDATION_RULES: Array<{
     component: 'sentimentScore',
   },
   {
-    condition: (i) => i.aviComponents.recommendationRate < 30,
+    condition: (i) =>
+      i.aviComponents.recommendationRate != null && i.aviComponents.recommendationRate < 30,
     title: 'Aumenta raccomandazioni',
     description: () =>
       'Tasso di raccomandazione basso. Crea contenuti che generino endorsement organici.',

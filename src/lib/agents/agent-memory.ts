@@ -135,13 +135,18 @@ export async function getOwnedConversation(
   userId: string,
   brandId?: string,
 ): Promise<Conversation | null> {
-  const conversation = await getConversation(conversationId)
-  if (!conversation) return null
+  const raw = await getConversation(conversationId)
+  if (!raw) return null
 
-  const isOwner = String(conversation.userId) === userId
-  const brandMatches = brandId ? String(conversation.brandId) === brandId : true
+  // getConversation spreads the stored row, so the raw snake_case columns are
+  // what is actually present (the camelCase fields on Conversation are
+  // declared for convenience and not materialised by the storage layer).
+  const row = raw as unknown as { user_id?: string; brand_id?: string | null }
 
-  return isOwner && brandMatches ? conversation : null
+  const isOwner = String(row.user_id) === userId
+  const brandMatches = brandId ? String(row.brand_id) === brandId : true
+
+  return isOwner && brandMatches ? raw : null
 }
 
 export async function getRecentConversations(

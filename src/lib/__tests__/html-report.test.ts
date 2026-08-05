@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import {
   calculateAVIFromResults,
   calculateDomainSOAIV,
@@ -120,61 +122,65 @@ describe('HTML Report Functions', () => {
   })
 })
 
-describe('i18n Labels', () => {
-  const locales = ['en', 'it', 'sv'] as const
+// ─── HTML report: the wiring that made every report state a false number ─────
+//
+// The competitor table is built inside the route handler, which App Router does
+// not let us export for a render test. So these assert the SOURCE, in the same
+// way brand-scoped-reads.test.ts does — enough to pin the exact regression:
+//
+//   `mappedResults` was built without `competitor_mentions`, though the row is
+//   selected with `*`. The lookup therefore searched an array that could never
+//   contain anything, the synthetic {position: 0, count: 0} stand-in fired for
+//   every competitor in every report, calculateCompetitorAVI returned 0, and
+//   the printed gap was the brand's OWN score. Every report generated said the
+//   client beat every rival by exactly their own AVI.
+//
+// The previous i18n test that lived here was removed rather than repaired: it
+// declared its own `labels` literal inline and asserted against that, so it
+// passed unchanged after `rank` and `gap` were deleted from the real
+// dictionary. A test that cannot fail is worse than none — it reads as cover.
+describe('HTML report — competitor table wiring', () => {
+  const rawSrc = readFileSync(join(process.cwd(), 'src/app/api/reports/html/route.ts'), 'utf8')
 
-  it('has all required labels for each locale', () => {
-    const requiredLabels = [
-      'title',
-      'brand',
-      'period',
-      'aviScore',
-      'soaiv',
-      'competitors',
-      'rank',
-      'gap',
-      'sentiment',
-    ]
+  // Assert against CODE, not prose. The comments in that file deliberately
+  // quote the old broken shapes to explain them, so a naive source match
+  // fires on the explanation of the bug rather than on the bug.
+  const routeSrc = rawSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
-    for (const locale of locales) {
-      const labels = {
-        en: {
-          title: 'AI Voice Report',
-          brand: 'Brand',
-          period: 'Report Period',
-          aviScore: 'AVI Score',
-          soaiv: 'Share of AI Voice',
-          competitors: 'Competitor Analysis',
-          rank: 'Rank',
-          gap: 'Gap',
-          sentiment: 'Sentiment Heatmap',
-        },
-        it: {
-          title: 'Rapporto AI Voice',
-          brand: 'Marca',
-          period: 'Periodo Report',
-          aviScore: 'Punteggio AVI',
-          soaiv: 'Share of AI Voice',
-          competitors: 'Analisi Competitor',
-          rank: 'Rank',
-          gap: 'Gap',
-          sentiment: 'Mappa Sentiment',
-        },
-        sv: {
-          title: 'AI Voice Rapport',
-          brand: 'Varumärke',
-          period: 'Rapportperiod',
-          aviScore: 'AVI Poäng',
-          soaiv: 'Share of AI Voice',
-          competitors: 'Konkurrentanalys',
-          rank: 'Rank',
-          gap: 'Gap',
-          sentiment: 'Sentiment Heatmap',
-        },
-      }
-      for (const label of requiredLabels) {
-        expect(labels[locale][label as keyof (typeof labels)['en']]).toBeDefined()
-      }
+  it('carries competitor_mentions into the mapped results', () => {
+    expect(routeSrc).toMatch(/competitor_mentions:\s*r\.competitor_mentions/)
+  })
+
+  it('never substitutes a synthetic zero row for an unmentioned competitor', () => {
+    // Not mentioned is not scored zero.
+    expect(routeSrc).not.toMatch(/position:\s*0,\s*count:\s*0/)
+  })
+
+  it('uses the measured standings, not the deprecated competitor AVI', () => {
+    expect(routeSrc).toMatch(/calculateCompetitorStandings\(/)
+    expect(routeSrc).not.toMatch(/calculateCompetitorAVI\(/)
+  })
+
+  it('does not present the model-reported position to a client', () => {
+    // `competitor_mentions[].position` was requested from the model as a bare
+    // `<integer>` with no unit and no origin until 2026-08-05, so historical
+    // values are not comparable with each other. It stays out of the rendered
+    // table until there is data written under the defined meaning.
+    expect(routeSrc).not.toMatch(/<th>\$\{t\.avgPosition\}<\/th>/)
+  })
+
+  it('every locale carries the same label set', () => {
+    // The real invariant: a missing translation silently renders `undefined`
+    // in a client-facing report.
+    const dicts = [...routeSrc.matchAll(/^ {2}(en|it|sv): \{$/gm)].map((m) => m.index!)
+    expect(dicts).toHaveLength(3)
+
+    const keysOf = (from: number) => {
+      const block = routeSrc.slice(from, routeSrc.indexOf('\n  },', from))
+      return [...block.matchAll(/^ {4}(\w+):/gm)].map((m) => m[1]).sort()
     }
+    const [en, it, sv] = dicts.map(keysOf)
+    expect(it).toEqual(en)
+    expect(sv).toEqual(en)
   })
 })

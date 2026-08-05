@@ -92,8 +92,16 @@ console.log(
 )
 for (const t of missingFromMigrations) console.log(`   ${t}`)
 
-console.log(`\n── ${missingFromPrisma.length} runtime table(s) with no Prisma model — invisible to Prisma ──`)
+console.log(`\n── ${missingFromPrisma.length} runtime table(s) with no Prisma model ──`)
 for (const t of missingFromPrisma) console.log(`   ${t}`)
+console.log(
+  '\n   Cosmetic, and deliberately left alone: `grep -rl @prisma/client src` is\n' +
+    '   empty — nothing queries this database through Prisma. The schema is a\n' +
+    '   second, unused description of the tables. Writing the missing models\n' +
+    '   would make this number zero without changing anything that runs.\n' +
+    '   Worth doing only if Prisma ever gains a runtime caller; the model that\n' +
+    '   IS used by tooling (MonitoringResult) is kept aligned by hand.',
+)
 
 console.log(
   '\nMeasurement only — exits 0. The blocking version is the ratchet in PR #5,\n' +

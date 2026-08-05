@@ -7,6 +7,7 @@ import { createServerClient } from '@/lib/supabase'
 import { verifyCronAuth } from '@/lib/cron-auth'
 import { logger } from '@/lib/logger'
 import { runMonitoringCheck, calculateAVIFromResults } from '@/lib/services/monitoring'
+import { consumeCreditsForQuery } from '@/lib/services/credits'
 import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/services/alerts'
 import type {
   Brand,
@@ -211,6 +212,60 @@ export async function POST(req: NextRequest) {
       const engines = (prompt.engines || ['chatgpt', 'gemini', 'perplexity', 'claude']).filter(
         (e): e is MonitoringEngine => (validEngines as readonly string[]).includes(e),
       )
+
+      // ── Credit gate ─────────────────────────────────────────────────────
+      // A scheduled run buys exactly the same paid LLM work as the manual
+      // path, so it goes through the same ledger. This was missing entirely:
+      // consumeCreditsForQuery had two call sites, /api/credits/use and the
+      // manual /api/monitoring path, so every cron run spent engine calls that
+      // nothing recorded. The owner was never in doubt — prompt.user_id is the
+      // identity already passed to runMonitoringCheck below.
+      //
+      // A refusal skips THIS prompt and nothing else: one tenant out of credit
+      // must not stop the run for every other tenant. A gate that could not be
+      // evaluated also skips, for the reason the manual path gives — never run
+      // paid work when the credit check itself failed.
+      try {
+        const creditDecision = await consumeCreditsForQuery(prompt.user_id, {
+          engines,
+          brandId: brand.id,
+          queryId: prompt.id,
+        })
+
+        if (!creditDecision.allowed) {
+          logger.info('Skipping scheduled prompt — insufficient credits', {
+            source: 'cron',
+            brandId: brand.id,
+            promptId: prompt.id,
+            cost: creditDecision.cost,
+          })
+          for (const engine of engines) {
+            results.push({
+              promptId: prompt.id,
+              engine,
+              success: false,
+              error: creditDecision.message || 'Insufficient credits',
+            })
+          }
+          continue
+        }
+      } catch (creditErr) {
+        logger.error('Credit check failed for scheduled prompt — skipping', {
+          source: 'cron',
+          brandId: brand.id,
+          promptId: prompt.id,
+          error: creditErr instanceof Error ? creditErr.message : String(creditErr),
+        })
+        for (const engine of engines) {
+          results.push({
+            promptId: prompt.id,
+            engine,
+            success: false,
+            error: 'Credit check failed',
+          })
+        }
+        continue
+      }
 
       const workflowResult = await createWorkflow(
         supabase,

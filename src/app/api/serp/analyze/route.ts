@@ -93,9 +93,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('SERP analysis error', { service: 'ai-overview-detector', keyword, error })
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Analysis failed' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Failed to analyse SERP' }, { status: 500 })
   }
 }

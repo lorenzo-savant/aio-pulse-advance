@@ -122,6 +122,28 @@ export async function getConversation(conversationId: string): Promise<Conversat
   } as unknown as Conversation
 }
 
+/**
+ * Load a conversation only if it belongs to the given user (and, when a brand
+ * is supplied, to that brand). Returns null when the caller has no claim on it
+ * so that ownership failures and missing rows share one refusal path.
+ *
+ * The client here is the service-role client, which bypasses RLS, so ownership
+ * cannot be left to the database — it must be checked in code.
+ */
+export async function getOwnedConversation(
+  conversationId: string,
+  userId: string,
+  brandId?: string,
+): Promise<Conversation | null> {
+  const conversation = await getConversation(conversationId)
+  if (!conversation) return null
+
+  const isOwner = String(conversation.userId) === userId
+  const brandMatches = brandId ? String(conversation.brandId) === brandId : true
+
+  return isOwner && brandMatches ? conversation : null
+}
+
 export async function getRecentConversations(
   userId: string,
   brandId?: string,

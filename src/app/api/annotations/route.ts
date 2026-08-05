@@ -180,8 +180,14 @@ export async function DELETE(req: NextRequest) {
   const gate = await requireBrandRole(row.brand_id as string, userId, 'editor')
   if ('response' in gate) return gate.response
 
+  // Pin the delete to the brand the gate actually authorised. Deleting on the
+  // id alone would let a race or a reparented row fall through the check.
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  const { error } = await (db as any).from('brand_annotations').delete().eq('id', id)
+  const { error } = await (db as any)
+    .from('brand_annotations')
+    .delete()
+    .eq('id', id)
+    .eq('brand_id', row.brand_id as string)
   /* eslint-enable @typescript-eslint/no-explicit-any */
   if (error) {
     logger.error('/api/annotations DELETE failed', { err: String(error) })

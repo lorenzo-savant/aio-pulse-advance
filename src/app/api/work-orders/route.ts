@@ -176,6 +176,7 @@ export async function PATCH(req: NextRequest) {
       .from('work_orders')
       .update(update)
       .eq('id', id)
+      .eq('brand_id', existing.brand_id)
       .select()
       .single()
     if (error) return err(error.message)

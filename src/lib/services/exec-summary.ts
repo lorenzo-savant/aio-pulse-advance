@@ -52,7 +52,16 @@ export interface ExecSummaryQ2 {
 export interface ExecSummaryQ3 {
   brandShare: number // %
   brandRank: number | null
+  /** Declared competitors that appeared. The rank is computed against these. */
   totalCompetitors: number
+  /**
+   * Names that showed up in answers but are not on the brand's declared list.
+   * Never ranked — a model naming someone is not evidence they are a rival —
+   * but surfaced, because a name that keeps recurring is worth investigating.
+   */
+  discoveredCompetitors: Array<{ name: string; share: number }>
+  /** Combined share of those names, 0–100. */
+  discoveredShare: number
   narrativeGaps: Array<{ driver: string; leader: string; gap: number }>
   perEngine: Array<{ engine: string; share: number; rank: number | null }>
 }
@@ -244,7 +253,19 @@ export async function buildExecSummary(brand: Brand, days: number): Promise<Exec
   const q3: ExecSummaryQ3 = {
     brandShare,
     brandRank: rank,
+    // Declared competitors only — the rank and the "out of N brands" in the
+    // headline are assertions, and they used to count every name a model
+    // produced, so the denominator moved whenever a model free-associated.
     totalCompetitors: Math.max(0, overall.entities.length - 1),
+    // The names that appeared but were never declared. Reporting the count
+    // rather than swallowing it: this is the one place that knows a rival the
+    // brand has not listed keeps showing up in answers about them, and that is
+    // worth a look even though it must not be ranked.
+    discoveredCompetitors: overall.discovered.slice(0, 10).map((d) => ({
+      name: d.name,
+      share: d.share,
+    })),
+    discoveredShare: overall.discoveredShare,
     narrativeGaps: brandDriverLosses.slice(0, 3).map((g) => ({
       driver: g.driver.label,
       leader: g.leader.brand,

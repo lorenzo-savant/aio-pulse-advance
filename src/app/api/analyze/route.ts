@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger'
 import { analyzeWithProvider } from '@/lib/services/analysis'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { verifyBrandAccess, getAccessibleBrandIds } from '@/lib/authorize'
+import { verifyBrandAccess, getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 import type { ApiResponse, AnalysisResult } from '@/types'
 
 function err(message: string, status = 500) {
@@ -129,7 +129,12 @@ export async function POST(req: NextRequest) {
 
   const { input, mode, engine, provider, model } = parsed.data
 
-  // ── Verify brand access if brand_id provided ──────────────────────────────
+  // ── Gate on the brand if brand_id provided ────────────────────────────────
+  // This runs a paid LLM analysis and inserts a row, so it takes editor rights.
+  // A denied brand_id used to be silently blanked to null and the request
+  // carried on — the analysis still ran (and cost), a row was still written
+  // with no brand, and the caller got 200. Denial that spends money and saves
+  // orphan data is not denial.
   const db = createServerClient()
   let brandContext:
     | {
@@ -140,16 +145,23 @@ export async function POST(req: NextRequest) {
       }
     | undefined
   if (brandId && db) {
+    if (userId.startsWith('anonymous:')) {
+      return NextResponse.json(
+        { success: false, message: 'Sign in to analyse for a brand' },
+        { status: 401 },
+      )
+    }
+    const gate = await requireBrandRole(brandId, userId, 'editor')
+    if ('response' in gate) return gate.response
+
     const brand = await verifyBrandAccess(brandId, userId)
-    if (!brand) {
-      brandId = null // Invalid brand, ignore
-    } else {
-      brandContext = {
-        name: brand.name,
-        industry: brand.industry,
-        description: brand.description,
-        competitors: brand.competitors,
-      }
+    if (!brand) return err('Brand not found or access denied', 404)
+
+    brandContext = {
+      name: brand.name,
+      industry: brand.industry,
+      description: brand.description,
+      competitors: brand.competitors,
     }
   }
 
@@ -218,7 +230,6 @@ export async function POST(req: NextRequest) {
     })
   } catch (error: unknown) {
     logger.error('Analysis error', { source: 'analyze', error: String(error) })
-    const message = error instanceof Error ? error.message : 'Analysis failed'
-    return NextResponse.json({ success: false, message }, { status: 500 })
+    return NextResponse.json({ success: false, message: 'Analysis failed' }, { status: 500 })
   }
 }

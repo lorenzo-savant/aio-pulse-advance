@@ -365,6 +365,7 @@ export async function PUT(req: NextRequest) {
       .from('alert_rules')
       .update({ is_active: !rule.is_active })
       .eq('id', id)
+      .eq('brand_id', allowed.brandId)
       .select()
       .single()
 

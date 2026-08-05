@@ -5,7 +5,7 @@ import {
   classifyMention,
 } from '../services/competitor-identity'
 import { computeShareOfVoice, type SovInputRow } from '../services/share-of-voice'
-import { calculateCompetitorStandings } from '../services/monitoring'
+import { calculateCompetitorStandings, calculateAVIFromResults } from '../services/monitoring'
 
 /**
  * The report used to hand market share, a rank, a trend line and a sentence in
@@ -154,5 +154,48 @@ describe('calculateCompetitorStandings', () => {
     const s = calculateCompetitorStandings([{ name: 'X', position: 0, count: 2 }], 2)
     expect(s?.avgPosition).toBeNull()
     expect(s?.mentions).toBe(2)
+  })
+})
+
+describe('calculateAVIFromResults — citationRate excludes Brave fallbacks', () => {
+  const row = (over: Partial<Parameters<typeof calculateAVIFromResults>[0][number]> = {}) => ({
+    brand_mentioned: true,
+    visibility_score: 50,
+    sentiment_score: 0,
+    cited_urls: ['https://example.com'],
+    has_hallucination: false,
+    mention_position: 1,
+    ...over,
+  })
+
+  it('counts a citation the engine actually produced', () => {
+    const { components } = calculateAVIFromResults([row({ citation_source: 'engine' })])
+    expect(components.citationRate).toBe(100)
+  })
+
+  it('does NOT count URLs substituted from a Brave search on the query', () => {
+    // The fallback fires precisely when the engine cited nothing, and searches
+    // the QUERY rather than the response. Counting it inverted the signal on
+    // exactly the rows citationRate was meant to catch — and citationRate is
+    // 20% of the AVI.
+    const { components } = calculateAVIFromResults([row({ citation_source: 'brave_fallback' })])
+    expect(components.citationRate).toBe(0)
+  })
+
+  it('leaves rows written before the column existed counting as they always did', () => {
+    // Reinterpreting the archive downwards would put a step in every chart
+    // that no change in the world caused.
+    const { components } = calculateAVIFromResults([row({ citation_source: null })])
+    expect(components.citationRate).toBe(100)
+  })
+
+  it('mixes the two correctly', () => {
+    const { components } = calculateAVIFromResults([
+      row({ citation_source: 'engine' }),
+      row({ citation_source: 'brave_fallback' }),
+      row({ citation_source: 'engine' }),
+      row({ cited_urls: [], citation_source: 'engine' }),
+    ])
+    expect(components.citationRate).toBe(50)
   })
 })

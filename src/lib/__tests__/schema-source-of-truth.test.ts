@@ -50,13 +50,13 @@ const MIGRATIONS = join(ROOT, 'supabase', 'migrations')
  * fails if this list claims a debt that no longer exists, and that is deliberate.
  */
 const KNOWN_UNDECLARED = [
-  'audit_logs',
+  // Down from seven to two: 20260805120000_backfill_missing_create_table.sql
+  // declares audit_logs, organizations, organization_members, workspaces and
+  // workspace_members, so the multi-tenant layer and the audit trail can be
+  // rebuilt. Only these two are left, and neither has DDL anywhere in the repo
+  // to carry across — they need their shape read off production first.
   'clients',
-  'organization_members',
-  'organizations',
   'sentiment_history',
-  'workspace_members',
-  'workspaces',
 ] as const
 
 /** Every relation the migration repo can create from scratch. */

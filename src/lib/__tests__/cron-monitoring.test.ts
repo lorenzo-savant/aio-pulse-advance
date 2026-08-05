@@ -38,7 +38,12 @@ vi.mock('@/lib/services/weekly-review', () => ({
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('calculateAVI — edge cases', () => {
-  it('all components zero yields baseline from sentiment/position normalization', () => {
+  // The expected values below changed on 2026-08-04. They previously encoded two
+  // defects: `positionAvg <= 0` normalised to a fabricated 50, and a positive
+  // positionAvg was read as a 1-5 list rank when `mention_position` is in fact a
+  // sentence index capped at 20. See avi-missing-data.test.ts for the behaviour
+  // that replaced them.
+  it('a missing position redistributes its weight instead of scoring 50', () => {
     const input: AVIInput = {
       citationRate: 0,
       mentionFrequency: 0,
@@ -48,9 +53,10 @@ describe('calculateAVI — edge cases', () => {
       hallucinationIndex: 0,
     }
     const avi = calculateAVI(input)
-    // sentimentNorm = 50, positionNorm = 50 (positionAvg<=0), antiHallucination = 100
-    // raw = 0 + 0 + 50*0.15 + 0 + 50*0.15 + 100*0.1 = 7.5 + 7.5 + 10 = 25
-    expect(avi).toBe(25)
+    // sentimentNorm = 50, antiHallucination = 100, position ABSENT
+    // raw = 50*0.15 + 100*0.1 = 17.5 over the 0.85 of weight that was measured
+    // 17.5 / 0.85 = 20.588… -> 20.6
+    expect(avi).toBe(20.6)
   })
 
   it('all components at maximum yields 100', () => {
@@ -78,12 +84,12 @@ describe('calculateAVI — edge cases', () => {
       hallucinationIndex: 0,
     }
     const avi = calculateAVI(input)
-    // sentimentNorm = 0, positionNorm = 50, antiHallucination = 100
-    // raw = 0 + 0 + 0 + 0 + 50*0.15 + 100*0.1 = 17.5
-    expect(avi).toBe(17.5)
+    // sentimentNorm = 0, antiHallucination = 100, position ABSENT
+    // raw = 100*0.1 = 10 over 0.85 measured weight -> 11.8
+    expect(avi).toBe(11.8)
   })
 
-  it('positionAvg=5 yields positionNorm=0', () => {
+  it('positionAvg=5 is an early sentence, not a worst-rank', () => {
     const input: AVIInput = {
       citationRate: 0,
       mentionFrequency: 0,
@@ -93,12 +99,12 @@ describe('calculateAVI — edge cases', () => {
       hallucinationIndex: 0,
     }
     const avi = calculateAVI(input)
-    // positionNorm = max(0, min(100, (5-5)/4 * 100)) = 0
-    // raw = 0 + 0 + 50*0.15 + 0 + 0 + 100*0.1 = 17.5
-    expect(avi).toBe(17.5)
+    // positionNorm = (20-5)/19 * 100 = 78.95  (was 0 under the 1-5 rank reading)
+    // raw = 50*0.15 + 100*0.1 + 78.95*0.15 = 29.34 -> 29.3
+    expect(avi).toBe(29.3)
   })
 
-  it('positionAvg=3 yields positionNorm=50', () => {
+  it('positionAvg=3 scores near the top of the sentence scale', () => {
     const input: AVIInput = {
       citationRate: 0,
       mentionFrequency: 0,
@@ -108,9 +114,9 @@ describe('calculateAVI — edge cases', () => {
       hallucinationIndex: 0,
     }
     const avi = calculateAVI(input)
-    // positionNorm = (5-3)/4 * 100 = 50
-    // raw = 0 + 0 + 50*0.15 + 0 + 50*0.15 + 100*0.1 = 25
-    expect(avi).toBe(25)
+    // positionNorm = (20-3)/19 * 100 = 89.47
+    // raw = 50*0.15 + 100*0.1 + 89.47*0.15 = 30.92 -> 30.9
+    expect(avi).toBe(30.9)
   })
 
   it('hallucinationIndex=100 zeros antiHallucination component', () => {
@@ -137,9 +143,9 @@ describe('calculateAVI — edge cases', () => {
       hallucinationIndex: 0,
     }
     const avi = calculateAVI(input)
-    // sentimentScore is clamped to 1 -> sentimentNorm = 100
-    // raw = 0 + 0 + 100*0.15 + 0 + 50*0.15 + 100*0.1 = 15 + 7.5 + 10 = 32.5
-    expect(avi).toBe(32.5)
+    // sentimentScore is clamped to 1 -> sentimentNorm = 100, position ABSENT
+    // raw = 100*0.15 + 100*0.1 = 25 over 0.85 measured weight -> 29.4
+    expect(avi).toBe(29.4)
   })
 
   it('clamps sentiment below -1', () => {
@@ -152,9 +158,9 @@ describe('calculateAVI — edge cases', () => {
       hallucinationIndex: 0,
     }
     const avi = calculateAVI(input)
-    // clamped to -1 -> sentimentNorm = 0
-    // raw = 0 + 0 + 0 + 0 + 50*0.15 + 100*0.1 = 17.5
-    expect(avi).toBe(17.5)
+    // clamped to -1 -> sentimentNorm = 0, position ABSENT
+    // raw = 100*0.1 = 10 over 0.85 measured weight -> 11.8
+    expect(avi).toBe(11.8)
   })
 
   it('positionAvg > 5 yields positionNorm clamped to 0', () => {
@@ -172,7 +178,7 @@ describe('calculateAVI — edge cases', () => {
     expect(avi).toBe(17.5)
   })
 
-  it('negative positionAvg treated as <= 0 -> positionNorm=50', () => {
+  it('negative positionAvg is treated as absent, not as a midpoint', () => {
     const input: AVIInput = {
       citationRate: 0,
       mentionFrequency: 0,
@@ -182,8 +188,8 @@ describe('calculateAVI — edge cases', () => {
       hallucinationIndex: 0,
     }
     const avi = calculateAVI(input)
-    // positionAvg <= 0 -> positionNorm = 50
-    expect(avi).toBe(25)
+    // positionAvg <= 0 -> component absent, weight redistributed (same as 0)
+    expect(avi).toBe(20.6)
   })
 
   it('result is always clamped between 0 and 100', () => {
@@ -382,24 +388,23 @@ describe('calculateHealthScore', () => {
   it('maps visibilityScore to citationRate, mentionFrequency, recommendationRate', () => {
     const score = calculateHealthScore(80, 0, 0)
     // citationRate=80, mentionFrequency=80, recommendationRate=80
-    // sentimentNorm = 50, positionNorm = 50, antiHallucination = 100
-    // raw = 80*0.2 + 80*0.2 + 50*0.15 + 80*0.2 + 50*0.15 + 100*0.1
-    // = 16 + 16 + 7.5 + 16 + 7.5 + 10 = 73
-    expect(score).toBe(73)
+    // sentimentNorm = 50, antiHallucination = 100, position ABSENT (positionAvg 0)
+    // raw = 16 + 16 + 7.5 + 16 + 10 = 65.5 over 0.85 measured weight -> 77.1
+    expect(score).toBe(77.1)
   })
 
   it('hallucinationRate of 0.5 maps to hallucinationIndex 50', () => {
     const score = calculateHealthScore(0, 0, 0.5)
-    // antiHallucination = 50
-    // raw = 0 + 0 + 50*0.15 + 0 + 50*0.15 + 50*0.1 = 7.5 + 7.5 + 5 = 20
-    expect(score).toBe(20)
+    // antiHallucination = 50, position ABSENT
+    // raw = 50*0.15 + 50*0.1 = 12.5 over 0.85 measured weight -> 14.7
+    expect(score).toBe(14.7)
   })
 
   it('hallucinationRate of 1.0 maps to hallucinationIndex 100', () => {
     const score = calculateHealthScore(0, 0, 1.0)
-    // antiHallucination = 0
-    // raw = 0 + 0 + 50*0.15 + 0 + 50*0.15 + 0 = 15
-    expect(score).toBe(15)
+    // antiHallucination = 0, position ABSENT
+    // raw = 50*0.15 = 7.5 over 0.85 measured weight -> 8.8
+    expect(score).toBe(8.8)
   })
 
   it('negative hallucinationRate clamps hallucinationIndex to non-negative', () => {
@@ -413,24 +418,23 @@ describe('calculateHealthScore', () => {
 
   it('hallucinationRate > 1.0 makes antiHallucination go negative (clamped in final)', () => {
     const score = calculateHealthScore(0, 0, 2.0)
-    // hallucinationIndex = 200, antiHallucination = max(0, 100-200) = 0 (clamped)
-    // But wait - the max(0, ...) is in calculateAVI's formula
-    // Actually: antiHallucination = max(0, 100 - 200) = 0 (there IS a max(0,...))
-    // raw = 0 + 0 + 50*0.15 + 0 + 50*0.15 + 0*0.1 = 15
-    expect(score).toBe(15)
+    // hallucinationIndex = 200 -> antiHallucination = max(0, 100-200) = 0
+    // raw = 50*0.15 = 7.5 over 0.85 measured weight -> 8.8
+    expect(score).toBe(8.8)
   })
 
   it('all zero inputs', () => {
     const score = calculateHealthScore(0, 0, 0)
-    expect(score).toBe(25)
+    // Was 25 — the fabricated floor. Now 17.5 over the 0.85 that was measured.
+    expect(score).toBe(20.6)
   })
 
   it('boundary: visibility=100, sentiment=1, hallucinationRate=0', () => {
     const score = calculateHealthScore(100, 1, 0)
     // citationRate=100, mentionFreq=100, sentimentScore=1, recommendationRate=100
-    // sentimentNorm=100, positionNorm=50, antiHallucination=100
-    // raw = 20 + 20 + 15 + 20 + 50*0.15 + 10 = 92.5
-    expect(score).toBe(92.5)
+    // sentimentNorm=100, antiHallucination=100, position ABSENT
+    // raw = 20 + 20 + 15 + 20 + 10 = 85, all of the 0.85 that was measured -> 100
+    expect(score).toBe(100)
   })
 
   it('boundary: visibility=50, sentiment=0, hallucinationRate=0.5', () => {

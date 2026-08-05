@@ -24,6 +24,7 @@
     "check:zod": "node scripts/audit-zod-coverage.mjs",
     "check:rls": "node scripts/audit-rls-coverage.mjs",
     "check:drift": "node scripts/audit-prisma-drift.mjs",
+    "recalc:health": "node scripts/recalc-health-scores.mjs",
     "check:all": "npm run check:rls && npm run check:zod && npm run security:audit",
     "prepare": "husky"
   },

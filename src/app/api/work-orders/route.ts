@@ -90,9 +90,9 @@ export async function POST(req: NextRequest) {
     )
   }
   const d = parsed.data
-  if (!(await verifyBrandAccess(d.brand_id, userId))) {
-    return err('Brand not found or access denied', 404)
-  }
+  // Creating a work order writes to the brand — editor, not any role.
+  const gate = await requireBrandRole(d.brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   // Snapshot the GEO score now → the baseline we'll re-check against on completion.
   const baseline = await currentGeoScore(d.brand_id)

@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger'
 import { analyzeCompetitor } from '@/lib/services/gemini'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { verifyBrandAccess, getAccessibleBrandIds } from '@/lib/authorize'
+import { verifyBrandAccess, getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -170,13 +170,23 @@ export async function POST(req: NextRequest) {
 
   const { primaryUrl, competitorUrls } = parsed.data
 
-  // ── Verify brand access if brand_id provided ──────────────────────────────
+  // ── Gate on the brand if brand_id provided ────────────────────────────────
+  // This runs paid Gemini analysis and inserts a row, so it takes editor
+  // rights. Refusing outright replaces the worst shape in this file: a denied
+  // brand_id used to be silently blanked to null, and the request carried on —
+  // the analysis still ran (and cost), a row was still written with no brand,
+  // and the caller got 200. Denial that spends money and saves orphan data is
+  // not denial.
   const db = createServerClient()
-  if (brandId && db) {
-    const brand = await verifyBrandAccess(brandId, userId)
-    if (!brand) {
-      brandId = null
+  if (brandId) {
+    if (userId.startsWith('anonymous:')) {
+      return NextResponse.json(
+        { success: false, message: 'Sign in to analyse competitors for a brand' },
+        { status: 401 },
+      )
     }
+    const gate = await requireBrandRole(brandId, userId, 'editor')
+    if ('response' in gate) return gate.response
   }
 
   // Normalize URLs (add https:// if missing)

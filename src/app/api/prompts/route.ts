@@ -239,7 +239,14 @@ export async function DELETE(req: NextRequest) {
   const gate = await requireBrandRole(String(prompt.brand_id), userId, 'editor')
   if ('response' in gate) return gate.response
 
-  const { error } = await db.from('prompts').delete().eq('id', id)
+  // Carry the brand we actually authorised into the delete. Matching on `id`
+  // alone would let a row reassigned between the check and the delete be
+  // removed under a permission that no longer applies to it.
+  const { error } = await db
+    .from('prompts')
+    .delete()
+    .eq('id', id)
+    .eq('brand_id', String(prompt.brand_id))
 
   if (error) return err(error.message)
   return NextResponse.json({ success: true, data: null, timestamp: Date.now() })

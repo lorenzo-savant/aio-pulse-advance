@@ -101,6 +101,46 @@ describe('brand data is scoped by brand, not by author', () => {
     expect(offenders).toEqual([])
   })
 
+  it('every route that resolves the read scope actually filters by it', () => {
+    // The mirror of the assertion above. That one catches filtering by the
+    // WRONG column; this one catches not filtering at all — the tempting
+    // "optimisation" when someone decides an empty brand list means
+    // "no restriction" and drops the filter. That reading is exactly backwards:
+    // an empty scope means the caller may see nothing.
+    //
+    // Measured against the live PostgREST (postgrest-js 2.97.0) on 2026-08-05:
+    // `.in('brand_id', [])` returns error null and 0 rows, including with
+    // count:'exact', order and limit. An empty scope is a safe filter, not a
+    // 400 — so there is no reason to special-case it away.
+    // Matching on the *shape* of the filter is too brittle to assert — the
+    // scope is legitimately consumed as `.in('brand_id', ids)`, as
+    // `.in(scopeColumn, ids)` with a dynamic column, inside an `.or()` string
+    // as `brand_id.in.(…)`, and by iterating the ids. An earlier version of
+    // this test enumerated those forms and flagged three routes that were all
+    // perfectly correct.
+    //
+    // So assert the thing that actually breaks: a scope resolved and then
+    // dropped on the floor. If it is bound to a name, that name has to be
+    // read somewhere; if it is used inline, it is consumed by construction.
+    const dropped: string[] = []
+
+    for (const file of routeFiles) {
+      const src = readFileSync(file, 'utf8')
+      if (!src.includes('getAccessibleBrandIds(')) continue
+
+      const rel = file.slice(API_DIR.length + 1).replace(/\\/g, '/')
+
+      for (const m of src.matchAll(/const\s+(\w+)\s*=\s*await\s+getAccessibleBrandIds\(/g)) {
+        const name = m[1]!
+        // One occurrence is the binding itself; anything more is a use.
+        const uses = src.split(new RegExp(`\\b${name}\\b`)).length - 1
+        if (uses < 2) dropped.push(`${rel} (${name})`)
+      }
+    }
+
+    expect(dropped).toEqual([])
+  })
+
   it('the shared read scope is exported and used', () => {
     // If getAccessibleBrandIds ever loses its callers again, the union it
     // encodes has drifted back into the routes — which is how the two copies

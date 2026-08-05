@@ -195,14 +195,22 @@ export async function DELETE(req: NextRequest) {
 
   if (!scan) return err('Scan not found', 404)
 
+  // Pin the delete to whatever we authorised — the brand for a brand-scoped
+  // scan, the owner for a personal one — so a row reassigned between the check
+  // and the delete cannot be removed under a stale permission.
+  let deleteQuery = db.from('scan_history').delete().eq('id', scanId)
+
   if (scan.brand_id) {
     const gate = await requireBrandRole(String(scan.brand_id), userId, 'editor')
     if ('response' in gate) return gate.response
+    deleteQuery = deleteQuery.eq('brand_id', String(scan.brand_id))
   } else if (String(scan.user_id) !== userId) {
     return err('Scan not found', 404)
+  } else {
+    deleteQuery = deleteQuery.eq('user_id', userId)
   }
 
-  const { error } = await db.from('scan_history').delete().eq('id', scanId)
+  const { error } = await deleteQuery
 
   if (error) {
     logger.error('Scan delete error', { route: '/api/scans', error })

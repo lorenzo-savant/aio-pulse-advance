@@ -72,6 +72,13 @@ export async function GET(req: NextRequest) {
   try {
     // Auto-generate snapshots if needed
     if (action === 'generate') {
+      // A write hiding behind GET. `autoGenerateSnapshots` inserts into
+      // brand_health_scores, so it takes the same editor gate as the POST
+      // below — tightening only the POST left the identical operation
+      // reachable by a viewer through a query parameter.
+      const genGate = await requireBrandRole(brandId, userId, 'editor')
+      if ('response' in genGate) return genGate.response
+
       const result = await autoGenerateSnapshots(brandId)
       return NextResponse.json({
         success: true,

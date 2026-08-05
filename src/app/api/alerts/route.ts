@@ -139,7 +139,7 @@ async function gateAlertWrite(
   table: 'alert_rules' | 'alert_events',
   id: string,
   userId: string,
-): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+): Promise<{ ok: true; brandId: string } | { ok: false; response: NextResponse }> {
   const { data: row } = await db.from(table).select('brand_id').eq('id', id).maybeSingle()
 
   if (!row?.brand_id) {
@@ -152,7 +152,9 @@ async function gateAlertWrite(
   const gate = await requireBrandRole(String(row.brand_id), userId, 'editor')
   if ('response' in gate) return { ok: false, response: gate.response }
 
-  return { ok: true }
+  // Hand the brand back so callers can pin the mutation to the brand they were
+  // actually authorised for, rather than to the id alone.
+  return { ok: true, brandId: String(row.brand_id) }
 }
 
 // ─── GET /api/alerts ──────────────────────────────────────────────────────────
@@ -337,7 +339,11 @@ export async function PUT(req: NextRequest) {
     const allowed = await gateAlertWrite(db, 'alert_events', id, userId)
     if (!allowed.ok) return allowed.response
 
-    const { error } = await db.from('alert_events').update({ is_read: true }).eq('id', id)
+    const { error } = await db
+      .from('alert_events')
+      .update({ is_read: true })
+      .eq('id', id)
+      .eq('brand_id', allowed.brandId)
 
     if (error) return err(error.message)
     return NextResponse.json({ success: true, data: null, timestamp: Date.now() })
@@ -392,6 +398,7 @@ export async function PUT(req: NextRequest) {
     .from('alert_rules')
     .update(parsed.data)
     .eq('id', id)
+    .eq('brand_id', allowed.brandId)
     .select()
     .single()
 
@@ -435,7 +442,7 @@ export async function DELETE(req: NextRequest) {
   const allowed = await gateAlertWrite(db, table, id, userId)
   if (!allowed.ok) return allowed.response
 
-  const { error } = await db.from(table).delete().eq('id', id)
+  const { error } = await db.from(table).delete().eq('id', id).eq('brand_id', allowed.brandId)
 
   if (error) return err(error.message)
   return NextResponse.json({ success: true, data: null, timestamp: Date.now() })

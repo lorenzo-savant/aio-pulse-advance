@@ -203,6 +203,10 @@ export async function POST(req: NextRequest) {
 
     const processedBrands = new Set<string>()
 
+    // Every engine result of this run, grouped by brand, so the daily health row
+    // can be computed over all of them instead of the last prompt processed.
+    const resultsByBrand = new Map<string, { userId: string; results: MonitoringResult[] }>()
+
     for (const promptRow of prompts) {
       const brand = promptRow.brand as unknown as Brand
       if (!brand || !brand.is_active) continue
@@ -428,32 +432,22 @@ export async function POST(req: NextRequest) {
 
       await supabase.from('prompts').update({ last_run_at: now.toISOString() }).eq('id', prompt.id)
 
+      // The daily health row is a BRAND aggregate, so it cannot be written from
+      // inside this loop: the upsert lives on (brand_id, date), so each prompt
+      // overwrote the previous one and only the last of the run survived. Every
+      // consumer — GEO score, the AVI widget, the advisor, the weekly review —
+      // then read a whole-brand daily metric that was really one arbitrary
+      // prompt measured over n≈4. Accumulate, write once per brand below.
       if (engineResults.length > 0) {
-        const { avi, components } = calculateAVIFromResults(engineResults)
-        const citedCount = engineResults.filter((r) => r.cited_urls?.length > 0).length
-
-        await supabase.from('brand_health_scores').upsert(
-          {
-            brand_id: brand.id,
-            user_id: prompt.user_id,
-            date: now.toISOString().split('T')[0]!,
-            visibility_score: components.mentionFrequency,
-            sentiment_score: components.sentimentScore,
-            hallucination_rate: components.hallucinationIndex / 100,
-            mention_count: engineResults.filter((r) => r.brand_mentioned).length,
-            citation_count: citedCount,
-            avi_score: avi,
-            citation_rate: components.citationRate,
-            mention_rate: components.mentionFrequency,
-            recommendation_rate: components.recommendationRate,
-            position_avg: components.positionAvg,
-            health_score: avi,
-            engine_breakdown: JSON.stringify(
-              Object.fromEntries(engineResults.map((r) => [r.engine, r.visibility_score])),
-            ),
-          },
-          { onConflict: 'brand_id,date' },
-        )
+        const bucket = resultsByBrand.get(brand.id)
+        if (bucket) {
+          bucket.results.push(...engineResults)
+        } else {
+          resultsByBrand.set(brand.id, {
+            userId: prompt.user_id,
+            results: [...engineResults],
+          })
+        }
 
         if (workflowId) {
           await updateWorkflowStep(supabase, workflowId, 'Update health scores', 'completed')
@@ -461,6 +455,35 @@ export async function POST(req: NextRequest) {
       }
 
       processedBrands.add(brand.id)
+    }
+
+    // ── Daily brand health, once per brand, over every result of this run ────
+    for (const [brandId, { userId, results: brandResults }] of resultsByBrand) {
+      const { avi, components } = calculateAVIFromResults(brandResults)
+      const citedCount = brandResults.filter((r) => r.cited_urls?.length > 0).length
+
+      await supabase.from('brand_health_scores').upsert(
+        {
+          brand_id: brandId,
+          user_id: userId,
+          date: now.toISOString().split('T')[0]!,
+          visibility_score: components.mentionFrequency,
+          sentiment_score: components.sentimentScore,
+          hallucination_rate: components.hallucinationIndex / 100,
+          mention_count: brandResults.filter((r) => r.brand_mentioned).length,
+          citation_count: citedCount,
+          avi_score: avi,
+          citation_rate: components.citationRate,
+          mention_rate: components.mentionFrequency,
+          recommendation_rate: components.recommendationRate,
+          position_avg: components.positionAvg,
+          health_score: avi,
+          engine_breakdown: JSON.stringify(
+            Object.fromEntries(brandResults.map((r) => [r.engine, r.visibility_score])),
+          ),
+        },
+        { onConflict: 'brand_id,date' },
+      )
     }
 
     for (const bId of processedBrands) {

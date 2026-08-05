@@ -8,6 +8,60 @@ export interface ExportedNote {
   content: string
 }
 
+/** The subset of a `brand_health_scores` row these notes report. */
+export interface NoteMetricsSource {
+  mention_count?: number | null
+  citation_count?: number | null
+  mention_rate?: number | null
+  citation_rate?: number | null
+}
+
+/**
+ * KPI percentages for an exported note, read from the stored row rather than
+ * recomputed from counts.
+ *
+ * Every note used to report "Mention Rate 100%". The derivation was:
+ *
+ *     totalPrompts = citation_count + (mention_count - citation_count)
+ *     mentionRate  = mention_count / totalPrompts
+ *
+ * The first line simplifies to `mention_count`, so the second is
+ * `mention_count / mention_count` — pinned at 1 by algebra, in a form just
+ * indirect enough that nobody read it twice. A brand mentioned in 3 answers out
+ * of 40 exported as perfectly visible, in the YAML frontmatter and in the
+ * client-facing metrics table.
+ *
+ * `citationRate` had its own defect: `citation_count / mention_count` divides
+ * citations by mentions rather than by responses, and can exceed 100%.
+ *
+ * `brand_health_scores` already stores both rates over the correct denominator
+ * (`calculateAVIFromResults`), so the fix is to stop recomputing. The count
+ * fallback exists for rows written before those columns and uses the number of
+ * RESPONSES — the denominator the rates are actually defined on.
+ */
+export function deriveNoteMetrics(
+  health: NoteMetricsSource | null | undefined,
+  totalResponses: number,
+): { citationRate: number | null; mentionRate: number | null; promptsTested: number } {
+  const round2 = (n: number) => Math.round(n * 100) / 100
+  const rateOf = (count: number | null | undefined) =>
+    totalResponses > 0 && count != null
+      ? Math.min(100, round2((count / totalResponses) * 100))
+      : null
+
+  if (!health) {
+    return { citationRate: null, mentionRate: null, promptsTested: totalResponses }
+  }
+
+  return {
+    citationRate:
+      health.citation_rate != null ? round2(health.citation_rate) : rateOf(health.citation_count),
+    mentionRate:
+      health.mention_rate != null ? round2(health.mention_rate) : rateOf(health.mention_count),
+    promptsTested: totalResponses,
+  }
+}
+
 export interface ObsidianExportRequest {
   brandId: string
   brandName: string
@@ -438,17 +492,9 @@ export async function generateObsidianExport(
       }
     }
 
-    const citationRate =
-      health && health.mention_count > 0
-        ? Math.round((health.citation_count / health.mention_count) * 10000) / 100
-        : null
-    const totalPrompts = health
-      ? health.citation_count + (health.mention_count - health.citation_count)
-      : 0
-    const mentionRate =
-      health && totalPrompts > 0
-        ? Math.round((health.mention_count / totalPrompts) * 10000) / 100
-        : null
+    // This note reports coverage as `monitoringRuns` / `activePrompts`, so it
+    // needs the two rates only.
+    const { citationRate, mentionRate } = deriveNoteMetrics(health, runCount ?? 0)
 
     notes.push(
       generateBrandOverviewNote({
@@ -506,9 +552,21 @@ export async function generateObsidianExport(
       // Nullable columns in health_snapshots row — guard with ?? 0 fallbacks.
       const citationCount = latest.citation_count ?? 0
       const mentionCount = latest.mention_count ?? 0
-      const totalPrompts = citationCount + (mentionCount - citationCount)
-      const mentionRate = totalPrompts > 0 ? (mentionCount / totalPrompts) * 100 : 0
-      const citationRate = mentionCount > 0 ? (citationCount / mentionCount) * 100 : 0
+
+      // The denominator for a rate is how many answers were examined, which
+      // lives in monitoring_results — not in the health row. Without it the
+      // previous code derived one from the counts themselves and produced a
+      // constant 100%. See deriveNoteMetrics.
+      const { count: responseCount } = await db
+        .from('monitoring_results')
+        .select('id', { count: 'exact', head: true })
+        .eq('brand_id', brandId)
+
+      const {
+        citationRate,
+        mentionRate,
+        promptsTested: totalPrompts,
+      } = deriveNoteMetrics(latest, responseCount ?? 0)
 
       notes.push(
         generateSnapshotNote({
@@ -516,14 +574,17 @@ export async function generateObsidianExport(
           date: latest.date,
           healthScore: latest.health_score ?? 0,
           citationCount,
-          citationRate: Math.round(citationRate * 100) / 100,
+          citationRate: citationRate ?? 0,
           mentionCount,
-          mentionRate: Math.round(mentionRate * 100) / 100,
+          mentionRate: mentionRate ?? 0,
           sentimentScore: latest.sentiment_score ?? 0,
           hallucinationRate: latest.hallucination_rate ?? 0,
           visibilityScore: latest.visibility_score ?? 0,
           hallucinationCount: 0,
-          shareOfVoice: citationRate,
+          // Was `citationRate`, which published one number under three labels:
+          // citation_rate, share_of_voice AND recommendation_rate. The health
+          // row stores a real recommendation rate — use it.
+          shareOfVoice: latest.recommendation_rate ?? 0,
           positionAvg: null,
           promptsTested: totalPrompts,
           platformsTested: Object.keys(engineBreakdown),

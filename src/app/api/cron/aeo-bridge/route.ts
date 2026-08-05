@@ -24,6 +24,29 @@ export async function POST(req: NextRequest) {
   const cronError = verifyCronAuth(req)
   if (cronError) return cronError
 
+  // The bridge writes into a SEPARATE Supabase project (AEO_SUPABASE_*), and
+  // neither credential is set. `sendToAeo` therefore returns "not configured"
+  // for every brand — but only after this route has walked every active brand,
+  // slept 500ms per brand, and run a 30-day aggregation query for each. Three
+  // hundred seconds of budget spent, once a day, to produce a list of identical
+  // failures nobody reads.
+  //
+  // Answer the question up front instead. This is the OFF state of an optional
+  // integration, not a fault, so it reports success — with a message that says
+  // plainly why nothing happened, which is what the daily log was failing to.
+  if (!process.env['AEO_SUPABASE_URL'] || !process.env['AEO_SUPABASE_KEY']) {
+    logger.info('AEO bridge not configured — skipping', {
+      source: 'cron/aeo-bridge',
+      hint: 'set AEO_SUPABASE_URL and AEO_SUPABASE_KEY to enable',
+    })
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      message: 'AEO bridge disabled: AEO_SUPABASE_URL / AEO_SUPABASE_KEY not configured',
+      processed: 0,
+    })
+  }
+
   const db = createServerClient()
   if (!db) {
     return NextResponse.json(

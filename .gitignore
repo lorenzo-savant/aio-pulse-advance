@@ -108,3 +108,4 @@ playwright-report/
 
 .vercel
 .env*
+brand_health_scores.backup.*.json

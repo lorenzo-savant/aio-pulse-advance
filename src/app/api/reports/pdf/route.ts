@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { asUntyped } from '@/lib/supabase-untyped'
 import { generatePdf } from '@/lib/services/pdf-generator'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
@@ -73,19 +72,25 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, message: resultsError.message }, { status: 500 })
   }
 
-  // SCHEMA DRIFT (TODO): sentiment_history table missing from DB schema.
-  const { data: sentimentHistory, error: sentimentError } = await asUntyped(db)
-    .from('sentiment_history')
-    .select('snapshot_date, sentiment_score, positive_count, neutral_count, negative_count')
-    .eq('brand_id', brandId)
-    .gte('snapshot_date', fromDate)
-    .lte('snapshot_date', toDate)
-    .order('snapshot_date', { ascending: false })
-    .limit(30)
-
-  if (sentimentError) {
-    logger.warn('Failed to fetch sentiment history for PDF', { error: sentimentError.message })
-  }
+  // `sentiment_history` does not exist. Verified read-only against production
+  // on 2026-08-05: PostgREST answers "Could not find the table". The TODO that
+  // stood here called it schema drift, which implied the table was somewhere —
+  // it is not, in this project or any other.
+  //
+  // So every PDF has issued this query, taken the error, logged a warning and
+  // shipped without the section. Removing the round-trip changes nothing a
+  // reader sees and stops the report asking a question that has no answer.
+  //
+  // Not deleted, because whether this section comes back is a product call: the
+  // data it wants is derivable from monitoring_results.sentiment_score grouped
+  // by day, which is how it would be rebuilt if anyone wants it.
+  const sentimentHistory: Array<{
+    snapshot_date: string
+    sentiment_score: number
+    positive_count: number
+    neutral_count: number
+    negative_count: number
+  }> = []
 
   const { data: recommendations, error: recError } = await db
     .from('recommendation_tracking')

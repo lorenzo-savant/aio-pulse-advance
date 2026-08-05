@@ -26,7 +26,11 @@ describe('calculateCompetitorAVI', () => {
   })
 
   it('calculates rank 3 when gap is large', () => {
-    const mentions = [{ name: 'CompetitorA', position: 5, count: 1 }]
+    // Position was 5 here. Under the old 1-5 rank reading that scored zero and
+    // produced a >20 gap; on the real sentence scale (capped at 20) sentence 5
+    // is early and the gap closes to 18.7, which is rank 2. Moved to 20 — a
+    // genuinely late mention — so the test still exercises "large gap".
+    const mentions = [{ name: 'CompetitorA', position: 20, count: 1 }]
     const result = calculateCompetitorAVI(mentions, 90)
     expect(result.rank).toBe(3)
   })

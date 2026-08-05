@@ -468,6 +468,16 @@ Respond ONLY with valid JSON (no markdown):
 
 // ─── AVI Formula ─────────────────────────────────────────────────────────────
 
+/**
+ * How warm an answer must be about the brand before it counts as a
+ * recommendation rather than a mention.
+ *
+ * Above zero on purpose: "not negative" is not an endorsement, and being listed
+ * neutrally among ten competitors should not score as one. Exported so a report
+ * can state the rule it is claiming.
+ */
+export const POSITIVE_SENTIMENT_THRESHOLD = 0.25
+
 export interface AVIInput {
   citationRate: number
   mentionFrequency: number
@@ -476,6 +486,17 @@ export interface AVIInput {
   positionAvg: number
   hallucinationIndex: number
 }
+
+/**
+ * `mention_position` is a SENTENCE INDEX, not a list rank.
+ * `brand-mention.ts` → `sentenceIndexOf` counts sentence terminators and caps
+ * at 20, so 1 is the opening sentence and 20 means "late, or later".
+ *
+ * The formula used to normalise it as `((5 - p) / 4) * 100`, i.e. a 1-5 rank.
+ * Everything from the fifth sentence on therefore scored exactly zero — a cliff
+ * in the middle of a perfectly normal prose answer.
+ */
+export const POSITION_SCALE_MAX = 20
 
 export function calculateAVI(input: AVIInput): number {
   const {
@@ -487,19 +508,36 @@ export function calculateAVI(input: AVIInput): number {
     hallucinationIndex,
   } = input
   const sentimentNorm = ((Math.max(-1, Math.min(1, sentimentScore)) + 1) / 2) * 100
-  const positionNorm =
-    positionAvg <= 0 ? 50 : Math.max(0, Math.min(100, ((5 - positionAvg) / 4) * 100))
   const antiHallucination = Math.max(0, 100 - hallucinationIndex)
 
-  const raw =
+  // `positionAvg <= 0` is the "never positioned" sentinel the cron writes. It
+  // used to normalise to 50 — a fabricated midpoint that made an unmeasured
+  // position score better than a measured late one. Absence is not a verdict:
+  // the component drops out and its weight is shared by what WAS measured, so
+  // a missing reading lands between the best and worst real ones instead of at
+  // an invented middle.
+  const hasPosition = positionAvg > 0
+  const positionNorm = hasPosition
+    ? Math.max(
+        0,
+        Math.min(100, ((POSITION_SCALE_MAX - positionAvg) / (POSITION_SCALE_MAX - 1)) * 100),
+      )
+    : 0
+
+  let raw =
     citationRate * 0.2 +
     mentionFrequency * 0.2 +
     sentimentNorm * 0.15 +
     recommendationRate * 0.2 +
-    positionNorm * 0.15 +
     antiHallucination * 0.1
+  let weight = 0.85
 
-  return Math.min(100, Math.max(0, Math.round(raw * 10) / 10))
+  if (hasPosition) {
+    raw += positionNorm * 0.15
+    weight = 1
+  }
+
+  return Math.min(100, Math.max(0, Math.round((raw / weight) * 10) / 10))
 }
 
 export function calculateAVIFromResults(
@@ -534,10 +572,39 @@ export function calculateAVIFromResults(
     }
 
   const mentioned = results.filter((r) => r.brand_mentioned)
+  // No mention anywhere means there is no AI visibility to index. Every
+  // mention-derived component is 0 and the rest have no referent — sentiment,
+  // position and hallucination are all judgements ABOUT a mention. Scoring them
+  // as midpoints produced a floor of exactly 25.0/100 for a brand no engine had
+  // ever named, printed on report covers as if something had been measured.
+  if (mentioned.length === 0) {
+    return {
+      avi: 0,
+      components: {
+        citationRate: 0,
+        mentionFrequency: 0,
+        sentimentScore: 0,
+        recommendationRate: 0,
+        positionAvg: 0,
+        hallucinationIndex: 0,
+      },
+    }
+  }
+
+  // A recommendation is a mention the answer speaks well of. This used to be
+  // `mentioned` again — byte-identical to mentionFrequency on the line below —
+  // so the AVI declared six components but carried five signals, and mention
+  // frequency drove 40% of the score under two names.
+  const recommended = mentioned.filter(
+    (r) => (r.sentiment_score ?? 0) >= POSITIVE_SENTIMENT_THRESHOLD,
+  )
+
   // citationRate is meant to answer "how often does an engine cite sources when
   // it answers about this brand". A Brave fallback fires precisely when the
   // engine cited nothing, and searches the QUERY rather than the response — so
   // counting it inverted the signal on exactly the rows it was measuring.
+  // Kept on top of the fix above: the two are independent corrections to the
+  // same formula and both are wanted.
   const cited = results.filter(
     (r) => r.cited_urls && r.cited_urls.length > 0 && r.citation_source !== 'brave_fallback',
   )
@@ -553,7 +620,7 @@ export function calculateAVIFromResults(
       mentioned.length > 0
         ? mentioned.reduce((a, r) => a + (r.sentiment_score ?? 0), 0) / mentioned.length
         : 0,
-    recommendationRate: (mentioned.length / total) * 100,
+    recommendationRate: (recommended.length / total) * 100,
     positionAvg:
       positionsValid.length > 0
         ? positionsValid.reduce((a, p) => a + p, 0) / positionsValid.length

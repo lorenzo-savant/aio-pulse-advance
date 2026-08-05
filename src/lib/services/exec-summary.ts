@@ -232,6 +232,10 @@ export async function buildExecSummary(brand: Brand, days: number): Promise<Exec
       engine: m.engine,
     })),
     brand.name,
+    // Q3 asserts "you are winning/losing against X" and prints a rank out of N.
+    // Without this the N counted every name a model produced, so the rank moved
+    // whenever a model free-associated. Only declared competitors rank.
+    { declaredCompetitors: brand.competitors ?? [] },
   )
   const overall = sovByEngine.overall
   const brandEntity = overall.entities.find((e) => e.isBrand)

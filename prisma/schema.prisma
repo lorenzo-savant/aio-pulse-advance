@@ -130,6 +130,21 @@ model MonitoringResult {
   failedProviders    String[] @default([]) @map("failed_providers")
   responseComparison Json?    @map("response_comparison")
 
+  // Columns that exist at runtime and in src/types/database.ts but were missing
+  // from this model. Prisma builds its INSERT from the model, so a create()
+  // through Prisma omitted them; any that are NOT NULL in the database would
+  // fail the write outright. Aligning the model is the whole fix — the columns
+  // are already there.
+  sentimentAspects    Json?     @default("[]") @map("sentiment_aspects")
+  confusionFlag       Boolean?  @default(false) @map("confusion_flag")
+  confusionReason     String?   @map("confusion_reason")
+  confusionAuditedAt  DateTime? @map("confusion_audited_at")
+
+  // Provenance — see supabase/migrations/20260805090000. `engine` is the
+  // provider that was REQUESTED; responseProvider is the one that answered.
+  responseProvider    String?   @map("response_provider")
+  citationSource      String?   @map("citation_source")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)

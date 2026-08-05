@@ -71,30 +71,56 @@ describe('Credit Calculator - getProviderFromModel', () => {
   })
 })
 
+/**
+ * These expectations used to assert the bug.
+ *
+ * MODEL_PRICING holds USD per 1,000,000 tokens — the unit every provider
+ * publishes, and the unit the twin implementation in cost-tracker.ts divides
+ * by. calculateCost divided by 1,000 instead, so it returned 1000× the real
+ * price, and this suite pinned those numbers: 1000 in + 500 out of gpt-4o was
+ * asserted at $7.50 when it costs $0.0075. A test can only protect the
+ * behaviour it describes, and this one described the defect — which is how it
+ * survived in the sole source of the public /api/v1/credits/estimate endpoint.
+ *
+ * Every figure below is (tokens × price) / 1e6, worked from the published
+ * rates in MODEL_PRICING, with an absolute tolerance rather than `toBeCloseTo`
+ * digits — at this scale a digit-based tolerance passes almost anything.
+ */
 describe('Credit Calculator - calculateCost', () => {
-  it('should calculate cost for gpt-4o', () => {
-    const cost = calculateCost('gpt-4o', 1000, 500)
-    expect(cost).toBeCloseTo(7.5, 1)
+  const near = (actual: number, expected: number) =>
+    expect(Math.abs(actual - expected)).toBeLessThan(expected * 0.001)
+
+  it('prices gpt-4o at $2.50/1M in + $10/1M out', () => {
+    // (1000 × 2.50 + 500 × 10.00) / 1e6
+    near(calculateCost('gpt-4o', 1000, 500), 0.0075)
   })
 
-  it('should calculate cost for gpt-4o-mini', () => {
-    const cost = calculateCost('gpt-4o-mini', 1000, 500)
-    expect(cost).toBeCloseTo(0.45, 1)
+  it('prices gpt-4o-mini at $0.15/1M in + $0.60/1M out', () => {
+    near(calculateCost('gpt-4o-mini', 1000, 500), 0.00045)
   })
 
-  it('should calculate cost for claude-3.5-sonnet', () => {
-    const cost = calculateCost('claude-3.5-sonnet', 1000, 500)
-    expect(cost).toBeCloseTo(10.5, 1)
+  it('prices claude-3.5-sonnet at $3/1M in + $15/1M out', () => {
+    near(calculateCost('claude-3.5-sonnet', 1000, 500), 0.0105)
   })
 
-  it('should calculate cost for gemini-1.5-flash', () => {
-    const cost = calculateCost('gemini-1.5-flash', 1000, 500)
-    expect(cost).toBeCloseTo(0.225, 1)
+  it('prices gemini-1.5-flash at $0.075/1M in + $0.30/1M out', () => {
+    near(calculateCost('gemini-1.5-flash', 1000, 500), 0.000225)
   })
 
-  it('should calculate cost for sonar-small', () => {
-    const cost = calculateCost('sonar-small', 1000, 500)
-    expect(cost).toBeCloseTo(0.3, 1)
+  it('prices sonar-small at $0.20/1M both ways', () => {
+    near(calculateCost('sonar-small', 1000, 500), 0.0003)
+  })
+
+  it('charges exactly the published rate for one million input tokens', () => {
+    // The anchor that makes the unit impossible to get wrong again: a million
+    // input tokens of gpt-4o is its headline price, $2.50.
+    near(calculateCost('gpt-4o', 1_000_000, 0), 2.5)
+  })
+
+  it('keeps sub-cent precision instead of rounding a real call to zero', () => {
+    // Rounding to 2 decimals reported nearly every genuine request as $0.00,
+    // which is how a 1000× error stayed invisible.
+    expect(calculateCost('gemini-1.5-flash', 1000, 500)).toBeGreaterThan(0)
   })
 
   it('should return 0 for unknown model', () => {

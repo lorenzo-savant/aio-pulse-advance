@@ -11,6 +11,15 @@ export interface Message {
   content: string
 }
 
+/**
+ * USD per 1,000,000 tokens — the unit every provider publishes.
+ *
+ * The unit is stated here because it was silently wrong: `calculateCost` below
+ * divided by 1_000, reading these as per-1K prices and overcharging by 1000×.
+ * `gpt-4o` at 2.5 is $2.50 per MILLION input tokens, not per thousand. The
+ * twin implementation in cost-monitor/cost-tracker.ts divides by 1_000_000,
+ * which is what settled it.
+ */
 export const MODEL_PRICING: Record<string, ModelPricing> = {
   'gpt-4o': { input: 2.5, output: 10.0 },
   'gpt-4o-mini': { input: 0.15, output: 0.6 },
@@ -52,10 +61,14 @@ export function calculateCost(model: string, inputTokens: number, outputTokens: 
   const pricing = MODEL_PRICING[model]
   if (!pricing) return 0
 
-  const inputCost = (inputTokens / 1000) * pricing.input
-  const outputCost = (outputTokens / 1000) * pricing.output
+  const inputCost = (inputTokens / 1_000_000) * pricing.input
+  const outputCost = (outputTokens / 1_000_000) * pricing.output
 
-  return Math.round((inputCost + outputCost) * 100) / 100
+  // Six decimals, not two. A single request costs a fraction of a cent, and
+  // rounding to cents reported almost every real call as $0.00 — which is how
+  // a 1000× error could sit in the one function behind the public
+  // /api/v1/credits/estimate endpoint without ever looking wrong.
+  return Math.round((inputCost + outputCost) * 1_000_000) / 1_000_000
 }
 
 function estimateTokensFromText(text: string): number {

@@ -11,6 +11,7 @@ import type {
   CompetitorMention,
   HallucinationFlag,
   BrandLanguage,
+  CitationSource,
 } from '@/types'
 import type { PromptLang } from '@/lib/prompt-library'
 
@@ -61,14 +62,25 @@ const analysisOutputSchema = z.object({
   sentiment_score: z.number().min(-1).max(1).default(0),
   sentiment_reasoning: z.string().optional().default(''),
   cited_urls: z.array(z.string()).optional().default([]),
+  // Bounded, but deliberately NOT filtered against the brand's declared
+  // competitor list here. The prompt above asks the model to record look-alikes
+  // as competitor mentions on purpose — that is how brand confusion is
+  // detected — so discarding unknown names at write time would throw away the
+  // signal. Which names count as competitors is decided on READ, by
+  // competitor-identity.ts, where the declared list can change without
+  // rewriting history.
+  //
+  // What is enforced here is shape: a name is a short line of text, not an
+  // unbounded blob, and one response cannot emit hundreds of rivals.
   competitor_mentions: z
     .array(
       z.object({
-        name: z.string(),
+        name: z.string().trim().min(1).max(120),
         position: z.number().int().nullable().optional(),
         count: z.number().int().nullable().optional().default(1),
       }),
     )
+    .max(50)
     .optional()
     .default([]),
   has_hallucination: z.boolean().default(false),
@@ -296,8 +308,16 @@ export async function runMonitoringCheck(
   // Citations: real engine citations + URLs ACTUALLY present in the text (never
   // the LLM's possibly-invented cited_urls). Brave-ground only if empty.
   let citedUrls = cleanCitations([...engineCitations, ...extractUrlsFromText(responseText)])
+
+  // Record WHERE the citations came from. The Brave fallback searches the
+  // QUERY, not the response, so those URLs say nothing about whether the engine
+  // cited anyone — and citationRate is 20% of the AVI. Unmarked, the score has
+  // been measuring Brave's coverage on exactly the rows where the engine cited
+  // nothing, which is precisely where it should have scored low.
+  let citationSource: CitationSource = 'engine'
   if (citedUrls.length === 0) {
     citedUrls = (await groundCitationsViaBrave(prompt.text, language)).citations
+    if (citedUrls.length > 0) citationSource = 'brave_fallback'
   }
 
   // Keep visibility consistent with the deterministic mention: if the brand IS
@@ -324,6 +344,12 @@ export async function runMonitoringCheck(
     competitor_mentions: analysis.competitor_mentions as CompetitorMention[],
     has_hallucination: analysis.has_hallucination,
     hallucination_flags: analysis.hallucination_flags as HallucinationFlag[],
+    // `engine` above is what was REQUESTED. This is what answered, after any
+    // router fallback — the two differ whenever a provider is unconfigured or
+    // errors, and the per-engine comparison in the reports depends on knowing
+    // which is which.
+    response_provider: simulationProvider ?? null,
+    citation_source: citationSource,
   }
 }
 
@@ -484,6 +510,13 @@ export function calculateAVIFromResults(
     cited_urls: string[]
     has_hallucination: boolean
     mention_position?: number | null
+    /**
+     * Where cited_urls came from. Absent on rows written before the column
+     * existed, and those keep counting as they always did — reinterpreting the
+     * archive downwards would put a step in every chart that no change in the
+     * world caused.
+     */
+    citation_source?: CitationSource | null
   }>,
 ): { avi: number; components: AVIInput } {
   const total = results.length
@@ -501,7 +534,13 @@ export function calculateAVIFromResults(
     }
 
   const mentioned = results.filter((r) => r.brand_mentioned)
-  const cited = results.filter((r) => r.cited_urls && r.cited_urls.length > 0)
+  // citationRate is meant to answer "how often does an engine cite sources when
+  // it answers about this brand". A Brave fallback fires precisely when the
+  // engine cited nothing, and searches the QUERY rather than the response — so
+  // counting it inverted the signal on exactly the rows it was measuring.
+  const cited = results.filter(
+    (r) => r.cited_urls && r.cited_urls.length > 0 && r.citation_source !== 'brave_fallback',
+  )
   const hallucinated = results.filter((r) => r.has_hallucination)
   const positionsValid = mentioned
     .map((r) => r.mention_position)
@@ -550,6 +589,62 @@ const COMPONENT_LABELS: Record<keyof AVIInput, string> = {
   hallucinationIndex: 'Hallucination Index',
 }
 
+/**
+ * What we can actually measure about a competitor.
+ *
+ * A competitor is only ever observed through mentions inside answers about the
+ * brand. There is no sentiment analysis of them, no citation data for them, no
+ * hallucination check on them — so an "AVI" for a competitor cannot be built
+ * from the same six components as the brand's, and the two numbers are not on
+ * the same scale. `calculateCompetitorAVI` below builds one anyway by
+ * substituting `sentimentScore: 0` (a literal, not a measurement),
+ * `hallucinationIndex: 0`, and `citationRate: min(100, mentions * 10)` — a
+ * rescaled count with no denominator. Subtracting that from the brand's AVI
+ * inflates every gap it prints.
+ *
+ * These three numbers are measured, comparable and mean what their names say.
+ */
+export interface CompetitorStandings {
+  name: string
+  /** Total weighted mentions across the window. */
+  mentions: number
+  /** Share of all competitor mentions in the same window, 0–100. */
+  shareOfCompetitorMentions: number
+  /** Average answer position when mentioned (lower = earlier); null if never positioned. */
+  avgPosition: number | null
+}
+
+export function calculateCompetitorStandings(
+  competitorMentions: Array<{ name: string; position: number; count: number }>,
+  totalCompetitorMentions: number,
+): CompetitorStandings | null {
+  const mentions = competitorMentions.reduce((sum, m) => sum + Math.max(m.count, 0), 0)
+  if (mentions === 0) return null
+
+  const positioned = competitorMentions.filter((m) => m.position > 0)
+
+  return {
+    name: competitorMentions[0]?.name ?? '',
+    mentions,
+    shareOfCompetitorMentions:
+      totalCompetitorMentions > 0
+        ? Math.round((mentions / totalCompetitorMentions) * 1000) / 10
+        : 0,
+    avgPosition:
+      positioned.length > 0
+        ? Math.round(
+            (positioned.reduce((sum, m) => sum + m.position, 0) / positioned.length) * 10,
+          ) / 10
+        : null,
+  }
+}
+
+/**
+ * @deprecated Not comparable to the brand's AVI — see CompetitorStandings.
+ * Retained because it is still covered by competitor-gap.test.ts and
+ * html-report.test.ts, which pin its current arithmetic. New report surfaces
+ * use calculateCompetitorStandings.
+ */
 export function calculateCompetitorAVI(
   competitorMentions: Array<{ name: string; position: number; count: number }>,
   brandAVI: number,

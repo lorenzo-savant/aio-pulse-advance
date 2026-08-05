@@ -1,6 +1,11 @@
 import { jsPDF } from 'jspdf'
 import type { Brand } from '@/types'
-import { calculateAVIFromResults, calculateDomainSOAIV, calculateCompetitorAVI } from './monitoring'
+import {
+  calculateAVIFromResults,
+  calculateDomainSOAIV,
+  calculateCompetitorStandings,
+} from './monitoring'
+import { normalizeEntityName } from './competitor-identity'
 
 export interface PdfReportData {
   brandName: string
@@ -206,7 +211,10 @@ export async function generatePdf(
   doc.text('2. Competitor Gap Analysis', margin, 35)
 
   doc.setFontSize(11)
-  doc.text('Comparing brand AVI against competitors:', margin, 45)
+  // A competitor is only ever seen through mentions inside answers about the
+  // brand — there is no sentiment or citation data for them — so this page can
+  // honestly report how often and how early they appear, and nothing more.
+  doc.text('How often competitors appear in the same answers:', margin, 45)
 
   yPos = 55
   const competitorList = data.competitors || brand.competitors || []
@@ -215,37 +223,42 @@ export async function generatePdf(
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
     doc.text('Competitor', margin, yPos)
-    doc.text('AVI', margin + 60, yPos)
-    doc.text('Gap', margin + 90, yPos)
-    doc.text('Status', margin + 120, yPos)
+    doc.text('Mentions', margin + 60, yPos)
+    doc.text('Share', margin + 90, yPos)
+    doc.text('Avg. pos.', margin + 120, yPos)
     yPos += 2
     doc.line(margin, yPos, pageWidth - margin, yPos)
     yPos += 6
     doc.setFont('helvetica', 'normal')
 
-    for (const competitor of competitorList) {
-      const competitorMentions = data.results
-        .filter((r) =>
-          r.competitor_mentions?.some((c) => c.name.toLowerCase() === competitor.toLowerCase()),
-        )
-        .flatMap((r) => r.competitor_mentions || [])
-        .filter((c) => c.name.toLowerCase() === competitor.toLowerCase())
+    const allCompetitorMentions = data.results.flatMap((r) => r.competitor_mentions || [])
+    const totalCompetitorMentions = allCompetitorMentions.reduce(
+      (sum, m) => sum + Math.max(m.count ?? 1, 0),
+      0,
+    )
 
-      const result = calculateCompetitorAVI(competitorMentions, avi)
-      const gap = avi - result.competitorAvi
-      const statusLabel =
-        result.rank === 1
-          ? 'Leader'
-          : result.rank === 2
-            ? 'Close'
-            : result.rank === 3
-              ? 'Behind'
-              : 'N/A'
+    for (const competitor of competitorList) {
+      // Identity match, so "Acast AB" counts towards a declared "Acast".
+      const competitorMentions = allCompetitorMentions.filter(
+        (c) => normalizeEntityName(c.name) === normalizeEntityName(competitor),
+      )
+
+      const standings = calculateCompetitorStandings(competitorMentions, totalCompetitorMentions)
 
       doc.text(competitor, margin, yPos)
-      doc.text(result.competitorAvi.toFixed(1), margin + 60, yPos)
-      doc.text(gap > 0 ? `+${gap.toFixed(1)}` : gap.toFixed(1), margin + 90, yPos)
-      doc.text(statusLabel, margin + 120, yPos)
+      // Never mentioned is not a score — say so rather than printing zeros the
+      // reader will take for a measurement.
+      doc.text(standings ? String(standings.mentions) : 'no data', margin + 60, yPos)
+      doc.text(
+        standings ? `${standings.shareOfCompetitorMentions.toFixed(1)}%` : '—',
+        margin + 90,
+        yPos,
+      )
+      doc.text(
+        standings?.avgPosition != null ? standings.avgPosition.toFixed(1) : '—',
+        margin + 120,
+        yPos,
+      )
       yPos += 8
     }
   } else {

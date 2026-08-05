@@ -1,5 +1,6 @@
 import type { AIProviderRequest, AIProviderResult } from './types'
 import { BaseProvider } from './base-provider'
+import { estimateBlendedCost } from '@/lib/cost-monitor/types'
 
 const PERPLEXITY_MODELS = {
   SONAR_PRO: 'sonar-pro',
@@ -127,6 +128,8 @@ export class PerplexityProvider extends BaseProvider {
   }
 
   private calculateCost(tokens: number): number {
-    return tokens * 0.0000035
+    // Was an opaque per-token constant maintained by hand and drifting from
+    // the shared price list. Same source of truth as everything else now.
+    return estimateBlendedCost('sonar', tokens)
   }
 }

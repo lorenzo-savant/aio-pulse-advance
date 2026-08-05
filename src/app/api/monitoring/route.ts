@@ -12,6 +12,8 @@ import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 import { trackKeywords } from '@/lib/services/keyword-tracker'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { consumeCreditsForQuery } from '@/lib/services/credits'
+import { getCostTracker } from '@/lib/cost-monitor'
+import { estimateBlendedCost, pricingKeyForProviderLabel } from '@/lib/cost-monitor/types'
 import { getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 import type { Brand, Prompt, MonitoringResult, AlertRule } from '@/types'
 
@@ -248,11 +250,34 @@ export async function POST(req: NextRequest) {
               : resultData.response_text,
         }
 
-        const { data: saved, error: insertError } = await db
+        // `response_provider` / `citation_source` arrive with migration
+        // 20260805090000. Until it is applied, inserting them fails the whole
+        // row — so a deploy that ships this code ahead of the migration would
+        // stop monitoring entirely. Retry once without them; the run still
+        // records everything else, just without provenance. Same shape as the
+        // confusion_* columns already handled elsewhere.
+        let { data: saved, error: insertError } = await db
           .from('monitoring_results')
           .insert(truncatedData)
           .select()
           .single()
+
+        if (insertError && /response_provider|citation_source/.test(insertError.message ?? '')) {
+          logger.warn('monitoring: provenance columns missing, inserting without them', {
+            source: 'monitoring',
+            hint: 'apply supabase/migrations/20260805090000_monitoring_result_provenance.sql',
+          })
+          const {
+            response_provider: _provider,
+            citation_source: _citationSource,
+            ...withoutProvenance
+          } = truncatedData
+          ;({ data: saved, error: insertError } = await db
+            .from('monitoring_results')
+            .insert(withoutProvenance)
+            .select()
+            .single())
+        }
 
         if (insertError || !saved) {
           logger.error('DB insert error', {
@@ -265,6 +290,38 @@ export async function POST(req: NextRequest) {
         }
 
         results.push(saved as unknown as MonitoringResult)
+
+        // ── Record what this run cost ──────────────────────────────────────
+        // `ai_cost_logs` had exactly two writers, neither on this path — and
+        // monitoring is by far the highest-volume LLM consumer in the product.
+        // So both cost dashboards and the budget manager have been reading an
+        // almost-empty table: spend that is invisible cannot be capped, and a
+        // budget alert that never fires looks identical to one that never
+        // needed to. Best-effort — a failure here must never lose a result
+        // that has already been persisted and paid for.
+        try {
+          const provider = String(resultData.response_provider ?? engine)
+          const promptTokens = Math.ceil((resultData.prompt_text?.length ?? 0) / 4)
+          const responseTokens = Math.ceil((resultData.response_text?.length ?? 0) / 4)
+          await getCostTracker().logCost({
+            userId: billingUserId,
+            brandId: brand.id,
+            provider,
+            model: pricingKeyForProviderLabel(provider),
+            inputTokens: promptTokens,
+            outputTokens: responseTokens,
+            costUsd: estimateBlendedCost(provider, promptTokens + responseTokens),
+            costCredits: 0,
+            endpoint: '/api/monitoring',
+            success: true,
+          })
+        } catch (costErr) {
+          logger.warn('monitoring: cost logging failed', {
+            source: 'monitoring',
+            engine,
+            error: String(costErr),
+          })
+        }
 
         // ── Evaluate alert rules (use already-fetched rules) ────────────────
         if (rules && rules.length > 0) {

@@ -225,7 +225,6 @@ export async function generatePdf(
     doc.text('Competitor', margin, yPos)
     doc.text('Mentions', margin + 60, yPos)
     doc.text('Share', margin + 90, yPos)
-    doc.text('Avg. pos.', margin + 120, yPos)
     yPos += 2
     doc.line(margin, yPos, pageWidth - margin, yPos)
     yPos += 6

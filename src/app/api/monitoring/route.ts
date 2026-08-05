@@ -406,7 +406,9 @@ export async function POST(req: NextRequest) {
         date: new Date().toISOString().split('T')[0]!,
         visibility_score: components.mentionFrequency,
         sentiment_score: components.sentimentScore,
-        hallucination_rate: components.hallucinationIndex / 100,
+        // null, not 0: nothing assessed it is not the same as nothing found.
+        hallucination_rate:
+          components.hallucinationIndex == null ? null : components.hallucinationIndex / 100,
         mention_count: results.filter((r) => r.brand_mentioned).length,
         citation_count: citedCount,
         // AVI component fields

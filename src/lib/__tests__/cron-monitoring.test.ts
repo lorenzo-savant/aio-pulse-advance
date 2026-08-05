@@ -278,8 +278,10 @@ describe('calculateAVIFromResults — edge cases', () => {
       },
     ]
     const { components } = calculateAVIFromResults(results)
-    // null sentiment_score becomes 0 via ?? 0
-    expect(components.sentimentScore).toBe(0)
+    // Was: "null sentiment_score becomes 0 via ?? 0" — which turned "unknown"
+    // into "neutral", and neutral normalises to 50/100 in the score. A reading
+    // that does not exist now stays absent and drops out of the weighting.
+    expect(components.sentimentScore).toBeNull()
   })
 
   it('averages sentiment across only mentioned results', () => {

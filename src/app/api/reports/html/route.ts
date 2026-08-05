@@ -140,7 +140,13 @@ function generateHtmlReport(
   avi: number,
   components: Record<string, number>,
   soaiv: DomainSOAIVResult[],
-  competitors: Array<{ name: string; rank: number; gap: number; weakestComponent: string }>,
+  competitors: Array<{
+    name: string
+    rank: number | null
+    gap: number | null
+    weakestComponent: string | null
+    hasData: boolean
+  }>,
   heatmap: SentimentHeatmap,
   locale: Locale,
 ): string {
@@ -200,9 +206,9 @@ function generateHtmlReport(
               (c) => `
             <tr>
               <td>${esc(c.name)}</td>
-              <td>${c.rank === 1 ? t.rank1 : c.rank === 2 ? t.rank2 : t.rank3}</td>
-              <td>${c.gap > 0 ? '-' + c.gap.toFixed(1) : '+' + Math.abs(c.gap).toFixed(1)}</td>
-              <td>${esc(c.weakestComponent)}</td>
+              <td>${!c.hasData || c.rank === null ? t.noData : c.rank === 1 ? t.rank1 : c.rank === 2 ? t.rank2 : t.rank3}</td>
+              <td>${!c.hasData || c.gap === null ? t.noData : c.gap > 0 ? '-' + c.gap.toFixed(1) : '+' + Math.abs(c.gap).toFixed(1)}</td>
+              <td>${!c.hasData || !c.weakestComponent ? t.noData : esc(c.weakestComponent)}</td>
             </tr>
           `,
             )
@@ -429,6 +435,10 @@ export async function GET(req: NextRequest) {
     has_hallucination: r.has_hallucination ?? false,
     mention_position: r.mention_position,
     category: r.prompt?.category,
+    // The row is selected with `*` so this was always available — it was just
+    // dropped here, which made the competitor lookup below search an array
+    // that could never contain anything.
+    competitor_mentions: r.competitor_mentions || [],
   }))
 
   const { avi, components } = calculateAVIFromResults(mappedResults)
@@ -446,15 +456,30 @@ export async function GET(req: NextRequest) {
     const compMentions = mappedResults
       .flatMap((r: any) => r.competitor_mentions || [])
       .filter((m: any) => m.name === compName)
-    const result: CompetitorGapResult = calculateCompetitorAVI(
-      compMentions.length > 0 ? compMentions : [{ name: compName, position: 0, count: 0 }],
-      avi,
-    )
+
+    // "Not mentioned" is not "scores zero". The synthetic
+    // {position: 0, count: 0} row that used to stand in here produced
+    // competitorAvi = 0, so the printed gap was the brand's OWN score — every
+    // report claimed the brand beat every rival by exactly its own AVI. With
+    // competitor_mentions dropped from the mapping above, that fallback fired
+    // for every competitor in every report ever generated.
+    if (compMentions.length === 0) {
+      return {
+        name: compName,
+        rank: null,
+        gap: null,
+        weakestComponent: null,
+        hasData: false,
+      }
+    }
+
+    const result: CompetitorGapResult = calculateCompetitorAVI(compMentions, avi)
     return {
       name: compName,
       rank: result.rank,
       gap: avi - result.competitorAvi,
       weakestComponent: result.weakestComponent,
+      hasData: true,
     }
   })
 

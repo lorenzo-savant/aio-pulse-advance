@@ -9,9 +9,12 @@ export async function GET(req: NextRequest) {
   let userId: string
   try {
     userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
-  } catch (e) {
-    // Return empty results for unauthenticated users (public search)
-    return NextResponse.json({ success: true, data: [] })
+  } catch {
+    // Search only ever covers the caller's own brands, so there is nothing
+    // public to return. Answering 200 with an empty list made an expired
+    // session look like "you have nothing", which is the wrong thing to tell
+    // someone whose data is sitting right there.
+    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
   }
 
   const { searchParams } = new URL(req.url)
@@ -34,12 +37,23 @@ export async function GET(req: NextRequest) {
   // Search across everything the caller can reach, not only what they authored.
   const accessibleBrandIds = await getAccessibleBrandIds(supabase, userId)
 
+  // The raw query used to be interpolated straight into the `.or()` filter
+  // string. The surrounding `.in('id', accessibleBrandIds)` meant it could not
+  // reach another tenant's rows, so this was never a data leak — but `,` and
+  // `)` end a PostgREST filter term, and `%` / `_` are ILIKE wildcards, so a
+  // query containing them either errored or silently matched far more than the
+  // user typed. Strip the filter-grammar characters and escape the wildcards.
+  const safeQuery = query.replace(/[(),."\\]/g, ' ').replace(/[%_]/g, (c) => `\\${c}`)
+  if (!safeQuery.trim()) {
+    return NextResponse.json({ success: true, data: [] })
+  }
+
   // Search brands
   const { data: brands, error: brandsError } = await supabase
     .from('brands')
     .select('id, name')
     .in('id', accessibleBrandIds)
-    .or(`name.ilike.%${query}%,aliases.cs.{${query}}`)
+    .or(`name.ilike.%${safeQuery}%,aliases.cs.{${safeQuery}}`)
     .limit(5)
 
   // A failed query is not "nothing matched". Both branches only checked for
@@ -59,7 +73,7 @@ export async function GET(req: NextRequest) {
     .from('prompts')
     .select('id, text')
     .in('brand_id', accessibleBrandIds)
-    .ilike('text', `%${query}%`)
+    .ilike('text', `%${safeQuery}%`)
     .limit(5)
 
   if (promptsError) {

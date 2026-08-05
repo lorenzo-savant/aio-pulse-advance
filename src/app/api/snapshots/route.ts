@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, requireBrandRole } from '@/lib/authorize'
 import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 
@@ -37,13 +37,29 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return err(firstZodMessage(parsed.error), 400)
   const body = parsed.data
 
+  // Computing a snapshot writes to the brand, so it takes editor rights.
+  const gate = await requireBrandRole(body.brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
+
   // Verify brand access using the safe verifyBrandAccess (no report_* columns)
   const brand = await verifyBrandAccess(body.brand_id, userId)
   if (!brand) {
     return err('Brand not found or access denied', 404)
   }
 
-  const result = await calculateCitationSnapshots(body.brand_id, body.date)
+  // Wrapped: an unhandled throw here reached the client as a raw HTML 500,
+  // which tells the caller nothing and leaks a stack trace into the response.
+  let result
+  try {
+    result = await calculateCitationSnapshots(body.brand_id, body.date)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error('snapshots: calculateCitationSnapshots failed', {
+      brandId: body.brand_id,
+      error: message,
+    })
+    return err('Could not compute snapshot', 500)
+  }
 
   return NextResponse.json({
     success: true,

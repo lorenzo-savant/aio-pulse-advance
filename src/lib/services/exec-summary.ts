@@ -163,7 +163,15 @@ export async function buildExecSummary(brand: Brand, days: number): Promise<Exec
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (monitoringRes.error) {
+    // Do NOT continue with an empty array. Every downstream question reads
+    // `monitoring`, so a failed query produced a fully-formed summary asserting
+    // "0% mention rate", "no competitors" and a flat trend — a database blip
+    // rendered as a confident report telling the client they have no
+    // visibility at all. A missing answer has to look missing.
     logger.error('exec-summary: monitoring query failed', { err: monitoringRes.error })
+    throw new Error(
+      `exec-summary: monitoring data unavailable (${monitoringRes.error.message ?? 'unknown error'})`,
+    )
   }
   if (gscRes.error) {
     logger.warn('exec-summary: gsc query failed (non-fatal)', { err: gscRes.error })

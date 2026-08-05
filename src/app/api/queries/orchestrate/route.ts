@@ -7,7 +7,7 @@ import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { asUntyped } from '@/lib/supabase-untyped'
 import { queryOrchestrator } from '@/lib/services/query-orchestrator'
 import { calculateOrchestratedCost } from '@/lib/services/cost-calculator'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { requireBrandRole } from '@/lib/authorize'
 import { firstZodMessage } from '@/lib/validations'
 import { checkRateLimit } from '@/lib/ratelimit'
 import type { MonitoringEngine } from '@/types'
@@ -66,10 +66,9 @@ export async function POST(req: NextRequest) {
 
   // Verify brand access if brand_id provided
   if (brand_id) {
-    const brand = await verifyBrandAccess(brand_id, userId)
-    if (!brand) {
-      return err('Brand not found or access denied', 404)
-    }
+    // Writes and paid work on a brand take editor rights: a viewer reads.
+    const gate = await requireBrandRole(brand_id, userId, 'editor')
+    if ('response' in gate) return gate.response
   }
 
   // Execute orchestrated query
@@ -177,6 +176,21 @@ export async function POST(req: NextRequest) {
 
 // ─── GET /api/queries/orchestrate — Get cache stats ───────────────────────────
 export async function GET(req: NextRequest) {
+  // This returned cache size and sample keys to anyone who asked, with no auth
+  // and no rate limit — the only unauthenticated endpoint over tenant-shaped
+  // data in the API. The keys are derived from real queries.
+  let userId: string
+  try {
+    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
+  } catch {
+    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { success } = await checkRateLimit(`orchestrate-stats:${userId}`, 30, 60_000)
+  if (!success) {
+    return NextResponse.json({ success: false, message: 'Rate limit exceeded' }, { status: 429 })
+  }
+
   const cacheStats = queryOrchestrator.getCacheStats()
 
   return NextResponse.json({

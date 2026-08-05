@@ -14,7 +14,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireUser, rateLimitGate } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, requireBrandRole } from '@/lib/authorize'
 import { getAdvisorRecommendation, getAdvisorHistory } from '@/lib/services/advisor'
 import { logger } from '@/lib/logger'
 
@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
     return err(parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '), 400)
   }
 
-  if (!(await verifyBrandAccess(parsed.data.brand_id, userId))) {
-    return err('Brand not found or access denied', 404)
-  }
+  // Writes and paid work on a brand take editor rights: a viewer reads.
+  const gate = await requireBrandRole(parsed.data.brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   try {
     const result = await getAdvisorRecommendation(

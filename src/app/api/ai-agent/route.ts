@@ -8,6 +8,7 @@ import { generateFixBrief, formatFixBriefAsMarkdown } from '@/lib/audit/fix-brie
 import { generateLlmstxt, checkFreshness } from '@/lib/audit/generators'
 import { getCostTracker } from '@/lib/cost-monitor'
 import { requireUser, rateLimitGate } from '@/lib/api-auth'
+import { requireBrandRole } from '@/lib/authorize'
 import { SsrfError } from '@/lib/utils/safe-fetch'
 import { logger } from '@/lib/logger'
 import { aiAgentMessageSchema, firstZodMessage } from '@/lib/validations'
@@ -47,6 +48,15 @@ export async function POST(req: NextRequest) {
       )
     }
     const { message, agentId, brandId, context, conversationId } = parsed.data
+
+    // brandId arrives as a free-form string and was never checked against
+    // membership, so any authenticated user could attach a conversation to any
+    // brand id they cared to type. Running an agent costs an LLM call and
+    // writes agent_conversations, so it takes editor rights on a real brand.
+    if (brandId) {
+      const gate = await requireBrandRole(brandId, userId, 'editor')
+      if ('response' in gate) return gate.response
+    }
 
     const agent = getAgent(agentId || 'brand_monitor')
     if (!agent) {

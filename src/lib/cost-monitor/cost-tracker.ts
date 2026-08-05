@@ -8,6 +8,7 @@ import {
   type BudgetAlert,
 } from './types'
 import { BudgetManager } from './budget-manager'
+import { logger } from '@/lib/logger'
 
 export interface CostLogInput {
   userId: string
@@ -67,7 +68,7 @@ export class CostTracker {
       .single()
 
     if (error) {
-      console.error('Failed to log cost:', error)
+      logger.error('cost-tracker: failed to log cost', { error: String(error) })
       return null
     }
 
@@ -151,7 +152,7 @@ export class CostTracker {
     const { data, error } = await query
 
     if (error) {
-      console.error('Failed to get user costs:', error)
+      logger.error('cost-tracker: failed to get user costs', { error: String(error) })
       return []
     }
 
@@ -176,7 +177,7 @@ export class CostTracker {
       .gte('created_at', startDate.toISOString())
 
     if (error) {
-      console.error('Failed to get provider costs:', error)
+      logger.error('cost-tracker: failed to get provider costs', { error: String(error) })
       return {}
     }
 
@@ -223,7 +224,7 @@ export class CostTracker {
     const { data, error } = await query
 
     if (error) {
-      console.error('Failed to get daily costs:', error)
+      logger.error('cost-tracker: failed to get daily costs', { error: String(error) })
       return []
     }
 

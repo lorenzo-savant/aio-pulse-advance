@@ -24,40 +24,42 @@ const ROOT = process.cwd()
 const MIGRATIONS = join(ROOT, 'supabase', 'migrations')
 
 /**
- * Relations that exist in production but which `supabase/migrations/` cannot
- * create. Verified against the live database (read-only) on 2026-08-04: all
- * seven exist, so nothing here is a runtime fault — the debt is that their
- * shape is undeclared in the active migration path.
+ * Relations the migration path cannot create.
  *
- * The cause is historical: the project moved Prisma → Supabase, and
- * `supabase/migrations/` was re-baselined at `20260412000100_fix_schema_types.sql`
- * without carrying these across. Their real DDL is stranded in directories that
- * are not the migration path:
+ * The list started at seven. Five were declared by
+ * `20260805120000_backfill_missing_create_table.sql` — organizations,
+ * workspaces, their two membership tables and audit_logs — so the
+ * multi-tenant layer and the audit trail can be rebuilt.
  *
- *   audit_logs           prisma/migrations/20260413000000_add_workspace_rbac/
- *                        prisma/migrations/20260513120000_fase1_workspace_audit_apikeys/
- *   clients              NOWHERE IN THE REPO — exists in production, no DDL anywhere
- *   organization_members prisma/migrations/20260513120000_fase1_workspace_audit_apikeys/
- *   organizations        prisma/migrations/20260513120000_fase1_workspace_audit_apikeys/
- *                        supabase/archive/pre-bootstrap/20260304_add_org_structure.sql
- *   sentiment_history    supabase/archive/pre-bootstrap/20260411_add_archive_tables.sql
- *   workspace_members    prisma/migrations/20260413000000_add_workspace_rbac/
- *   workspaces           prisma/migrations/20260413000000_add_workspace_rbac/
+ * The last two are now empty for a different reason: `clients` and
+ * `sentiment_history` DO NOT EXIST in production. Re-checked read-only on
+ * 2026-08-05 and PostgREST answers "Could not find the table" for both. The
+ * 2026-08-04 note above them said all seven existed; that was true of the
+ * five, and wrong about these two. They were carried as debt to be repaid by
+ * writing DDL, when the correct entry was that there is nothing to declare.
  *
- * To remove an entry: add a forward-only migration that declares the relation to
- * match production, confirm with the migration-drift CI gate, then delete it from
- * this list. Do NOT delete an entry without the migration — the second test below
- * fails if this list claims a debt that no longer exists, and that is deliberate.
+ * These two stay listed, but they are NOT waiting for DDL — writing it would
+ * create tables nothing has used for months. They are waiting for a decision
+ * about the features that query them:
+ *
+ *   clients            src/lib/aeo-bridge.ts looks a client up by domain and
+ *                      always answers "Client not found", so the daily
+ *                      /api/cron/aeo-bridge run cannot do anything.
+ *   sentiment_history  src/app/api/reports/pdf/route.ts already carries a
+ *                      "SCHEMA DRIFT (TODO)" note; the PDF ships without its
+ *                      sentiment history every time.
+ *
+ * Neither crashes — both handle the error — which is why this went unnoticed.
+ * Either the tables come back or the code that reads them goes. Declaring them
+ * to make this list shorter would be the worst of the three options.
+ *
+ * The cause of the original debt, for the record: the project moved
+ * Prisma → Supabase and `supabase/migrations/` was re-baselined at
+ * `20260412000100_fix_schema_types.sql` without carrying the earlier DDL
+ * across. It is still stranded in `prisma/migrations/` and
+ * `supabase/archive/pre-bootstrap/`, which are not the migration path.
  */
-const KNOWN_UNDECLARED = [
-  // Down from seven to two: 20260805120000_backfill_missing_create_table.sql
-  // declares audit_logs, organizations, organization_members, workspaces and
-  // workspace_members, so the multi-tenant layer and the audit trail can be
-  // rebuilt. Only these two are left, and neither has DDL anywhere in the repo
-  // to carry across — they need their shape read off production first.
-  'clients',
-  'sentiment_history',
-] as const
+const KNOWN_UNDECLARED = ['clients', 'sentiment_history'] as const
 
 /** Every relation the migration repo can create from scratch. */
 function declaredRelations(): Set<string> {

@@ -8,6 +8,8 @@ import { verifyCronAuth } from '@/lib/cron-auth'
 import { logger } from '@/lib/logger'
 import { runMonitoringCheck, calculateAVIFromResults } from '@/lib/services/monitoring'
 import { consumeCreditsForQuery } from '@/lib/services/credits'
+import { getCostTracker } from '@/lib/cost-monitor'
+import { estimateBlendedCost, pricingKeyForProviderLabel } from '@/lib/cost-monitor/types'
 import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/services/alerts'
 import type {
   Brand,
@@ -354,6 +356,38 @@ export async function POST(req: NextRequest) {
 
           engineResults.push(saved as unknown as MonitoringResult)
           results.push({ promptId: prompt.id, engine, success: true })
+
+          // ── Record what this run cost ──────────────────────────────────
+          // The interactive route got this writer; the cron did not — and the
+          // cron is the bigger consumer by far, three passes a day across every
+          // active prompt against every engine. With only the interactive path
+          // logging, ai_cost_logs stayed at 0 rows and both dashboards plus the
+          // budget manager kept reading an empty table, which is why the gap
+          // survived being "fixed". Best-effort: a failure here must never lose
+          // a result already persisted and paid for.
+          try {
+            const provider = String(resultData.response_provider ?? engine)
+            const promptTokens = Math.ceil((resultData.prompt_text?.length ?? 0) / 4)
+            const responseTokens = Math.ceil((resultData.response_text?.length ?? 0) / 4)
+            await getCostTracker().logCost({
+              userId: prompt.user_id,
+              brandId: brand.id,
+              provider,
+              model: pricingKeyForProviderLabel(provider),
+              inputTokens: promptTokens,
+              outputTokens: responseTokens,
+              costUsd: estimateBlendedCost(provider, promptTokens + responseTokens),
+              costCredits: 0,
+              endpoint: '/api/cron/monitoring',
+              success: true,
+            })
+          } catch (costErr) {
+            logger.warn('cron: cost logging failed', {
+              source: 'cron',
+              engine,
+              error: String(costErr),
+            })
+          }
 
           // ── Evaluate alert rules for this result ─────────────────────────
           if (alertRules && alertRules.length > 0) {

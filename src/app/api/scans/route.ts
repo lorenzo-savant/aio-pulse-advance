@@ -51,7 +51,13 @@ export async function GET(req: NextRequest) {
   // disjunct below stays: a scan that is not attached to any brand still
   // belongs to whoever ran it.
   const accessibleIds = await getAccessibleBrandIds(db, userId)
-  const rawFilterIds = brandId && accessibleIds.includes(brandId) ? [brandId] : accessibleIds
+
+  // Refuse an unreachable brand_id rather than widening to every accessible
+  // brand — same answer as /api/alerts, /api/prompts and /api/monitoring.
+  if (brandId && !accessibleIds.includes(brandId)) {
+    return err('Brand not found or access denied', 404)
+  }
+  const rawFilterIds = brandId ? [brandId] : accessibleIds
 
   // M-10: PostgREST filter injection hardening — only allow UUID-shaped values
   // into the `.or()` interpolation, and require userId itself to be UUID-shaped.

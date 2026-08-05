@@ -466,7 +466,14 @@ export async function GET(req: NextRequest) {
       timestamp: Date.now(),
     })
   }
-  const filterIds = brandId && accessibleBrandIds.includes(brandId) ? [brandId] : accessibleBrandIds
+  // An explicit brand_id the caller cannot reach is refused, not quietly
+  // widened to "everything you can see". Widening answered a question nobody
+  // asked and made a permission problem look like data — the same request
+  // returns 404 from /api/alerts and /api/prompts.
+  if (brandId && !accessibleBrandIds.includes(brandId)) {
+    return err('Brand not found or access denied', 404)
+  }
+  const filterIds = brandId ? [brandId] : accessibleBrandIds
 
   let query = db
     .from('monitoring_results')

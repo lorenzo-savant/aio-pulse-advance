@@ -10,12 +10,7 @@ import {
   autoGenerateSnapshots,
 } from '@/lib/services/analytics-service'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
-import {
-  verifyBrandAccess,
-  getAccessibleBrandIds,
-  getBrandRole,
-  requireBrandRole,
-} from '@/lib/authorize'
+import { verifyBrandAccess, getWritableBrandIds, requireBrandRole } from '@/lib/authorize'
 import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 
@@ -158,13 +153,9 @@ export async function POST(req: NextRequest) {
   if (generate_all) {
     // Generating a snapshot writes to the brand, so only the brands where the
     // caller is owner or editor — a viewer's "generate all" must not silently
-    // skip past its own read-only role.
-    const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
-    const writableBrandIds: string[] = []
-    for (const id of accessibleBrandIds) {
-      const role = await getBrandRole(id, userId)
-      if (role === 'owner' || role === 'editor') writableBrandIds.push(id)
-    }
+    // skip past its own read-only role. Resolved in two queries rather than
+    // two per brand.
+    const writableBrandIds = await getWritableBrandIds(db, userId)
 
     const results = []
     for (const brandId of writableBrandIds) {

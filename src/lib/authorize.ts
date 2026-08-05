@@ -329,6 +329,7 @@ export async function getBrandBillingUserId(brandId: string): Promise<string | n
 export async function getAccessibleBrandIds(
   db: ReturnType<typeof createServerClient>,
   userId: string,
+  workspaceId?: string,
 ): Promise<string[]> {
   if (!db) return []
 
@@ -338,11 +339,17 @@ export async function getAccessibleBrandIds(
   // returns only the caller's own rows and hides a colleague's work.
   //
   // An empty array is a real answer (the caller has no brands) and correctly
-  // yields no rows through `.in()`.
+  // yields no rows through `.in()` — measured against the live PostgREST
+  // (postgrest-js 2.97.0): `.in('col', [])` returns no error and 0 rows, also
+  // with count:'exact', order and limit. There is nothing to special-case.
   //
   // Independent queries — run together.
+  const ownedQuery = workspaceId
+    ? db.from('brands').select('id').eq('user_id', userId).eq('workspace_id', workspaceId)
+    : db.from('brands').select('id').eq('user_id', userId)
+
   const [{ data: ownedBrands }, { data: teamMemberships }] = await Promise.all([
-    db.from('brands').select('id').eq('user_id', userId),
+    ownedQuery,
     db
       .from('team_members')
       .select('brand_id')
@@ -351,9 +358,54 @@ export async function getAccessibleBrandIds(
   ])
 
   const ownedIds = (ownedBrands || []).map((b) => b.id)
-  const teamIds = (teamMemberships || []).map((m) => m.brand_id)
+  let teamIds = (teamMemberships || []).map((m) => m.brand_id)
+
+  // A workspace filter has to apply to BOTH halves of the union. The inline
+  // copy this replaced filtered only the owned half, so asking for one
+  // workspace still returned every brand you collaborate on anywhere — the
+  // scope silently leaked exactly where it was meant to narrow.
+  if (workspaceId && teamIds.length > 0) {
+    const { data: inWorkspace } = await db
+      .from('brands')
+      .select('id')
+      .in('id', teamIds)
+      .eq('workspace_id', workspaceId)
+    teamIds = (inWorkspace || []).map((b) => b.id)
+  }
 
   // De-dup: an owner who is also listed as a team member must not produce
   // duplicate IDs for downstream .in() filters.
   return [...new Set([...ownedIds, ...teamIds])]
+}
+
+/**
+ * The brands the caller may WRITE to — owned, plus memberships that carry an
+ * editor or owner role.
+ *
+ * The obvious way to build this is to take getAccessibleBrandIds and ask
+ * getBrandRole about each id, which costs two queries per brand and grows with
+ * the account. Two queries answer it for any number of brands.
+ */
+export async function getWritableBrandIds(
+  db: ReturnType<typeof createServerClient>,
+  userId: string,
+): Promise<string[]> {
+  if (!db) return []
+
+  const [{ data: ownedBrands }, { data: teamMemberships }] = await Promise.all([
+    db.from('brands').select('id').eq('user_id', userId),
+    db
+      .from('team_members')
+      .select('brand_id')
+      .eq('user_id', userId)
+      .not('status', 'in', INACTIVE_MEMBER_STATUSES)
+      .in('role', ['owner', 'editor']),
+  ])
+
+  return [
+    ...new Set([
+      ...(ownedBrands || []).map((b) => b.id),
+      ...(teamMemberships || []).map((m) => m.brand_id),
+    ]),
+  ]
 }

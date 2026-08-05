@@ -35,6 +35,13 @@ vi.mock('@/lib/services/credits', () => ({
   CreditServiceError: class CreditServiceError extends Error {},
 }))
 
+vi.mock('@/lib/cost-monitor', () => ({
+  // Added when the cron gained a cost writer. Without this the real tracker
+  // runs inside these tests, reaching for a table the fake client does not
+  // model — which made both files flaky under parallel load rather than
+  // failing outright, the worst way for a test to break.
+  getCostTracker: () => ({ logCost: vi.fn().mockResolvedValue(null) }),
+}))
 vi.mock('@/lib/services/citation-snapshots', () => ({ calculateCitationSnapshots: vi.fn() }))
 
 // ─── Supabase double ────────────────────────────────────────────────────────

@@ -99,14 +99,13 @@ export async function POST(req: NextRequest) {
     return err('Invitation has expired', 400)
   }
 
-  // Invitation must still be pending (not already accepted/revoked) — reject
-  // replay of a previously-consumed token.
-  if (invitation.status && invitation.status !== 'pending') {
-    return err('Invitation is no longer valid', 400)
-  }
-
   // The authenticated account's email MUST match the invited email — prevents
   // any logged-in user who obtains a token from binding it to their account.
+  //
+  // This check moved ABOVE the status check below. It has to come first: the
+  // status of someone else's invitation is not a stranger's business, and
+  // answering "no longer valid" to an unmatched token tells the holder it was
+  // real and has been used.
   const { data: authUser } = await db.auth.admin.getUserById(userId)
   const callerEmail = authUser?.user?.email?.toLowerCase() ?? null
   if (!callerEmail || callerEmail !== String(invitation.email).toLowerCase()) {
@@ -136,15 +135,38 @@ export async function POST(req: NextRequest) {
     return err('Brand no longer exists', 404)
   }
 
+  // Being a member of the brand this invitation is for IS the outcome the
+  // caller asked for. Reporting it as an error made the flow fail at the exact
+  // moment it had succeeded.
+  //
+  // This is not hypothetical. Signing in fires /api/invitations/claim, which
+  // matches pending invitations by verified email, accepts them and creates the
+  // membership. So the ordinary path — open the link, choose "I already have an
+  // account", sign in — has the invitation consumed BEFORE the accept page ever
+  // posts its token. Measured in production: the membership row was written
+  // 162ms after the invitation flipped, by the claim route. The user was in,
+  // and the screen said "Unable to Accept · Invitation is no longer valid".
   const { data: existingMember } = await db
     .from('team_members')
     .select('id')
     .eq('brand_id', invitation.brand_id)
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (existingMember) {
-    return err('You are already a team member', 400)
+    return NextResponse.json({
+      success: true,
+      alreadyMember: true,
+      message: `You are a member of ${brand.name}`,
+    })
+  }
+
+  // Only now is a non-pending status interesting: the email matched and the
+  // caller is NOT a member, so this token really was consumed by someone else,
+  // declined, or revoked. Refusing here is right; refusing before the two
+  // checks above was what broke the flow.
+  if (invitation.status && invitation.status !== 'pending') {
+    return err('Invitation is no longer valid', 400)
   }
 
   // Atomically claim the invitation: only one concurrent request can flip
@@ -165,6 +187,26 @@ export async function POST(req: NextRequest) {
     return err('Failed to accept invitation')
   }
   if (!claimed) {
+    // Lost the race — but to whom? /api/invitations/claim runs on sign-in and
+    // on dashboard load, so the likeliest winner is this same user, a few
+    // milliseconds ago. Ask the database rather than assuming a failure: if the
+    // membership is there, the caller got what they came for and the answer is
+    // yes.
+    const { data: raced } = await db
+      .from('team_members')
+      .select('id')
+      .eq('brand_id', invitation.brand_id)
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (raced) {
+      return NextResponse.json({
+        success: true,
+        alreadyMember: true,
+        message: `You are a member of ${brand.name}`,
+      })
+    }
+
     return err('Invitation is no longer valid', 400)
   }
 

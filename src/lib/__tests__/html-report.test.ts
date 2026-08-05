@@ -5,6 +5,7 @@ import {
   calculateAVIFromResults,
   calculateDomainSOAIV,
   calculateCompetitorAVI,
+  buildCompetitorReport,
   buildSentimentHeatmap,
 } from '../services/monitoring'
 
@@ -156,8 +157,8 @@ describe('HTML report — competitor table wiring', () => {
     expect(routeSrc).not.toMatch(/position:\s*0,\s*count:\s*0/)
   })
 
-  it('uses the measured standings, not the deprecated competitor AVI', () => {
-    expect(routeSrc).toMatch(/calculateCompetitorStandings\(/)
+  it('builds the competitor table from measured standings, not deprecated AVI', () => {
+    expect(routeSrc).toMatch(/buildCompetitorReport\(/)
     expect(routeSrc).not.toMatch(/calculateCompetitorAVI\(/)
   })
 
@@ -182,5 +183,51 @@ describe('HTML report — competitor table wiring', () => {
     const [en, it, sv] = dicts.map(keysOf)
     expect(it).toEqual(en)
     expect(sv).toEqual(en)
+  })
+})
+
+// ─── buildCompetitorReport: the honest competitor table ──────────────────────
+//
+// This is the pure function the route handler calls to build the competitor
+// rows. Pinning its arithmetic here keeps the rendered report honest without
+// exporting the App Router handler.
+describe('buildCompetitorReport', () => {
+  const acast = 'Acast AB'
+  const bjorn = 'Björn Lundén'
+  const wint = 'Wint'
+
+  it('renders mentions, quota and avg position for declared competitors', () => {
+    const rows = buildCompetitorReport(
+      [acast, bjorn, wint],
+      [
+        { name: 'Acast', position: 1, count: 10 },
+        { name: 'Acast AB', position: 2, count: 5 },
+        { name: 'Björn Lundén AB', position: 3, count: 5 },
+        { name: 'Some invented rival', position: 1, count: 5 },
+      ],
+    )
+
+    const acastRow = rows.find((r) => r.name === acast)!
+    expect(acastRow).toMatchObject({
+      mentions: 15,
+      share: 60, // 15 of 25 — invented rival keeps its weight in the denominator
+      avgPosition: 1.5,
+      hasData: true,
+    })
+    const bjornRow = rows.find((r) => r.name === bjorn)!
+    expect(bjornRow.mentions).toBe(5)
+    expect(bjornRow.avgPosition).toBe(3)
+    const wintRow = rows.find((r) => r.name === wint)!
+    expect(wintRow).toMatchObject({ mentions: 0, share: null, avgPosition: null, hasData: false })
+  })
+
+  it('returns a row per declared competitor, including unmentioned ones', () => {
+    const rows = buildCompetitorReport([acast], [])
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ name: acast, mentions: 0, share: null, hasData: false })
+  })
+
+  it('returns [] for an empty declared list', () => {
+    expect(buildCompetitorReport([], [])).toEqual([])
   })
 })

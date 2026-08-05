@@ -23,6 +23,7 @@ import { cleanCitations, groundCitationsViaBrave } from './citation-grounding'
 import { detectBrandMention, extractUrlsFromText } from './brand-mention'
 import { lexicalSentiment, sentimentAgreement } from './sentiment-lexicon'
 import type { LexiconLabel, ConflictLevel } from './sentiment-lexicon'
+import { normalizeEntityName } from './competitor-identity'
 import { withLlmCache } from './llm-cache'
 import { logger } from '@/lib/logger'
 
@@ -803,6 +804,47 @@ export function calculateCompetitorStandings(
           ) / 10
         : null,
   }
+}
+
+/**
+ * One row of the competitor table in the HTML report: measured, comparable and
+ * meaningful under its own name. This is the shape the report now prints —
+ * `name / mentions / shareOfCompetitorMentions / avgPosition`.
+ *
+ * Only DECLARED competitors get a row. A name the model invented is still
+ * counted in the denominator (so shares add up honestly) but is never
+ * presented to the client as a rival with a standing. A declared competitor
+ * that was never mentioned gets `hasData: false` — "not mentioned" is not
+ * "scores zero", and must never look like a 0/100 standing against the brand.
+ */
+export interface CompetitorReportRow {
+  name: string
+  mentions: number
+  share: number | null
+  avgPosition: number | null
+  hasData: boolean
+}
+
+export function buildCompetitorReport(
+  declaredCompetitors: string[],
+  allMentions: CompetitorMention[],
+): CompetitorReportRow[] {
+  const totalCompetitorMentions = allMentions.reduce((sum, m) => sum + Math.max(m.count ?? 1, 0), 0)
+
+  return declaredCompetitors.map((compName) => {
+    const compMentions = allMentions.filter(
+      (m) => normalizeEntityName(m.name ?? '') === normalizeEntityName(compName),
+    )
+    const standings = calculateCompetitorStandings(compMentions, totalCompetitorMentions)
+
+    return {
+      name: compName,
+      mentions: standings?.mentions ?? 0,
+      share: standings?.shareOfCompetitorMentions ?? null,
+      avgPosition: standings?.avgPosition ?? null,
+      hasData: standings !== null,
+    }
+  })
 }
 
 /**

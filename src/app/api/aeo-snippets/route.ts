@@ -5,6 +5,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { runAEOGeneration } from '@/lib/services/aeo-snippets'
 // v2 API strategy: SerpApi removed. PAA is now DataForSEO (narrow scope) and
 // gap-detection is Brave Search. We surface both quotas so the operator
@@ -52,12 +53,12 @@ export async function GET(req: NextRequest) {
 
   if (!brandId) return err('brand_id is required', 400)
 
-  const { data: brand } = await db
-    .from('brands')
-    .select('id')
-    .eq('id', brandId)
-    .eq('user_id', userId)
-    .single()
+  // Reading this needs any role on the brand. Ownership was too narrow: an invited
+  // collaborator was refused their own project's data.
+  const gate = await requireBrandRole(brandId, userId, 'viewer')
+  if ('response' in gate) return gate.response
+
+  const { data: brand } = await db.from('brands').select('id').eq('id', brandId).maybeSingle()
   if (!brand) return err('Brand not found or access denied', 404)
 
   let q = db

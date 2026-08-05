@@ -12,7 +12,7 @@ import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 import { trackKeywords } from '@/lib/services/keyword-tracker'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { consumeCreditsForQuery } from '@/lib/services/credits'
-import { INACTIVE_MEMBER_STATUSES } from '@/lib/authorize'
+import { getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 import type { Brand, Prompt, MonitoringResult, AlertRule } from '@/types'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -83,45 +83,28 @@ export async function POST(req: NextRequest) {
     return err('Prompt not found', 404)
   }
 
-  // Now check access: either user owns the brand OR user owns the prompt
   const brand = prompt.brand as Brand
 
-  // Convert to strings for comparison (user_id could be UUID or string)
-  const brandOwnerId = String(brand.user_id ?? '')
-  const promptOwnerId = String(prompt.user_id ?? '')
-  const requestUserId = String(userId)
+  // Running a prompt writes results into the brand and spends its credits, so
+  // it takes editor rights on the brand — a viewer may read the results but not
+  // produce more. The previous check also admitted the prompt's AUTHOR
+  // regardless of brand access, which stopped making sense once prompts became
+  // brand-scoped: authorship is provenance, not permission.
+  const gate = await requireBrandRole(String(brand.id), userId, 'editor')
+  if ('response' in gate) return gate.response
 
-  const isBrandOwner = brandOwnerId === requestUserId
-  const isPromptOwner = promptOwnerId === requestUserId
-
-  // Also check team membership. The status filter was MISSING here, so a
-  // merely invited (still pending) or declined user passed as a team member
-  // and could spend the brand owner's credits — the opposite failure from the
-  // brand list, which allowlisted a status no row ever has.
-  const { data: membership } = await db
-    .from('team_members')
-    .select('id')
-    .eq('brand_id', brand.id)
-    .eq('user_id', userId)
-    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
-    .single()
-
-  const isTeamMember = !!membership
+  // One project, one budget: the brand owner pays, whoever presses the button.
+  // Billing the caller instead would leave a collaborator with an empty balance
+  // unable to run the very analyses they were invited to run, and would scatter
+  // one brand's spend across every account that touched it.
+  const billingUserId = String(brand.user_id ?? '')
 
   logger.debug('Access check', {
     source: 'monitoring',
-    isBrandOwner,
-    isPromptOwner,
-    isTeamMember,
-    promptUserId: promptOwnerId,
-    brandUserId: brandOwnerId,
-    requestUserId,
+    role: gate.role,
+    brandId: String(brand.id),
+    billingUserId,
   })
-
-  // Return 403 for access denied, not 404 (security best practice)
-  if (!isBrandOwner && !isPromptOwner && !isTeamMember) {
-    return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
-  }
 
   // ── Resolve engines ───────────────────────────────────────────────────────
   const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
@@ -147,7 +130,7 @@ export async function POST(req: NextRequest) {
     // /api/credits/use that forwarded the caller's cookie/authorization and
     // derived the origin from the inbound Host header — double invocation,
     // second rate-limit token, and a header-forwarding hazard.
-    const creditDecision = await consumeCreditsForQuery(requestUserId, {
+    const creditDecision = await consumeCreditsForQuery(billingUserId, {
       engines,
       brandId: brand.id,
       queryId: prompt.id,
@@ -471,10 +454,11 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const offset = (page - 1) * limit
 
-  // Resolve brands owned by user (handles UUID vs string mismatch on user_id col)
-  const { data: ownedBrands } = await db.from('brands').select('id').eq('user_id', userId)
-  const ownedBrandIds = (ownedBrands ?? []).map((b: { id: string }) => b.id)
-  if (ownedBrandIds.length === 0) {
+  // Every brand the caller can read, owned or collaborated on. Restricting this
+  // to OWNED brands is what left an invited colleague with a visible brand and
+  // no results inside it.
+  const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+  if (accessibleBrandIds.length === 0) {
     return NextResponse.json({
       success: true,
       data: [],
@@ -482,7 +466,7 @@ export async function GET(req: NextRequest) {
       timestamp: Date.now(),
     })
   }
-  const filterIds = brandId && ownedBrandIds.includes(brandId) ? [brandId] : ownedBrandIds
+  const filterIds = brandId && accessibleBrandIds.includes(brandId) ? [brandId] : accessibleBrandIds
 
   let query = db
     .from('monitoring_results')

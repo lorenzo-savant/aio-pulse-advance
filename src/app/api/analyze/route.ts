@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger'
 import { analyzeWithProvider } from '@/lib/services/analysis'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, getAccessibleBrandIds } from '@/lib/authorize'
 import type { ApiResponse, AnalysisResult } from '@/types'
 
 function err(message: string, status = 500) {
@@ -49,7 +49,9 @@ export async function GET(req: NextRequest) {
   if (brandId) {
     query = query.eq('brand_id', brandId)
   } else {
-    query = query.eq('user_id', userId)
+    // Unfiltered means "everything I can see", which is every brand the caller
+    // collaborates on — not only the analyses they personally ran.
+    query = query.in('brand_id', await getAccessibleBrandIds(db, userId))
   }
 
   const { data, error: fetchErr } = await query

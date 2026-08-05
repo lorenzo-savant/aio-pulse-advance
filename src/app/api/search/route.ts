@@ -2,6 +2,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId } from '@/lib/supabase'
+import { getAccessibleBrandIds } from '@/lib/authorize'
 
 export async function GET(req: NextRequest) {
   let userId: string
@@ -29,11 +30,14 @@ export async function GET(req: NextRequest) {
 
   const results: { type: string; id: string; name: string }[] = []
 
+  // Search across everything the caller can reach, not only what they authored.
+  const accessibleBrandIds = await getAccessibleBrandIds(supabase, userId)
+
   // Search brands
   const { data: brands } = await supabase
     .from('brands')
     .select('id, name')
-    .eq('user_id', userId)
+    .in('id', accessibleBrandIds)
     .or(`name.ilike.%${query}%,aliases.cs.{${query}}`)
     .limit(5)
 
@@ -45,7 +49,7 @@ export async function GET(req: NextRequest) {
   const { data: prompts } = await supabase
     .from('prompts')
     .select('id, text')
-    .eq('user_id', userId)
+    .in('brand_id', accessibleBrandIds)
     .ilike('text', `%${query}%`)
     .limit(5)
 

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "lint:ci": "eslint . --max-warnings 171",
+    "lint:ci": "eslint . --max-warnings 170",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "test": "vitest",

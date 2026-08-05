@@ -7,6 +7,7 @@ import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { parsePaginationParams, paginatedResponse } from '@/lib/api-utils'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { embedText, mostSimilar, NEAR_DUPLICATE_THRESHOLD } from '@/lib/services/semantic'
+import { getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -80,14 +81,24 @@ async function getPromptsHandler(req: NextRequest) {
     maxLimit: 100,
   })
 
-  let query = db
+  // Scope by BRAND, not by author. A prompt belongs to the brand it was written
+  // for, so every collaborator on that brand sees it — filtering on
+  // `user_id = <viewer>` returned only the viewer's own prompts and left an
+  // invited colleague looking at an empty brand.
+  const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+
+  if (brandId && !accessibleBrandIds.includes(brandId)) {
+    return err('Brand not found or access denied', 404)
+  }
+
+  const scope = brandId ? [brandId] : accessibleBrandIds
+
+  const query = db
     .from('prompts')
     .select('*, brand:brands(name, color, slug)', { count: 'exact' })
-    .eq('user_id', userId)
+    .in('brand_id', scope)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
-
-  if (brandId) query = query.eq('brand_id', brandId)
 
   const { data, error, count } = await query
   if (error) return err(error.message)
@@ -137,15 +148,11 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  // Verify that the referenced brand belongs to this user
-  const { data: brand } = await db
-    .from('brands')
-    .select('id')
-    .eq('id', parsed.data.brand_id)
-    .eq('user_id', userId)
-    .single()
-
-  if (!brand) return err('Brand not found or access denied', 404)
+  // Creating a prompt is a write on the brand: owners and editors may, viewers
+  // may not. Ownership alone was too narrow — an editor invited to collaborate
+  // could not add a single prompt to the brand they were invited to work on.
+  const gate = await requireBrandRole(parsed.data.brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   // Semantic dedup (best-effort): embed the new prompt and compare against the
   // brand's existing prompt embeddings. A near-duplicate is reported as a
@@ -221,7 +228,18 @@ export async function DELETE(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { error } = await db.from('prompts').delete().eq('id', id).eq('user_id', userId)
+  // Delete by brand permission, not by authorship: a prompt is the brand's, and
+  // an editor must be able to remove one a colleague wrote. Matching on
+  // `user_id` also failed silently — deleting someone else's prompt reported
+  // success while removing nothing.
+  const { data: prompt } = await db.from('prompts').select('brand_id').eq('id', id).maybeSingle()
+
+  if (!prompt) return err('Prompt not found', 404)
+
+  const gate = await requireBrandRole(String(prompt.brand_id), userId, 'editor')
+  if ('response' in gate) return gate.response
+
+  const { error } = await db.from('prompts').delete().eq('id', id)
 
   if (error) return err(error.message)
   return NextResponse.json({ success: true, data: null, timestamp: Date.now() })

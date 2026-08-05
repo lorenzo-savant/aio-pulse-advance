@@ -2,6 +2,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { AuthError, createServerClient, getCurrentUserId } from '@/lib/supabase'
+import { getAccessibleBrandIds } from '@/lib/authorize'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -26,19 +27,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
   }
 
+  // A weekly review reports on a brand, so the whole team reads it.
+  const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+  if (brandId && !accessibleBrandIds.includes(brandId)) {
+    return NextResponse.json({ error: 'Brand not found or access denied' }, { status: 404 })
+  }
+  const scope = brandId ? [brandId] : accessibleBrandIds
+
   // Try the new weekly_reviews table first
   if (source === 'auto' || source === 'weekly_reviews') {
     try {
-      let query = db
+      const query = db
         .from('weekly_reviews')
         .select(
           'id, brand_id, week_number, year, week_start, week_end, metrics, markdown, created_at',
         )
-        .eq('user_id', userId)
+        .in('brand_id', scope)
         .order('created_at', { ascending: false })
         .limit(limit)
-
-      if (brandId) query = query.eq('brand_id', brandId)
 
       const { data, error } = await query
 
@@ -51,16 +57,12 @@ export async function GET(req: NextRequest) {
   }
 
   // Fallback: legacy recommendation_histories
-  let query = db
+  const query = db
     .from('recommendation_history')
     .select('*')
-    .eq('user_id', userId)
+    .in('brand_id', scope)
     .order('created_at', { ascending: false })
     .limit(limit)
-
-  if (brandId) {
-    query = query.eq('brand_id', brandId)
-  }
 
   const { data, error } = await query
 

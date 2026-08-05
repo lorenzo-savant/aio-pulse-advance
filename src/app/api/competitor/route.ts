@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger'
 import { analyzeCompetitor } from '@/lib/services/gemini'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, getAccessibleBrandIds } from '@/lib/authorize'
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -94,11 +94,14 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // Otherwise, return user's own analyses
+  // Otherwise, every analysis across the brands the caller can read — not just
+  // the ones they personally ran.
+  const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+
   const { data, error: fetchErr } = await db
     .from('competitor_analyses')
     .select('id, brand_id, primary_url, competitors, summary, created_at')
-    .eq('user_id', userId)
+    .in('brand_id', accessibleBrandIds)
     .order('created_at', { ascending: false })
     .limit(limit)
 

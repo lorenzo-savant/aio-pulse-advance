@@ -3,6 +3,7 @@ import { verifyApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
 import { parsePaginationParams, getPaginationHeaders } from '@/lib/api-utils'
 import { publicBrandCreateSchema, firstZodMessage } from '@/lib/validations'
+import { getAccessibleBrandIds } from '@/lib/authorize'
 
 const BRAND_LIST_COLS =
   'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
@@ -53,10 +54,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const paginationRequested = searchParams.has('page') || searchParams.has('limit')
 
+  // Same scope as the app: owned brands plus the ones the caller collaborates
+  // on. An integrator's key should see the same projects its owner does.
   let query = db
     .from('brands')
     .select(BRAND_LIST_COLS, { count: 'exact' })
-    .eq('user_id', userId)
+    .in('id', await getAccessibleBrandIds(db, userId))
     .order('created_at', { ascending: false })
 
   const { page, limit, offset } = parsePaginationParams(searchParams, {

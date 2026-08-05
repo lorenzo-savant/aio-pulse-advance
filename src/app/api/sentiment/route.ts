@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { analyzeSentiment, detectHallucinations } from '@/lib/services/monitoring'
+import { requireBrandRole } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -54,13 +55,12 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  // Verify brand belongs to this user
-  const { data: brand } = await db
-    .from('brands')
-    .select('name')
-    .eq('id', brand_id)
-    .eq('user_id', userId)
-    .single()
+  // Analysing text against the brand is a write on the brand's data, so it
+  // takes editor rights rather than ownership.
+  const gate = await requireBrandRole(brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
+
+  const { data: brand } = await db.from('brands').select('name').eq('id', brand_id).maybeSingle()
 
   if (!brand) return err('Brand not found or access denied', 404)
 
@@ -119,11 +119,17 @@ export async function GET(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
+  // Reading sentiment needs any role on the brand. The rows are then scoped by
+  // brand alone: a result belongs to the brand, not to whoever triggered it, so
+  // adding `user_id = <viewer>` here hid a colleague's runs from the chart and
+  // silently changed the numbers it reports.
+  const gate = await requireBrandRole(brandId, userId, 'viewer')
+  if ('response' in gate) return gate.response
+
   const { data, error } = await db
     .from('monitoring_results')
     .select('sentiment, sentiment_score, engine, has_hallucination, created_at, brand_mentioned')
     .eq('brand_id', brandId)
-    .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(200)
 
@@ -195,7 +201,6 @@ export async function GET(req: NextRequest) {
       .from('monitoring_results')
       .select('sentiment_aspects')
       .eq('brand_id', brandId)
-      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(500)
 

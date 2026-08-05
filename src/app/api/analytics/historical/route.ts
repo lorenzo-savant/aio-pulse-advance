@@ -10,7 +10,12 @@ import {
   autoGenerateSnapshots,
 } from '@/lib/services/analytics-service'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
-import { verifyBrandAccess } from '@/lib/authorize'
+import {
+  verifyBrandAccess,
+  getAccessibleBrandIds,
+  getBrandRole,
+  requireBrandRole,
+} from '@/lib/authorize'
 import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 
@@ -144,13 +149,20 @@ export async function POST(req: NextRequest) {
   const { brand_id, generate_all } = parsed.data
 
   if (generate_all) {
-    // Generate snapshots for all user's brands
-    const { data: brands } = await db.from('brands').select('id').eq('user_id', userId)
+    // Generating a snapshot writes to the brand, so only the brands where the
+    // caller is owner or editor — a viewer's "generate all" must not silently
+    // skip past its own read-only role.
+    const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+    const writableBrandIds: string[] = []
+    for (const id of accessibleBrandIds) {
+      const role = await getBrandRole(id, userId)
+      if (role === 'owner' || role === 'editor') writableBrandIds.push(id)
+    }
 
     const results = []
-    for (const brand of brands || []) {
-      const result = await autoGenerateSnapshots(brand.id)
-      results.push({ brandId: brand.id, ...result })
+    for (const brandId of writableBrandIds) {
+      const result = await autoGenerateSnapshots(brandId)
+      results.push({ brandId, ...result })
     }
 
     return NextResponse.json({
@@ -164,17 +176,9 @@ export async function POST(req: NextRequest) {
     return err('brand_id is required', 400)
   }
 
-  // Verify access
-  const { data: brand } = await db
-    .from('brands')
-    .select('id')
-    .eq('id', brand_id)
-    .eq('user_id', userId)
-    .single()
-
-  if (!brand) {
-    return err('Brand not found or access denied', 404)
-  }
+  // Writing a snapshot takes editor rights on the brand.
+  const gate = await requireBrandRole(brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   const result = await autoGenerateSnapshots(brand_id)
 

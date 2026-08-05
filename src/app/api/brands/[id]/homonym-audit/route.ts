@@ -10,7 +10,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { requireBrandRole } from '@/lib/authorize'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { auditBrandMentions, getAuditStats, type BrandContext } from '@/lib/services/homonym-audit'
 import { logger } from '@/lib/logger'
@@ -29,18 +29,23 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
+// No userId parameter: access is settled by requireBrandRole at the entry
+// point, and taking one here invited the re-check that used to hide inside
+// this loader and lock collaborators out.
 async function loadBrandContext(
   db: NonNullable<ReturnType<typeof createServerClient>>,
   brandId: string,
-  userId: string,
 ): Promise<BrandContext | null> {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const { data, error } = await (db as any)
     .from('brands')
+    // Access is already settled by the caller. Re-filtering on `user_id` here
+    // was an ownership check hiding inside a data loader: a collaborator
+    // passed the access check at the door and then got null from this,
+    // surfacing as "brand not found" for a brand they were looking at.
     .select('name, domain, industry, description, aliases, disambiguation')
     .eq('id', brandId)
-    .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   /* eslint-enable @typescript-eslint/no-explicit-any */
   if (error || !data) return null
   return data as BrandContext
@@ -53,8 +58,9 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
 
-  const brand = await verifyBrandAccess(id, userId)
-  if (!brand) return err('Brand not found or access denied', 404)
+  // Reading the audit stats takes any role on the brand.
+  const gate = await requireBrandRole(id, userId, 'viewer')
+  if ('response' in gate) return gate.response
 
   const ip = getClientIp(req.headers)
   const rate = await checkRateLimit(`homonym-audit-get:${ip}`, 30, 60_000)
@@ -94,8 +100,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
 
-  const brand = await verifyBrandAccess(id, userId)
-  if (!brand) return err('Brand not found or access denied', 404)
+  // Running an audit costs LLM calls and writes back to the brand.
+  const gate = await requireBrandRole(id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   const ip = getClientIp(req.headers)
   // Tighter limit on POST — audits cost LLM calls. 3 runs / minute is
@@ -106,7 +113,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const ctx = await loadBrandContext(db, id, userId)
+  const ctx = await loadBrandContext(db, id)
   if (!ctx) return err('Brand context not loadable', 404)
 
   // Optional `limit` body param for power users / cron jobs to drain a

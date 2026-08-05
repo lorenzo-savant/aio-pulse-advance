@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { getTrends } from '@/lib/services/serp-tracker'
 
 export async function GET(request: NextRequest) {
@@ -34,12 +35,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
+  // Reading this needs any role on the brand. Ownership was too narrow: an invited
+  // collaborator was refused their own project's data.
+  const gate = await requireBrandRole(brandId, userId, 'viewer')
+  if ('response' in gate) return gate.response
+
   const { data: brand, error: brandError } = await db
     .from('brands')
     .select('id, name')
     .eq('id', brandId)
-    .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (brandError || !brand) {
     return NextResponse.json({ error: 'Brand not found' }, { status: 404 })

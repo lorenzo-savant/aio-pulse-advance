@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 import {
   getTemplatesByCategories,
@@ -58,12 +59,15 @@ export async function POST(req: NextRequest) {
 
   const { brandId, categories, engines } = parsed.data
 
+  // Seeding writes prompts into the brand.
+  const gate = await requireBrandRole(brandId, userId, 'editor')
+  if ('response' in gate) return gate.response
+
   const { data: brand, error: brandError } = await db
     .from('brands')
     .select('id, name, industry, competitors, domain, language')
     .eq('id', brandId)
-    .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (brandError || !brand) {
     return err('Brand not found or access denied', 404)
@@ -102,11 +106,12 @@ export async function POST(req: NextRequest) {
   const templates = getTemplatesByCategories(validCategories || [])
   const templatesAvailable = templates.length
 
+  // Dedupe against the brand's whole prompt set. Scoped to the caller, seeding
+  // re-inserted prompts a colleague had already added, as exact duplicates.
   const { data: existingPrompts } = await db
     .from('prompts')
     .select('id, text')
     .eq('brand_id', brandId)
-    .eq('user_id', userId)
 
   const existingTexts = new Set((existingPrompts || []).map((p) => p.text.toLowerCase().trim()))
   const skippedIds: string[] = (existingPrompts || []).map((p) => p.id)

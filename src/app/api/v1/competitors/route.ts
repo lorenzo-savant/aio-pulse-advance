@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { verifyApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
 import { withApiHandler } from '@/lib/api-utils'
+import { requireBrandRole, getAccessibleBrandIds } from '@/lib/authorize'
 
 function successResponse(data: unknown) {
   return NextResponse.json({ success: true, data, timestamp: Date.now() })
@@ -37,13 +38,8 @@ export const GET = withApiHandler('v1/competitors', async (req: NextRequest) => 
   if (!db) return errorResponse('Database not configured', 503)
 
   if (brandId) {
-    const { data: brand } = await db
-      .from('brands')
-      .select('id')
-      .eq('id', brandId)
-      .eq('user_id', userId)
-      .single()
-    if (!brand) return errorResponse('Brand not found', 404)
+    const gate = await requireBrandRole(brandId, userId, 'viewer')
+    if ('response' in gate) return errorResponse('Brand not found', 404)
 
     const { data, error } = await db
       .from('competitor_analyses')
@@ -56,10 +52,11 @@ export const GET = withApiHandler('v1/competitors', async (req: NextRequest) => 
     return successResponse(data || [])
   }
 
+  // No brand given — every analysis across the brands this key can reach.
   const { data, error } = await db
     .from('competitor_analyses')
     .select('id, brand_id, primary_url, competitors, summary, created_at')
-    .eq('user_id', userId)
+    .in('brand_id', await getAccessibleBrandIds(db, userId))
     .order('created_at', { ascending: false })
     .limit(limit)
 

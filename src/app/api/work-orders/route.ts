@@ -4,7 +4,7 @@ import { z } from 'zod'
 import type { Json } from '@/types/database'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, requireBrandRole } from '@/lib/authorize'
 import { currentGeoScore } from '@/lib/services/work-orders'
 import { logger } from '@/lib/logger'
 
@@ -147,14 +147,17 @@ export async function PATCH(req: NextRequest) {
   const { id, status } = parsed.data
 
   try {
-    // Load the work order (scoped to the user) to get its brand + baseline.
+    // Load the work order to get its brand + baseline, then gate on the BRAND:
+    // a work order is a task on the project, so any editor can move it along.
     const { data: existing } = await (db as any)
       .from('work_orders')
       .select('id, brand_id, baseline_geo_score')
       .eq('id', id)
-      .eq('user_id', userId)
       .maybeSingle()
     if (!existing) return err('Work order not found', 404)
+
+    const gate = await requireBrandRole(String(existing.brand_id), userId, 'editor')
+    if ('response' in gate) return gate.response
 
     const update: Record<string, unknown> = { status }
     if (status === 'done') {
@@ -173,7 +176,6 @@ export async function PATCH(req: NextRequest) {
       .from('work_orders')
       .update(update)
       .eq('id', id)
-      .eq('user_id', userId)
       .select()
       .single()
     if (error) return err(error.message)

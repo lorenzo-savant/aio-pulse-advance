@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, getAccessibleBrandIds } from '@/lib/authorize'
 import { workflowCreateSchema, firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import type { WorkflowExecution, WorkflowStatus, WorkflowType } from '@/types'
@@ -161,12 +161,20 @@ export async function GET(request: NextRequest) {
       }
       query = query.eq('brand_id', brandId)
     } else {
-      // No brand specified — restrict to the rows the user owns directly
-      // OR to brands they have access to. Workspace-level multi-tenancy
-      // makes the second part complex; for now, scope strictly to
-      // user_id = userId. Workflows for shared brands still show up when
-      // the caller picks that brand in the dropdown.
-      query = query.eq('user_id', userId)
+      // No brand specified — everything under a brand the caller can reach,
+      // PLUS their own brand-less workflows (brand_setup before a brand
+      // exists, data exports). The previous `user_id = caller` scope was a
+      // deliberate stopgap that made a colleague's runs invisible unless you
+      // already knew to pick the brand from the dropdown.
+      //
+      // UUID-shaped values only into the `.or()` interpolation, same hardening
+      // as /api/scans.
+      const UUID_RE = /^[0-9a-fA-F-]{36}$/
+      const safeIds = (await getAccessibleBrandIds(supabase, userId)).filter((b) => UUID_RE.test(b))
+      query =
+        safeIds.length > 0 && UUID_RE.test(userId)
+          ? query.or(`user_id.eq.${userId},brand_id.in.(${safeIds.join(',')})`)
+          : query.eq('user_id', userId)
     }
 
     const { data, error } = await query

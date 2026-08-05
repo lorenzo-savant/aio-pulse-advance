@@ -3,6 +3,7 @@ import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
@@ -123,6 +124,37 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
+/**
+ * Gate a write on a single alert row by the BRAND it belongs to.
+ *
+ * Every mutation here used to match on `user_id`, which meant a colleague could
+ * not silence a noisy rule, and — worse — the update simply affected 0 rows and
+ * still reported success, so the UI showed the change until the next reload.
+ *
+ * `is_read` is shared state too: marking an event read hides it for the whole
+ * team, so it is an editor action rather than a per-person dismissal.
+ */
+async function gateAlertWrite(
+  db: NonNullable<ReturnType<typeof createServerClient>>,
+  table: 'alert_rules' | 'alert_events',
+  id: string,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+  const { data: row } = await db.from(table).select('brand_id').eq('id', id).maybeSingle()
+
+  if (!row?.brand_id) {
+    return {
+      ok: false,
+      response: err(table === 'alert_events' ? 'Alert not found' : 'Alert rule not found', 404),
+    }
+  }
+
+  const gate = await requireBrandRole(String(row.brand_id), userId, 'editor')
+  if ('response' in gate) return { ok: false, response: gate.response }
+
+  return { ok: true }
+}
+
 // ─── GET /api/alerts ──────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   let userId: string
@@ -152,15 +184,23 @@ export async function GET(req: NextRequest) {
   const brandId = searchParams.get('brand_id')
   const type = searchParams.get('type')
 
+  // Alerts fire for a BRAND, so the whole team sees them. Scoping by `user_id`
+  // meant an alert raised by one collaborator's run was invisible to everyone
+  // else on the project — the notification reached exactly one person, at
+  // random, depending on who happened to trigger the scan.
+  const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+  if (brandId && !accessibleBrandIds.includes(brandId)) {
+    return err('Brand not found or access denied', 404)
+  }
+  const scope = brandId ? [brandId] : accessibleBrandIds
+
   if (type === 'events') {
-    let query = db
+    const query = db
       .from('alert_events')
       .select('*, brand:brands(name, color)')
-      .eq('user_id', String(userId))
+      .in('brand_id', scope)
       .order('created_at', { ascending: false })
       .limit(100)
-
-    if (brandId) query = query.eq('brand_id', brandId)
 
     const { data, error } = await query
     if (error) {
@@ -180,13 +220,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, data, timestamp: Date.now() })
   }
 
-  let query = db
+  const query = db
     .from('alert_rules')
     .select('*, brand:brands(name, color, slug)')
-    .eq('user_id', String(userId))
+    .in('brand_id', scope)
     .order('created_at', { ascending: false })
-
-  if (brandId) query = query.eq('brand_id', brandId)
 
   const { data, error } = await query
   if (error) {
@@ -250,16 +288,9 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { data: brand } = await db
-    .from('brands')
-    .select('id')
-    .eq('id', parsed.data.brand_id)
-    .eq('user_id', userId)
-    .single()
-
-  if (!brand) {
-    return err('Brand not found or access denied', 404)
-  }
+  // Creating an alert rule is a write on the brand.
+  const gate = await requireBrandRole(parsed.data.brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   const { data, error } = await db
     .from('alert_rules')
@@ -303,23 +334,24 @@ export async function PUT(req: NextRequest) {
   if (!id) return err('id query parameter is required', 400)
 
   if (action === 'read') {
-    const { error } = await db
-      .from('alert_events')
-      .update({ is_read: true })
-      .eq('id', id)
-      .eq('user_id', userId)
+    const allowed = await gateAlertWrite(db, 'alert_events', id, userId)
+    if (!allowed.ok) return allowed.response
+
+    const { error } = await db.from('alert_events').update({ is_read: true }).eq('id', id)
 
     if (error) return err(error.message)
     return NextResponse.json({ success: true, data: null, timestamp: Date.now() })
   }
 
   if (action === 'toggle') {
+    const allowed = await gateAlertWrite(db, 'alert_rules', id, userId)
+    if (!allowed.ok) return allowed.response
+
     const { data: rule } = await db
       .from('alert_rules')
       .select('is_active')
       .eq('id', id)
-      .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (!rule) return err('Alert rule not found', 404)
 
@@ -327,7 +359,6 @@ export async function PUT(req: NextRequest) {
       .from('alert_rules')
       .update({ is_active: !rule.is_active })
       .eq('id', id)
-      .eq('user_id', userId)
       .select()
       .single()
 
@@ -354,11 +385,13 @@ export async function PUT(req: NextRequest) {
     )
   }
 
+  const allowed = await gateAlertWrite(db, 'alert_rules', id, userId)
+  if (!allowed.ok) return allowed.response
+
   const { data, error } = await db
     .from('alert_rules')
     .update(parsed.data)
     .eq('id', id)
-    .eq('user_id', userId)
     .select()
     .single()
 
@@ -399,7 +432,10 @@ export async function DELETE(req: NextRequest) {
 
   const table = type === 'event' ? 'alert_events' : 'alert_rules'
 
-  const { error } = await db.from(table).delete().eq('id', id).eq('user_id', userId)
+  const allowed = await gateAlertWrite(db, table, id, userId)
+  if (!allowed.ok) return allowed.response
+
+  const { error } = await db.from(table).delete().eq('id', id)
 
   if (error) return err(error.message)
   return NextResponse.json({ success: true, data: null, timestamp: Date.now() })

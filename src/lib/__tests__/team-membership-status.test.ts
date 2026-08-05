@@ -102,9 +102,19 @@ describe('team_members.status — access-check consistency', () => {
     },
   )
 
-  it.each(ACCESS_CHECK_FILES)('%s denylists pending and declined', (file) => {
+  // Brand access is now resolved in one place (authorize.ts: getBrandRole /
+  // requireBrandRole / getAccessibleBrandIds). A route is therefore correct in
+  // one of two ways: it queries team_members itself AND denylists, or it does
+  // not touch the table and delegates. What must never come back is a third
+  // hand-rolled variant that forgets the status filter — which is exactly how
+  // monitoring once let a merely-invited user spend the owner's credits.
+  it.each(ACCESS_CHECK_FILES)('%s denylists pending and declined, or delegates', (file) => {
     const src = read(file)
-    expect(src).toMatch(/\.not\(\s*'status',\s*'in',/)
+    if (src.includes("from('team_members')")) {
+      expect(src).toMatch(/\.not\(\s*'status',\s*'in',/)
+    } else {
+      expect(src).toMatch(/from '@\/lib\/authorize'/)
+    }
   })
 
   it('the shared denylist excludes exactly the two non-granting states', () => {
@@ -118,9 +128,12 @@ describe('team_members.status — access-check consistency', () => {
 
   it('monitoring gates on membership status at all', () => {
     // This check shipped with NO status filter, so a merely-invited user
-    // counted as a team member and could spend the owner's credits.
+    // counted as a team member and could spend the owner's credits. It no
+    // longer builds the query itself — it asks requireBrandRole, which applies
+    // the denylist centrally. Assert the delegation, and that no hand-rolled
+    // membership query has crept back in beside it.
     const src = read('app/api/monitoring/route.ts')
-    const block = src.slice(src.indexOf("from('team_members')"))
-    expect(block.slice(0, 400)).toMatch(/\.not\(\s*'status',\s*'in',/)
+    expect(src).not.toMatch(/from\('team_members'\)/)
+    expect(src).toMatch(/requireBrandRole\(/)
   })
 })

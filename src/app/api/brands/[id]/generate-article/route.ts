@@ -9,7 +9,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { requireBrandRole } from '@/lib/authorize'
 import { guardWithTier } from '@/lib/rate-limit-tiers'
 import {
   generateArticle,
@@ -36,10 +36,12 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
+// No userId parameter: access is settled by requireBrandRole at the entry
+// point, and taking one here invited the re-check that used to hide inside
+// this loader and lock collaborators out.
 async function loadBrandContext(
   db: NonNullable<ReturnType<typeof createServerClient>>,
   brandId: string,
-  userId: string,
 ): Promise<ArticleBrandContext | null> {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const { data, error } = await (db as any)
@@ -47,9 +49,10 @@ async function loadBrandContext(
     .select(
       'name, domain, description, industry, aliases, competitors, same_as, disambiguation, citation_format, legal_id, legal_id_type, language',
     )
+    // Access is already settled by the caller; re-checking ownership here made
+    // the loader return null for a collaborator who had just been let in.
     .eq('id', brandId)
-    .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   /* eslint-enable @typescript-eslint/no-explicit-any */
   if (error || !data) return null
   return {
@@ -75,8 +78,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
 
-  const brand = await verifyBrandAccess(id, userId)
-  if (!brand) return err('Brand not found or access denied', 404)
+  // This writes back to the brand and calls a paid model, so it takes editor
+  // rights rather than plain access.
+  const gate = await requireBrandRole(id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   // Per-USER rate limit (not per-IP). The 'ai_heavy' tier in
   // src/lib/rate-limit-tiers.ts caps at 5/min — generous for human use,
@@ -103,7 +108,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const brandContext = await loadBrandContext(db, id, userId)
+  const brandContext = await loadBrandContext(db, id)
   if (!brandContext) return err('Brand context not loadable', 404)
 
   try {

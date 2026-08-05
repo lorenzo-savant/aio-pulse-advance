@@ -12,7 +12,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, requireBrandRole } from '@/lib/authorize'
 import { runFactVerification } from '@/lib/services/fact-verifier'
 import { logger } from '@/lib/logger'
 
@@ -87,7 +87,9 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return err(parsed.error.issues.map((i) => i.message).join('; '), 400)
 
   const { brand_id, fact_type, value, notes } = parsed.data
-  if (!(await verifyBrandAccess(brand_id, userId))) return err('Forbidden', 403)
+  // Writes and paid work on a brand take editor rights: a viewer reads.
+  const gate = await requireBrandRole(brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
@@ -137,10 +139,18 @@ export async function DELETE(req: NextRequest) {
     .single()
   /* eslint-enable @typescript-eslint/no-explicit-any */
   if (lookupErr || !row) return err('Brand fact not found', 404)
-  if (!(await verifyBrandAccess(row.brand_id as string, userId))) return err('Forbidden', 403)
+  // Writes and paid work on a brand take editor rights: a viewer reads.
+  const gate = await requireBrandRole(row.brand_id as string, userId, 'editor')
+  if ('response' in gate) return gate.response
 
+  // Pin the delete to the brand the gate actually authorised. Deleting on the
+  // id alone would let a race or a reparented row fall through the check.
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  const { error } = await (db as any).from('brand_facts').delete().eq('id', id)
+  const { error } = await (db as any)
+    .from('brand_facts')
+    .delete()
+    .eq('id', id)
+    .eq('brand_id', row.brand_id as string)
   /* eslint-enable @typescript-eslint/no-explicit-any */
   if (error) {
     logger.error('/api/brand-facts DELETE failed', { err: String(error) })

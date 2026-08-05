@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { getTrends } from '@/lib/services/serp-tracker'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -34,12 +36,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
+  // Reading this needs any role on the brand. Ownership was too narrow: an invited
+  // collaborator was refused their own project's data.
+  const gate = await requireBrandRole(brandId, userId, 'viewer')
+  if ('response' in gate) return gate.response
+
   const { data: brand, error: brandError } = await db
     .from('brands')
     .select('id, name')
     .eq('id', brandId)
-    .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (brandError || !brand) {
     return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
@@ -56,9 +62,10 @@ export async function GET(request: NextRequest) {
       trends,
     })
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch trends' },
-      { status: 500 },
-    )
+    // Was the only unlogged 500 in the API, and it forwarded the raw exception
+    // message to the client: nothing to debug from, and internals on the wire.
+    const message = error instanceof Error ? error.message : String(error)
+    logger.error('serp/trends failed', { brandId, error: message })
+    return NextResponse.json({ error: 'Failed to fetch trends' }, { status: 500 })
   }
 }

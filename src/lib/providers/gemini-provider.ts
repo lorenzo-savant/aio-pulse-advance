@@ -1,5 +1,6 @@
 import type { AIProviderRequest, AIProviderResult } from './types'
 import { BaseProvider } from './base-provider'
+import { estimateBlendedCost } from '@/lib/cost-monitor/types'
 
 export class GeminiProvider extends BaseProvider {
   readonly id = 'gemini' as const
@@ -66,6 +67,13 @@ export class GeminiProvider extends BaseProvider {
   }
 
   protected override estimateCost(tokens: number): number {
-    return tokens * 0.000075
+    // Was `tokens * 0.000075`, i.e. the PER-MILLION price used as a per-token
+    // one: $75 per million tokens against a real $0.075–$0.30. Roughly 250×,
+    // flowing into ai_cost_logs through the agent path.
+    //
+    // Only a total token count is available here, so this prices all of it at
+    // the higher output rate — an estimate that errs upward is the right way
+    // for a number a budget alert reads.
+    return estimateBlendedCost('gemini-2.5-flash', tokens)
   }
 }

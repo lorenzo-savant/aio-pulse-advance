@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { getAccessibleBrandIds, getBrandRole, requireBrandRole } from '@/lib/authorize'
 import { workflowCreateSchema, firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 import type { WorkflowExecution, WorkflowStatus, WorkflowType } from '@/types'
@@ -153,20 +153,24 @@ export async function GET(request: NextRequest) {
       .limit(limit)
 
     if (brandId) {
-      if (!(await verifyBrandAccess(brandId, userId))) {
-        return NextResponse.json(
-          { success: false, message: 'Forbidden', data: [] },
-          { status: 403 },
-        )
-      }
+      const gate = await requireBrandRole(brandId, userId, 'viewer')
+      if ('response' in gate) return gate.response
       query = query.eq('brand_id', brandId)
     } else {
-      // No brand specified — restrict to the rows the user owns directly
-      // OR to brands they have access to. Workspace-level multi-tenancy
-      // makes the second part complex; for now, scope strictly to
-      // user_id = userId. Workflows for shared brands still show up when
-      // the caller picks that brand in the dropdown.
-      query = query.eq('user_id', userId)
+      // No brand specified — everything under a brand the caller can reach,
+      // PLUS their own brand-less workflows (brand_setup before a brand
+      // exists, data exports). The previous `user_id = caller` scope was a
+      // deliberate stopgap that made a colleague's runs invisible unless you
+      // already knew to pick the brand from the dropdown.
+      //
+      // UUID-shaped values only into the `.or()` interpolation, same hardening
+      // as /api/scans.
+      const UUID_RE = /^[0-9a-fA-F-]{36}$/
+      const safeIds = (await getAccessibleBrandIds(supabase, userId)).filter((b) => UUID_RE.test(b))
+      query =
+        safeIds.length > 0 && UUID_RE.test(userId)
+          ? query.or(`user_id.eq.${userId},brand_id.in.(${safeIds.join(',')})`)
+          : query.eq('user_id', userId)
     }
 
     const { data, error } = await query
@@ -235,10 +239,14 @@ async function loadAccessibleWorkflow(
 
   const row = data as unknown as WorkflowRow
   const hasAccess = row.brand_id
-    ? !!(await verifyBrandAccess(row.brand_id, userId))
+    ? (await getBrandRole(row.brand_id, userId)) !== null
     : row.user_id === userId
   if (!hasAccess) {
-    return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
+    // A stranger (no role) must not learn that the workflow or its brand
+    // exists — answer like a missing resource, matching the branch's 404
+    // policy. A viewer with an insufficient role is still forbidden, but the
+    // rerun path re-gates on editor above the viewer floor this grants.
+    return NextResponse.json({ success: false, message: 'Workflow not found' }, { status: 404 })
   }
   return row
 }
@@ -380,6 +388,15 @@ export async function POST(request: NextRequest) {
       }
       const loaded = await loadAccessibleWorkflow(supabase, actionId, userId)
       if (loaded instanceof NextResponse) return loaded
+
+      // `cancel` is a viewer action (anyone who can see the workflow may stop
+      // it). `rerun` re-dispatches a job that re-runs monitoring and pays for
+      // LLM work, so it takes editor rights like every other write/spend path.
+      if (action === 'rerun' && loaded.brand_id) {
+        const gate = await requireBrandRole(loaded.brand_id, userId, 'editor')
+        if ('response' in gate) return gate.response
+      }
+
       return action === 'cancel'
         ? cancelWorkflowExecution(supabase, loaded)
         : rerunWorkflowExecution(request, loaded)
@@ -395,9 +412,13 @@ export async function POST(request: NextRequest) {
     }
     const { type, brandId, promptId, metadata } = parsed.data
 
-    // A workflow scoped to a brand requires access to that brand.
-    if (brandId && !(await verifyBrandAccess(brandId, userId))) {
-      return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
+    // A workflow scoped to a brand creates a row and starts work that can
+    // spend, so it takes editor rights (matching every other write path in
+    // this change). Refusing via requireBrandRole also answers strangers with
+    // 404 instead of leaking that the brand exists.
+    if (brandId) {
+      const gate = await requireBrandRole(brandId, userId, 'editor')
+      if ('response' in gate) return gate.response
     }
 
     // userId is taken from the authenticated session, never from the body.

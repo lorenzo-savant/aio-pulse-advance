@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, requireBrandRole } from '@/lib/authorize'
 import { logger } from '@/lib/logger'
 import { trackKeywords } from '@/lib/services/keyword-tracker'
 
@@ -118,9 +118,9 @@ export async function POST(req: NextRequest) {
   }
   const brandId = parsed.data.brand_id
 
-  if (!(await verifyBrandAccess(brandId, userId))) {
-    return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
-  }
+  // Writes and paid work on a brand take editor rights: a viewer reads.
+  const gate = await requireBrandRole(brandId, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   try {
     await trackKeywords(brandId)

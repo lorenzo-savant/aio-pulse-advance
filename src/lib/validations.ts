@@ -196,7 +196,9 @@ export function firstZodMessage(error: z.ZodError, fallback = 'Invalid request b
 export const aiAgentMessageSchema = z.object({
   message: z.string().trim().min(1, 'Message required').max(10_000),
   agentId: z.string().max(100).optional(),
-  brandId: z.string().max(100).optional(),
+  // A brand id is a uuid. Accepting any 100-char string let a caller name a
+  // brand that could not exist and reach code that assumed it did.
+  brandId: z.string().uuid().optional(),
   conversationId: z.string().max(100).optional(),
   context: z.any().optional(),
 })

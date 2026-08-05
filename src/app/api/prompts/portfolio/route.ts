@@ -57,10 +57,13 @@ export async function GET(req: NextRequest) {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     const [{ data: prompts, error: pErr }, { data: monitoring, error: mErr }] = await Promise.all([
       (db as any)
+        // Brand-scoped, like the monitoring_results query beside it. Filtering
+        // prompts by author while results were filtered by brand compared two
+        // different populations: coverage was computed against a fraction of
+        // the prompts and read higher than it was.
         .from('prompts')
         .select('id, text')
         .eq('brand_id', brandId)
-        .eq('user_id', userId)
         .limit(500),
       (db as any)
         .from('monitoring_results')

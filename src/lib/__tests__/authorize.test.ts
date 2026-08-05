@@ -28,16 +28,21 @@ function buildChain(table: string) {
     // identifying one, so it must not take part in the lookup key. Rows placed
     // in queryResults represent memberships that already passed the filter.
     not: () => chain,
-    single: () => {
-      // Try exact key first, then table-only fallback
-      const key = resultKey(table, filters)
-      if (queryResults[key]) return queryResults[key]
-      // Fallback: just the table name (for simpler setups)
-      if (queryResults[table]) return queryResults[table]
-      return { data: null, error: null }
-    },
+    single: () => resolve(table, filters),
+    // The role helpers use maybeSingle: "no row" is an ordinary answer there
+    // (no membership), not an error worth constructing.
+    maybeSingle: () => resolve(table, filters),
   }
   return chain
+}
+
+function resolve(table: string, filters: Record<string, string>) {
+  // Try exact key first, then table-only fallback
+  const key = resultKey(table, filters)
+  if (queryResults[key]) return queryResults[key]
+  // Fallback: just the table name (for simpler setups)
+  if (queryResults[table]) return queryResults[table]
+  return { data: null, error: null }
 }
 
 const mockFrom = vi.fn((table: string) => buildChain(table))
@@ -58,6 +63,9 @@ import {
   verifyAlertOwnership,
   canEditBrand,
   getAccessibleBrandIds,
+  getBrandRole,
+  requireBrandRole,
+  getBrandBillingUserId,
 } from '../authorize'
 import { createServerClient } from '@/lib/supabase'
 
@@ -534,5 +542,131 @@ describe('getAccessibleBrandIds', () => {
     const db = createMockDb([{ id: 'b1' }], [{ brand_id: 'b1' }])
     const result = await getAccessibleBrandIds(db, USER_ID)
     expect(result).toEqual(['b1'])
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// getBrandRole / requireBrandRole / getBrandBillingUserId
+//
+// These encode the rule the product actually wants: a brand is a shared
+// project. Everyone on it reads everything; owners and editors write; a viewer
+// does not. The bug these replace was subtler than a missing permission — the
+// brand was reachable but its CONTENTS were filtered by `user_id = <viewer>`,
+// so an invited colleague opened Relovie and found 0 of its 13 prompts.
+// ═══════════════════════════════════════════════════════════════════════════
+describe('getBrandRole', () => {
+  it('reports owner from the brand row', async () => {
+    queryResults[resultKey('brands', { id: BRAND_ID })] = {
+      data: { user_id: USER_ID },
+      error: null,
+    }
+    expect(await getBrandRole(BRAND_ID, USER_ID)).toBe('owner')
+  })
+
+  it('reports the membership role for a collaborator', async () => {
+    queryResults[resultKey('brands', { id: BRAND_ID })] = {
+      data: { user_id: OTHER_USER },
+      error: null,
+    }
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID })] = {
+      data: { role: 'editor' },
+      error: null,
+    }
+    expect(await getBrandRole(BRAND_ID, USER_ID)).toBe('editor')
+  })
+
+  it('returns null for a stranger', async () => {
+    queryResults[resultKey('brands', { id: BRAND_ID })] = {
+      data: { user_id: OTHER_USER },
+      error: null,
+    }
+    expect(await getBrandRole(BRAND_ID, USER_ID)).toBeNull()
+  })
+
+  it('owner of the brand outranks a stale membership row calling them a viewer', async () => {
+    queryResults[resultKey('brands', { id: BRAND_ID })] = {
+      data: { user_id: USER_ID },
+      error: null,
+    }
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID })] = {
+      data: { role: 'viewer' },
+      error: null,
+    }
+    expect(await getBrandRole(BRAND_ID, USER_ID)).toBe('owner')
+  })
+
+  it('treats an unrecognised role as viewer, never as write access', async () => {
+    // The column is free text behind a CHECK. Anything unexpected must fall to
+    // the least privilege that still grants access — silently reading it as
+    // edit is how a viewer would end up spending the owner's credits.
+    queryResults[resultKey('brands', { id: BRAND_ID })] = {
+      data: { user_id: OTHER_USER },
+      error: null,
+    }
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID })] = {
+      data: { role: 'administrator' },
+      error: null,
+    }
+    expect(await getBrandRole(BRAND_ID, USER_ID)).toBe('viewer')
+  })
+})
+
+describe('requireBrandRole', () => {
+  function asMember(role: string) {
+    queryResults[resultKey('brands', { id: BRAND_ID })] = {
+      data: { user_id: OTHER_USER },
+      error: null,
+    }
+    queryResults[resultKey('team_members', { brand_id: BRAND_ID, user_id: USER_ID })] = {
+      data: { role },
+      error: null,
+    }
+  }
+
+  it('lets an editor write', async () => {
+    asMember('editor')
+    const gate = await requireBrandRole(BRAND_ID, USER_ID, 'editor')
+    expect(gate).toEqual({ role: 'editor' })
+  })
+
+  it('lets a viewer read', async () => {
+    asMember('viewer')
+    const gate = await requireBrandRole(BRAND_ID, USER_ID, 'viewer')
+    expect(gate).toEqual({ role: 'viewer' })
+  })
+
+  it('refuses a viewer who tries to write, with 403', async () => {
+    asMember('viewer')
+    const gate = await requireBrandRole(BRAND_ID, USER_ID, 'editor')
+    expect('response' in gate).toBe(true)
+    expect((gate as { response: { status: number } }).response.status).toBe(403)
+  })
+
+  it('answers a stranger with 404, not 403', async () => {
+    // A stranger must not learn that the brand exists; a viewer already knows
+    // and needs to be told why the action was refused.
+    queryResults[resultKey('brands', { id: BRAND_ID })] = {
+      data: { user_id: OTHER_USER },
+      error: null,
+    }
+    const gate = await requireBrandRole(BRAND_ID, USER_ID, 'viewer')
+    expect('response' in gate).toBe(true)
+    expect((gate as { response: { status: number } }).response.status).toBe(404)
+  })
+})
+
+describe('getBrandBillingUserId', () => {
+  it('bills the brand owner, not the caller', async () => {
+    // One project, one budget: a collaborator with an empty balance must still
+    // be able to run the analyses they were invited to run.
+    queryResults[resultKey('brands', { id: BRAND_ID })] = {
+      data: { user_id: OTHER_USER },
+      error: null,
+    }
+    expect(await getBrandBillingUserId(BRAND_ID)).toBe(OTHER_USER)
+  })
+
+  it('returns null when the brand is gone', async () => {
+    expect(await getBrandBillingUserId(BRAND_ID)).toBeNull()
   })
 })

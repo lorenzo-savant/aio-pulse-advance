@@ -7,6 +7,7 @@ import { logger } from '@/lib/logger'
 import {
   computeShareOfVoice,
   computeShareOfVoiceByEngine,
+  type SovOptions,
   type SovInputRow,
 } from '@/lib/services/share-of-voice'
 import { classifyMarketPosition } from '@/lib/services/market-position'
@@ -78,11 +79,15 @@ export async function GET(req: NextRequest) {
     }
 
     const rows = (data ?? []) as Array<SovInputRow & { sentiment_score: number | null }>
-    const sov = computeShareOfVoice(rows as SovInputRow[], brand.name, { bucket })
+    // Only the brand's DECLARED competitors are ranked. Anything else the
+    // model named lands in `sov.discovered` — still counted in the denominator,
+    // never presented as a rival holding market share.
+    const sovOpts: SovOptions = { bucket, declaredCompetitors: brand.competitors ?? [] }
+    const sov = computeShareOfVoice(rows as SovInputRow[], brand.name, sovOpts)
     // Per-engine breakdown — only computed when the caller asks for it,
     // so the legacy aggregate-only response stays cheap.
     const byEngine = includeByEngine
-      ? computeShareOfVoiceByEngine(rows as SovInputRow[], brand.name, { bucket }).byEngine
+      ? computeShareOfVoiceByEngine(rows as SovInputRow[], brand.name, sovOpts).byEngine
       : null
 
     // ── Market Position (HubSpot-style role + perception) from REAL signals ──

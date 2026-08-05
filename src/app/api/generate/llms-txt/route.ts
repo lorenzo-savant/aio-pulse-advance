@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { asUntyped } from '@/lib/supabase-untyped'
 import { z } from 'zod'
 import type { LlmsInput } from '@/lib/services/llms-generator'
@@ -94,11 +95,15 @@ export async function GET(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
+  // Version history belongs to the brand — a colleague must see the versions
+  // someone else generated, or they will regenerate what already exists.
+  const gate = await requireBrandRole(brandId, userId, 'viewer')
+  if ('response' in gate) return gate.response
+
   const { data, error: fetchErr } = await db
     .from('llms_txt_versions')
     .select('id, brand_id, version, llms_txt, llms_full_txt, input_data, created_at')
     .eq('brand_id', brandId)
-    .eq('user_id', userId)
     .order('version', { ascending: false })
     .limit(10)
 
@@ -153,6 +158,10 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
+  // Generating a new version writes to the brand.
+  const gate = await requireBrandRole(brandId, userId, 'editor')
+  if ('response' in gate) return gate.response
+
   // Route through asUntyped because `legal_id` / `legal_id_type` (plus the
   // earlier LLMO trio) aren't in the generated Database type until the
   // operator runs `npm run db:gen-types` after applying the migration.
@@ -163,8 +172,7 @@ export async function POST(req: NextRequest) {
       'id, name, domain, description, industry, competitors, aliases, language, same_as, disambiguation, citation_format, legal_id, legal_id_type',
     )
     .eq('id', brandId)
-    .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (brandError || !brand) {
     return err('Brand not found or access denied', 404)

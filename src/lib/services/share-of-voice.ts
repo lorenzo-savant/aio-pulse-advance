@@ -8,6 +8,7 @@
 // route feeds it raw monitoring_results rows.
 
 import type { CompetitorMention } from '@/types'
+import { buildCompetitorMatcher } from './competitor-identity'
 
 export interface SovInputRow {
   brand_mentioned: boolean | null
@@ -51,6 +52,26 @@ export interface ShareOfVoice {
   totalResponses: number
   /** Names included in the timeline series (brand + top competitors). */
   series: string[]
+  /**
+   * Names the model reported that are NOT on the brand's declared competitor
+   * list. Empty unless `declaredCompetitors` was supplied.
+   *
+   * These are observations, not verdicts: possibly a competitor nobody thought
+   * to declare, possibly the model free-associating. They stay OUT of
+   * `entities` — no rank, no market share of their own, no place in the
+   * executive summary — but their mentions remain in the share denominator, so
+   * removing them from the table does not silently inflate the brand's share.
+   */
+  discovered: SovDiscovered[]
+  /** Combined share of all discovered names, 0–100. */
+  discoveredShare: number
+}
+
+export interface SovDiscovered {
+  name: string
+  mentions: number
+  /** Share of all brand+competitor mentions, 0–100 (one decimal). */
+  share: number
 }
 
 const round1 = (v: number) => Math.round(v * 10) / 10
@@ -80,6 +101,14 @@ export interface SovOptions {
   maxSeries?: number
   /** Time bucket for the historical series. Default 'day'. */
   bucket?: 'day' | 'week'
+  /**
+   * The brand's declared competitor list. Supply it and only these names are
+   * ranked as competitors; anything else the model named is reported under
+   * `discovered` instead. Omit it and every name is ranked, which is the old
+   * behaviour — kept so existing callers and the historical series are
+   * unchanged until they opt in.
+   */
+  declaredCompetitors?: readonly string[]
 }
 
 /** Per-entity share volatility across the timeline. Pure aggregation over the
@@ -138,6 +167,7 @@ export function computeShareOfVoice(
   const maxSeries = opts.maxSeries ?? 5
   const bucket = opts.bucket ?? 'day'
   const brandKey = brandName.trim().toLowerCase()
+  const matcher = buildCompetitorMatcher(opts.declaredCompetitors ?? null)
 
   const tallies = new Map<string, Tally>()
   tallies.set(brandKey, emptyTally(brandName, true))
@@ -183,9 +213,26 @@ export function computeShareOfVoice(
   }
 
   const all = [...tallies.values()]
+  // The denominator is EVERY mention, declared or not. Dropping discovered
+  // names from it would hand the brand a larger share simply because the model
+  // named someone unfamiliar, which is the opposite of what filtering is for.
   const totalMentions = all.reduce((s, t) => s + t.mentions, 0)
 
+  const isRanked = (t: Tally) => t.isBrand || !matcher.hasDeclaredList || matcher.isDeclared(t.name)
+
+  const discovered: SovDiscovered[] = all
+    .filter((t) => !isRanked(t))
+    .sort((a, b) => b.mentions - a.mentions)
+    .map((t) => ({
+      name: t.name,
+      mentions: t.mentions,
+      share: totalMentions > 0 ? round1((t.mentions / totalMentions) * 100) : 0,
+    }))
+
+  const discoveredShare = round1(discovered.reduce((s, d) => s + d.share, 0))
+
   const entities: SovEntity[] = all
+    .filter(isRanked)
     .map((t) => {
       const stats = entityShareStats(byDate, t.name.toLowerCase())
       return {
@@ -202,11 +249,13 @@ export function computeShareOfVoice(
     // Brand first, then competitors by descending share.
     .sort((a, b) => (a.isBrand === b.isBrand ? b.mentions - a.mentions : a.isBrand ? -1 : 1))
 
-  // Timeline series: brand + the top competitors by total mentions.
+  // Timeline series: brand + the top RANKED competitors by total mentions. A
+  // discovered name must not get its own trend line either — a chart is an
+  // assertion that the thing plotted is a competitor.
   const seriesKeys = [
     brandKey,
     ...all
-      .filter((t) => !t.isBrand)
+      .filter((t) => !t.isBrand && isRanked(t))
       .sort((a, b) => b.mentions - a.mentions)
       .slice(0, maxSeries)
       .map((t) => t.name.toLowerCase()),
@@ -227,7 +276,7 @@ export function computeShareOfVoice(
       return { date, shares }
     })
 
-  return { entities, timeline, totalResponses, series }
+  return { entities, timeline, totalResponses, series, discovered, discoveredShare }
 }
 
 // ─── Per-engine variant ────────────────────────────────────────────────────

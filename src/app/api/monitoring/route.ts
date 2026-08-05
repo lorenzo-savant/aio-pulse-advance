@@ -12,7 +12,9 @@ import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 import { trackKeywords } from '@/lib/services/keyword-tracker'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { consumeCreditsForQuery } from '@/lib/services/credits'
-import { INACTIVE_MEMBER_STATUSES } from '@/lib/authorize'
+import { getCostTracker } from '@/lib/cost-monitor'
+import { estimateBlendedCost, pricingKeyForProviderLabel } from '@/lib/cost-monitor/types'
+import { getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 import type { Brand, Prompt, MonitoringResult, AlertRule } from '@/types'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -83,45 +85,28 @@ export async function POST(req: NextRequest) {
     return err('Prompt not found', 404)
   }
 
-  // Now check access: either user owns the brand OR user owns the prompt
   const brand = prompt.brand as Brand
 
-  // Convert to strings for comparison (user_id could be UUID or string)
-  const brandOwnerId = String(brand.user_id ?? '')
-  const promptOwnerId = String(prompt.user_id ?? '')
-  const requestUserId = String(userId)
+  // Running a prompt writes results into the brand and spends its credits, so
+  // it takes editor rights on the brand — a viewer may read the results but not
+  // produce more. The previous check also admitted the prompt's AUTHOR
+  // regardless of brand access, which stopped making sense once prompts became
+  // brand-scoped: authorship is provenance, not permission.
+  const gate = await requireBrandRole(String(brand.id), userId, 'editor')
+  if ('response' in gate) return gate.response
 
-  const isBrandOwner = brandOwnerId === requestUserId
-  const isPromptOwner = promptOwnerId === requestUserId
-
-  // Also check team membership. The status filter was MISSING here, so a
-  // merely invited (still pending) or declined user passed as a team member
-  // and could spend the brand owner's credits — the opposite failure from the
-  // brand list, which allowlisted a status no row ever has.
-  const { data: membership } = await db
-    .from('team_members')
-    .select('id')
-    .eq('brand_id', brand.id)
-    .eq('user_id', userId)
-    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
-    .single()
-
-  const isTeamMember = !!membership
+  // One project, one budget: the brand owner pays, whoever presses the button.
+  // Billing the caller instead would leave a collaborator with an empty balance
+  // unable to run the very analyses they were invited to run, and would scatter
+  // one brand's spend across every account that touched it.
+  const billingUserId = String(brand.user_id ?? '')
 
   logger.debug('Access check', {
     source: 'monitoring',
-    isBrandOwner,
-    isPromptOwner,
-    isTeamMember,
-    promptUserId: promptOwnerId,
-    brandUserId: brandOwnerId,
-    requestUserId,
+    role: gate.role,
+    brandId: String(brand.id),
+    billingUserId,
   })
-
-  // Return 403 for access denied, not 404 (security best practice)
-  if (!isBrandOwner && !isPromptOwner && !isTeamMember) {
-    return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
-  }
 
   // ── Resolve engines ───────────────────────────────────────────────────────
   const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
@@ -147,7 +132,7 @@ export async function POST(req: NextRequest) {
     // /api/credits/use that forwarded the caller's cookie/authorization and
     // derived the origin from the inbound Host header — double invocation,
     // second rate-limit token, and a header-forwarding hazard.
-    const creditDecision = await consumeCreditsForQuery(requestUserId, {
+    const creditDecision = await consumeCreditsForQuery(billingUserId, {
       engines,
       brandId: brand.id,
       queryId: prompt.id,
@@ -265,11 +250,34 @@ export async function POST(req: NextRequest) {
               : resultData.response_text,
         }
 
-        const { data: saved, error: insertError } = await db
+        // `response_provider` / `citation_source` arrive with migration
+        // 20260805090000. Until it is applied, inserting them fails the whole
+        // row — so a deploy that ships this code ahead of the migration would
+        // stop monitoring entirely. Retry once without them; the run still
+        // records everything else, just without provenance. Same shape as the
+        // confusion_* columns already handled elsewhere.
+        let { data: saved, error: insertError } = await db
           .from('monitoring_results')
           .insert(truncatedData)
           .select()
           .single()
+
+        if (insertError && /response_provider|citation_source/.test(insertError.message ?? '')) {
+          logger.warn('monitoring: provenance columns missing, inserting without them', {
+            source: 'monitoring',
+            hint: 'apply supabase/migrations/20260805090000_monitoring_result_provenance.sql',
+          })
+          const {
+            response_provider: _provider,
+            citation_source: _citationSource,
+            ...withoutProvenance
+          } = truncatedData
+          ;({ data: saved, error: insertError } = await db
+            .from('monitoring_results')
+            .insert(withoutProvenance)
+            .select()
+            .single())
+        }
 
         if (insertError || !saved) {
           logger.error('DB insert error', {
@@ -282,6 +290,38 @@ export async function POST(req: NextRequest) {
         }
 
         results.push(saved as unknown as MonitoringResult)
+
+        // ── Record what this run cost ──────────────────────────────────────
+        // `ai_cost_logs` had exactly two writers, neither on this path — and
+        // monitoring is by far the highest-volume LLM consumer in the product.
+        // So both cost dashboards and the budget manager have been reading an
+        // almost-empty table: spend that is invisible cannot be capped, and a
+        // budget alert that never fires looks identical to one that never
+        // needed to. Best-effort — a failure here must never lose a result
+        // that has already been persisted and paid for.
+        try {
+          const provider = String(resultData.response_provider ?? engine)
+          const promptTokens = Math.ceil((resultData.prompt_text?.length ?? 0) / 4)
+          const responseTokens = Math.ceil((resultData.response_text?.length ?? 0) / 4)
+          await getCostTracker().logCost({
+            userId: billingUserId,
+            brandId: brand.id,
+            provider,
+            model: pricingKeyForProviderLabel(provider),
+            inputTokens: promptTokens,
+            outputTokens: responseTokens,
+            costUsd: estimateBlendedCost(provider, promptTokens + responseTokens),
+            costCredits: 0,
+            endpoint: '/api/monitoring',
+            success: true,
+          })
+        } catch (costErr) {
+          logger.warn('monitoring: cost logging failed', {
+            source: 'monitoring',
+            engine,
+            error: String(costErr),
+          })
+        }
 
         // ── Evaluate alert rules (use already-fetched rules) ────────────────
         if (rules && rules.length > 0) {
@@ -471,10 +511,11 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const offset = (page - 1) * limit
 
-  // Resolve brands owned by user (handles UUID vs string mismatch on user_id col)
-  const { data: ownedBrands } = await db.from('brands').select('id').eq('user_id', userId)
-  const ownedBrandIds = (ownedBrands ?? []).map((b: { id: string }) => b.id)
-  if (ownedBrandIds.length === 0) {
+  // Every brand the caller can read, owned or collaborated on. Restricting this
+  // to OWNED brands is what left an invited colleague with a visible brand and
+  // no results inside it.
+  const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+  if (accessibleBrandIds.length === 0) {
     return NextResponse.json({
       success: true,
       data: [],
@@ -482,7 +523,14 @@ export async function GET(req: NextRequest) {
       timestamp: Date.now(),
     })
   }
-  const filterIds = brandId && ownedBrandIds.includes(brandId) ? [brandId] : ownedBrandIds
+  // An explicit brand_id the caller cannot reach is refused, not quietly
+  // widened to "everything you can see". Widening answered a question nobody
+  // asked and made a permission problem look like data — the same request
+  // returns 404 from /api/alerts and /api/prompts.
+  if (brandId && !accessibleBrandIds.includes(brandId)) {
+    return err('Brand not found or access denied', 404)
+  }
+  const filterIds = brandId ? [brandId] : accessibleBrandIds
 
   let query = db
     .from('monitoring_results')

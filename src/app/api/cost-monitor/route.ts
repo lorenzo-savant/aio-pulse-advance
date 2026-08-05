@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { AuthError, getCurrentUserId } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { getCostTracker, getCostAnalytics, BudgetManager } from '@/lib/cost-monitor'
 import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
@@ -132,6 +133,16 @@ export async function POST(request: NextRequest) {
 
     if (input.action === 'log') {
       const { action: _action, ...logInput } = input
+
+      // Cost is attributed to a brand, and this accepted any brandId the caller
+      // sent. Without a membership check, one account could charge spend to
+      // another's brand — poisoning that brand's cost dashboards and its budget
+      // alerts, which are the numbers the budget manager acts on.
+      if (logInput.brandId) {
+        const gate = await requireBrandRole(logInput.brandId, userId, 'editor')
+        if ('response' in gate) return gate.response
+      }
+
       const tracker = getCostTracker()
       const log = await tracker.logCost({ userId, ...logInput })
       return NextResponse.json({ log })

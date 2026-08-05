@@ -4,7 +4,7 @@ import { z } from 'zod'
 import type { Json } from '@/types/database'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, requireBrandRole } from '@/lib/authorize'
 import { currentGeoScore } from '@/lib/services/work-orders'
 import { logger } from '@/lib/logger'
 
@@ -90,9 +90,9 @@ export async function POST(req: NextRequest) {
     )
   }
   const d = parsed.data
-  if (!(await verifyBrandAccess(d.brand_id, userId))) {
-    return err('Brand not found or access denied', 404)
-  }
+  // Creating a work order writes to the brand — editor, not any role.
+  const gate = await requireBrandRole(d.brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   // Snapshot the GEO score now → the baseline we'll re-check against on completion.
   const baseline = await currentGeoScore(d.brand_id)
@@ -147,14 +147,17 @@ export async function PATCH(req: NextRequest) {
   const { id, status } = parsed.data
 
   try {
-    // Load the work order (scoped to the user) to get its brand + baseline.
+    // Load the work order to get its brand + baseline, then gate on the BRAND:
+    // a work order is a task on the project, so any editor can move it along.
     const { data: existing } = await (db as any)
       .from('work_orders')
       .select('id, brand_id, baseline_geo_score')
       .eq('id', id)
-      .eq('user_id', userId)
       .maybeSingle()
     if (!existing) return err('Work order not found', 404)
+
+    const gate = await requireBrandRole(String(existing.brand_id), userId, 'editor')
+    if ('response' in gate) return gate.response
 
     const update: Record<string, unknown> = { status }
     if (status === 'done') {
@@ -173,7 +176,7 @@ export async function PATCH(req: NextRequest) {
       .from('work_orders')
       .update(update)
       .eq('id', id)
-      .eq('user_id', userId)
+      .eq('brand_id', existing.brand_id)
       .select()
       .single()
     if (error) return err(error.message)

@@ -2,6 +2,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
+import { getAccessibleBrandIds } from '@/lib/authorize'
 import { requireUser } from '@/lib/api-auth'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { cached } from '@/lib/response-cache'
@@ -65,17 +66,22 @@ export async function GET(req: NextRequest) {
       shouldCache: (v) => v !== EMPTY_AVI,
     },
     async () => {
+      // A health score describes a BRAND, so it is readable by everyone who can
+      // read that brand. Scoping it to `user_id` meant a collaborator's AVI
+      // widget showed 0 for a brand whose score was sitting in the table.
+      const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+      if (brandId && !accessibleBrandIds.includes(brandId)) return EMPTY_AVI
+
+      const scope = brandId ? [brandId] : accessibleBrandIds
+      if (scope.length === 0) return EMPTY_AVI
+
       // Get latest health score
-      let query = db
+      const query = db
         .from('brand_health_scores')
         .select('*')
-        .eq('user_id', userId)
+        .in('brand_id', scope)
         .order('date', { ascending: false })
         .limit(1)
-
-      if (brandId) {
-        query = query.eq('brand_id', brandId)
-      }
 
       const { data: latest, error: latestError } = await query
 
@@ -98,17 +104,13 @@ export async function GET(req: NextRequest) {
       const prevDate = new Date()
       prevDate.setDate(prevDate.getDate() - 7)
 
-      let prevQuery = db
+      const prevQuery = db
         .from('brand_health_scores')
         .select('avi_score, health_score')
-        .eq('user_id', userId)
+        .in('brand_id', scope)
         .lte('date', prevDate.toISOString().split('T')[0] ?? '')
         .order('date', { ascending: false })
         .limit(1)
-
-      if (brandId) {
-        prevQuery = prevQuery.eq('brand_id', brandId)
-      }
 
       const { data: prev } = await prevQuery
       const previousAvi = prev?.[0]?.avi_score ?? prev?.[0]?.health_score ?? 0

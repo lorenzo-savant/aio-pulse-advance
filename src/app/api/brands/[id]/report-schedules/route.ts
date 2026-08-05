@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase'
 import { asUntyped } from '@/lib/supabase-untyped'
 import { requireUser } from '@/lib/api-auth'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, requireBrandRole } from '@/lib/authorize'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 
@@ -52,7 +52,6 @@ export async function GET(req: NextRequest, { params }: Params) {
         'id, brand_id, frequency, recipients, label, is_active, next_run_at, last_sent_at, last_error, send_count, created_at',
       )
       .eq('brand_id', id)
-      .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -74,7 +73,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     logger.warn('report-schedules GET failed', { brandId: id, err: msg })
-    return err(msg)
+    return err('Failed to load report schedules')
   }
 }
 
@@ -85,8 +84,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
 
-  const brand = await verifyBrandAccess(id, userId)
-  if (!brand) return err('Brand not found or access denied', 404)
+  // Creating a schedule persists a row and later emails recipients brand data,
+  // so it is a write on the brand and takes editor rights — matching DELETE.
+  const gate = await requireBrandRole(id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   const ip = getClientIp(req.headers)
   const rate = await checkRateLimit(`report-schedules-post:${ip}`, 10, 60_000)
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     logger.warn('report-schedules POST failed', { brandId: id, err: msg })
-    return err(msg)
+    return err('Failed to create report schedule')
   }
 }
 
@@ -155,8 +156,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
 
-  const brand = await verifyBrandAccess(id, userId)
-  if (!brand) return err('Brand not found or access denied', 404)
+  // Deleting a schedule is a write on the brand, and the schedule belongs to
+  // the brand rather than to whoever set it up.
+  const gate = await requireBrandRole(id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   const scheduleId = req.nextUrl.searchParams.get('schedule_id')
   if (!scheduleId) return err('schedule_id query param required', 400)
@@ -170,7 +173,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       .delete()
       .eq('id', scheduleId)
       .eq('brand_id', id)
-      .eq('user_id', userId)
     if (error) throw new Error(error.message)
     return NextResponse.json({ success: true, timestamp: Date.now() })
   } catch (e) {

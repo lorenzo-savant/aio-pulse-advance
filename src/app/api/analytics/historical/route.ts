@@ -10,7 +10,7 @@ import {
   autoGenerateSnapshots,
 } from '@/lib/services/analytics-service'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, getWritableBrandIds, requireBrandRole } from '@/lib/authorize'
 import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
 
@@ -67,6 +67,13 @@ export async function GET(req: NextRequest) {
   try {
     // Auto-generate snapshots if needed
     if (action === 'generate') {
+      // A write hiding behind GET. `autoGenerateSnapshots` inserts into
+      // brand_health_scores, so it takes the same editor gate as the POST
+      // below — tightening only the POST left the identical operation
+      // reachable by a viewer through a query parameter.
+      const genGate = await requireBrandRole(brandId, userId, 'editor')
+      if ('response' in genGate) return genGate.response
+
       const result = await autoGenerateSnapshots(brandId)
       return NextResponse.json({
         success: true,
@@ -144,13 +151,16 @@ export async function POST(req: NextRequest) {
   const { brand_id, generate_all } = parsed.data
 
   if (generate_all) {
-    // Generate snapshots for all user's brands
-    const { data: brands } = await db.from('brands').select('id').eq('user_id', userId)
+    // Generating a snapshot writes to the brand, so only the brands where the
+    // caller is owner or editor — a viewer's "generate all" must not silently
+    // skip past its own read-only role. Resolved in two queries rather than
+    // two per brand.
+    const writableBrandIds = await getWritableBrandIds(db, userId)
 
     const results = []
-    for (const brand of brands || []) {
-      const result = await autoGenerateSnapshots(brand.id)
-      results.push({ brandId: brand.id, ...result })
+    for (const brandId of writableBrandIds) {
+      const result = await autoGenerateSnapshots(brandId)
+      results.push({ brandId, ...result })
     }
 
     return NextResponse.json({
@@ -164,17 +174,9 @@ export async function POST(req: NextRequest) {
     return err('brand_id is required', 400)
   }
 
-  // Verify access
-  const { data: brand } = await db
-    .from('brands')
-    .select('id')
-    .eq('id', brand_id)
-    .eq('user_id', userId)
-    .single()
-
-  if (!brand) {
-    return err('Brand not found or access denied', 404)
-  }
+  // Writing a snapshot takes editor rights on the brand.
+  const gate = await requireBrandRole(brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   const result = await autoGenerateSnapshots(brand_id)
 

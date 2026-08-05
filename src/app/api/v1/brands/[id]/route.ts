@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { verifyApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
 import { publicBrandUpdateSchema, firstZodMessage } from '@/lib/validations'
+import { requireBrandRole } from '@/lib/authorize'
 
 const BRAND_COLS =
   'id, user_id, name, slug, description, domain, aliases, domains, competitors, industry, language, color, logo_url, is_active, created_at, updated_at'
@@ -40,12 +41,12 @@ export async function GET(req: NextRequest, { params }: Params) {
   const db = createServerClient()
   if (!db) return errorResponse('Database not configured', 503)
 
-  const { data, error } = await db
-    .from('brands')
-    .select(BRAND_COLS)
-    .eq('id', id)
-    .eq('user_id', userId)
-    .single()
+  // Reading a brand takes any role on it; PUT and DELETE below stay
+  // owner-only.
+  const gate = await requireBrandRole(id, userId, 'viewer')
+  if ('response' in gate) return errorResponse('Brand not found', 404)
+
+  const { data, error } = await db.from('brands').select(BRAND_COLS).eq('id', id).maybeSingle()
 
   if (error || !data) return errorResponse('Brand not found', 404)
   return successResponse(data)

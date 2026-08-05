@@ -3,6 +3,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -39,12 +40,16 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     return NextResponse.json({ success: false, message: 'Not found' }, { status: 404 })
   }
 
+  // Reading this needs any role on the brand. Ownership was too narrow: an invited
+  // collaborator was refused their own project's data.
+  const gate = await requireBrandRole(snippet.brand_id as string, userId, 'viewer')
+  if ('response' in gate) return gate.response
+
   const { data: brand } = await db
     .from('brands')
     .select('id')
     .eq('id', snippet.brand_id as string)
-    .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   if (!brand) {
     return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
   }

@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 import { parsePaginationParams, paginatedResponse } from '@/lib/api-utils'
 import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
@@ -46,10 +47,17 @@ export async function GET(req: NextRequest) {
     maxLimit: 100,
   })
 
-  // Resolve owned brands (handles user_id format mismatch on legacy rows)
-  const { data: ownedBrands } = await db.from('brands').select('id').eq('user_id', userId)
-  const ownedIds = (ownedBrands ?? []).map((b: { id: string }) => b.id)
-  const rawFilterIds = brandId && ownedIds.includes(brandId) ? [brandId] : ownedIds
+  // Every brand the caller can read, owned or collaborated on. The `user_id`
+  // disjunct below stays: a scan that is not attached to any brand still
+  // belongs to whoever ran it.
+  const accessibleIds = await getAccessibleBrandIds(db, userId)
+
+  // Refuse an unreachable brand_id rather than widening to every accessible
+  // brand — same answer as /api/alerts, /api/prompts and /api/monitoring.
+  if (brandId && !accessibleIds.includes(brandId)) {
+    return err('Brand not found or access denied', 404)
+  }
+  const rawFilterIds = brandId ? [brandId] : accessibleIds
 
   // M-10: PostgREST filter injection hardening — only allow UUID-shaped values
   // into the `.or()` interpolation, and require userId itself to be UUID-shaped.
@@ -121,19 +129,15 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  // Verify brand access if brand_id provided
+  // Attaching a scan to a brand is a write on that brand, so it takes editor
+  // rights. Refusing beats the old behaviour of silently dropping the
+  // association: that returned success and saved a scan whose brand had
+  // quietly vanished, which reads as data loss from the caller's side.
   let brandId: string | null = null
   if (body.brand_id) {
-    const { data: brand } = await db
-      .from('brands')
-      .select('id')
-      .eq('id', body.brand_id)
-      .eq('user_id', userId)
-      .single()
-
-    if (brand) {
-      brandId = body.brand_id
-    }
+    const gate = await requireBrandRole(body.brand_id, userId, 'editor')
+    if ('response' in gate) return gate.response
+    brandId = body.brand_id
   }
 
   const { data, error } = await db
@@ -187,7 +191,32 @@ export async function DELETE(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { error } = await db.from('scan_history').delete().eq('id', scanId).eq('user_id', userId)
+  // A scan attached to a brand is the brand's, and an editor may remove one a
+  // colleague ran; an unattached scan stays personal to whoever ran it.
+  const { data: scan } = await db
+    .from('scan_history')
+    .select('user_id, brand_id')
+    .eq('id', scanId)
+    .maybeSingle()
+
+  if (!scan) return err('Scan not found', 404)
+
+  // Pin the delete to whatever we authorised — the brand for a brand-scoped
+  // scan, the owner for a personal one — so a row reassigned between the check
+  // and the delete cannot be removed under a stale permission.
+  let deleteQuery = db.from('scan_history').delete().eq('id', scanId)
+
+  if (scan.brand_id) {
+    const gate = await requireBrandRole(String(scan.brand_id), userId, 'editor')
+    if ('response' in gate) return gate.response
+    deleteQuery = deleteQuery.eq('brand_id', String(scan.brand_id))
+  } else if (String(scan.user_id) !== userId) {
+    return err('Scan not found', 404)
+  } else {
+    deleteQuery = deleteQuery.eq('user_id', userId)
+  }
+
+  const { error } = await deleteQuery
 
   if (error) {
     logger.error('Scan delete error', { route: '/api/scans', error })

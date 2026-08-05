@@ -104,9 +104,15 @@ export interface CostEstimate {
 // Provider pricing per 1M tokens (USD)
 export const PROVIDER_PRICING: Record<string, { input: number; output: number }> = {
   // Google Gemini
+  // gemini-2.5-flash is the most-used model in the product and was ABSENT,
+  // so every one of its calls fell through to `default` (1.0/2.0) — roughly
+  // 13× its real input price, on the highest-volume path there is.
+  'gemini-2.5-flash': { input: 0.075, output: 0.3 },
   'gemini-2.0-flash': { input: 0.1, output: 0.4 },
   'gemini-2.0-flash-lite': { input: 0.075, output: 0.3 },
   'gemini-2.5-pro': { input: 1.25, output: 10.0 },
+  'gemini-1.5-pro': { input: 1.25, output: 5.0 },
+  'gemini-1.5-flash': { input: 0.075, output: 0.3 },
 
   // Anthropic Claude
   'claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
@@ -128,6 +134,58 @@ export const PROVIDER_PRICING: Record<string, { input: number; output: number }>
 
   // Default fallback pricing
   default: { input: 1.0, output: 2.0 },
+}
+
+/**
+ * Cost in USD for `tokens` total tokens of a model, priced at its OUTPUT rate.
+ *
+ * Providers that only report a combined token count cannot split input from
+ * output, so this deliberately takes the higher of the two rates. A budget
+ * alert that fires slightly early is useful; one that fires late is not.
+ */
+export function estimateBlendedCost(model: string, tokens: number): number {
+  const pricing = PROVIDER_PRICING[pricingKeyForProviderLabel(model)] ?? PROVIDER_PRICING.default!
+  const rate = Math.max(pricing.input, pricing.output)
+  return Math.round((Math.max(tokens, 0) / 1_000_000) * rate * 1_000_000) / 1_000_000
+}
+
+/**
+ * Fold an ai-router provider label onto a key in PROVIDER_PRICING.
+ *
+ * The router emits `'<vendor>:<model>'` with an optional `+web` / `+search`
+ * suffix for the grounded variants — `'gemini:flash-2.5'`,
+ * `'openai:gpt-4o-mini+web'`, `'perplexity:sonar'`. None of those strings
+ * matched a pricing key, so every routed call priced at `default` and every
+ * cost row landed orphaned in the dashboards.
+ *
+ * The grounding suffix is dropped on purpose: it changes what the call does,
+ * not the per-token price of the model that runs it.
+ */
+export function pricingKeyForProviderLabel(label: string): string {
+  const raw = (label ?? '').toLowerCase().trim()
+  if (!raw) return 'default'
+
+  // Exact match first, so a plain model name still works.
+  if (PROVIDER_PRICING[raw]) return raw
+
+  const withoutGrounding = raw.split('+')[0] ?? raw
+  if (PROVIDER_PRICING[withoutGrounding]) return withoutGrounding
+
+  const [vendor, model] = withoutGrounding.split(':')
+  if (!model) return PROVIDER_PRICING[withoutGrounding] ? withoutGrounding : 'default'
+
+  // 'gemini:flash-2.5' → 'gemini-2.5-flash'; the router writes the version
+  // after the tier, the price list writes it before.
+  const candidates = [
+    `${vendor}-${model}`,
+    model,
+    model.replace(/^([a-z]+)-([0-9.]+)$/, (_m, tier, version) => `${vendor}-${version}-${tier}`),
+  ]
+  for (const c of candidates) {
+    if (PROVIDER_PRICING[c]) return c
+  }
+
+  return 'default'
 }
 
 // Map provider IDs to default models

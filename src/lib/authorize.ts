@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 /**
  * Membership statuses that must NOT grant access to a brand.
@@ -222,34 +223,226 @@ export async function canEditBrand(brandId: string, userId: string): Promise<boo
 }
 
 /**
+ * A brand is a shared workspace, not a private folder.
+ *
+ * Everything hanging off a brand — prompts, monitoring results, alerts, scans,
+ * reports — belongs to the BRAND, and every collaborator on that brand can read
+ * it. Rows still carry the `user_id` of whoever created them (useful as
+ * provenance, and the column is not going anywhere), but that column must never
+ * be used to decide who may SEE a row. Filtering brand data by
+ * `user_id = <viewer>` is what made an invited colleague open a brand and find
+ * it empty: they got the brand, then none of its contents.
+ *
+ * Read access  → any role (owner | editor | viewer)
+ * Write access → owner | editor. A viewer may not create, modify, or spend.
+ *
+ * `personal` resources are the deliberate exception and keep their per-user
+ * filter: credit balances, API keys, and anything else that belongs to a person
+ * rather than to a brand.
+ */
+export type BrandRole = 'owner' | 'editor' | 'viewer'
+
+const ROLE_RANK: Record<BrandRole, number> = { viewer: 0, editor: 1, owner: 2 }
+
+/**
+ * Resolve the caller's role on a brand — the single question every brand-scoped
+ * endpoint should ask. Returns null when the caller has no access at all.
+ *
+ * The brand's `user_id` outranks any membership row: the owner is an owner even
+ * if a stale `team_members` row calls them a viewer.
+ */
+export async function getBrandRole(brandId: string, userId: string): Promise<BrandRole | null> {
+  const db = createServerClient()
+  if (!db) return null
+
+  const { data: brand } = await db.from('brands').select('user_id').eq('id', brandId).maybeSingle()
+
+  if (brand && String(brand.user_id) === userId) return 'owner'
+
+  const { data: membership } = await db
+    .from('team_members')
+    .select('role')
+    .eq('brand_id', brandId)
+    .eq('user_id', userId)
+    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
+    .maybeSingle()
+
+  if (!membership) return null
+
+  // The column is free text with a CHECK; anything unrecognised is treated as
+  // the least privilege that still grants access rather than silently as edit.
+  const role = String(membership.role) as BrandRole
+  return role in ROLE_RANK ? role : 'viewer'
+}
+
+/**
+ * Gate for endpoints that mutate brand data or spend the brand's credits.
+ * Returns the caller's role on success, or the NextResponse to return.
+ *
+ * Usage:
+ *   const gate = await requireBrandRole(brandId, userId, 'editor')
+ *   if ('response' in gate) return gate.response
+ */
+export async function requireBrandRole(
+  brandId: string,
+  userId: string,
+  minimum: BrandRole = 'viewer',
+): Promise<{ role: BrandRole } | { response: NextResponse }> {
+  const role = await getBrandRole(brandId, userId)
+
+  // Absence of access and insufficient access are answered differently on
+  // purpose: a stranger must not learn that the brand exists, while a viewer
+  // already knows and needs to be told why the action was refused.
+  if (!role) return { response: errResponse('Brand not found or access denied', 404) }
+
+  if (ROLE_RANK[role] < ROLE_RANK[minimum]) {
+    return {
+      response: errResponse(
+        `This action requires ${minimum} access to the brand; your role is ${role}.`,
+        403,
+      ),
+    }
+  }
+
+  return { role }
+}
+
+/**
+ * Whose credits pay for work on this brand: the owner's.
+ *
+ * A brand is one shared project with one budget. If billing followed the caller
+ * instead, a colleague with an empty balance could not run the analyses they
+ * were invited to run, and the brand's spend would be scattered across every
+ * account that touched it.
+ */
+export async function getBrandBillingUserId(brandId: string): Promise<string | null> {
+  const db = createServerClient()
+  if (!db) return null
+
+  const { data } = await db.from('brands').select('user_id').eq('id', brandId).maybeSingle()
+
+  return data?.user_id ? String(data.user_id) : null
+}
+
+/**
  * Get all brand IDs the user has access to (owned + team member).
  */
 export async function getAccessibleBrandIds(
   db: ReturnType<typeof createServerClient>,
   userId: string,
+  workspaceId?: string,
 ): Promise<string[]> {
   if (!db) return []
 
-  // NOTE: this helper currently has NO production callers — /api/brands has
-  // its own inline copy of the same union. An earlier comment here claimed it
-  // "sits on the hot path of most authenticated list endpoints", which was
-  // simply untrue. Kept because the inline copy should collapse into it, but
-  // do not assume it is exercised.
+  // This is the read scope for every brand-scoped list endpoint: the set of
+  // brands the caller may see anything inside. Callers filter with
+  // `.in('brand_id', ids)` — never with `.eq('user_id', callerId)`, which
+  // returns only the caller's own rows and hides a colleague's work.
+  //
+  // An empty array is a real answer (the caller has no brands) and correctly
+  // yields no rows through `.in()` — measured against the live PostgREST
+  // (postgrest-js 2.97.0): `.in('col', [])` returns no error and 0 rows, also
+  // with count:'exact', order and limit. There is nothing to special-case.
   //
   // Independent queries — run together.
-  const [{ data: ownedBrands }, { data: teamMemberships }] = await Promise.all([
-    db.from('brands').select('id').eq('user_id', userId),
-    db
-      .from('team_members')
-      .select('brand_id')
-      .eq('user_id', userId)
-      .not('status', 'in', INACTIVE_MEMBER_STATUSES),
-  ])
+  const ownedQuery = workspaceId
+    ? db.from('brands').select('id').eq('user_id', userId).eq('workspace_id', workspaceId)
+    : db.from('brands').select('id').eq('user_id', userId)
+
+  const [{ data: ownedBrands, error: ownedError }, { data: teamMemberships, error: teamError }] =
+    await Promise.all([
+      ownedQuery,
+      db
+        .from('team_members')
+        .select('brand_id')
+        .eq('user_id', userId)
+        .not('status', 'in', INACTIVE_MEMBER_STATUSES),
+    ])
+
+  // A query ERROR is not "you have no brands" — it is an outage wearing that
+  // costume. Both halves fail closed to `[]` (never a leak), but each must be
+  // logged so the silent-emptiness trap that would otherwise hide behind every
+  // scope-driven page is visible.
+  if (ownedError) {
+    logger.error('getAccessibleBrandIds: owned-brands query failed', {
+      source: 'authorize',
+      error: ownedError.message,
+      workspaceId,
+    })
+  }
+  if (teamError) {
+    logger.error('getAccessibleBrandIds: team-members query failed', {
+      source: 'authorize',
+      error: teamError.message,
+      workspaceId,
+    })
+  }
 
   const ownedIds = (ownedBrands || []).map((b) => b.id)
-  const teamIds = (teamMemberships || []).map((m) => m.brand_id)
+  let teamIds = (teamMemberships || []).map((m) => m.brand_id)
+
+  // A workspace filter has to apply to BOTH halves of the union. The inline
+  // copy this replaced filtered only the owned half, so asking for one
+  // workspace still returned every brand you collaborate on anywhere — the
+  // scope silently leaked exactly where it was meant to narrow.
+  if (workspaceId && teamIds.length > 0) {
+    const { data: inWorkspace } = await db
+      .from('brands')
+      .select('id')
+      .in('id', teamIds)
+      .eq('workspace_id', workspaceId)
+    teamIds = (inWorkspace || []).map((b) => b.id)
+  }
 
   // De-dup: an owner who is also listed as a team member must not produce
   // duplicate IDs for downstream .in() filters.
   return [...new Set([...ownedIds, ...teamIds])]
+}
+
+/**
+ * The brands the caller may WRITE to — owned, plus memberships that carry an
+ * editor or owner role.
+ *
+ * The obvious way to build this is to take getAccessibleBrandIds and ask
+ * getBrandRole about each id, which costs two queries per brand and grows with
+ * the account. Two queries answer it for any number of brands.
+ */
+export async function getWritableBrandIds(
+  db: ReturnType<typeof createServerClient>,
+  userId: string,
+): Promise<string[]> {
+  if (!db) return []
+
+  const [{ data: ownedBrands, error: ownedError }, { data: teamMemberships, error: teamError }] =
+    await Promise.all([
+      db.from('brands').select('id').eq('user_id', userId),
+      db
+        .from('team_members')
+        .select('brand_id')
+        .eq('user_id', userId)
+        .not('status', 'in', INACTIVE_MEMBER_STATUSES)
+        .in('role', ['owner', 'editor']),
+    ])
+
+  // Same fail-closed-with-logging rule as getAccessibleBrandIds: an empty
+  // array is a real answer, an error is an outage and must not be silent.
+  if (ownedError) {
+    logger.error('getWritableBrandIds: owned-brands query failed', {
+      source: 'authorize',
+      error: ownedError.message,
+    })
+  }
+  if (teamError) {
+    logger.error('getWritableBrandIds: team-members query failed', {
+      source: 'authorize',
+      error: teamError.message,
+    })
+  }
+
+  return [
+    ...new Set([
+      ...(ownedBrands || []).map((b) => b.id),
+      ...(teamMemberships || []).map((m) => m.brand_id),
+    ]),
+  ]
 }

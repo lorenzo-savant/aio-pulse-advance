@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { DataForSEOProvider } from '@/lib/providers/dataforseo-provider'
 import { analyzeBrandPresence } from '@/lib/services/ai-overview-detector'
 import { logger } from '@/lib/logger'
@@ -34,12 +35,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
+  // This runs a paid analysis, so it needs editor rights. Ownership was too narrow: an invited
+  // collaborator was refused their own project's data.
+  const gate = await requireBrandRole(brandId, userId, 'editor')
+  if ('response' in gate) return gate.response
+
   const { data: brand, error: brandError } = await db
     .from('brands')
     .select('id, name, domain')
     .eq('id', brandId)
-    .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (brandError || !brand) {
     return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
@@ -88,9 +93,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('SERP analysis error', { service: 'ai-overview-detector', keyword, error })
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Analysis failed' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Failed to analyse SERP' }, { status: 500 })
   }
 }

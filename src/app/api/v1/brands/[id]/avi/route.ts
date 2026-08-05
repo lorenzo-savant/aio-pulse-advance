@@ -3,6 +3,7 @@ import { verifyApiKey, publicApiRateLimit } from '@/lib/services/public-api'
 import { createServerClient } from '@/lib/supabase'
 import { cached } from '@/lib/response-cache'
 import { withApiHandler } from '@/lib/api-utils'
+import { requireBrandRole } from '@/lib/authorize'
 
 function successResponse(data: unknown) {
   return NextResponse.json({ success: true, data, timestamp: Date.now() })
@@ -58,12 +59,10 @@ export const GET = withApiHandler('v1/brands/avi', async (req: NextRequest, { pa
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
-  const { data: brand } = await db
-    .from('brands')
-    .select('id')
-    .eq('id', id)
-    .eq('user_id', userId)
-    .single()
+  const gate = await requireBrandRole(id, userId, 'viewer')
+  if ('response' in gate) return errorResponse('Brand not found', 404)
+
+  const { data: brand } = await db.from('brands').select('id').eq('id', id).maybeSingle()
 
   if (!brand) return errorResponse('Brand not found', 404)
 

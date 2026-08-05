@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { callLLM } from '@/lib/services/prompt-generator-ai'
-import { verifyBrandAccess } from '@/lib/authorize'
+import { verifyBrandAccess, requireBrandRole } from '@/lib/authorize'
 import { rateLimitGate } from '@/lib/api-auth'
 import { firstZodMessage } from '@/lib/validations'
 import { logger } from '@/lib/logger'
@@ -91,6 +91,10 @@ export async function POST(req: NextRequest) {
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
+
+  // Generating recommendations calls an LLM and writes them back.
+  const gate = await requireBrandRole(body.brand_id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   // Fetch brand (use safe columns)
   const brand = await verifyBrandAccess(body.brand_id, userId)

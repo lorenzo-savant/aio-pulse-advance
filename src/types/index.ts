@@ -262,10 +262,26 @@ export interface MonitoringResult {
   competitor_mentions: CompetitorMention[]
   has_hallucination: boolean
   hallucination_flags: HallucinationFlag[]
+  /**
+   * The provider that actually answered, after any router fallback
+   * (e.g. 'gemini:flash-2.5'). `engine` above is only what was REQUESTED, and
+   * the two diverge whenever a provider is unconfigured or errors. Null on rows
+   * written before the column existed — unknown, not "the requested one".
+   */
+  response_provider?: string | null
+  /**
+   * Where cited_urls came from. 'brave_fallback' URLs answer the prompt's
+   * query rather than the engine's response, so they are not evidence that the
+   * engine cited anything and are excluded from citationRate.
+   */
+  citation_source?: CitationSource | null
   created_at: string
   prompt?: Prompt
   brand?: Brand
 }
+
+/** Provenance of a row's cited_urls. Null means the row predates the column. */
+export type CitationSource = 'engine' | 'brave_fallback'
 
 // Fixed aspect taxonomy for aspect-based sentiment (ABSA). A closed set keeps
 // the cross-run aggregation in /api/sentiment meaningful (no "price" vs

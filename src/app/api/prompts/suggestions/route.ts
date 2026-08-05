@@ -9,6 +9,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { simulateEngineResponse } from '@/lib/services/ai-router'
 import { isPerplexityAvailable } from '@/lib/services/perplexity'
 import { relatedQuestionsToPromptSuggestions } from '@/lib/services/prompt-suggestions'
@@ -59,10 +60,16 @@ export async function POST(req: NextRequest) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  // Load the brand (ownership-checked) + its existing prompts for dedupe.
+  // Generating suggestions calls a paid provider, so it takes editor rights.
+  const gate = await requireBrandRole(brandId, userId, 'editor')
+  if ('response' in gate) return gate.response
+
+  // Load the brand + ALL its existing prompts for dedupe — deduping against
+  // only the caller's own prompts would keep re-suggesting the ones a
+  // colleague already added.
   const [{ data: brand }, { data: existing }] = await Promise.all([
-    db.from('brands').select('*').eq('id', brandId).eq('user_id', userId).single(),
-    db.from('prompts').select('text').eq('brand_id', brandId).eq('user_id', userId).limit(500),
+    db.from('brands').select('*').eq('id', brandId).maybeSingle(),
+    db.from('prompts').select('text').eq('brand_id', brandId).limit(500),
   ])
   if (!brand) return err('Brand not found or access denied', 404)
 

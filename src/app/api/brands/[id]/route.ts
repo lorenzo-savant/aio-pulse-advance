@@ -3,6 +3,7 @@ import { formatValidationError } from '@/lib/format-validation-error'
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireBrandRole } from '@/lib/authorize'
 import { withDerivedAliases } from '@/lib/brand-aliases'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 
@@ -88,12 +89,13 @@ export async function GET(req: NextRequest, { params }: Params) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  const { data, error } = await db
-    .from('brands')
-    .select(BRAND_ALL_COLS)
-    .eq('id', id)
-    .eq('user_id', userId)
-    .single()
+  // Opening a brand takes any role on it. PUT and DELETE below stay
+  // owner-only: a collaborator works inside a brand, they do not rename or
+  // delete it.
+  const gate = await requireBrandRole(id, userId, 'viewer')
+  if ('response' in gate) return gate.response
+
+  const { data, error } = await db.from('brands').select(BRAND_ALL_COLS).eq('id', id).maybeSingle()
 
   if (error || !data) return err('Brand not found', 404)
   return NextResponse.json({ success: true, data, timestamp: Date.now() })

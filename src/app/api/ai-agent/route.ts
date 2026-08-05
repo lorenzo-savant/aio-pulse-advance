@@ -1,13 +1,19 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { getAgent, getAllAgents } from '@/lib/agents/agent-registry'
-import { createConversation, addMessage, getConversationHistory } from '@/lib/agents/agent-memory'
+import {
+  createConversation,
+  addMessage,
+  getConversationHistory,
+  getOwnedConversation,
+} from '@/lib/agents/agent-memory'
 import type { AgentContext } from '@/lib/agents/base-agent'
 import { auditSite, auditArticle } from '@/lib/audit/site-audit'
 import { generateFixBrief, formatFixBriefAsMarkdown } from '@/lib/audit/fix-brief'
 import { generateLlmstxt, checkFreshness } from '@/lib/audit/generators'
 import { getCostTracker } from '@/lib/cost-monitor'
 import { requireUser, rateLimitGate } from '@/lib/api-auth'
+import { requireBrandRole } from '@/lib/authorize'
 import { SsrfError } from '@/lib/utils/safe-fetch'
 import { logger } from '@/lib/logger'
 import { aiAgentMessageSchema, firstZodMessage } from '@/lib/validations'
@@ -47,6 +53,27 @@ export async function POST(req: NextRequest) {
       )
     }
     const { message, agentId, brandId, context, conversationId } = parsed.data
+
+    // brandId arrives as a free-form string and was never checked against
+    // membership, so any authenticated user could attach a conversation to any
+    // brand id they cared to type. Running an agent costs an LLM call and
+    // writes agent_conversations, so it takes editor rights on a real brand.
+    if (brandId) {
+      const gate = await requireBrandRole(brandId, userId, 'editor')
+      if ('response' in gate) return gate.response
+    }
+
+    // A conversationId from the body is a handle to another user's message
+    // history if left unverified. The service-role client bypasses RLS, so
+    // ownership must be proven here: the conversation must belong to this user
+    // and, when a brand is in play, to that same brand. Refuse like a missing
+    // resource rather than leaking that it exists.
+    if (conversationId) {
+      const owned = await getOwnedConversation(conversationId, userId, brandId)
+      if (!owned) {
+        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+      }
+    }
 
     const agent = getAgent(agentId || 'brand_monitor')
     if (!agent) {

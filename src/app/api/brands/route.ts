@@ -9,7 +9,7 @@ import { withDerivedAliases } from '@/lib/brand-aliases'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 import { logAudit } from '@/lib/services/audit-log'
-import { INACTIVE_MEMBER_STATUSES } from '@/lib/authorize'
+import { getAccessibleBrandIds } from '@/lib/authorize'
 import { getCurrentOrganization } from '@/lib/services/organization-auth'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -54,35 +54,16 @@ function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
 }
 
+// The owned ∪ team union lives in ONE place now. This file used to carry its
+// own copy, and the two drifted: the copy never de-duplicated, and its
+// workspace filter reached only the owned half. Two implementations of "which
+// brands may this person see" is one more than is safe.
 async function getUserBrandIds(
   db: UntypedSupabaseClient,
   userId: string,
   workspaceId?: string,
 ): Promise<string[]> {
-  let query = db.from('brands').select('id').eq('user_id', userId)
-
-  if (workspaceId) {
-    query = query.eq('workspace_id', workspaceId)
-  }
-
-  const { data: ownedBrands } = await query
-
-  const ownedIds = ((ownedBrands ?? []) as Array<{ id: string }>).map((b) => b.id)
-
-  // THIS is what made team collaboration silently useless: the filter
-  // allowlisted 'accepted', but the invitation-accept route writes 'active',
-  // so `teamIds` was ALWAYS empty. An invited colleague accepted the
-  // invitation, got a real membership row, and still saw zero brands.
-  // See INACTIVE_MEMBER_STATUSES for the two live vocabularies.
-  const { data: teamMemberships } = await db
-    .from('team_members')
-    .select('brand_id')
-    .eq('user_id', userId)
-    .not('status', 'in', INACTIVE_MEMBER_STATUSES)
-
-  const teamIds = ((teamMemberships ?? []) as Array<{ brand_id: string }>).map((m) => m.brand_id)
-
-  return [...ownedIds, ...teamIds]
+  return getAccessibleBrandIds(db as ReturnType<typeof createServerClient>, userId, workspaceId)
 }
 
 // canEditBrand was a local helper, never imported. Workspace-level edit

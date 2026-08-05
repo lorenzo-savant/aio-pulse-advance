@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   // `)` end a PostgREST filter term, and `%` / `_` are ILIKE wildcards, so a
   // query containing them either errored or silently matched far more than the
   // user typed. Strip the filter-grammar characters and escape the wildcards.
-  const safeQuery = query.replace(/[(),."\\]/g, ' ').replace(/[%_]/g, (c) => `\\${c}`)
+  const safeQuery = query.replace(/[(),."\\{};]/g, ' ').replace(/[%_]/g, (c) => `\\${c}`)
   if (!safeQuery.trim()) {
     return NextResponse.json({ success: true, data: [] })
   }

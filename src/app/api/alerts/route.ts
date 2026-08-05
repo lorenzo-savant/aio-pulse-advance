@@ -196,6 +196,12 @@ export async function GET(req: NextRequest) {
   }
   const scope = brandId ? [brandId] : accessibleBrandIds
 
+  // Empty scope is a real answer (the caller has no brands), not an error to
+  // push through PostgREST's `.in()` serialization. Same guard as /api/monitoring.
+  if (scope.length === 0) {
+    return NextResponse.json({ success: true, data: [], timestamp: Date.now() })
+  }
+
   if (type === 'events') {
     const query = db
       .from('alert_events')

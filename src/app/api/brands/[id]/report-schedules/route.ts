@@ -73,7 +73,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     logger.warn('report-schedules GET failed', { brandId: id, err: msg })
-    return err(msg)
+    return err('Failed to load report schedules')
   }
 }
 
@@ -84,8 +84,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
 
-  const brand = await verifyBrandAccess(id, userId)
-  if (!brand) return err('Brand not found or access denied', 404)
+  // Creating a schedule persists a row and later emails recipients brand data,
+  // so it is a write on the brand and takes editor rights — matching DELETE.
+  const gate = await requireBrandRole(id, userId, 'editor')
+  if ('response' in gate) return gate.response
 
   const ip = getClientIp(req.headers)
   const rate = await checkRateLimit(`report-schedules-post:${ip}`, 10, 60_000)
@@ -143,7 +145,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     logger.warn('report-schedules POST failed', { brandId: id, err: msg })
-    return err(msg)
+    return err('Failed to create report schedule')
   }
 }
 

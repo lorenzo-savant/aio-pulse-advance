@@ -34,6 +34,12 @@ export async function GET(req: NextRequest) {
   }
   const scope = brandId ? [brandId] : accessibleBrandIds
 
+  // Empty scope is a real answer (the caller has no brands), not an error to
+  // push through PostgREST's `.in()` serialization. Same guard as /api/monitoring.
+  if (scope.length === 0) {
+    return NextResponse.json({ success: true, reviews: [], source })
+  }
+
   // Try the new weekly_reviews table first
   if (source === 'auto' || source === 'weekly_reviews') {
     try {

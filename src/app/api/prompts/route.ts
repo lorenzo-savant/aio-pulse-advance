@@ -93,6 +93,16 @@ async function getPromptsHandler(req: NextRequest) {
 
   const scope = brandId ? [brandId] : accessibleBrandIds
 
+  // Empty scope is a real answer (the caller has no brands), not an error to
+  // push through PostgREST's `.in()` serialization. Same guard as /api/monitoring.
+  if (scope.length === 0) {
+    return NextResponse.json({
+      success: true,
+      ...paginatedResponse([], 0, page, limit),
+      timestamp: Date.now(),
+    })
+  }
+
   const query = db
     .from('prompts')
     .select('*, brand:brands(name, color, slug)', { count: 'exact' })

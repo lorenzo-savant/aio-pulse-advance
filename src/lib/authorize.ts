@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 /**
  * Membership statuses that must NOT grant access to a brand.
@@ -348,14 +349,34 @@ export async function getAccessibleBrandIds(
     ? db.from('brands').select('id').eq('user_id', userId).eq('workspace_id', workspaceId)
     : db.from('brands').select('id').eq('user_id', userId)
 
-  const [{ data: ownedBrands }, { data: teamMemberships }] = await Promise.all([
-    ownedQuery,
-    db
-      .from('team_members')
-      .select('brand_id')
-      .eq('user_id', userId)
-      .not('status', 'in', INACTIVE_MEMBER_STATUSES),
-  ])
+  const [{ data: ownedBrands, error: ownedError }, { data: teamMemberships, error: teamError }] =
+    await Promise.all([
+      ownedQuery,
+      db
+        .from('team_members')
+        .select('brand_id')
+        .eq('user_id', userId)
+        .not('status', 'in', INACTIVE_MEMBER_STATUSES),
+    ])
+
+  // A query ERROR is not "you have no brands" — it is an outage wearing that
+  // costume. Both halves fail closed to `[]` (never a leak), but each must be
+  // logged so the silent-emptiness trap that would otherwise hide behind every
+  // scope-driven page is visible.
+  if (ownedError) {
+    logger.error('getAccessibleBrandIds: owned-brands query failed', {
+      source: 'authorize',
+      error: ownedError.message,
+      workspaceId,
+    })
+  }
+  if (teamError) {
+    logger.error('getAccessibleBrandIds: team-members query failed', {
+      source: 'authorize',
+      error: teamError.message,
+      workspaceId,
+    })
+  }
 
   const ownedIds = (ownedBrands || []).map((b) => b.id)
   let teamIds = (teamMemberships || []).map((m) => m.brand_id)
@@ -392,15 +413,31 @@ export async function getWritableBrandIds(
 ): Promise<string[]> {
   if (!db) return []
 
-  const [{ data: ownedBrands }, { data: teamMemberships }] = await Promise.all([
-    db.from('brands').select('id').eq('user_id', userId),
-    db
-      .from('team_members')
-      .select('brand_id')
-      .eq('user_id', userId)
-      .not('status', 'in', INACTIVE_MEMBER_STATUSES)
-      .in('role', ['owner', 'editor']),
-  ])
+  const [{ data: ownedBrands, error: ownedError }, { data: teamMemberships, error: teamError }] =
+    await Promise.all([
+      db.from('brands').select('id').eq('user_id', userId),
+      db
+        .from('team_members')
+        .select('brand_id')
+        .eq('user_id', userId)
+        .not('status', 'in', INACTIVE_MEMBER_STATUSES)
+        .in('role', ['owner', 'editor']),
+    ])
+
+  // Same fail-closed-with-logging rule as getAccessibleBrandIds: an empty
+  // array is a real answer, an error is an outage and must not be silent.
+  if (ownedError) {
+    logger.error('getWritableBrandIds: owned-brands query failed', {
+      source: 'authorize',
+      error: ownedError.message,
+    })
+  }
+  if (teamError) {
+    logger.error('getWritableBrandIds: team-members query failed', {
+      source: 'authorize',
+      error: teamError.message,
+    })
+  }
 
   return [
     ...new Set([

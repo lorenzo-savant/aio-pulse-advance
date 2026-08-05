@@ -51,7 +51,13 @@ export async function GET(req: NextRequest) {
   } else {
     // Unfiltered means "everything I can see", which is every brand the caller
     // collaborates on — not only the analyses they personally ran.
-    query = query.in('brand_id', await getAccessibleBrandIds(db, userId))
+    const scope = await getAccessibleBrandIds(db, userId)
+    // Empty scope is a real answer (the caller has no brands), not an error to
+    // push through PostgREST's `.in()` serialization. Same guard as /api/monitoring.
+    if (scope.length === 0) {
+      return NextResponse.json({ success: true, data: [], timestamp: Date.now() })
+    }
+    query = query.in('brand_id', scope)
   }
 
   const { data, error: fetchErr } = await query

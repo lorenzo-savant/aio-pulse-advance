@@ -53,10 +53,16 @@ export const GET = withApiHandler('v1/competitors', async (req: NextRequest) => 
   }
 
   // No brand given — every analysis across the brands this key can reach.
+  // Empty scope is a real answer (the key has no brands), not an error to push
+  // through PostgREST's `.in()` serialization.
+  const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+  if (accessibleBrandIds.length === 0) {
+    return successResponse([])
+  }
   const { data, error } = await db
     .from('competitor_analyses')
     .select('id, brand_id, primary_url, competitors, summary, created_at')
-    .in('brand_id', await getAccessibleBrandIds(db, userId))
+    .in('brand_id', accessibleBrandIds)
     .order('created_at', { ascending: false })
     .limit(limit)
 

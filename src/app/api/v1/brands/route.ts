@@ -54,18 +54,36 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const paginationRequested = searchParams.has('page') || searchParams.has('limit')
 
-  // Same scope as the app: owned brands plus the ones the caller collaborates
-  // on. An integrator's key should see the same projects its owner does.
-  let query = db
-    .from('brands')
-    .select(BRAND_LIST_COLS, { count: 'exact' })
-    .in('id', await getAccessibleBrandIds(db, userId))
-    .order('created_at', { ascending: false })
-
   const { page, limit, offset } = parsePaginationParams(searchParams, {
     defaultLimit: HARD_MAX_BRANDS,
     maxLimit: HARD_MAX_BRANDS,
   })
+
+  // Same scope as the app: owned brands plus the ones the caller collaborates
+  // on. An integrator's key should see the same projects its owner does.
+  const accessibleBrandIds = await getAccessibleBrandIds(db, userId)
+
+  // Empty scope is a real answer (the key has no brands), not an error to push
+  // through PostgREST's `.in()` serialization.
+  if (accessibleBrandIds.length === 0) {
+    return paginationRequested
+      ? NextResponse.json(
+          {
+            success: true,
+            data: [],
+            pagination: { page, perPage: limit, total: 0, totalPages: 0, hasMore: false },
+            timestamp: Date.now(),
+          },
+          { headers: getPaginationHeaders(0, page, limit) },
+        )
+      : successResponse([])
+  }
+
+  let query = db
+    .from('brands')
+    .select(BRAND_LIST_COLS, { count: 'exact' })
+    .in('id', accessibleBrandIds)
+    .order('created_at', { ascending: false })
 
   query = query.range(offset, offset + limit - 1)
 

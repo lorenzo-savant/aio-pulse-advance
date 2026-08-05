@@ -7,12 +7,11 @@ import { geoMethodologyNote } from '@/lib/geo-config'
 import {
   calculateAVIFromResults,
   calculateDomainSOAIV,
-  calculateCompetitorStandings,
+  buildCompetitorReport,
   buildSentimentHeatmap,
   type DomainSOAIVResult,
   type SentimentHeatmap,
 } from '@/lib/services/monitoring'
-import { normalizeEntityName } from '@/lib/services/competitor-identity'
 import type { CompetitorMention } from '@/types'
 
 const VALID_LOCALES = ['en', 'it', 'sv'] as const
@@ -437,40 +436,17 @@ export async function GET(req: NextRequest) {
         )
       : []
 
-  // Every competitor mention in the window, and the denominator for shares.
-  // Only DECLARED competitors get a row below: a name the model invented is
-  // still counted in the denominator (so the shares are honest) but is never
-  // presented to the client as a rival with a standing.
+  // Every competitor mention in the window. Only DECLARED competitors get a
+  // row below: a name the model invented is still counted in the denominator
+  // (so the shares are honest) but is never presented to the client as a rival
+  // with a standing. buildCompetitorReport also makes "not mentioned" mean
+  // hasData=false — it is not a zero score, and it must never print as the
+  // brand beating a rival by its own AVI.
   const allCompetitorMentions: CompetitorMention[] = mappedResults.flatMap(
     (r) => (r.competitor_mentions ?? []) as CompetitorMention[],
   )
-  const totalCompetitorMentions = allCompetitorMentions.reduce(
-    (sum, m) => sum + Math.max(m.count ?? 1, 0),
-    0,
-  )
 
-  const competitorAnalysis = brandCompetitors.map((compName: string) => {
-    // Match on identity, not on string equality: the model writes "Acast AB"
-    // where the brand declared "Acast". `m.name === compName` missed those.
-    const compMentions = allCompetitorMentions.filter(
-      (m) => normalizeEntityName(m.name ?? '') === normalizeEntityName(compName),
-    )
-
-    // "Not mentioned" is not "scores zero". The synthetic
-    // {position: 0, count: 0} row that used to stand in here produced
-    // competitorAvi = 0, so the printed gap was the brand's OWN score — every
-    // report claimed the brand beat every rival by exactly its own AVI. With
-    // competitor_mentions dropped from the mapping above, that fallback fired
-    // for every competitor in every report ever generated.
-    const standings = calculateCompetitorStandings(compMentions, totalCompetitorMentions)
-
-    return {
-      name: compName,
-      mentions: standings?.mentions ?? 0,
-      share: standings?.shareOfCompetitorMentions ?? null,
-      hasData: standings !== null,
-    }
-  })
+  const competitorAnalysis = buildCompetitorReport(brandCompetitors, allCompetitorMentions)
 
   const heatmap = buildSentimentHeatmap(mappedResults)
 

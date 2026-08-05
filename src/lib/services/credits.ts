@@ -10,6 +10,7 @@
 
 import { createServerClient } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
+import { getPlatformMode } from '@/lib/platform-mode'
 
 // Loose RPC shape — the generated Database type's rpc<> overloads gate by a
 // fixed name union that doesn't include consume_free_query / deduct_credits.
@@ -44,31 +45,21 @@ export const FREE_QUERIES_PER_DAY = 10
  * TWO locks, because a stray env var here means unlimited spend on someone
  * else's paid LLM keys:
  *
- *   1. `AIO_UNLIMITED_CREDITS=true` turns it on.
+ *   1. `AIO_MODE=unlimited` turns it on (or the original
+ *      `AIO_UNLIMITED_CREDITS=true`, still honoured when AIO_MODE is unset).
  *   2. In production it ALSO requires
  *      `AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION=true`. Without that second
- *      acknowledgement the flag is IGNORED and loudly logged, so copying a
- *      staging env file onto prod cannot silently disable billing.
+ *      acknowledgement the request is IGNORED and loudly logged, so copying a
+ *      development env file onto prod cannot silently disable billing.
  *
  * Default is off. The state is reported by /api/health so it is never a
  * surprise.
+ *
+ * This is a spelling of the platform mode, not a second source of truth — see
+ * `src/lib/platform-mode.ts`, which owns the decision and its production lock.
  */
 export function isUnlimitedCreditsMode(): boolean {
-  if (process.env['AIO_UNLIMITED_CREDITS'] !== 'true') return false
-
-  const isProd = process.env.NODE_ENV === 'production' || process.env['VERCEL_ENV'] === 'production'
-
-  if (isProd && process.env['AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION'] !== 'true') {
-    logger.error(
-      'AIO_UNLIMITED_CREDITS is set in a PRODUCTION environment and was IGNORED. ' +
-        'Set AIO_UNLIMITED_CREDITS_ALLOW_PRODUCTION=true to acknowledge unmetered spend, ' +
-        'or remove AIO_UNLIMITED_CREDITS.',
-      { source: 'credits' },
-    )
-    return false
-  }
-
-  return true
+  return getPlatformMode() === 'unlimited'
 }
 
 /** Infrastructure failure (DB unavailable, RPC error). Callers must fail

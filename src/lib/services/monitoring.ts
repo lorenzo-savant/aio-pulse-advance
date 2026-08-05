@@ -197,7 +197,7 @@ Respond ONLY with a valid JSON object (no markdown, no extra text):
   ],
   "cited_urls": ["<url>"],
   "competitor_mentions": [
-    {"name": "<n>", "position": <integer>, "count": <integer>}
+    {"name": "<n>", "position": <1-based index of the SENTENCE in which this competitor first appears, same scale as mention_position; null if unclear>, "count": <integer>}
   ],
   "has_hallucination": <boolean>,
   "hallucination_flags": [
@@ -610,7 +610,17 @@ export interface CompetitorStandings {
   mentions: number
   /** Share of all competitor mentions in the same window, 0–100. */
   shareOfCompetitorMentions: number
-  /** Average answer position when mentioned (lower = earlier); null if never positioned. */
+  /**
+   * Mean of the `position` values the model reported, when it reported any.
+   *
+   * Treat with care and do NOT show it to a client as a ranking. Until
+   * 2026-08-05 the prompt asked for `"position": <integer>` with no definition
+   * whatsoever — not the unit, not the origin — so historical rows hold
+   * whatever each model decided that meant: a sentence index, a place in a
+   * list, an offset. The prompt now pins it to a 1-based sentence index, which
+   * makes rows written from here on comparable; rows written before are not
+   * comparable with them or with each other.
+   */
   avgPosition: number | null
 }
 

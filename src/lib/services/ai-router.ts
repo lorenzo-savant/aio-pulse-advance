@@ -330,13 +330,71 @@ export async function simulateEngineResponse(
     }
   }
 
-  // Final fallback: Gemini (cheapest, most widely configured)
-  if (isGeminiAvailable()) {
+  // ── Final fallback: any configured provider that has not been tried ────────
+  //
+  // This used to be Gemini and nothing else, which made every engine depend on
+  // one account staying healthy. When Gemini's quota ran out the failure read:
+  //
+  //   engine "gemini":  Gemini (search) 429 · Gemini 429 · Gemini fallback 429
+  //   engine "claude":  Anthropic 400 (no credit) · Gemini fallback 429
+  //
+  // Three attempts at the same exhausted provider for one engine, and for the
+  // other the fallback WAS the exhausted provider — while OpenAI and Perplexity
+  // sat configured and untouched. One account's billing took down engines that
+  // had nothing to do with it.
+  //
+  // Falling back across providers is only honest because provenance is now
+  // recorded: `response_provider` stores whoever actually answered, so a run
+  // served by OpenAI is never counted as a Gemini measurement (migration
+  // 20260805090000). Without that column this would be quietly faking data.
+  //
+  // `engine` is excluded because its own branch above already tried it and
+  // pushed its error; retrying it here would just repeat the same failure.
+  const fallbacks: Array<{
+    id: string
+    engine: MonitoringEngine
+    available: () => boolean
+    call: () => Promise<string>
+  }> = [
+    {
+      id: 'gemini:flash-2.5',
+      engine: 'gemini',
+      available: isGeminiAvailable,
+      call: () => callGeminiFallback(fullPrompt),
+    },
+    {
+      id: 'openai:gpt-4o-mini',
+      engine: 'chatgpt',
+      available: isOpenAIAvailable,
+      call: () => callOpenAI(fullPrompt),
+    },
+    {
+      id: 'perplexity:sonar',
+      engine: 'perplexity',
+      available: isPerplexityAvailable,
+      call: async () => (await callPerplexityWithCitations(fullPrompt)).text,
+    },
+    {
+      id: 'anthropic:claude-sonnet',
+      engine: 'claude',
+      available: isAnthropicAvailable,
+      call: () => callAnthropic(fullPrompt),
+    },
+  ]
+
+  for (const candidate of fallbacks) {
+    if (candidate.engine === engine) continue
+    if (!candidate.available()) continue
     try {
-      const text = await callGeminiFallback(fullPrompt)
-      return { text, provider: 'gemini:flash-2.5', retrieval: 'model-memory' }
+      const text = await candidate.call()
+      logger.warn('Engine served by a fallback provider', {
+        service: 'ai-router',
+        requested: engine,
+        served: candidate.id,
+      })
+      return { text, provider: candidate.id, retrieval: 'model-memory' }
     } catch (e) {
-      errors.push(`Gemini fallback: ${e instanceof Error ? e.message : String(e)}`)
+      errors.push(`${candidate.id} (fallback): ${e instanceof Error ? e.message : String(e)}`)
     }
   }
 

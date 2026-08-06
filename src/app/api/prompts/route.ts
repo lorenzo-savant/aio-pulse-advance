@@ -13,6 +13,7 @@ import { logger } from '@/lib/logger'
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const PROMPT_RATE_LIMIT = 50
+const PROMPT_CREATE_RATE_LIMIT = 20
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -23,9 +24,9 @@ const promptSchema = z.object({
   market: z.string().default('global'),
   category: z.enum(['awareness', 'comparison', 'alternative', 'features', 'custom']).optional(),
   engines: z
-    .array(z.enum(['chatgpt', 'gemini', 'perplexity']))
+    .array(z.enum(['chatgpt', 'gemini', 'perplexity', 'claude']))
     .min(1)
-    .default(['chatgpt', 'gemini', 'perplexity']),
+    .default(['chatgpt', 'gemini', 'perplexity', 'claude']),
   run_frequency: z.enum(['hourly', 'daily', 'weekly']).default('daily'),
 })
 
@@ -130,6 +131,27 @@ export async function POST(req: NextRequest) {
     if (e instanceof AuthError)
       return NextResponse.json({ success: false, message: e.message }, { status: 401 })
     return err('Authentication failed')
+  }
+
+  // Rate-limit prompt creation: every POST pays for an OpenAI `embedText` call
+  // (and the semantic-dedup query), so an unauthenticated flood of requests is
+  // a real cost-abuse vector. Keyed by user ID so a single client burning the
+  // shared IP quota can't DoS teammates behind the same NAT.
+  const { success, resetAt } = await checkRateLimit(
+    `prompts:create:${userId}`,
+    PROMPT_CREATE_RATE_LIMIT,
+    60_000,
+  )
+  if (!success) {
+    const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000))
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Rate limit exceeded',
+        retryAfter,
+      },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+    )
   }
 
   let body: unknown

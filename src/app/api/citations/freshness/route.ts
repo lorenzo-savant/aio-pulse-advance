@@ -30,10 +30,16 @@ import {
   type FreshnessInput,
 } from '@/lib/utils/citation-freshness'
 import { safeFetch } from '@/lib/utils/safe-fetch'
+import { checkRateLimit } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 import type { Brand } from '@/types'
 
 export const dynamic = 'force-dynamic'
+
+// Freshness fan-out is expensive: up to topN (default 20, max 50) safeFetch
+// HEAD/GETs per request against third-party hosts. Tight per-user limit keeps
+// it from being used as a free scanning/cost vector.
+const FRESHNESS_RATE_LIMIT = 10
 
 interface ResultRow {
   cited_urls: string[] | null
@@ -102,6 +108,21 @@ export async function GET(req: NextRequest) {
   const auth = await requireUser(req)
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
+
+  // Rate limit the fan-out endpoint per user (each request fires up to topN
+  // fetches against third-party hosts).
+  const { success, resetAt } = await checkRateLimit(
+    `citations:freshness:${userId}`,
+    FRESHNESS_RATE_LIMIT,
+    60_000,
+  )
+  if (!success) {
+    const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000))
+    return NextResponse.json(
+      { success: false, message: 'Rate limit exceeded', retryAfter },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+    )
+  }
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)

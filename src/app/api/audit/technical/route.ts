@@ -151,10 +151,6 @@ export async function POST(req: NextRequest) {
     )
   } catch (error: unknown) {
     logger.error('Audit error', { source: 'audit/technical', error: String(error) })
-    const message = error instanceof Error ? error.message : 'Audit failed'
-    return NextResponse.json(
-      { success: false, message: `Unable to reach URL: ${message}` },
-      { status: 500 },
-    )
+    return NextResponse.json({ success: false, message: 'Technical audit failed' }, { status: 500 })
   }
 }

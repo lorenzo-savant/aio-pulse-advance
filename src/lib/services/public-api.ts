@@ -8,11 +8,16 @@ export function hashApiKey(key: string): string {
 
 /**
  * Resolve a public-API key (X-API-Key header) to its owning user id.
- * Returns null for unknown/revoked keys or when the DB is unavailable.
+ * Returns null for unknown/revoked/expired keys or when the DB is unavailable.
  *
  * Single definition on purpose: this used to be copy-pasted verbatim into
  * all four /api/v1 routes, so a revocation-check fix in one would silently
  * miss the other three.
+ *
+ * The key is looked up on `api_keys.key_hash` (a sha256 of the raw key). It
+ * previously compared against `user_api_keys.encrypted_key`, which stores an
+ * AES-256-GCM ciphertext — the two values could never match, so every v1
+ * request was rejected with 401.
  */
 export async function verifyApiKey(apiKey: string): Promise<string | null> {
   const keyHash = hashApiKey(apiKey)
@@ -20,13 +25,21 @@ export async function verifyApiKey(apiKey: string): Promise<string | null> {
   if (!db) return null
 
   const { data, error } = await db
-    .from('user_api_keys')
-    .select('user_id, is_active')
-    .eq('encrypted_key', keyHash)
-    .eq('is_active', true)
-    .single()
+    .from('api_keys')
+    .select('user_id, revoked_at, expires_at')
+    .eq('key_hash', keyHash)
+    .maybeSingle()
 
   if (error || !data) return null
+  if (data.revoked_at) return null
+  if (data.expires_at && new Date(data.expires_at).getTime() <= Date.now()) return null
+
+  // Best-effort touch: keep the "last used" column fresh for the settings UI.
+  await db
+    .from('api_keys')
+    .update({ last_used_at: new Date().toISOString() })
+    .eq('key_hash', keyHash)
+
   return data.user_id
 }
 

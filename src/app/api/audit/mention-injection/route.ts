@@ -30,7 +30,7 @@ import { z } from 'zod'
 import { requireUser, rateLimitGate, isValidHttpUrl } from '@/lib/api-auth'
 import { firstZodMessage } from '@/lib/validations'
 import { verifyBrandAccess } from '@/lib/authorize'
-import { safeFetch, SsrfError } from '@/lib/utils/safe-fetch'
+import { safeFetchText, SsrfError } from '@/lib/utils/safe-fetch'
 import { logger } from '@/lib/logger'
 import {
   findMentionInjectionOpportunities,
@@ -42,6 +42,8 @@ export const dynamic = 'force-dynamic'
 const MAX_URLS = 25
 const FETCH_TIMEOUT_MS = 8_000
 const MAX_TOPICS = 50
+// Body cap for attacker-chosen URLs — protects memory against huge/infinite pages.
+const FETCH_MAX_BODY_BYTES = 2 * 1024 * 1024
 
 const mentionInjectionBodySchema = z.object({
   brandId: z.string().min(1, 'brandId is required'),
@@ -72,8 +74,9 @@ function extractTitle(html: string): string | null {
 
 async function fetchPage(url: string): Promise<InjectionPageInput | null> {
   try {
-    const response = await safeFetch(url, {
+    const { text, response } = await safeFetchText(url, {
       timeout: FETCH_TIMEOUT_MS,
+      maxBytes: FETCH_MAX_BODY_BYTES,
       headers: {
         'User-Agent':
           'Mozilla/5.0 (compatible; AIO-Pulse-MentionAudit/1.0; +https://aiopulse.io/bot)',
@@ -83,7 +86,7 @@ async function fetchPage(url: string): Promise<InjectionPageInput | null> {
     if (!response.ok) return null
     const ct = response.headers.get('content-type') ?? ''
     if (!ct.includes('html') && !ct.includes('xml') && ct !== '') return null
-    const html = await response.text()
+    const html = text
     return { url, html, title: extractTitle(html) }
   } catch (e) {
     if (e instanceof SsrfError) {

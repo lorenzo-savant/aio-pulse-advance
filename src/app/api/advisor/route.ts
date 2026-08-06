@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     logger.error('/api/advisor failed', { err: msg })
-    return err(msg, 500)
+    return err('Failed to generate recommendation', 500)
   }
 }
 
@@ -92,6 +92,6 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     logger.error('/api/advisor GET failed', { err: msg })
-    return err(msg, 500)
+    return err('Failed to load advisor history', 500)
   }
 }

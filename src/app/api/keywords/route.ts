@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
   const source = searchParams.get('source')
   const type = searchParams.get('type')
   const limitParam = searchParams.get('limit')
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
 
   if (!brandId) {
     return NextResponse.json({ success: false, message: 'brand_id is required' }, { status: 400 })
@@ -38,9 +39,13 @@ export async function GET(req: NextRequest) {
 
   try {
     if (source === 'tracking') {
-      const limit = Math.min(parseInt(limitParam || '100', 10), 500)
+      const limit = Math.min(parseInt(limitParam || '100', 10) || 100, 500)
+      const offset = (page - 1) * limit
 
-      let query = (supabase as any).from('keyword_tracking').select('*').eq('brand_id', brandId)
+      let query = (supabase as any)
+        .from('keyword_tracking')
+        .select('*', { count: 'exact' })
+        .eq('brand_id', brandId)
 
       if (type === 'correlated') {
         query = query.gt('correlation_score', 0.3).order('correlation_score', { ascending: false })
@@ -48,9 +53,9 @@ export async function GET(req: NextRequest) {
         query = query.order('mention_count', { ascending: false })
       }
 
-      query = query.limit(limit)
+      query = query.range(offset, offset + limit - 1)
 
-      const { data, error } = await query
+      const { data, error, count } = await query
 
       if (error || !data) {
         return NextResponse.json({ data: [] })
@@ -68,7 +73,15 @@ export async function GET(req: NextRequest) {
         last_seen: row.last_seen ?? null,
       }))
 
-      return NextResponse.json({ data: keywords })
+      return NextResponse.json({
+        data: keywords,
+        pagination: {
+          page,
+          limit,
+          total: count ?? keywords.length,
+          hasMore: count != null ? page * limit < count : false,
+        },
+      })
     }
 
     const query = (supabase as any)

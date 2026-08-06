@@ -12,21 +12,25 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireUser } from '@/lib/api-auth'
+import { requireUser, rateLimitGate, isValidHttpUrl } from '@/lib/api-auth'
 import { firstZodMessage } from '@/lib/validations'
 import { isPerplexityAvailable } from '@/lib/services/perplexity'
 import { simulateEngineResponse } from '@/lib/services/ai-router'
-import { safeFetch } from '@/lib/utils/safe-fetch'
+import { safeFetchText, SsrfError } from '@/lib/utils/safe-fetch'
 import { scoreFanoutCoverage, exportFanoutAsFAQ } from '@/lib/utils/query-fanout'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
 const fanoutBodySchema = z.object({
-  url: z.string().max(2048),
+  url: z.string().refine(isValidHttpUrl, 'A valid http(s) URL is required'),
   topic: z.string().max(500).optional(),
   maxQuestions: z.coerce.number().optional(),
 })
+
+// Cap on the buffered page body — a huge/infinite page must not exhaust
+// memory. Audit pages are far below this in practice.
+const FANOUT_MAX_BODY_BYTES = 2 * 1024 * 1024
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -35,6 +39,9 @@ function err(message: string, status = 500) {
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req)
   if (auth instanceof NextResponse) return auth
+
+  const limited = await rateLimitGate(req, 'audit-fanout', 10)
+  if (limited) return limited
 
   let rawBody: unknown
   try {
@@ -61,19 +68,20 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // 1) Fetch the page HTML.
+  // 1) Fetch the page HTML (SSRF-guarded + body-capped).
   let html = ''
   try {
-    const res = await safeFetch(url, {
+    const { text } = await safeFetchText(url, {
       timeout: 10_000,
+      maxBytes: FANOUT_MAX_BODY_BYTES,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; aio-pulse-fanout/1.0; +https://aio-pulse.com/bot)',
         Accept: 'text/html,application/xhtml+xml',
       },
     })
-    if (!res.ok) return err(`Could not fetch ${url} (HTTP ${res.status})`, 502)
-    html = await res.text().catch(() => '')
+    html = text
   } catch (e) {
+    if (e instanceof SsrfError) return err('URL not allowed', 400)
     logger.warn('/api/audit/fanout fetch failed', { url, err: String(e) })
     return err(`Could not fetch ${url}`, 502)
   }

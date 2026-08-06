@@ -1,5 +1,6 @@
 import { createServerClient, getCurrentUserId } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
+import { hostOf, buildOwnedDomainSet, isOwnedHost } from '@/lib/services/citation-capture'
 
 export interface LifetimeAnalytics {
   brandId: string
@@ -38,9 +39,23 @@ export async function getLifetimeAnalytics(brandId: string): Promise<LifetimeAna
     if (error) throw error
     if (!data || data.length === 0) return null
 
+    // The brand's own domains decide which cited_urls count as "domain
+    // citations" (an AI citing YOUR site vs Wikipedia/a competitor). Mirrors
+    // the owned-domain matching used by citation-capture.ts.
+    const { data: brandRow } = await supabase
+      .from('brands')
+      .select('domain, domains')
+      .eq('id', brandId)
+      .maybeSingle()
+
+    const ownedDomains = buildOwnedDomainSet(
+      (brandRow?.domain as string | null) ?? null,
+      (brandRow?.domains as string[] | null) ?? [],
+    )
+
     let totalBrandMentions = 0
     let totalCitations = 0
-    const domainCitations = 0
+    let domainCitations = 0
     let topProvider: string | null = null
     let topProviderCount = 0
     const providerDistribution: Record<string, number> = {}
@@ -54,6 +69,12 @@ export async function getLifetimeAnalytics(brandId: string): Promise<LifetimeAna
 
       const citedUrls = row.cited_urls || []
       totalCitations += citedUrls.length
+      if (ownedDomains.size > 0) {
+        for (const u of citedUrls) {
+          const h = hostOf(u)
+          if (h && isOwnedHost(h, ownedDomains)) domainCitations++
+        }
+      }
 
       const provider = row.engine || 'unknown'
       providerDistribution[provider] = (providerDistribution[provider] || 0) + 1

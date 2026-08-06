@@ -18,9 +18,10 @@ describe('GEO_WEIGHTS', () => {
 })
 
 describe('calculateGeoScore', () => {
-  it('returns a low-but-nonzero score for all-zero metrics (neutral position + clean trust)', () => {
+  it('returns a low-but-nonzero score for all-zero metrics (position excluded + clean trust)', () => {
     const r = calculateGeoScore(zero)
-    // position=0 → 50 (neutral), no hallucination → trust contributes; so > 0.
+    // position=0 is the "never positioned" sentinel → pillar excluded (not a
+    // neutral 50); no hallucination → trust contributes; so still > 0.
     expect(r.score).toBeGreaterThan(0)
     expect(r.score).toBeLessThan(40)
     expect(r.grade).toBe('F')
@@ -67,8 +68,8 @@ describe('calculateGeoScore', () => {
     expect(summed).toBeCloseTo(r.score, 0)
   })
 
-  it('exposes all five weighted pillars', () => {
-    const r = calculateGeoScore(zero)
+  it('exposes all five weighted pillars when positionAvg > 0', () => {
+    const r = calculateGeoScore({ ...zero, positionAvg: 1 })
     expect(r.pillars.map((p) => p.key).sort()).toEqual([
       'authority',
       'citation',
@@ -79,6 +80,13 @@ describe('calculateGeoScore', () => {
     r.pillars.forEach((p) => {
       expect(p.weight).toBe(GEO_WEIGHTS[p.key])
     })
+  })
+
+  it('excludes the position pillar for the never-positioned sentinel (0), like calculateAVI', () => {
+    // position_avg is NOT NULL DEFAULT 0, so "never positioned" arrives as a
+    // real 0 — the pillar must be excluded, not scored as a fabricated 50.
+    const r = calculateGeoScore({ ...zero, positionAvg: 0 })
+    expect(r.pillars.map((p) => p.key)).not.toContain('position')
   })
 
   it('prioritizes recommendations by weighted shortfall (citation outranks position)', () => {
@@ -151,7 +159,7 @@ describe('calculateGeoScore', () => {
   })
 
   it('all-present numeric input keeps the original base weights (identity)', () => {
-    const r = calculateGeoScore({ ...zero, citationRate: 50 })
+    const r = calculateGeoScore({ ...zero, citationRate: 50, positionAvg: 1 })
     const citation = r.pillars.find((p) => p.key === 'citation')!
     expect(citation.weight).toBeCloseTo(GEO_WEIGHTS.citation, 3)
     expect(r.pillars).toHaveLength(5)

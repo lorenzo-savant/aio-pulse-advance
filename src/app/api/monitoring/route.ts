@@ -172,13 +172,27 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Fetch previous results per change detection ───────────────────────────
-  const { data: previousResults } = await db
-    .from('monitoring_results')
-    .select('*')
-    .eq('prompt_id', prompt.id)
-    .in('engine', engines)
-    .order('created_at', { ascending: false })
-    .limit(engines.length)
+  // One most-recent row PER ENGINE. A single `.limit(engines.length)` query is
+  // wrong: one engine with many historical rows can consume the whole limit,
+  // leaving every other engine without a `previousResult` — so mention_lost /
+  // sentiment_drop / visible_change silently never fired for them. Fetching
+  // per engine guarantees each one gets its own baseline.
+  const previousResults = (
+    await Promise.all(
+      engines.map((engine) =>
+        db
+          .from('monitoring_results')
+          .select('*')
+          .eq('prompt_id', prompt.id)
+          .eq('engine', engine)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ),
+    )
+  )
+    .map((r) => r.data)
+    .filter((r) => r != null) as unknown as MonitoringResult[]
 
   // ── FIX N+1: fetch alert rules ONCE before the loop ─────────────────────
   const { data: rules } = await db
@@ -325,9 +339,7 @@ export async function POST(req: NextRequest) {
 
         // ── Evaluate alert rules (use already-fetched rules) ────────────────
         if (rules && rules.length > 0) {
-          const previousResult = (previousResults as unknown as MonitoringResult[])?.find(
-            (r) => r.engine === engine,
-          )
+          const previousResult = previousResults.find((r) => r.engine === engine)
 
           for (const rule of rules as AlertRule[]) {
             const shouldFire = shouldTriggerAlert(rule, {

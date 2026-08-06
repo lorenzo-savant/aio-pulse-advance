@@ -24,16 +24,13 @@ import {
   Camera,
   Lightbulb,
   FileText,
-  CreditCard,
   ClipboardCheck,
   Sparkles,
-  Coins,
   Radio,
   GitBranch,
   Sparkle,
   Link2,
   Target,
-  TrendingUp,
   Filter,
   ShieldCheck,
   Wand2,
@@ -247,14 +244,10 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     step: 5,
     labelKey: 'sidebar.sections.account.label',
-    // Account section ordered by frequency of need + operational adjacency:
-    // Billing + Credits are the commercial layer, API Costs is the
-    // operational view of where the credits actually go. Settings and
-    // Documentation are infrequent reference items.
+    // Internal deployment: the commercial layer (Billing, Credits, API Costs)
+    // is intentionally not exposed — the platform runs unmetered. Settings and
+    // Documentation remain.
     items: [
-      { href: '/dashboard/billing', icon: CreditCard, labelKey: 'sidebar.items.billing' },
-      { href: '/dashboard/credits', icon: Coins, labelKey: 'sidebar.items.credits' },
-      { href: '/dashboard/api-costs', icon: TrendingUp, labelKey: 'sidebar.items.api_costs' },
       { href: '/dashboard/settings', icon: Settings, labelKey: 'sidebar.items.settings' },
       { href: '/dashboard/docs', icon: BookOpen, labelKey: 'sidebar.items.documentation' },
     ],

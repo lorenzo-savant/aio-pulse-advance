@@ -29,8 +29,10 @@ const nextConfig: NextConfig = {
 
   serverExternalPackages: ['dns'],
 
+  // Absolute root to silence the "turbopack.root should be absolute" warning.
+  // process.cwd() is the project root at build time (webpack & Turbopack).
   turbopack: {
-    root: './',
+    root: process.cwd(),
   },
 
   // Compiler optimizations
@@ -96,21 +98,6 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Long-lived immutable caching for hashed static assets — production
-      // only. Omitted in dev to avoid pinning stale Turbopack chunks.
-      ...(isDev
-        ? []
-        : [
-            {
-              source: '/_next/static/(.*)',
-              headers: [
-                {
-                  key: 'Cache-Control',
-                  value: 'public, max-age=31536000, immutable',
-                },
-              ],
-            },
-          ]),
     ]
   },
 
@@ -134,8 +121,14 @@ const sentryWebpackPluginOptions = {
   silent: process.env.NODE_ENV !== 'production',
   widenClientFileUpload: true,
   hideSourceMaps: true,
-  disableLogger: true,
-  automaticVercelMonitors: true,
+  // Next.js 16 (Sentry 10+): the top-level disableLogger/automaticVercelMonitors
+  // are deprecated — move them under `webpack.*`.
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    automaticVercelMonitors: true,
+  },
 }
 
 export default withSentryConfig(withNextIntl(nextConfig), sentryWebpackPluginOptions)

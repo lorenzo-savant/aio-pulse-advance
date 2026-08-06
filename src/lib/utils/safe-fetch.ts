@@ -39,23 +39,8 @@ const PRIVATE_RANGES_IPV4 = [
   { pattern: /^2(?:2[4-9]|[3-4]\d|5[0-5])\./, range: '224.0.0.0/4 + 240.0.0.0/4' },
 ]
 
-export type SsrfErrorCode =
-  | 'BLOCKED_PROTOCOL'
-  | 'BLOCKED_IP'
-  | 'BLOCKED_HOST'
-  | 'TIMEOUT'
-  | 'REDIRECT_LOOP'
-  | 'RESPONSE_TOO_LARGE'
-
-export class SsrfError extends Error {
-  constructor(
-    public readonly code: SsrfErrorCode,
-    message: string,
-  ) {
-    super(message)
-    this.name = 'SsrfError'
-  }
-}
+export { SsrfError, type SsrfErrorCode } from '@/lib/utils/ssrf-error'
+import { SsrfError } from '@/lib/utils/ssrf-error'
 
 /**
  * Parse an IPv4 literal in ANY radix/short form (inet_aton semantics):

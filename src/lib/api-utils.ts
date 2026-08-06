@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
-import { SsrfError } from '@/lib/utils/safe-fetch'
+import { SsrfError } from '@/lib/utils/ssrf-error'
 
 /**
  * The standard error envelope: `{ success: false, message }`.

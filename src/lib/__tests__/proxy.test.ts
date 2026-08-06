@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// safeRedirect and buildCspHeader are exported from src/middleware.ts
-// We test them directly; middleware() is tested through integration-style mocks.
+// safeRedirect and buildCspHeader are exported from src/proxy.ts
+// We test them directly; proxy() is tested through integration-style mocks.
 // ---------------------------------------------------------------------------
 
 // Mock dependencies BEFORE importing the module under test
@@ -23,7 +23,7 @@ vi.mock('@/lib/ratelimit', () => ({
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
-import { safeRedirect, buildCspHeader, resolveAllowedOrigin, middleware } from '@/middleware'
+import { safeRedirect, buildCspHeader, resolveAllowedOrigin, proxy } from '@/proxy'
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { checkRateLimit } from '@/lib/ratelimit'
@@ -235,9 +235,9 @@ describe('resolveAllowedOrigin', () => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
-// middleware() — integration tests
+// proxy() — integration tests
 // ═══════════════════════════════════════════════════════════════════════════
-describe('middleware', () => {
+describe('proxy', () => {
   function makeRequest(path: string): NextRequest {
     return new NextRequest(new URL(path, 'http://localhost:3000'))
   }
@@ -252,19 +252,19 @@ describe('middleware', () => {
   }
 
   it('sets CSP header on every response', async () => {
-    const res = await middleware(makeRequest('/'))
+    const res = await proxy(makeRequest('/'))
     expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
   })
 
   it('sets x-nonce header on every response', async () => {
-    const res = await middleware(makeRequest('/'))
+    const res = await proxy(makeRequest('/'))
     const nonce = res.headers.get('x-nonce')
     expect(nonce).toBeTruthy()
     expect(nonce!.length).toBeGreaterThan(0)
   })
 
   it('CSP header contains the same nonce as x-nonce header', async () => {
-    const res = await middleware(makeRequest('/'))
+    const res = await proxy(makeRequest('/'))
     const nonce = res.headers.get('x-nonce')
     const csp = res.headers.get('Content-Security-Policy')
     expect(csp).toContain(`'nonce-${nonce}'`)
@@ -272,14 +272,14 @@ describe('middleware', () => {
 
   // Rate limiting headers on API routes
   it('adds rate limit headers for /api/ routes', async () => {
-    const res = await middleware(makeRequest('/api/brands'))
+    const res = await proxy(makeRequest('/api/brands'))
     expect(res.headers.get('X-RateLimit-Limit')).toBe('100')
     expect(res.headers.get('X-RateLimit-Remaining')).toBeTruthy()
     expect(res.headers.get('X-RateLimit-Reset')).toBeTruthy()
   })
 
   it('does not add rate limit headers for non-API routes', async () => {
-    const res = await middleware(makeRequest('/about'))
+    const res = await proxy(makeRequest('/about'))
     expect(res.headers.get('X-RateLimit-Limit')).toBeNull()
   })
 
@@ -289,7 +289,7 @@ describe('middleware', () => {
       remaining: 0,
       resetAt: Date.now() + 30_000,
     })
-    const res = await middleware(makeRequest('/api/brands'))
+    const res = await proxy(makeRequest('/api/brands'))
     expect(res.status).toBe(429)
   })
 
@@ -299,7 +299,7 @@ describe('middleware', () => {
       remaining: 0,
       resetAt: Date.now() + 30_000,
     })
-    const res = await middleware(makeRequest('/api/brands'))
+    const res = await proxy(makeRequest('/api/brands'))
     expect(res.headers.get('Retry-After')).toBeTruthy()
   })
 
@@ -309,7 +309,7 @@ describe('middleware', () => {
       remaining: 0,
       resetAt: Date.now() + 30_000,
     })
-    const res = await middleware(makeRequest('/api/brands'))
+    const res = await proxy(makeRequest('/api/brands'))
     expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
   })
 
@@ -321,7 +321,7 @@ describe('middleware', () => {
       },
     } as never)
 
-    const res = await middleware(makeRequest('/dashboard'))
+    const res = await proxy(makeRequest('/dashboard'))
     expect(res.status).toBe(307)
     const location = res.headers.get('location') || ''
     expect(location).toContain('/auth/login')
@@ -334,7 +334,7 @@ describe('middleware', () => {
       },
     } as never)
 
-    const res = await middleware(makeRequest('/dashboard/brands'))
+    const res = await proxy(makeRequest('/dashboard/brands'))
     const location = res.headers.get('location') || ''
     expect(location).toContain('redirect=%2Fdashboard%2Fbrands')
   })
@@ -346,7 +346,7 @@ describe('middleware', () => {
       },
     } as never)
 
-    const res = await middleware(makeRequest('/about'))
+    const res = await proxy(makeRequest('/about'))
     // Not a redirect
     expect(res.status).not.toBe(307)
   })
@@ -361,7 +361,7 @@ describe('middleware', () => {
       },
     } as never)
 
-    const res = await middleware(makeRequest('/auth/login'))
+    const res = await proxy(makeRequest('/auth/login'))
     expect(res.status).toBe(307)
     const location = res.headers.get('location') || ''
     expect(location).toContain('/dashboard')
@@ -377,7 +377,7 @@ describe('middleware', () => {
       },
     } as never)
 
-    const res = await middleware(makeRequest('/dashboard'))
+    const res = await proxy(makeRequest('/dashboard'))
     expect(res.status).not.toBe(307)
   })
 
@@ -386,7 +386,7 @@ describe('middleware', () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_URL
     delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    const res = await middleware(makeRequest('/dashboard'))
+    const res = await proxy(makeRequest('/dashboard'))
     // Should not throw, should return a response with CSP
     expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
   })
@@ -399,7 +399,7 @@ describe('middleware', () => {
       },
     } as never)
 
-    const res = await middleware(makeRequest('/dashboard/settings'))
+    const res = await proxy(makeRequest('/dashboard/settings'))
     expect(res.status).toBe(307)
     const location = res.headers.get('location') || ''
     expect(location).toContain('/auth/login')
@@ -413,7 +413,7 @@ describe('middleware', () => {
     })
 
     it('answers an OPTIONS preflight with 204 and the allowed origin', async () => {
-      const res = await middleware(
+      const res = await proxy(
         makeApiRequest('/api/brands', { method: 'OPTIONS', origin: 'http://localhost:3000' }),
       )
       expect(res.status).toBe(204)
@@ -423,20 +423,18 @@ describe('middleware', () => {
     })
 
     it('sets ACAO on a normal /api request from an allowed origin', async () => {
-      const res = await middleware(
-        makeApiRequest('/api/brands', { origin: 'http://localhost:3000' }),
-      )
+      const res = await proxy(makeApiRequest('/api/brands', { origin: 'http://localhost:3000' }))
       expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3000')
       expect(res.headers.get('Vary')).toContain('Origin')
     })
 
     it('omits ACAO for a disallowed origin', async () => {
-      const res = await middleware(makeApiRequest('/api/brands', { origin: 'https://evil.com' }))
+      const res = await proxy(makeApiRequest('/api/brands', { origin: 'https://evil.com' }))
       expect(res.headers.get('Access-Control-Allow-Origin')).toBeNull()
     })
 
     it('omits ACAO when there is no Origin header (same-origin)', async () => {
-      const res = await middleware(makeApiRequest('/api/brands', {}))
+      const res = await proxy(makeApiRequest('/api/brands', {}))
       expect(res.headers.get('Access-Control-Allow-Origin')).toBeNull()
     })
 
@@ -446,9 +444,7 @@ describe('middleware', () => {
         remaining: 0,
         resetAt: Date.now() + 30_000,
       })
-      const res = await middleware(
-        makeApiRequest('/api/brands', { origin: 'http://localhost:3000' }),
-      )
+      const res = await proxy(makeApiRequest('/api/brands', { origin: 'http://localhost:3000' }))
       expect(res.status).toBe(429)
       expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:3000')
     })
@@ -458,8 +454,8 @@ describe('middleware', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 // Session-preserving redirects — the ERR_TOO_MANY_REDIRECTS guard
 // ═══════════════════════════════════════════════════════════════════════════
-describe('middleware redirects preserve the refreshed session', () => {
-  const source = readFileSync(join(process.cwd(), 'src/middleware.ts'), 'utf8')
+describe('proxy redirects preserve the refreshed session', () => {
+  const source = readFileSync(join(process.cwd(), 'src/proxy.ts'), 'utf8')
 
   // The loop: getUser() rotates the refresh token and writes the new pair onto
   // `supabaseResponse`. A bare NextResponse.redirect() throws those cookies

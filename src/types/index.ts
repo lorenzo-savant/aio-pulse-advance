@@ -23,6 +23,44 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 // ─── AEO Pulse — Analysis ─────────────────────────────────────────────────────
 export type EngineId = 'all' | 'chatgpt' | 'gemini' | 'perplexity' | 'claude'
 export type MonitoringEngine = 'chatgpt' | 'gemini' | 'perplexity' | 'claude'
+
+/**
+ * Every engine the product has ever measured. Reading surfaces — history,
+ * snapshots, citations, per-engine charts — must keep using this, because the
+ * database holds results for all of them and a filter that forgets one hides
+ * data that was really collected.
+ */
+export const ALL_ENGINES: readonly MonitoringEngine[] = [
+  'chatgpt',
+  'gemini',
+  'perplexity',
+  'claude',
+] as const
+
+/**
+ * Engines a NEW run is allowed to use. Anything not listed here is never
+ * called, whatever a stored prompt or an old request body asks for.
+ *
+ * Claude is out on cost. Measured over 1768 results (2026-05-18 → 2026-08-06):
+ * 179 Claude runs cost $1.30 of a $2.01 total — 65% of the spend for 10% of
+ * the runs, at $0.0072 per run against Gemini's $0.00015. That is the model's
+ * list price ($3/$15 per million against $0.075/$0.30), not longer answers:
+ * Gemini's replies were actually the longer ones.
+ *
+ * The engine stays in `MonitoringEngine` on purpose. 179 results already exist
+ * with engine='claude' and they are real measurements; dropping it from the
+ * type would make the archive unreadable to satisfy a billing decision.
+ */
+export const ACTIVE_ENGINES: readonly MonitoringEngine[] = [
+  'chatgpt',
+  'gemini',
+  'perplexity',
+] as const
+
+/** True when this engine may be used for a new run. */
+export function isActiveEngine(engine: string): engine is MonitoringEngine {
+  return (ACTIVE_ENGINES as readonly string[]).includes(engine)
+}
 export type AIProvider = 'gemini' | 'openai' | 'perplexity' | 'anthropic'
 export type ModelId =
   | 'default'

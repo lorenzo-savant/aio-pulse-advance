@@ -109,7 +109,7 @@ const STEPS = [
 //   • PRESENCE  — does the AI know the brand at all?
 //   • CITATION  — is the brand named when the category/market is asked?
 //   • SENTIMENT — how is the brand spoken about (reviews, recommendation, vs)?
-const ALL_ENGINES: PromptForm['engines'] = ['chatgpt', 'gemini', 'perplexity', 'claude']
+const ALL_ENGINES: PromptForm['engines'] = ['chatgpt', 'gemini', 'perplexity']
 
 function generatePromptTemplates(
   brandName: string,
@@ -398,7 +398,7 @@ export default function OnboardingPage() {
       {
         text: customPrompt.trim(),
         language: brand.language || 'en',
-        engines: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+        engines: ['chatgpt', 'gemini', 'perplexity'],
       },
     ])
     setCustomPrompt('')
@@ -665,7 +665,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
                 <button
-                  className="shrink-0 rounded-lg p-1 text-muted-foreground hover:text-red-400"
+                  className="hover:text-red-400 shrink-0 rounded-lg p-1 text-muted-foreground"
                   onClick={() => removePrompt(i)}
                 >
                   ×

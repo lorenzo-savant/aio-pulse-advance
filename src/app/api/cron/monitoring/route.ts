@@ -11,14 +11,8 @@ import { consumeCreditsForQuery } from '@/lib/services/credits'
 import { getCostTracker } from '@/lib/cost-monitor'
 import { estimateBlendedCost, pricingKeyForProviderLabel } from '@/lib/cost-monitor/types'
 import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/services/alerts'
-import type {
-  Brand,
-  Prompt,
-  MonitoringResult,
-  MonitoringEngine,
-  WorkflowStatus,
-  AlertRule,
-} from '@/types'
+import type { Brand, Prompt, MonitoringResult, WorkflowStatus, AlertRule } from '@/types'
+import { ACTIVE_ENGINES, isActiveEngine } from '@/types'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 
 interface WorkflowStep {
@@ -214,10 +208,10 @@ export async function POST(req: NextRequest) {
       if (!brand || !brand.is_active) continue
 
       const prompt = promptRow as unknown as Prompt
-      const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
-      const engines = (prompt.engines || ['chatgpt', 'gemini', 'perplexity', 'claude']).filter(
-        (e): e is MonitoringEngine => (validEngines as readonly string[]).includes(e),
-      )
+      // Same gate as the interactive route: a retired engine is never called,
+      // whatever the stored prompt lists. The cron is the higher-volume path,
+      // so this is where a per-run price difference compounds.
+      const engines = (prompt.engines || [...ACTIVE_ENGINES]).filter(isActiveEngine)
 
       // ── Credit gate ─────────────────────────────────────────────────────
       // A scheduled run buys exactly the same paid LLM work as the manual

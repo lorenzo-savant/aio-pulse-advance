@@ -15,10 +15,11 @@ import type { BrandLanguage } from '@/types'
 const seedSchema = z.object({
   brandId: z.string().uuid(),
   categories: z.array(z.string()).optional(),
-  engines: z.array(z.enum(['chatgpt', 'gemini', 'perplexity', 'claude'])).optional(),
+  engines: z.array(z.enum(['chatgpt', 'gemini', 'perplexity'])).optional(),
 })
 
-const DEFAULT_ENGINES = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
+// Claude retired on cost — see ACTIVE_ENGINES in src/types.
+const DEFAULT_ENGINES = ['chatgpt', 'gemini', 'perplexity'] as const
 const BATCH_SIZE = 20
 
 function err(message: string, status = 500) {

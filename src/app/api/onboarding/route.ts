@@ -31,7 +31,8 @@ const schema = z.object({
 // They cover the base intent funnel (discovery → comparison → recommendation)
 // to give the new user interesting data on the first scan.
 const DEFAULT_SEED_CATEGORIES = ['discovery', 'comparison', 'recommendation'] as const
-const DEFAULT_ENGINES = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
+// Claude retired on cost — see ACTIVE_ENGINES in src/types.
+const DEFAULT_ENGINES = ['chatgpt', 'gemini', 'perplexity'] as const
 
 export async function POST(req: NextRequest) {
   let userId: string

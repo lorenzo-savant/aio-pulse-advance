@@ -10,7 +10,28 @@ const supabaseServiceKey = process.env['SUPABASE_SERVICE_KEY']
 
 const isConfigured = !!supabaseUrl && !!supabaseAnonKey
 
-if (!isConfigured && process.env.NODE_ENV === 'production') {
+/**
+ * `next build` runs with NODE_ENV=production and imports every route module to
+ * collect page data. Building is not booting: nothing serves a request, and no
+ * credential is needed to work out what the routes are.
+ *
+ * Without this exemption the guard below fired during the build itself, and
+ * every Vercel PREVIEW deployment in this repo failed while Production stayed
+ * green — because the Supabase variables are set on the Production scope only.
+ * Reproduced locally by moving .env aside and running `npm run build`:
+ *
+ *   Error: FATAL: Supabase environment variables ... are missing in production
+ *   > Build error occurred
+ *   Error: Failed to collect page data for /api/aeo-snippets/export-schema
+ *
+ * The guard keeps its real job. NEXT_PHASE is only set to this value by the
+ * build, so a running server with no configuration still refuses to start on
+ * the first cold request — fail-loud where it matters, silent where it does
+ * not.
+ */
+const isBuildPhase = process.env['NEXT_PHASE'] === 'phase-production-build'
+
+if (!isConfigured && process.env.NODE_ENV === 'production' && !isBuildPhase) {
   throw new Error(
     'FATAL: Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY) are missing in production. Aborting.',
   )

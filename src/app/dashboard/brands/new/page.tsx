@@ -121,7 +121,7 @@ export default function NewBrandWizard() {
     aliases: [] as string[],
     competitorInput: '',
     competitors: [] as string[],
-    engines: ['chatgpt', 'gemini', 'perplexity', 'claude'] as string[],
+    engines: ['chatgpt', 'gemini', 'perplexity'] as string[],
     frequency: 'weekly',
     alertEmail: '',
     primaryLanguage: 'en' as string,
@@ -334,7 +334,7 @@ export default function NewBrandWizard() {
 
       // Create prompts
       const promptErrors: string[] = []
-      const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude']
+      const validEngines = ['chatgpt', 'gemini', 'perplexity']
       for (const prompt of prompts) {
         console.log('[handleSubmit] Creating prompt:', prompt.text)
 

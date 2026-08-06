@@ -23,9 +23,9 @@ const promptSchema = z.object({
   market: z.string().default('global'),
   category: z.enum(['awareness', 'comparison', 'alternative', 'features', 'custom']).optional(),
   engines: z
-    .array(z.enum(['chatgpt', 'gemini', 'perplexity', 'claude']))
+    .array(z.enum(['chatgpt', 'gemini', 'perplexity']))
     .min(1)
-    .default(['chatgpt', 'gemini', 'perplexity', 'claude']),
+    .default(['chatgpt', 'gemini', 'perplexity']),
   run_frequency: z.enum(['hourly', 'daily', 'weekly']).default('daily'),
 })
 

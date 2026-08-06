@@ -16,6 +16,7 @@ import { getCostTracker } from '@/lib/cost-monitor'
 import { estimateBlendedCost, pricingKeyForProviderLabel } from '@/lib/cost-monitor/types'
 import { getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 import type { Brand, Prompt, MonitoringResult, AlertRule } from '@/types'
+import { ACTIVE_ENGINES, isActiveEngine } from '@/types'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -109,19 +110,18 @@ export async function POST(req: NextRequest) {
   })
 
   // ── Resolve engines ───────────────────────────────────────────────────────
-  const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude'] as const
-  type Engine = (typeof validEngines)[number]
-
+  // Filtered against ACTIVE_ENGINES, so an engine retired on cost cannot be
+  // reached by a stored prompt that still lists it or by a request body that
+  // asks for it. This is the gate that actually stops the spend — the UI and
+  // the schemas below it are convenience, not enforcement.
   const promptEngines = Array.isArray(prompt.engines) ? (prompt.engines as string[]) : []
   const requestedEngines = parsed.data.engines ?? promptEngines
-  let engines = requestedEngines.filter((e): e is Engine =>
-    (validEngines as readonly string[]).includes(e),
-  )
+  let engines = requestedEngines.filter(isActiveEngine)
 
-  // If the prompt has no engines set (legacy seed or manual insert), default
-  // to all 4 core engines rather than rejecting the request.
+  // If the prompt has no engines set (legacy seed or manual insert), or listed
+  // only retired ones, fall back to every active engine rather than rejecting.
   if (engines.length === 0) {
-    engines = [...validEngines]
+    engines = [...ACTIVE_ENGINES]
   }
 
   // ── Check/deduct credits before running ───────────────────────────────────

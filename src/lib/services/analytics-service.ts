@@ -75,16 +75,21 @@ export async function getHistoricalAnalytics(
   const todayStr = new Date().toISOString().split('T')[0]!
   const startStr = startDate.toISOString().split('T')[0]!
 
-  // Get current period data
-  let { data: currentData, error: currentError } = await querySnapshots(startStr, todayStr)
-
-  // Lazy backfill: if no snapshots exist, derive them from monitoring_results
-  if (!currentError && (!currentData || currentData.length === 0)) {
-    await autoGenerateSnapshots(brandId)
-    const retry = await querySnapshots(startStr, todayStr)
-    currentData = retry.data
-    currentError = retry.error
-  }
+  // Get current period data.
+  //
+  // This read used to lazily rebuild snapshots when it found none. That is
+  // gone: reads return what exists. Rebuilding runs where it belongs — in the
+  // monitoring cron after each scan, and behind the explicit POST
+  // /api/snapshots action — for two reasons.
+  //
+  // First, the correct writer produces engine × category × language rows,
+  // roughly 120 per date for a brand with a handful of categories and
+  // languages. Doing that for every date in a period, inside a page load,
+  // is minutes of work behind an HTTP handler that can time out mid-write.
+  //
+  // Second, two concurrent page loads both saw an empty window and both
+  // started the same rebuild.
+  const { data: currentData, error: currentError } = await querySnapshots(startStr, todayStr)
 
   // Get previous period for comparison (same filters)
   const { data: previousData } = await querySnapshots(
@@ -257,15 +262,9 @@ export async function getCompetitorComparison(
       .gte('scan_date', startDate.toISOString().split('T')[0])
       .order('scan_date', { ascending: false })
 
-  // Get brand snapshots (aggregate engine='all', category='all')
-  let { data: brandSnapshots } = await queryBrandSnaps()
-
-  // Lazy backfill when no snapshots yet
-  if (!brandSnapshots || brandSnapshots.length === 0) {
-    await autoGenerateSnapshots(brandId)
-    const retry = await queryBrandSnaps()
-    brandSnapshots = retry.data
-  }
+  // Get brand snapshots (aggregate engine='all', category='all').
+  // No lazy rebuild here either — see the note in getHistoricalAnalytics.
+  const { data: brandSnapshots } = await queryBrandSnaps()
 
   // Calculate brand averages
   const brandAvgCitation = calculateAverage(
@@ -309,78 +308,21 @@ export async function getCompetitorComparison(
   }
 }
 
-/**
- * Auto-generate snapshots from monitoring results
- * Call this periodically or after scans
- */
-export async function autoGenerateSnapshots(brandId: string): Promise<{
-  snapshotsCreated: number
-  errors: string[]
-}> {
-  const db = createServerClient()
-  if (!db) return { snapshotsCreated: 0, errors: ['Database not configured'] }
-
-  // Get all monitoring results for this brand
-  const { data: results, error } = await db
-    .from('monitoring_results')
-    .select('*')
-    .eq('brand_id', brandId)
-    .order('created_at', { ascending: false })
-    .limit(1000)
-
-  if (error) return { snapshotsCreated: 0, errors: [error.message] }
-  if (!results || results.length === 0) return { snapshotsCreated: 0, errors: [] }
-
-  // Group by date
-  const byDate = new Map<string, typeof results>()
-  for (const r of results) {
-    const dateStr = r.created_at as string | undefined
-    if (!dateStr) continue
-    const date = dateStr.split('T')[0]
-    if (!date) continue
-    if (!byDate.has(date)) byDate.set(date, [])
-    byDate.get(date)!.push(r)
-  }
-
-  let created = 0
-  const errors: string[] = []
-
-  // Create snapshot for each date
-  for (const [date, dayResults] of byDate) {
-    const totalPrompts = dayResults.length
-    const brandMentions = dayResults.filter((r) => r.brand_mentioned).length
-    const citationRate = totalPrompts > 0 ? (brandMentions / totalPrompts) * 100 : 0
-    const avgVisibility =
-      dayResults.reduce((sum, r) => sum + (Number(r.visibility_score) || 0), 0) / totalPrompts
-    const avgSentiment =
-      dayResults.reduce((sum, r) => sum + (Number(r.sentiment_score) || 0), 0) / totalPrompts
-
-    const { error: upsertError } = await db.from('citation_snapshots').upsert(
-      {
-        brand_id: brandId,
-        scan_date: date,
-        engine: 'all',
-        category: 'all',
-        language: 'all',
-        total_prompts: totalPrompts,
-        brand_citations: brandMentions,
-        citation_rate: Math.round(citationRate * 100) / 100,
-        avg_position: null,
-        avg_visibility: Math.round(avgVisibility * 100) / 100,
-        avg_sentiment: Math.round(avgSentiment * 100) / 100,
-        competitor_rates: {},
-      },
-      {
-        onConflict: 'brand_id,scan_date,engine,category,language',
-      },
-    )
-
-    if (upsertError) {
-      errors.push(`${date}: ${upsertError.message}`)
-    } else {
-      created++
-    }
-  }
-
-  return { snapshotsCreated: created, errors }
-}
+// `autoGenerateSnapshots` used to live here. It was DELETED, not repointed.
+//
+// It upserted `citation_snapshots` on the same conflict key as
+// `calculateCitationSnapshots` — (brand_id, scan_date, engine, category,
+// language) — but wrote the aggregate row with `avg_position: null` and
+// `competitor_rates: {}` as hardcoded literals. A Supabase upsert replaces the
+// full column set rather than merging, so whichever writer ran last won, and
+// this one always lost information.
+//
+// It was reachable from three unguarded API entry points, one of which looped
+// every brand the caller could write to. An assessment against production
+// found the damage had not yet fired only because its single caller sits on a
+// dashboard page with no inbound links.
+//
+// The replacement is `backfillSnapshotsForRange` in services/citation-snapshots,
+// which derives the same date list and delegates to the writer that actually
+// computes those fields. One table, one writer. `npm run check:writers`
+// enforces that.

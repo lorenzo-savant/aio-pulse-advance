@@ -17,20 +17,32 @@ export class ClaudeProvider extends BaseProvider {
     return !!process.env['ANTHROPIC_API_KEY']
   }
 
+  /**
+   * Liveness probe against a FREE endpoint.
+   *
+   * This used to POST /v1/messages — a real, billed inference call. It ran on
+   * every health-cache miss, and `GET /api/providers/health` is public: rate
+   * limited per IP, no auth, with a per-process cache whose floor is 30
+   * seconds. Every warm serverless instance held its own cache, so the spend
+   * scaled with concurrency and the caller did not have to be logged in.
+   *
+   * The other three providers already probe their free `/models` endpoints, so
+   * this also makes the contract uniform: the health check answers "does this
+   * key authenticate", nothing more.
+   *
+   * It deliberately does NOT answer "does this key have credit". A key with an
+   * exhausted balance still returns 200 here — the same blind spot the free
+   * endpoints have always had for OpenAI, Gemini and Perplexity. That question
+   * is answered from real call failures instead of by paying to ask, because
+   * every genuine request already reports it.
+   */
   protected override async healthCheckRequest(): Promise<Response> {
     const apiKey = process.env['ANTHROPIC_API_KEY']
-    return fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
+    return fetch('https://api.anthropic.com/v1/models?limit=1', {
       headers: {
         'x-api-key': apiKey ?? '',
         'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: CLAUDE_MODELS.HAIKU_4_5,
-        max_tokens: 1,
-        messages: [{ role: 'user', content: 'ping' }],
-      }),
     })
   }
 

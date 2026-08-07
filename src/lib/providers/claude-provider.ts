@@ -10,6 +10,7 @@ const CLAUDE_MODELS = {
 export class ClaudeProvider extends BaseProvider {
   readonly id = 'claude' as const
   readonly name = 'Anthropic Claude'
+  override readonly defaultModel = CLAUDE_MODELS.SONNET_4_6
 
   protected override timeoutMs = 60000
 

@@ -5,6 +5,7 @@ import { estimateBlendedCost } from '@/lib/cost-monitor/types'
 export class GeminiProvider extends BaseProvider {
   readonly id = 'gemini' as const
   readonly name = 'Google Gemini'
+  override readonly defaultModel = 'gemini-2.5-flash'
 
   isConfigured(): boolean {
     return !!process.env['GEMINI_API_KEY']

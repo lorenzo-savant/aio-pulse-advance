@@ -6,6 +6,12 @@ import {
   calculateCompetitorStandings,
 } from './monitoring'
 import { normalizeEntityName } from './competitor-identity'
+import {
+  loadBrandLogo,
+  drawBrandedHeader,
+  type BrandLogo,
+  type PdfHeaderTarget,
+} from './report-branding'
 
 export interface PdfReportData {
   brandName: string
@@ -69,28 +75,21 @@ function addHeader(
   brand: Brand,
   title: string,
   primaryColor: { r: number; g: number; b: number },
+  logo: BrandLogo | null,
 ): void {
-  const pageWidth = doc.internal.pageSize.getWidth()
-
-  doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
-  doc.rect(0, 0, pageWidth, 25, 'F')
-
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'bold')
-  doc.text(brand.report_brand_name || 'AEO Pulse', 15, 16)
-
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.text(title, pageWidth - 15, 16, { align: 'right' })
-
-  if (brand.report_logo_url) {
-    try {
-      doc.addImage(brand.report_logo_url, 'PNG', pageWidth - 45, 3, 20, 10)
-    } catch {
-      // Skip if image fails
-    }
-  }
+  // The logo argument is pre-loaded rather than fetched here: this runs once
+  // per page, and the previous version passed the raw URL straight to
+  // `addImage`, which cannot work. jsPDF in Node reads a string argument as a
+  // FILESYSTEM PATH, so it threw "Trying to read a file from local file
+  // system" into an empty catch on every single page, and the logo a customer
+  // configured never appeared on any report.
+  drawBrandedHeader(doc as unknown as PdfHeaderTarget, {
+    brandName: brand.report_brand_name || 'AEO Pulse',
+    title,
+    color: primaryColor,
+    logo,
+    pageWidth: doc.internal.pageSize.getWidth(),
+  })
 }
 
 export async function generatePdf(
@@ -100,6 +99,10 @@ export async function generatePdf(
 ): Promise<Buffer> {
   const { locale = 'en' } = options
   const primaryColor = hexToRgb(brand.report_primary_color || '#6366f1')
+  // Fetched once per document, not once per page. Null when absent, blocked by
+  // the SSRF guard, unsupported (SVG) or too large — the header degrades to
+  // text rather than failing the export.
+  const logo = await loadBrandLogo(brand.report_logo_url)
   const brandName = brand.report_brand_name || 'AEO Pulse'
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -110,7 +113,7 @@ export async function generatePdf(
 
   // Page 1: AVI + SOAIV
   doc.addPage()
-  addHeader(doc, brand, `Brand Report: ${data.brandName}`, primaryColor)
+  addHeader(doc, brand, `Brand Report: ${data.brandName}`, primaryColor, logo)
 
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(12)
@@ -203,7 +206,7 @@ export async function generatePdf(
 
   // Page 2: Competitor Gap
   doc.addPage()
-  addHeader(doc, brand, `Competitor Analysis: ${data.brandName}`, primaryColor)
+  addHeader(doc, brand, `Competitor Analysis: ${data.brandName}`, primaryColor, logo)
 
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(16)
@@ -268,7 +271,7 @@ export async function generatePdf(
 
   // Page 3: Sentiment Heatmap
   doc.addPage()
-  addHeader(doc, brand, `Sentiment Analysis: ${data.brandName}`, primaryColor)
+  addHeader(doc, brand, `Sentiment Analysis: ${data.brandName}`, primaryColor, logo)
 
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(16)
@@ -354,7 +357,7 @@ export async function generatePdf(
 
   // Page 4: Recommendations
   doc.addPage()
-  addHeader(doc, brand, `Recommendations: ${data.brandName}`, primaryColor)
+  addHeader(doc, brand, `Recommendations: ${data.brandName}`, primaryColor, logo)
 
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(16)
@@ -369,7 +372,7 @@ export async function generatePdf(
       if (yPos > pageHeight - 30) {
         addFooter(doc, brandName, totalPages)
         doc.addPage()
-        addHeader(doc, brand, `Recommendations: ${data.brandName}`, primaryColor)
+        addHeader(doc, brand, `Recommendations: ${data.brandName}`, primaryColor, logo)
         doc.setTextColor(0, 0, 0)
         yPos = 35
       }

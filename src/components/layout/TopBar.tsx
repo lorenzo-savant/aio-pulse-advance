@@ -9,6 +9,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher'
+import { ProviderCreditWarning } from './ProviderCreditWarning'
 
 // NOTE: this map is a second source of truth alongside NAV_SECTIONS in the
 // Sidebar, and it has fallen behind. Seven pages that ARE in the sidebar have
@@ -274,6 +275,8 @@ export function TopBar() {
           </Button>
 
           <ThemeToggle />
+
+          <ProviderCreditWarning />
 
           <Link href="/dashboard/alerts">
             <Button size="icon" variant="ghost" className="relative" aria-label="Notifications">

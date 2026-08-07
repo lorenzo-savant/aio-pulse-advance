@@ -60,8 +60,16 @@ type IndustryItem = {
   Icon: FeatureIllu
 }
 
+// Every link here must land on a page that is in the authenticated sidebar,
+// otherwise a prospect clicks the feature, signs up, and can never find it
+// again.
+//
+// The AVI card used to point at /dashboard/analytics, which is where the AVI
+// is NOT: `AVIScoreCard` renders on /dashboard. So the card missed twice — it
+// advertised a feature and linked to a different one, on a page the app never
+// navigates to.
 const FEATURE_ITEMS: FeatureItem[] = [
-  { key: 'avi', Illustration: AviGaugeIllustration, link: '/dashboard/analytics' },
+  { key: 'avi', Illustration: AviGaugeIllustration, link: '/dashboard' },
   { key: 'multi_engine', Illustration: MultiEngineIllustration, link: '/dashboard/monitoring' },
   { key: 'competitive', Illustration: CompetitiveIllustration, link: '/dashboard/competitor' },
   { key: 'content_opt', Illustration: ContentOptIllustration, link: '/dashboard/optimizer' },

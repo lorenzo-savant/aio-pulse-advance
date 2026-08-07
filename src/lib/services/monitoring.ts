@@ -26,6 +26,11 @@ import type { LexiconLabel, ConflictLevel } from './sentiment-lexicon'
 import { normalizeEntityName } from './competitor-identity'
 import { withLlmCache } from './llm-cache'
 import { logger } from '@/lib/logger'
+import {
+  POSITION_SCALE_MAX,
+  normalizePositionScore,
+  hasMeasuredPosition,
+} from '@/lib/metrics/position'
 
 // TTL for the ANALYSIS pass only (see runMonitoringCheck). The simulation
 // pass is never persisted — re-running a scan must sample the engine afresh.
@@ -533,8 +538,13 @@ export interface AVIInput {
  * The formula used to normalise it as `((5 - p) / 4) * 100`, i.e. a 1-5 rank.
  * Everything from the fifth sentence on therefore scored exactly zero — a cliff
  * in the middle of a perfectly normal prose answer.
+ *
+ * Re-exported from lib/metrics/position, which is now the single definition.
+ * Fixing it here in 1a1e10d left the old formula in three other places, so the
+ * constant and the normalisation moved somewhere every scorer — server and
+ * client — can reach.
  */
-export const POSITION_SCALE_MAX = 20
+export { POSITION_SCALE_MAX }
 
 /**
  * Reconciles the model's sentiment against the deterministic lexicon.
@@ -597,14 +607,8 @@ export function calculateAVI(input: AVIInput): number {
   if (recommendationRate != null) {
     parts.push({ value: recommendationRate, weight: 0.2 })
   }
-  if (positionAvg > 0) {
-    parts.push({
-      value: Math.max(
-        0,
-        Math.min(100, ((POSITION_SCALE_MAX - positionAvg) / (POSITION_SCALE_MAX - 1)) * 100),
-      ),
-      weight: 0.15,
-    })
+  if (hasMeasuredPosition(positionAvg)) {
+    parts.push({ value: normalizePositionScore(positionAvg), weight: 0.15 })
   }
   if (hallucinationIndex != null) {
     parts.push({ value: Math.max(0, 100 - hallucinationIndex), weight: 0.1 })
@@ -914,12 +918,18 @@ export function calculateCompetitorAVI(
           ? Number.POSITIVE_INFINITY
           : components.recommendationRate * COMPONENT_WEIGHTS.recommendationRate,
     },
+    // Was `((5 - positionAvg) / 4) * 100` — the 1-5 rank formula commit 1a1e10d
+    // declared wrong — AND returned 0 for the never-positioned sentinel while
+    // every other component here returns POSITIVE_INFINITY for absence. Both
+    // pushed this branch toward winning: unmeasured scored 0 outright, and any
+    // position past the fifth sentence scored 0 too. The result was that
+    // "Answer Position" was reported as the weakest component in very nearly
+    // every competitor report, whatever the brand actually looked like.
     {
       key: 'positionAvg',
-      value:
-        components.positionAvg > 0
-          ? ((5 - components.positionAvg) / 4) * 100 * COMPONENT_WEIGHTS.positionAvg
-          : 0,
+      value: hasMeasuredPosition(components.positionAvg)
+        ? normalizePositionScore(components.positionAvg) * COMPONENT_WEIGHTS.positionAvg
+        : Number.POSITIVE_INFINITY,
     },
     // An unassessed index contributes nothing, so it can never be reported as
     // the weakest component — there is no measurement to call weak.

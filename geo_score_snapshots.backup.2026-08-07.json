@@ -1,0 +1,2108 @@
+[
+  {
+    "id": "ede3a237-534b-44d6-8c03-aa118fbb59a3",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-06-08",
+    "score": 66.9,
+    "grade": "C",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 50,
+        "weight": 0.3,
+        "contribution": 15
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 0,
+        "weight": 0.15,
+        "contribution": 0
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 68.8,
+        "weight": 0.1,
+        "contribution": 6.9
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Citations are the strongest GEO signal and the highest-weighted pillar (30%): when an engine links your domain as a source you gain both visibility AND trust, so gains here move the score the most.",
+        "label": "Citation Rate",
+        "pillar": "citation",
+        "weight": 0.3,
+        "actions": [
+          "Publish fact-dense, well-structured pages models can quote (clear claims, data, dates).",
+          "Add a clean llms.txt + schema.org markup so engines have a citable, machine-readable source.",
+          "Earn citations on high-authority third-party sites the engines already trust."
+        ],
+        "upliftPts": 15,
+        "currentScore": 50
+      },
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 15,
+        "currentScore": 0
+      }
+    ],
+    "engine_breakdown": {
+      "claude": 90,
+      "chatgpt": 82
+    },
+    "sample_size": 260,
+    "confidence": "high",
+    "previous_score": 66.9,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-08T05:00:28.785205+00:00"
+  },
+  {
+    "id": "c4926b27-90f6-4e02-887e-7ab11f3af76a",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-06-08",
+    "score": 93.4,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 75,
+        "weight": 0.15,
+        "contribution": 11.3
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 71.9,
+        "weight": 0.1,
+        "contribution": 7.2
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "claude": 90,
+      "gemini": 80,
+      "chatgpt": 85,
+      "perplexity": 80
+    },
+    "sample_size": 35,
+    "confidence": "high",
+    "previous_score": 93.4,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-08T05:00:29.212265+00:00"
+  },
+  {
+    "id": "7302fedf-1656-47e0-b8b7-e9b141230492",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-06-08",
+    "score": 65.8,
+    "grade": "C",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 50,
+        "weight": 0.25,
+        "contribution": 12.5
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 50,
+        "weight": 0.2,
+        "contribution": 10
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 25,
+        "weight": 0.15,
+        "contribution": 3.8
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 95,
+        "weight": 0.1,
+        "contribution": 9.5
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Presence is the foundation — if the model never names you, no other pillar can help. It is the second-heaviest pillar (25%).",
+        "label": "Brand Presence",
+        "pillar": "presence",
+        "weight": 0.25,
+        "actions": [
+          "Broaden topical coverage around your category and the problems you solve.",
+          "Make sure your brand name + aliases appear in canonical, crawlable content.",
+          "Build a Wikipedia presence — roughly 48% of ChatGPT citations come from Wikipedia."
+        ],
+        "upliftPts": 12.5,
+        "currentScore": 50
+      },
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 11.3,
+        "currentScore": 25
+      },
+      {
+        "why": "Being mentioned is good; being recommended is what converts. Models recommend brands that have social proof and clear comparison context.",
+        "label": "Recommendation Authority",
+        "pillar": "authority",
+        "weight": 0.2,
+        "actions": [
+          "Create comparison and “best of” pages that position you against named alternatives.",
+          "Earn reviews and third-party mentions that models read as endorsements.",
+          "Engage authentically on Reddit — roughly 47% of Perplexity citations come from Reddit."
+        ],
+        "upliftPts": 10,
+        "currentScore": 50
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 90,
+      "perplexity": 0
+    },
+    "sample_size": 22,
+    "confidence": "medium",
+    "previous_score": 65.8,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-08T05:00:29.563927+00:00"
+  },
+  {
+    "id": "f2fe7520-8b1c-492d-a5d9-f0793b24a743",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-06-15",
+    "score": 52.5,
+    "grade": "D",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 33.3,
+        "weight": 0.25,
+        "contribution": 8.3
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 33.3,
+        "weight": 0.2,
+        "contribution": 6.7
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 0,
+        "weight": 0.15,
+        "contribution": 0
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 75,
+        "weight": 0.1,
+        "contribution": 7.5
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Presence is the foundation — if the model never names you, no other pillar can help. It is the second-heaviest pillar (25%).",
+        "label": "Brand Presence",
+        "pillar": "presence",
+        "weight": 0.25,
+        "actions": [
+          "Broaden topical coverage around your category and the problems you solve.",
+          "Make sure your brand name + aliases appear in canonical, crawlable content.",
+          "Build a Wikipedia presence — roughly 48% of ChatGPT citations come from Wikipedia."
+        ],
+        "upliftPts": 16.7,
+        "currentScore": 33.3
+      },
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 15,
+        "currentScore": 0
+      },
+      {
+        "why": "Being mentioned is good; being recommended is what converts. Models recommend brands that have social proof and clear comparison context.",
+        "label": "Recommendation Authority",
+        "pillar": "authority",
+        "weight": 0.2,
+        "actions": [
+          "Create comparison and “best of” pages that position you against named alternatives.",
+          "Earn reviews and third-party mentions that models read as endorsements.",
+          "Engage authentically on Reddit — roughly 47% of Perplexity citations come from Reddit."
+        ],
+        "upliftPts": 13.3,
+        "currentScore": 33.3
+      }
+    ],
+    "engine_breakdown": {
+      "gemini": 0,
+      "chatgpt": 60,
+      "perplexity": 70
+    },
+    "sample_size": 384,
+    "confidence": "high",
+    "previous_score": 52.5,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-15T05:00:21.74526+00:00"
+  },
+  {
+    "id": "b6b857c1-da01-4442-87f8-7e5930c09008",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-06-15",
+    "score": 76.8,
+    "grade": "B",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 33.3,
+        "weight": 0.3,
+        "contribution": 10
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 91.7,
+        "weight": 0.15,
+        "contribution": 13.8
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 80,
+        "weight": 0.1,
+        "contribution": 8
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Citations are the strongest GEO signal and the highest-weighted pillar (30%): when an engine links your domain as a source you gain both visibility AND trust, so gains here move the score the most.",
+        "label": "Citation Rate",
+        "pillar": "citation",
+        "weight": 0.3,
+        "actions": [
+          "Publish fact-dense, well-structured pages models can quote (clear claims, data, dates).",
+          "Add a clean llms.txt + schema.org markup so engines have a citable, machine-readable source.",
+          "Earn citations on high-authority third-party sites the engines already trust."
+        ],
+        "upliftPts": 20,
+        "currentScore": 33.3
+      }
+    ],
+    "engine_breakdown": {
+      "claude": 80,
+      "chatgpt": 85,
+      "perplexity": 70
+    },
+    "sample_size": 56,
+    "confidence": "high",
+    "previous_score": 76.8,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-15T05:00:22.243213+00:00"
+  },
+  {
+    "id": "cc1c9bcb-a9a8-419b-94ea-80fa62ade480",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-06-15",
+    "score": 83.5,
+    "grade": "B",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 0,
+        "weight": 0.15,
+        "contribution": 0
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 85,
+        "weight": 0.1,
+        "contribution": 8.5
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 15,
+        "currentScore": 0
+      }
+    ],
+    "engine_breakdown": {
+      "gemini": 60,
+      "chatgpt": 90,
+      "perplexity": 75
+    },
+    "sample_size": 34,
+    "confidence": "high",
+    "previous_score": 83.5,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-15T05:00:22.580493+00:00"
+  },
+  {
+    "id": "c1dc6597-e28c-4cfe-9052-b85e887325ea",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-06-22",
+    "score": 77.4,
+    "grade": "B",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 50,
+        "weight": 0.3,
+        "contribution": 15
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 62.5,
+        "weight": 0.15,
+        "contribution": 9.4
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 80,
+        "weight": 0.1,
+        "contribution": 8
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Citations are the strongest GEO signal and the highest-weighted pillar (30%): when an engine links your domain as a source you gain both visibility AND trust, so gains here move the score the most.",
+        "label": "Citation Rate",
+        "pillar": "citation",
+        "weight": 0.3,
+        "actions": [
+          "Publish fact-dense, well-structured pages models can quote (clear claims, data, dates).",
+          "Add a clean llms.txt + schema.org markup so engines have a citable, machine-readable source.",
+          "Earn citations on high-authority third-party sites the engines already trust."
+        ],
+        "upliftPts": 15,
+        "currentScore": 50
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 80,
+      "perplexity": 60
+    },
+    "sample_size": 372,
+    "confidence": "high",
+    "previous_score": 77.4,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-22T05:01:08.830024+00:00"
+  },
+  {
+    "id": "60ac05cf-ef72-40a1-84b3-418cac4143cf",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-06-22",
+    "score": 98.3,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 82.5,
+        "weight": 0.1,
+        "contribution": 8.3
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "chatgpt": 85,
+      "perplexity": 75
+    },
+    "sample_size": 75,
+    "confidence": "high",
+    "previous_score": 98.3,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-22T05:01:09.260332+00:00"
+  },
+  {
+    "id": "27105017-33af-4d3c-93da-b2734d101fb0",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-06-22",
+    "score": 89.6,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 37.5,
+        "weight": 0.15,
+        "contribution": 5.6
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90,
+        "weight": 0.1,
+        "contribution": 9
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 9.4,
+        "currentScore": 37.5
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 90,
+      "perplexity": 80
+    },
+    "sample_size": 46,
+    "confidence": "high",
+    "previous_score": 89.6,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-22T05:01:09.618729+00:00"
+  },
+  {
+    "id": "079692a9-9ccf-4401-927a-220964e4bb6e",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-06-29",
+    "score": 87.5,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 66.7,
+        "weight": 0.3,
+        "contribution": 20
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 75,
+        "weight": 0.1,
+        "contribution": 7.5
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "gemini": 70,
+      "chatgpt": 70,
+      "perplexity": 70
+    },
+    "sample_size": 483,
+    "confidence": "high",
+    "previous_score": 87.5,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-29T05:01:00.668342+00:00"
+  },
+  {
+    "id": "e827c6cb-8843-44bb-9490-102f0e0e5f19",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-06-29",
+    "score": 98.9,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 89.4,
+        "weight": 0.1,
+        "contribution": 8.9
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "claude": 80,
+      "gemini": 95,
+      "chatgpt": 95,
+      "perplexity": 90
+    },
+    "sample_size": 92,
+    "confidence": "high",
+    "previous_score": 98.9,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-29T05:01:01.096911+00:00"
+  },
+  {
+    "id": "461f607c-8146-4da2-b3a5-331e8807c1e6",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-06-29",
+    "score": 89.6,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 37.5,
+        "weight": 0.15,
+        "contribution": 5.6
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90,
+        "weight": 0.1,
+        "contribution": 9
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 9.4,
+        "currentScore": 37.5
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 80,
+      "perplexity": 80
+    },
+    "sample_size": 51,
+    "confidence": "high",
+    "previous_score": 89.6,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-06-29T05:01:01.439627+00:00"
+  },
+  {
+    "id": "069c5993-a914-4130-adac-d610470f7370",
+    "brand_id": "8bf2d765-cee5-40e1-aa3a-f60274f56424",
+    "snapshot_date": "2026-07-06",
+    "score": 99.1,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90.6,
+        "weight": 0.1,
+        "contribution": 9.1
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "claude": 90,
+      "gemini": 90,
+      "chatgpt": 85,
+      "perplexity": 90
+    },
+    "sample_size": 4,
+    "confidence": "low",
+    "previous_score": 99.1,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-06T05:00:08.220745+00:00"
+  },
+  {
+    "id": "4b889ec5-3869-40b0-beca-a75204f6e705",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-07-06",
+    "score": 94.8,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 75,
+        "weight": 0.15,
+        "contribution": 11.3
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 85,
+        "weight": 0.1,
+        "contribution": 8.5
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "chatgpt": 80
+    },
+    "sample_size": 509,
+    "confidence": "high",
+    "previous_score": 94.8,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-06T05:00:08.936215+00:00"
+  },
+  {
+    "id": "7d2922a6-b2f5-4bf1-8696-abf5f89f2b8b",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-07-06",
+    "score": 98.8,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 87.5,
+        "weight": 0.1,
+        "contribution": 8.8
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "chatgpt": 85,
+      "perplexity": 85
+    },
+    "sample_size": 98,
+    "confidence": "high",
+    "previous_score": 98.8,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-06T05:00:09.385856+00:00"
+  },
+  {
+    "id": "25e7e945-959a-416d-b889-7917c703d6cd",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-07-06",
+    "score": 85.7,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 8.3,
+        "weight": 0.15,
+        "contribution": 1.2
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 94.2,
+        "weight": 0.1,
+        "contribution": 9.4
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 13.8,
+        "currentScore": 8.3
+      }
+    ],
+    "engine_breakdown": {
+      "gemini": 85,
+      "chatgpt": 90,
+      "perplexity": 80
+    },
+    "sample_size": 54,
+    "confidence": "high",
+    "previous_score": 85.7,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-06T05:00:09.7654+00:00"
+  },
+  {
+    "id": "f6cf8357-9e59-4b66-a130-06991e153ef7",
+    "brand_id": "8bf2d765-cee5-40e1-aa3a-f60274f56424",
+    "snapshot_date": "2026-07-13",
+    "score": 99.1,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90.6,
+        "weight": 0.1,
+        "contribution": 9.1
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "claude": 90,
+      "gemini": 90,
+      "chatgpt": 85,
+      "perplexity": 90
+    },
+    "sample_size": 4,
+    "confidence": "low",
+    "previous_score": 99.1,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-13T05:01:02.001303+00:00"
+  },
+  {
+    "id": "813eedb7-1de7-4215-96d4-e3295f3bdda9",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-07-13",
+    "score": 84,
+    "grade": "B",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 50,
+        "weight": 0.3,
+        "contribution": 15
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90,
+        "weight": 0.1,
+        "contribution": 9
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Citations are the strongest GEO signal and the highest-weighted pillar (30%): when an engine links your domain as a source you gain both visibility AND trust, so gains here move the score the most.",
+        "label": "Citation Rate",
+        "pillar": "citation",
+        "weight": 0.3,
+        "actions": [
+          "Publish fact-dense, well-structured pages models can quote (clear claims, data, dates).",
+          "Add a clean llms.txt + schema.org markup so engines have a citable, machine-readable source.",
+          "Earn citations on high-authority third-party sites the engines already trust."
+        ],
+        "upliftPts": 15,
+        "currentScore": 50
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 90,
+      "perplexity": 80
+    },
+    "sample_size": 510,
+    "confidence": "high",
+    "previous_score": 84,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-13T05:01:02.701043+00:00"
+  },
+  {
+    "id": "c7f69e66-465b-450c-a155-b8eb01fdede1",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-07-13",
+    "score": 99.5,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 95,
+        "weight": 0.1,
+        "contribution": 9.5
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "gemini": 95,
+      "chatgpt": 90,
+      "perplexity": 90
+    },
+    "sample_size": 98,
+    "confidence": "high",
+    "previous_score": 99.5,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-13T05:01:03.139025+00:00"
+  },
+  {
+    "id": "a6c6e50f-8e3a-4bd2-a1fe-897a58d6ad0b",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-07-13",
+    "score": 89.1,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 37.5,
+        "weight": 0.15,
+        "contribution": 5.6
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 85,
+        "weight": 0.1,
+        "contribution": 8.5
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 9.4,
+        "currentScore": 37.5
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 80,
+      "perplexity": 80
+    },
+    "sample_size": 56,
+    "confidence": "high",
+    "previous_score": 89.1,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-13T05:01:03.574686+00:00"
+  },
+  {
+    "id": "c54c3ff4-4453-4643-bc4b-a7968b6ec584",
+    "brand_id": "8bf2d765-cee5-40e1-aa3a-f60274f56424",
+    "snapshot_date": "2026-07-20",
+    "score": 99.1,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90.6,
+        "weight": 0.1,
+        "contribution": 9.1
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "claude": 90,
+      "gemini": 90,
+      "chatgpt": 85,
+      "perplexity": 90
+    },
+    "sample_size": 4,
+    "confidence": "low",
+    "previous_score": 99.1,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-20T05:00:07.983975+00:00"
+  },
+  {
+    "id": "7f5d72f2-3bb3-4ba6-93c4-f2f151d399aa",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-07-20",
+    "score": 97.1,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 87.5,
+        "weight": 0.15,
+        "contribution": 13.1
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90,
+        "weight": 0.1,
+        "contribution": 9
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "chatgpt": 90,
+      "perplexity": 80
+    },
+    "sample_size": 528,
+    "confidence": "high",
+    "previous_score": 97.1,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-20T05:00:08.695393+00:00"
+  },
+  {
+    "id": "6770430d-5d95-4bd7-870b-184b593af184",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-07-20",
+    "score": 99.4,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 93.8,
+        "weight": 0.1,
+        "contribution": 9.4
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "claude": 90,
+      "gemini": 90,
+      "chatgpt": 90,
+      "perplexity": 90
+    },
+    "sample_size": 105,
+    "confidence": "high",
+    "previous_score": 99.4,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-20T05:00:09.14207+00:00"
+  },
+  {
+    "id": "320282c5-774e-423a-bcaf-d242addfc03b",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-07-20",
+    "score": 80.3,
+    "grade": "B",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 50,
+        "weight": 0.3,
+        "contribution": 15
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 75,
+        "weight": 0.15,
+        "contribution": 11.3
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90,
+        "weight": 0.1,
+        "contribution": 9
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Citations are the strongest GEO signal and the highest-weighted pillar (30%): when an engine links your domain as a source you gain both visibility AND trust, so gains here move the score the most.",
+        "label": "Citation Rate",
+        "pillar": "citation",
+        "weight": 0.3,
+        "actions": [
+          "Publish fact-dense, well-structured pages models can quote (clear claims, data, dates).",
+          "Add a clean llms.txt + schema.org markup so engines have a citable, machine-readable source.",
+          "Earn citations on high-authority third-party sites the engines already trust."
+        ],
+        "upliftPts": 15,
+        "currentScore": 50
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 80,
+      "perplexity": 90
+    },
+    "sample_size": 52,
+    "confidence": "high",
+    "previous_score": 80.3,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-20T05:00:09.685476+00:00"
+  },
+  {
+    "id": "8ad6d974-01bf-4d6b-ae00-3cf53dc2079b",
+    "brand_id": "8bf2d765-cee5-40e1-aa3a-f60274f56424",
+    "snapshot_date": "2026-07-27",
+    "score": 99.1,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90.6,
+        "weight": 0.1,
+        "contribution": 9.1
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "claude": 90,
+      "gemini": 90,
+      "chatgpt": 85,
+      "perplexity": 90
+    },
+    "sample_size": 4,
+    "confidence": "low",
+    "previous_score": 99.1,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-27T05:01:01.314677+00:00"
+  },
+  {
+    "id": "bbaed67c-d271-4d18-a167-4f62ce07589d",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-07-27",
+    "score": 93.9,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 62.5,
+        "weight": 0.15,
+        "contribution": 9.4
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 95,
+        "weight": 0.1,
+        "contribution": 9.5
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "claude": 80,
+      "chatgpt": 90
+    },
+    "sample_size": 532,
+    "confidence": "high",
+    "previous_score": 93.9,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-27T05:01:01.901093+00:00"
+  },
+  {
+    "id": "f29f5f4a-15a9-4c2a-b97f-e5977d88972d",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-07-27",
+    "score": 99,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90,
+        "weight": 0.1,
+        "contribution": 9
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "chatgpt": 85,
+      "perplexity": 85
+    },
+    "sample_size": 114,
+    "confidence": "high",
+    "previous_score": 99,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-27T05:01:02.372414+00:00"
+  },
+  {
+    "id": "1181709a-dcc3-4575-bf09-aa7f68d5b301",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-07-27",
+    "score": 74.6,
+    "grade": "B",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 50,
+        "weight": 0.3,
+        "contribution": 15
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 37.5,
+        "weight": 0.15,
+        "contribution": 5.6
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 90,
+        "weight": 0.1,
+        "contribution": 9
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Citations are the strongest GEO signal and the highest-weighted pillar (30%): when an engine links your domain as a source you gain both visibility AND trust, so gains here move the score the most.",
+        "label": "Citation Rate",
+        "pillar": "citation",
+        "weight": 0.3,
+        "actions": [
+          "Publish fact-dense, well-structured pages models can quote (clear claims, data, dates).",
+          "Add a clean llms.txt + schema.org markup so engines have a citable, machine-readable source.",
+          "Earn citations on high-authority third-party sites the engines already trust."
+        ],
+        "upliftPts": 15,
+        "currentScore": 50
+      },
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 9.4,
+        "currentScore": 37.5
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 90,
+      "perplexity": 80
+    },
+    "sample_size": 58,
+    "confidence": "high",
+    "previous_score": 74.6,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-07-27T05:01:02.736923+00:00"
+  },
+  {
+    "id": "7fef3040-04b7-4634-a216-49d558d45d4a",
+    "brand_id": "8bf2d765-cee5-40e1-aa3a-f60274f56424",
+    "snapshot_date": "2026-08-03",
+    "score": 98.3,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 82.5,
+        "weight": 0.1,
+        "contribution": 8.3
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "chatgpt": 85,
+      "perplexity": 60
+    },
+    "sample_size": 6,
+    "confidence": "low",
+    "previous_score": 98.3,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-08-03T05:00:58.587897+00:00"
+  },
+  {
+    "id": "28a23880-ea7a-42ff-9b37-4cfb492f2c1b",
+    "brand_id": "f4441645-2937-46c4-8ac8-51a136a55e49",
+    "snapshot_date": "2026-08-03",
+    "score": 64.8,
+    "grade": "C",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 50,
+        "weight": 0.25,
+        "contribution": 12.5
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 50,
+        "weight": 0.2,
+        "contribution": 10
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 25,
+        "weight": 0.15,
+        "contribution": 3.8
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 85,
+        "weight": 0.1,
+        "contribution": 8.5
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Presence is the foundation — if the model never names you, no other pillar can help. It is the second-heaviest pillar (25%).",
+        "label": "Brand Presence",
+        "pillar": "presence",
+        "weight": 0.25,
+        "actions": [
+          "Broaden topical coverage around your category and the problems you solve.",
+          "Make sure your brand name + aliases appear in canonical, crawlable content.",
+          "Build a Wikipedia presence — roughly 48% of ChatGPT citations come from Wikipedia."
+        ],
+        "upliftPts": 12.5,
+        "currentScore": 50
+      },
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 11.3,
+        "currentScore": 25
+      },
+      {
+        "why": "Being mentioned is good; being recommended is what converts. Models recommend brands that have social proof and clear comparison context.",
+        "label": "Recommendation Authority",
+        "pillar": "authority",
+        "weight": 0.2,
+        "actions": [
+          "Create comparison and “best of” pages that position you against named alternatives.",
+          "Earn reviews and third-party mentions that models read as endorsements.",
+          "Engage authentically on Reddit — roughly 47% of Perplexity citations come from Reddit."
+        ],
+        "upliftPts": 10,
+        "currentScore": 50
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 80,
+      "perplexity": 50
+    },
+    "sample_size": 546,
+    "confidence": "high",
+    "previous_score": 64.8,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-08-03T05:00:59.180965+00:00"
+  },
+  {
+    "id": "2d4ce3ab-fc2f-4d39-bf61-bc25fa9239e6",
+    "brand_id": "6fb8bdf8-4419-4ee0-b62e-ba818356d9b6",
+    "snapshot_date": "2026-08-03",
+    "score": 99.3,
+    "grade": "A",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 100,
+        "weight": 0.3,
+        "contribution": 30
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 100,
+        "weight": 0.15,
+        "contribution": 15
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 92.5,
+        "weight": 0.1,
+        "contribution": 9.3
+      }
+    ],
+    "recommendations": [],
+    "engine_breakdown": {
+      "chatgpt": 90,
+      "perplexity": 85
+    },
+    "sample_size": 105,
+    "confidence": "high",
+    "previous_score": 99.3,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-08-03T05:00:59.586498+00:00"
+  },
+  {
+    "id": "19a9b243-9921-4e37-9527-efc5fef47de2",
+    "brand_id": "1cfe7e61-b3aa-4ea9-91ba-1fe170e6655c",
+    "snapshot_date": "2026-08-03",
+    "score": 72.6,
+    "grade": "B",
+    "pillars": [
+      {
+        "key": "citation",
+        "label": "Citation Rate",
+        "score": 50,
+        "weight": 0.3,
+        "contribution": 15
+      },
+      {
+        "key": "presence",
+        "label": "Brand Presence",
+        "score": 100,
+        "weight": 0.25,
+        "contribution": 25
+      },
+      {
+        "key": "authority",
+        "label": "Recommendation Authority",
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20
+      },
+      {
+        "key": "position",
+        "label": "Answer Position",
+        "score": 25,
+        "weight": 0.15,
+        "contribution": 3.8
+      },
+      {
+        "key": "trust",
+        "label": "Trust & Accuracy",
+        "score": 88.8,
+        "weight": 0.1,
+        "contribution": 8.9
+      }
+    ],
+    "recommendations": [
+      {
+        "why": "Citations are the strongest GEO signal and the highest-weighted pillar (30%): when an engine links your domain as a source you gain both visibility AND trust, so gains here move the score the most.",
+        "label": "Citation Rate",
+        "pillar": "citation",
+        "weight": 0.3,
+        "actions": [
+          "Publish fact-dense, well-structured pages models can quote (clear claims, data, dates).",
+          "Add a clean llms.txt + schema.org markup so engines have a citable, machine-readable source.",
+          "Earn citations on high-authority third-party sites the engines already trust."
+        ],
+        "upliftPts": 15,
+        "currentScore": 50
+      },
+      {
+        "why": "Where you appear in the answer decides whether users actually notice you. A low/zero score means you are effectively never positioned, even when mentioned.",
+        "label": "Answer Position",
+        "pillar": "position",
+        "weight": 0.15,
+        "actions": [
+          "Lead key pages with a concise, direct answer (answer-first format).",
+          "Use clear headings and Q&A blocks the model can lift verbatim.",
+          "Keep the most important facts in the first 100 words of the page."
+        ],
+        "upliftPts": 11.3,
+        "currentScore": 25
+      }
+    ],
+    "engine_breakdown": {
+      "chatgpt": 80,
+      "perplexity": 80
+    },
+    "sample_size": 56,
+    "confidence": "high",
+    "previous_score": 72.6,
+    "delta": 0,
+    "triggered_alerts": [],
+    "created_at": "2026-08-03T05:00:59.916072+00:00"
+  }
+]

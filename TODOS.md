@@ -118,21 +118,21 @@ API key, which is the thing that actually went wrong on 2026-08-07.
 
 ---
 
-## 3. Surface provider credit state in the cost/health UI
+## 3. ~~Surface provider credit state in the cost/health UI~~ — DONE 2026-08-07
 
-**What:** Once passive credit detection lands (issue #25, PR3), surface it
-somewhere an operator will see before a customer does.
+Detection landed in `27c6839`; the surfacing landed in `bfa9f7c` as a TopBar
+badge, present on every page.
 
-**Why:** On 2026-08-07 the Anthropic key returned "credit balance is too low" on
-every call and no part of the product noticed — not Engine Info, not any cost
-dashboard, not alerts. The detection is being built; the surfacing is not.
+The design decision worth keeping: it renders **nothing** unless a provider is
+confirmed to be refusing billed calls. Not for unknown state — credit is learned
+from real traffic, so a provider nobody has called has no verdict — and a failed
+poll never clears a live warning. A badge that is always on screen stops being
+read, and is then worth nothing on the day it matters.
 
-**Pros:** Turns a silent outage into a visible one. Cheap once detection exists.
-
-**Cons:** Needs a home, which depends on TODO 2.
-
-**Depends on:** issue #25 PR3 (passive credit detection), and TODO 2 for where it
-lives.
+The rule lives in `lib/providers/credit-warning` as a pure function rather than
+inside the component, because the project has no React component testing setup
+and adding one for a badge was not worth a new dependency. Eight tests, most of
+them asserting cases where nothing should appear.
 
 ---
 

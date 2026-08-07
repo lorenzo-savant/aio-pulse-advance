@@ -102,6 +102,23 @@ Disallow: /private
     expect(v.disallowPaths).toEqual(['/admin', '/private'])
   })
 
+  it('treats Disallow: /* as a root block, not as a subpath restriction', () => {
+    // `/*` matches every path, so it is semantically identical to `/`. Reading
+    // it as a mere subpath restriction reported a fully blocked site as
+    // crawlable — 100/100 on the public score instead of 0/100.
+    const r = parseRobotsTxt(`User-agent: GPTBot
+Disallow: /*
+`)
+    expect(checkBotAccess(r, 'gptbot').verdict).toBe('explicitly_blocked')
+  })
+
+  it('treats a wildcard group Disallow: /* as blocking every bot', () => {
+    const r = parseRobotsTxt(`User-agent: *
+Disallow: /*
+`)
+    expect(checkBotAccess(r, 'claudebot').verdict).toBe('wildcard_blocked')
+  })
+
   it('bot-specific group wins over wildcard (precedence)', () => {
     const r = parseRobotsTxt(`User-agent: *
 Disallow: /

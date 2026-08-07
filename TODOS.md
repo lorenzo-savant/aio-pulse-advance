@@ -335,3 +335,45 @@ one surface quieter rather than smaller.
 
 **Depends on:** the Citation Rate wording depends on entry 9's decision about
 what the metric should mean.
+
+---
+
+## 12. The test suite fails intermittently, and nobody knows why
+
+**What:** On 2026-08-07, across roughly six full runs of an unchanged tree, the
+suite produced: one run with 4 failed tests across 3 files, one run reporting
+"6 errors" (unhandled, not assertion failures), and four runs completely clean
+at 1895 passed. The failures were not captured — the very next run went green
+before the names could be read.
+
+**Why:** A suite that fails at random makes a green run weak evidence. Every
+"tests pass" claim in the 2026-08-07 work rests on runs that could have gone the
+other way, and the next person to hit a red build will reasonably assume their
+change caused it and go looking in the wrong place.
+
+**What was ruled out:** the obvious suspect was tests making real network calls,
+because `Groq HTTP 429` and `Cerebras HTTP 429` appear in the output on every
+run. They are **not** real: `callllm-fallback.test.ts` stubs `global.fetch` by
+URL and blanks the provider env keys first, precisely so real keys cannot leak
+into the chain. Those 429s are simulated, and the warnings are the code under
+test behaving correctly. Checked and dismissed.
+
+**Leading hypothesis, unproven:** resource contention causing timeouts. Run
+duration on identical code varied from 77s to 216s — nearly 3× — and the bad
+runs coincided with other heavy work on the same machine. `vi.stubGlobal` on
+`fetch` combined with `vi.resetModules()` across parallel workers is the other
+candidate worth examining.
+
+**How to pin it down:** run the suite in a loop capturing JSON output per run
+(`--reporter=json --outputFile=...`) until it goes red, then read the captured
+names rather than re-running. Consider `--pool=forks` or reducing concurrency to
+test the contention theory, and raising `testTimeout` to see whether the
+failures are timeouts wearing a disguise.
+
+**Pros:** A deterministic suite is the foundation every other guarantee in this
+repo stands on, including the audit scripts added on 2026-08-07.
+
+**Cons:** Intermittent failures are expensive to chase, and this one has a low
+rate — roughly 1 run in 3 at worst, and 4 consecutive clean runs at best.
+
+**Depends on:** Nothing.

@@ -9,36 +9,83 @@ this file is the living list.
 
 ---
 
-## 1. Decide the fate of ~1800 lines of unreachable dashboard pages
+## 1. Unreachable dashboard pages — PARTLY DONE 2026-08-07
 
-**What:** Four pages exist, render, and are wired to working APIs, but have zero
-inbound links from anywhere in the app. Connect them or delete them.
+Four complete, working pages had zero inbound links from anywhere. Every one of
+them called endpoints that exist and return data; none was broken. Two are
+resolved, two remain open because they turn on product decisions.
 
-| Page | Lines | Note |
-|---|---|---|
-| `/dashboard/overview` | 683 | Richer than the `/dashboard` that is actually linked. Uses `useRealtime`. |
-| `/dashboard/cost-monitor` | 513 | Complete cost UI, fully orphaned. |
-| `/dashboard/analytics` | 505 | Has a `BREADCRUMB_MAP` title but no link anywhere. |
-| `/dashboard/glossary` | 135 | Nothing points at it. |
+**Resolved:**
 
-**Why:** Shipped code nobody can reach is pure carrying cost — it appears in
-builds, in dependency graphs, and in every future refactor's blast radius, while
-returning nothing. `/dashboard/overview` is the sharp case: it is the better
-version of the page users actually land on.
+- `/dashboard/overview` (683 lines) — **connected** as "Brand Overview" under
+  Insights. It is the only surface in the product showing Google Search Console
+  data, and two of its three GSC panels — `CannibalizationPanel` and
+  `StrikingDistancePanel` — exist nowhere else, so deleting it would have thrown
+  away working analysis nobody had ever seen. Verified it duplicates neither
+  `/dashboard` (which aggregates insight surfaces) nor `/dashboard/brands/[id]`
+  (brand configuration and team): the three share no data sources at all.
+- `/dashboard/glossary` (135 lines) — **deleted.** The Documentation page,
+  already in the sidebar, carries a glossary section with more terms. See entry
+  11 for the drift this exposed.
 
-**Pros:** Either outcome is a win. Connecting recovers finished features for
-free; deleting shrinks the surface every future change has to consider.
+**Still open — `/dashboard/cost-monitor` (513 lines).**
 
-**Cons:** Requires a product judgement per page, not a mechanical fix. Connecting
-means each page must actually be good enough to show.
+The only surface in the product showing API cost data. Connecting it
+contradicts a decision already taken and written down: `/dashboard/api-costs`
+is a deliberate placeholder stating "this deployment runs internally in
+unlimited mode, so credit-based cost tracking is not exposed here".
 
-**Context:** Found by diffing `NAV_SECTIONS` in `components/layout/Sidebar.tsx`
-against the 47 files under `app/dashboard/`, then grepping for inbound links.
-`/dashboard/tools/prompt-generator` is a deliberate redirect and `api-costs`,
-`billing`, `credits` are deliberate placeholders for unmetered mode — those four
-are not orphans and should be left alone.
+That decision is worth re-examining rather than assumed. On 2026-08-07 the
+first operational question asked of this codebase was how much credit remained
+on the AI provider keys — which the product could not answer, and which had to
+be established by calling the providers by hand.
 
-**Depends on:** Nothing. Independent of the issue #25 work.
+Related: entry 2 (three parallel cost subsystems) should be settled at the same
+time, because connecting this page decides which of the three survives.
+
+**Still open — `/dashboard/analytics` (505 lines). Not actually an orphan.**
+
+Correcting the original diagnostic, which called this page unreachable: it IS
+linked, from the **public landing page**. `HomeContent.tsx:64` lists it as the
+"AVI" feature card, rendered at line 145. Three of the four feature cards point
+at pages that are in the sidebar; this is the one that is not.
+
+So a prospect clicks the AVI feature, lands on Analytics, signs up — and can
+never navigate back to it, because the authenticated app has no link. That is a
+worse problem than an unreachable page, and it is not fixed by deleting the
+page: deleting it breaks a link the marketing site is actively advertising.
+
+The overlap with `/dashboard/snapshots`, which IS in the sidebar:
+
+| analytics                     | snapshots (linked)        |
+| ----------------------------- | ------------------------- |
+| Citation Trend                | Citation Rate Trend       |
+| Competitor Comparison         | Competitor Citation Rates |
+| Avg Citation / Avg Visibility | —                         |
+| Change vs previous period     | Snapshot History          |
+
+Snapshots already covers both charts. Analytics adds period-over-period
+comparison and averages.
+
+Three ways out, in preference order:
+
+1. Fold the period comparison and averages into Snapshots, then point the
+   landing page's AVI card at Snapshots and delete this page. One surface, and
+   the marketing link still lands somewhere that exists in the menu.
+2. Connect it to the sidebar and accept two entries telling the same story.
+   That is how a product becomes hard to use.
+3. Leave it. The landing page keeps sending prospects to a page they can never
+   find again after signing up.
+
+**Note on ordering, which will not be obvious later:** `/dashboard/analytics`
+carries a "Generate snapshots" button. Until 2026-08-07 that button called a
+writer which erased `avg_position` and `competitor_rates` across a brand's
+whole history. It never fired in production _only because the page was
+unreachable_. That writer is now deleted (`b17a4d7`), so connecting the page is
+safe — but it was not safe before, and nothing in the page itself would have
+told you.
+
+**Depends on:** the cost-page decision depends on entry 2.
 
 ---
 
@@ -71,21 +118,21 @@ API key, which is the thing that actually went wrong on 2026-08-07.
 
 ---
 
-## 3. Surface provider credit state in the cost/health UI
+## 3. ~~Surface provider credit state in the cost/health UI~~ — DONE 2026-08-07
 
-**What:** Once passive credit detection lands (issue #25, PR3), surface it
-somewhere an operator will see before a customer does.
+Detection landed in `27c6839`; the surfacing landed in `bfa9f7c` as a TopBar
+badge, present on every page.
 
-**Why:** On 2026-08-07 the Anthropic key returned "credit balance is too low" on
-every call and no part of the product noticed — not Engine Info, not any cost
-dashboard, not alerts. The detection is being built; the surfacing is not.
+The design decision worth keeping: it renders **nothing** unless a provider is
+confirmed to be refusing billed calls. Not for unknown state — credit is learned
+from real traffic, so a provider nobody has called has no verdict — and a failed
+poll never clears a live warning. A badge that is always on screen stops being
+read, and is then worth nothing on the day it matters.
 
-**Pros:** Turns a silent outage into a visible one. Cheap once detection exists.
-
-**Cons:** Needs a home, which depends on TODO 2.
-
-**Depends on:** issue #25 PR3 (passive credit detection), and TODO 2 for where it
-lives.
+The rule lives in `lib/providers/credit-warning` as a pure function rather than
+inside the component, because the project has no React component testing setup
+and adding one for a badge was not worth a new dependency. Eight tests, most of
+them asserting cases where nothing should appear.
 
 ---
 
@@ -133,14 +180,14 @@ what was found and why the fix took the shape it did.
 - Deleted `supabase/schema.sql`. It had **zero consumers** — nothing in the CLI
   config, CI, scripts, or docs referenced it — while `check:drift` confirms
   0 runtime tables lack a `CREATE TABLE` in `supabase/migrations/`. The migrations
-  rebuild the database completely, so the file was redundant *and* wrong. Recover
+  rebuild the database completely, so the file was redundant _and_ wrong. Recover
   with `git checkout HEAD~1 -- supabase/schema.sql` if it is ever wanted back.
 - Left `prisma/schema.prisma` alone. `grep -rl @prisma/client src` is empty —
   nothing queries this database through Prisma, and `scripts/audit-prisma-drift.mjs`
   already documents that as a deliberate choice.
 
 **What is still open:** the source of truth is now `supabase/migrations/` plus the
-generated types, but nothing *enforces* that the types are regenerated after a
+generated types, but nothing _enforces_ that the types are regenerated after a
 migration. `check:drift` measures and exits 0. Making it gate would need
 `SUPABASE_DB_URL`, which this environment does not have.
 
@@ -194,8 +241,7 @@ them rather than fixing the same thing in two places.
 **Why:** The competitor cap is the live one. `validations.ts:46` hardcodes a max of
 3 on `competitorSchema`, duplicating the constant, while `brandStringArray` at
 `:123` caps at **100** and is what brands actually use. A brand created through
-the public API can carry 100 competitors while the UI and comparison logic assume
-3. `calculateCitationSnapshots` loops every competitor inside its
+the public API can carry 100 competitors while the UI and comparison logic assume 3. `calculateCitationSnapshots` loops every competitor inside its
 engine × category × language triple loop, so the write cost scales with that
 number.
 
@@ -215,8 +261,8 @@ citation 20% vs 30%, mention 20% vs 25%, sentiment 15% vs part of a combined 10%
 hallucination 10% vs the other part of that 10%. Recommendation and position match
 at 20% and 15%.
 
-**Why:** issue #25 corrects the position *formula* so both scorers normalise
-identically, but deliberately leaves the *weights* different. That ships a release
+**Why:** issue #25 corrects the position _formula_ so both scorers normalise
+identically, but deliberately leaves the _weights_ different. That ships a release
 whose stated purpose is metric correctness with two headline numbers that still
 disagree by construction. Defensible as two lenses — but it should be a stated
 decision with a visible explanation, not an omission a customer discovers.
@@ -253,3 +299,39 @@ feature that exists.
 reasons.
 
 **Depends on:** Nothing.
+
+---
+
+## 11. Two glossaries, different contents, one of them wrong
+
+**What:** The product carries two glossaries that can and do disagree.
+
+- `lib/data/glossary.ts` — 11 structured terms. Consumed by `/api/glossary`,
+  and by `/api/recommendations` and `services/gemini.ts` through
+  `buildGlossaryContext` / `buildAnalysisGlossaryContext`. **This is what the AI
+  models read when scoring and recommending.**
+- `app/dashboard/docs/page.tsx` — 13 terms, hardcoded inline. **This is what
+  the user reads.**
+
+**Why:** They already differ in count, and nothing keeps them in step. Worse,
+the user-facing copy documents a defect: it defines Citation Rate as "the
+percentage of monitored AI responses that **mention** your brand", which is the
+mention rate. That is the same conflation found in `citation_snapshots`, where a
+column named `citation_rate` is computed from `brand_mentioned` while
+`brand_health_scores.citation_rate` is a genuine citation rate derived from
+`cited_urls`. The glossary teaches the customer the wrong definition.
+
+**Pros:** Sourcing the docs section from `lib/data/glossary` gives one
+definition per term, and it is the definition the model is already using.
+
+**Cons:** The structured source has fewer terms, so the two would have to be
+merged rather than one simply replacing the other — and merging means deciding
+which wording is right, including for Citation Rate.
+
+**Context:** Found while deleting `/dashboard/glossary` (entry 1). That page
+rendered the _structured_ source, so removing it means users now only ever see
+the hardcoded copy. No terms were lost — docs has more — but the drift risk got
+one surface quieter rather than smaller.
+
+**Depends on:** the Citation Rate wording depends on entry 9's decision about
+what the metric should mean.

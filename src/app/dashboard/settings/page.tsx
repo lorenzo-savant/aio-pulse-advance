@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { User, Key, Bell, Save, Loader2, Trash2, Globe } from 'lucide-react'
+import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -211,7 +212,7 @@ function ApiKeysSection() {
                         •••••••••••••••••••••••••••••• (stored encrypted)
                       </div>
                       <Button size="icon" variant="ghost" onClick={() => handleDelete(provider)}>
-                        <Trash2 className="h-4 w-4 text-red-400" />
+                        <Trash2 className="text-red-400 h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
@@ -346,10 +347,23 @@ function ProfileSection() {
   )
 }
 
+/**
+ * This section used to offer an "alert email" field with a Save button.
+ *
+ * None of it was wired: the Button had no onClick, there was no form and no
+ * submit handler, `setSaving` was never called, and the email was never sent
+ * anywhere. Typing an address and pressing Save did nothing, silently — no
+ * request, no error, no feedback. A user who set it up would reasonably
+ * believe they had configured alert delivery and then wonder why no alert
+ * ever arrived.
+ *
+ * Alert email is real and works, but it lives PER RULE: `alert_rules.email`,
+ * dispatched by services/alerts.ts. Adding a second, account-level default
+ * would have been a new feature. The field is removed and points at the
+ * surface where the setting actually exists.
+ */
 function NotificationsSection() {
   const t = useTranslations('settings.notifications')
-  const [email, setEmail] = useState('')
-  const [saving, setSaving] = useState(false)
 
   return (
     <Card className="border border-input bg-card p-6">
@@ -361,26 +375,13 @@ function NotificationsSection() {
         <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            {t('alert_email')}
-          </label>
-          <input
-            type="email"
-            className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
-            placeholder={t('alert_email_placeholder')}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <p className="mt-2 text-xs text-muted-foreground">{t('alert_email_helper')}</p>
-        </div>
-
-        <Button loading={saving}>
-          <Save className="h-4 w-4" />
-          {t('save_button')}
-        </Button>
-      </div>
+      <Link
+        className="inline-flex items-center gap-2 rounded-xl border border-input bg-input px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary"
+        href="/dashboard/alerts"
+      >
+        <Bell className="h-4 w-4 text-muted-foreground" />
+        {t('manage_in_alerts')}
+      </Link>
     </Card>
   )
 }

@@ -10,8 +10,14 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher'
 
+// NOTE: this map is a second source of truth alongside NAV_SECTIONS in the
+// Sidebar, and it has fallen behind. Seven pages that ARE in the sidebar have
+// no entry here and render the generic title "Dashboard" — including GEO
+// Score, the product's headline metric. Deriving these from NAV_SECTIONS
+// would fix it permanently; that is TODOS.md entry 4 and out of scope here.
 const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard': 'Main Dashboard',
+  '/dashboard/overview': 'Brand Overview',
   '/dashboard/analytics': 'Analytics',
   '/dashboard/optimizer': 'Content Optimizer',
   '/dashboard/audit': 'Content Audit',

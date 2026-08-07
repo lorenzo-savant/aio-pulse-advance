@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Shield,
   Zap,
@@ -29,12 +29,9 @@ const ENGINES = [
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
     accent: 'text-emerald-400',
-    status: 'operational' as const,
-    version: 'GPT-4o + SearchGPT',
     indexingSpeed: 'Real-time',
     citationStyle: 'Inline with source links',
     strengths: ['Conversational retrieval', 'Multi-turn memory', 'Code & structured output'],
-    lastChecked: '2 min ago',
     docsUrl: 'https://platform.openai.com/docs',
   },
   {
@@ -46,12 +43,9 @@ const ENGINES = [
     bg: 'bg-blue-500/10',
     border: 'border-blue-500/20',
     accent: 'text-blue-400',
-    status: 'operational' as const,
-    version: 'Gemini 1.5 Pro',
     indexingSpeed: 'Hours to days',
     citationStyle: 'Source carousel + inline',
     strengths: ['Knowledge Graph integration', 'Multimodal understanding', 'Real-time indexing'],
-    lastChecked: '5 min ago',
     docsUrl: 'https://ai.google.dev/docs',
   },
   {
@@ -63,12 +57,9 @@ const ENGINES = [
     bg: 'bg-purple-500/10',
     border: 'border-purple-500/20',
     accent: 'text-purple-400',
-    status: 'operational' as const,
-    version: 'Sonar Large (Llama 3.1)',
     indexingSpeed: 'Near real-time',
     citationStyle: 'Numbered citations [1][2]',
     strengths: ['Fact density preference', 'Academic sources', 'Real-time search'],
-    lastChecked: '1 min ago',
     docsUrl: 'https://docs.perplexity.ai',
   },
   {
@@ -80,12 +71,9 @@ const ENGINES = [
     bg: 'bg-orange-500/10',
     border: 'border-orange-500/20',
     accent: 'text-orange-400',
-    status: 'operational' as const,
-    version: 'Claude 3.5 Sonnet',
     indexingSpeed: 'Context-based',
     citationStyle: 'Integrated synthesis',
     strengths: ['Long-form reasoning', 'Nuanced analysis', 'Safety-first responses'],
-    lastChecked: '3 min ago',
     docsUrl: 'https://docs.anthropic.com',
   },
 ]
@@ -99,9 +87,66 @@ const STATUS_MAP = {
   },
   degraded: { label: 'Degraded', color: 'warning', icon: AlertTriangle, dot: 'bg-amber-500' },
   outage: { label: 'Outage', color: 'danger', icon: XCircle, dot: 'bg-red-500' },
+  // Configured and reachable, but the account cannot pay for a call. The key
+  // authenticates perfectly — that is exactly why nothing caught this before.
+  no_credit: { label: 'No credit', color: 'danger', icon: XCircle, dot: 'bg-red-500' },
+  // No API key set for this engine, so it is not being queried at all.
+  unconfigured: { label: 'Not configured', color: 'warning', icon: AlertTriangle, dot: 'bg-muted' },
+  // Nothing has been read yet. Honest default, and NEVER "operational" — this
+  // page used to hardcode `status: 'operational'` and reported Claude as
+  // healthy while its balance was empty.
+  unknown: { label: 'Checking…', color: 'warning', icon: AlertTriangle, dot: 'bg-muted' },
 } as const
 
 type EngineStatus = keyof typeof STATUS_MAP
+
+export interface ProviderHealth {
+  id: string
+  isConfigured: boolean
+  isAvailable: boolean
+  lastChecked: string
+  model?: string
+  creditExhausted: boolean | null
+  creditDetail?: string
+}
+
+/** Live state for one engine card, derived from /api/providers/health. */
+export interface EngineLiveState {
+  status: EngineStatus
+  model?: string
+  lastChecked?: string
+  detail?: string
+}
+
+/**
+ * Order matters: an exhausted balance outranks reachability, because a key in
+ * that state passes every liveness probe and then refuses every billed call.
+ */
+export function deriveStatus(p: ProviderHealth | undefined): EngineLiveState {
+  if (!p) return { status: 'unknown' }
+  if (!p.isConfigured) return { status: 'unconfigured', lastChecked: p.lastChecked }
+  if (p.creditExhausted === true) {
+    return {
+      status: 'no_credit',
+      model: p.model,
+      lastChecked: p.lastChecked,
+      detail: p.creditDetail,
+    }
+  }
+  if (!p.isAvailable) return { status: 'outage', model: p.model, lastChecked: p.lastChecked }
+  return { status: 'operational', model: p.model, lastChecked: p.lastChecked }
+}
+
+/** "3 min ago" from a real timestamp, instead of a hardcoded string. */
+function relativeTime(iso: string | undefined): string {
+  if (!iso) return '—'
+  const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000))
+  if (seconds < 60) return `${seconds}s ago`
+  const minutes = Math.round(seconds / 60)
+  if (minutes < 60) return `${minutes} min ago`
+  const hours = Math.round(minutes / 60)
+  return hours < 24 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`
+}
 
 const OPTIMIZATION_MATRIX = [
   { category: 'Structure', chatgpt: 85, gemini: 90, perplexity: 75, claude: 70 },
@@ -111,10 +156,10 @@ const OPTIMIZATION_MATRIX = [
   { category: 'Authority Signals', chatgpt: 82, gemini: 88, perplexity: 90, claude: 78 },
 ]
 
-function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
+function EngineCard({ engine, live }: { engine: (typeof ENGINES)[0]; live: EngineLiveState }) {
   const t = useTranslations('monitor')
   const [expanded, setExpanded] = useState(false)
-  const status = STATUS_MAP[engine.status as EngineStatus]
+  const status = STATUS_MAP[live.status]
   const signals = getEngineSignals(engine.id)
   const Icon = engine.icon
 
@@ -135,7 +180,8 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
             <div>
               <p className="font-bold text-foreground">{engine.name}</p>
               <p className="text-xs text-muted-foreground">
-                {engine.company} · {engine.version}
+                {engine.company}
+                {live.model ? ` · ${live.model}` : ''}
               </p>
             </div>
           </div>
@@ -203,9 +249,15 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
           </div>
         )}
 
+        {live.detail && (
+          <p className="border-red-500/20 bg-red-500/5 text-red-300 mt-3 rounded-lg border px-3 py-2 text-[11px]">
+            {live.detail}
+          </p>
+        )}
+
         <div className="mt-4 flex items-center justify-between border-t border-input pt-3">
           <span className="text-text-secondary-surface text-[10px]">
-            {t('checked')} {engine.lastChecked}
+            {t('checked')} {relativeTime(live.lastChecked)}
           </span>
           <a
             className={cn(
@@ -226,15 +278,43 @@ function EngineCard({ engine }: { engine: (typeof ENGINES)[0] }) {
 
 export default function MonitorPage() {
   const t = useTranslations('monitor')
-  const tc = useTranslations('common')
   const [refreshing, setRefreshing] = useState(false)
+  const [health, setHealth] = useState<ProviderHealth[] | null>(null)
 
-  const handleRefresh = () => {
+  // This page performed ZERO network requests. Engine status, model names and
+  // a literal "2 min ago" were hardcoded, so it reported every engine as
+  // operational by construction — including, on 2026-08-07, a Claude key that
+  // was returning a billing error on every single call.
+  //
+  // /api/providers/health already existed and had no consumers.
+  const loadHealth = useCallback(async () => {
     setRefreshing(true)
-    setTimeout(() => setRefreshing(false), 1500)
-  }
+    try {
+      const res = await fetch('/api/providers/health')
+      const data = await res.json()
+      setHealth(Array.isArray(data?.providers) ? data.providers : [])
+    } catch {
+      // Leave `health` as-is rather than inventing a status. An empty array
+      // means "asked and got nothing"; null means "have not asked yet". Both
+      // render as unknown, never as operational.
+      setHealth((prev) => prev ?? [])
+    } finally {
+      setRefreshing(false)
+    }
+  }, [])
 
-  const allOperational = ENGINES.every((e) => e.status === 'operational')
+  useEffect(() => {
+    void loadHealth()
+  }, [loadHealth])
+
+  const liveByEngine = useMemo(() => {
+    const byId = new Map((health ?? []).map((p) => [p.id, p]))
+    return new Map(ENGINES.map((e) => [e.id, deriveStatus(byId.get(e.id))]))
+  }, [health])
+
+  const states = [...liveByEngine.values()]
+  const operationalCount = states.filter((s) => s.status === 'operational').length
+  const allOperational = health !== null && operationalCount === ENGINES.length
 
   return (
     <div className="animate-in space-y-8">
@@ -243,7 +323,7 @@ export default function MonitorPage() {
           <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
           <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
-        <Button loading={refreshing} size="sm" variant="outline" onClick={handleRefresh}>
+        <Button loading={refreshing} size="sm" variant="outline" onClick={() => void loadHealth()}>
           <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
           {t('refresh_status')}
         </Button>
@@ -266,7 +346,7 @@ export default function MonitorPage() {
           </p>
           <p className="text-xs text-muted-foreground">
             {t('engines_operational', {
-              operational: ENGINES.filter((e) => e.status === 'operational').length,
+              operational: operationalCount,
               total: ENGINES.length,
             })}
           </p>
@@ -275,7 +355,11 @@ export default function MonitorPage() {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {ENGINES.map((engine) => (
-          <EngineCard key={engine.id} engine={engine} />
+          <EngineCard
+            key={engine.id}
+            engine={engine}
+            live={liveByEngine.get(engine.id) ?? { status: 'unknown' }}
+          />
         ))}
       </div>
 

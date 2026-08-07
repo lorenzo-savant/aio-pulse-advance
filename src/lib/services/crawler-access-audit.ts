@@ -215,9 +215,16 @@ export function parseRobotsTxt(content: string): ParsedRobots {
 
 function isRootBlock(paths: string[]): boolean {
   // Disallow: / blocks everything; Disallow: (empty) means "nothing
-  // disallowed", explicitly allowing crawl. We treat exact "/" as the
-  // root block — partial paths leave the root open (verdict: restricted).
-  return paths.some((p) => p === '/')
+  // disallowed", explicitly allowing crawl. Partial paths leave the root open
+  // (verdict: restricted).
+  //
+  // `/*` is included because it is semantically identical to `/` — the
+  // wildcard matches every path — and sites do write it. Matching only the
+  // exact "/" reported all 13 bots as merely `restricted` against a file that
+  // blocks every one of them, which lands on the customer-facing score as
+  // 100/100 instead of 0/100. Every defect this module family has had failed
+  // in that same optimistic direction, so it is worth naming the pattern.
+  return paths.some((p) => p === '/' || p === '/*')
 }
 
 /**

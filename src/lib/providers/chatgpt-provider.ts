@@ -16,6 +16,7 @@ export interface ChatGPTSearchResult extends AIProviderResult {
 export class ChatGPTProvider extends BaseProvider {
   readonly id = 'chatgpt' as const
   readonly name = 'ChatGPT Search'
+  override readonly defaultModel = CHATGPT_MODELS.GPT_4_1
 
   protected override timeoutMs = 45000
 

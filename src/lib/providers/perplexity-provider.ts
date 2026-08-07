@@ -16,6 +16,7 @@ export interface PerplexityResult extends AIProviderResult {
 export class PerplexityProvider extends BaseProvider {
   readonly id = 'perplexity' as const
   readonly name = 'Perplexity'
+  override readonly defaultModel = PERPLEXITY_MODELS.SONAR_PRO
 
   isConfigured(): boolean {
     return !!process.env['PERPLEXITY_API_KEY']

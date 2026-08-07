@@ -599,11 +599,8 @@
     },
     "notifications": {
       "title": "Notifiche",
-      "description": "Configura come ricevi gli avvisi.",
-      "alert_email": "Email per Avvisi",
-      "alert_email_placeholder": "avvisi@tuodominio.com",
-      "alert_email_helper": "Gli avvisi verranno inviati tramite Resend quando attivati.",
-      "save_button": "Salva Preferenze"
+      "description": "La consegna degli avvisi si configura per singola regola.",
+      "manage_in_alerts": "Gestisci le regole di avviso"
     },
     "interface_language": {
       "title": "Lingua dell'Interfaccia",

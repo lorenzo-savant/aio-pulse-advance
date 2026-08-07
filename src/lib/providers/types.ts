@@ -26,6 +26,15 @@ export interface AIProviderResult {
   tokensUsed?: number
   costEstimate?: number
   cached?: boolean
+  /**
+   * HTTP status of the failing response, when there was one.
+   *
+   * It was previously computed inside BaseProvider and typed away at the
+   * boundary, so callers could not tell a 429 from a 500 — and the one place
+   * that kept it, `lastStatusCode`, was assigned and never read. Distinguishing
+   * "out of credit" from "going too fast" needs it.
+   */
+  statusCode?: number
 }
 
 export interface AIProviderRequest {

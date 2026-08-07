@@ -1,43 +1,62 @@
+// PATH: src/lib/services/crawlability.ts
+//
+// Public "can AI engines read your site?" check, served by
+// /api/crawlability/check and /api/crawlability/bots. Both are unauthenticated,
+// so this number is shown to people who are not customers yet.
+//
+// WHAT CHANGED, AND WHY
+// This module used to carry its own robots.txt parser and its own bot list.
+// Both were wrong, and both failed in the optimistic direction — telling a site
+// owner every AI crawler could read them while the crawlers were blocked.
+//
+// The parser had three defects, all confirmed by executing it:
+//
+//   · User-agent lookup was an exact-case Map get, but RFC 9309 makes
+//     user-agent matching case-insensitive. A robots.txt saying
+//     `user-agent: gptbot` in lowercase scored 100/100 with an empty blocked
+//     list, against a file that blocks GPTBot outright.
+//   · Consecutive `User-agent:` lines sharing one rule block — a documented
+//     and common pattern — silently dropped every agent but the last.
+//   · Rule precedence sorted by wildcard count rather than path specificity,
+//     so `Allow: /` beat `Disallow: /admin/`.
+//
+// The bot list was the worse half. It scored against `DuckBot`, which is not a
+// real token (the crawler is `DuckDuckBot`), so that entry never matched
+// anything and always counted as allowed. Seven of its thirteen entries were
+// not AI answer-engine crawlers at all — Bingbot, Yandex, TwitterBot,
+// FacebookBot, AdsBot-Google, Amazonbot, AdsBot — while the ones that decide
+// whether ChatGPT, Perplexity and Claude can read a page were missing
+// entirely: OAI-SearchBot, ChatGPT-User, Perplexity-User, Claude-Web,
+// anthropic-ai, Meta-ExternalAgent, Bytespider.
+//
+// Fixing the parser without fixing the list would have left the customer-facing
+// number just as wrong.
+//
+// Rather than repair either, this module now delegates to
+// `crawler-access-audit`, which already parses correctly (lowercases tokens on
+// both sides, keeps stacked User-agent lines in one group, resolves
+// specific-beats-wildcard precedence) and already carries the curated AI bot
+// registry. One parser, one list.
+
 import { safeFetch } from '@/lib/utils/safe-fetch'
-
-export const AI_BOTS = [
-  'GPTBot',
-  'ClaudeBot',
-  'PerplexityBot',
-  'Google-Extended',
-  'CCBot',
-  'Applebot-Extended',
-  'Amazonbot',
-  'AdsBot-Google',
-  'DuckBot',
-  'FacebookBot',
-  'TwitterBot',
-  'Bingbot',
-  'Yandex',
-] as const
-
-export type BotName = (typeof AI_BOTS)[number]
-
-export interface RobotRule {
-  userAgent: string
-  disallow: string[]
-  allow: string[]
-  crawlDelay?: number
-}
-
-export interface RobotRules {
-  raw: string
-  rules: Map<string, RobotRule>
-}
+import {
+  AI_BOTS,
+  parseRobotsTxt,
+  auditRobotsForAiBots,
+  type AccessVerdict,
+  type BotVerdict,
+} from './crawler-access-audit'
 
 export interface BotAccessResult {
-  bot: BotName
+  /** Human-readable bot label, e.g. "GPTBot". */
+  bot: string
   allowed: boolean
+  /** Why, in the caller's terms. Present whenever `allowed` is false. */
   reason?: string
 }
 
 export interface Recommendation {
-  bot: BotName
+  bot: string
   action: string
   priority: 'high' | 'medium' | 'low'
 }
@@ -45,164 +64,53 @@ export interface Recommendation {
 export interface CrawlabilityResult {
   url: string
   timestamp: string
+  /** 0–100. Share of tracked AI crawlers that can reach the site. */
   score: number
   results: BotAccessResult[]
   recommendations: Recommendation[]
+  /**
+   * How the robots.txt itself was resolved. Surfaced because "no robots.txt"
+   * and "robots.txt is down" produce very different scores and a caller
+   * should be able to tell them apart.
+   */
+  robotsStatus: 'found' | 'absent' | 'unreachable'
 }
 
-function normalizeUserAgent(ua: string): string {
-  return ua.toLowerCase().replace(/[*]/g, '.*')
+/**
+ * A bot counts as able to reach the site when its root is open.
+ *
+ * `restricted` counts as allowed on purpose: the bot has its own group with
+ * subpath disallows but the root is open, so it can still fetch and cite the
+ * pages that matter. Treating it as blocked would flag every site that hides
+ * /admin.
+ */
+function isAllowed(verdict: AccessVerdict): boolean {
+  return verdict === 'allowed' || verdict === 'restricted'
 }
 
-function matchUserAgent(botName: string, ruleUa: string): boolean {
-  const normalizedRule = normalizeUserAgent(ruleUa)
-  const botLower = botName.toLowerCase()
-
-  if (normalizedRule === '.*' || normalizedRule === '*') {
-    return true
-  }
-
-  if (new RegExp(`^${normalizedRule}`).test(botLower)) {
-    return true
-  }
-
-  return botLower.startsWith(normalizedRule.replace('.*', ''))
-}
-
-function patternToRegex(pattern: string): RegExp {
-  const regex = pattern
-    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*/g, '.*')
-    .replace(/\?/g, '.')
-
-  return new RegExp('^' + regex)
-}
-
-export function parseRobotsTxt(content: string): RobotRules {
-  const rules = new Map<string, RobotRule>()
-  const lines = content.split('\n')
-
-  let currentUa = '*'
-  const currentRule: RobotRule = {
-    userAgent: '*',
-    disallow: [],
-    allow: [],
-  }
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-
-    const colonIndex = trimmed.indexOf(':')
-    if (colonIndex === -1) continue
-
-    const directive = trimmed.substring(0, colonIndex).trim().toLowerCase()
-    const value = trimmed.substring(colonIndex + 1).trim()
-
-    if (directive === 'user-agent') {
-      if (
-        currentRule.disallow.length > 0 ||
-        currentRule.allow.length > 0 ||
-        currentRule.crawlDelay !== undefined
-      ) {
-        const existing = rules.get(currentUa)
-        if (existing) {
-          existing.disallow.push(...currentRule.disallow)
-          existing.allow.push(...currentRule.allow)
-          if (currentRule.crawlDelay !== undefined) {
-            existing.crawlDelay = currentRule.crawlDelay
-          }
-        } else {
-          rules.set(currentUa, { ...currentRule })
-        }
-      }
-      currentUa = value
-      currentRule.userAgent = value
-      currentRule.disallow = []
-      currentRule.allow = []
-      currentRule.crawlDelay = undefined
-    } else if (directive === 'disallow') {
-      if (value) currentRule.disallow.push(value)
-    } else if (directive === 'allow') {
-      if (value) currentRule.allow.push(value)
-    } else if (directive === 'crawl-delay') {
-      const delay = parseFloat(value)
-      if (!isNaN(delay)) {
-        currentRule.crawlDelay = delay
-      }
-    }
-  }
-
-  if (
-    currentRule.disallow.length > 0 ||
-    currentRule.allow.length > 0 ||
-    currentRule.crawlDelay !== undefined
-  ) {
-    const existing = rules.get(currentUa)
-    if (existing) {
-      existing.disallow.push(...currentRule.disallow)
-      existing.allow.push(...currentRule.allow)
-      if (currentRule.crawlDelay !== undefined) {
-        existing.crawlDelay = currentRule.crawlDelay
-      }
-    } else {
-      rules.set(currentUa, { ...currentRule })
-    }
-  }
-
-  return {
-    raw: content,
-    rules,
+function reasonFor(v: BotVerdict): string | undefined {
+  switch (v.verdict) {
+    case 'explicitly_blocked':
+      return `robots.txt has a ${v.bot.label} group with Disallow: /`
+    case 'wildcard_blocked':
+      return 'robots.txt blocks all crawlers with Disallow: / and has no group for this bot'
+    case 'unknown':
+      return 'robots.txt could not be read, so access cannot be confirmed'
+    default:
+      return undefined
   }
 }
 
-export function checkBotAccess(rules: RobotRules, bot: BotName, testPath = '/'): boolean {
-  const botSpecificRule = rules.rules.get(bot)
-  const defaultRule = rules.rules.get('*')
-
-  let patterns: { pattern: string; allowed: boolean }[] = []
-
-  if (botSpecificRule) {
-    patterns = [
-      ...botSpecificRule.allow.map((p) => ({ pattern: p, allowed: true })),
-      ...botSpecificRule.disallow.map((p) => ({ pattern: p, allowed: false })),
-    ]
-  } else if (defaultRule) {
-    patterns = [
-      ...defaultRule.allow.map((p) => ({ pattern: p, allowed: true })),
-      ...defaultRule.disallow.map((p) => ({ pattern: p, allowed: false })),
-    ]
-  }
-
-  if (patterns.length === 0) {
-    return true
-  }
-
-  patterns.sort((a, b) => {
-    const aWildcards = (a.pattern.match(/\*/g) || []).length
-    const bWildcards = (b.pattern.match(/\*/g) || []).length
-    return bWildcards - aWildcards
-  })
-
-  for (const { pattern, allowed } of patterns) {
-    const regex = patternToRegex(pattern)
-    if (regex.test(testPath)) {
-      return allowed
-    }
-  }
-
-  return true
-}
-
-export function checkAllBots(
-  rules: RobotRules,
-  bots: readonly BotName[] = AI_BOTS,
-  testPath = '/',
-): BotAccessResult[] {
-  return bots.map((bot) => ({
-    bot,
-    allowed: checkBotAccess(rules, bot, testPath),
-  }))
+/**
+ * Engines the product actually reports on outrank training-only and
+ * social crawlers: being blocked to ChatGPT costs a customer visibility in a
+ * surface they are paying to be measured in.
+ */
+function priorityFor(engine: string): 'high' | 'medium' | 'low' {
+  if (engine === 'chatgpt' || engine === 'gemini' || engine === 'perplexity' || engine === 'claude')
+    return 'high'
+  if (engine === 'training') return 'medium'
+  return 'low'
 }
 
 export function calculateCrawlabilityScore(results: BotAccessResult[]): number {
@@ -211,23 +119,28 @@ export function calculateCrawlabilityScore(results: BotAccessResult[]): number {
   return Math.round((allowed / results.length) * 100)
 }
 
-export function getRecommendations(results: BotAccessResult[]): Recommendation[] {
-  return results
-    .filter((r) => !r.allowed)
-    .map((r) => ({
-      bot: r.bot,
-      action: `Allow ${r.bot} in robots.txt`,
-      priority: getPriority(r.bot),
+export function getRecommendations(verdicts: BotVerdict[]): Recommendation[] {
+  return verdicts
+    .filter((v) => !isAllowed(v.verdict))
+    .map((v) => ({
+      bot: v.bot.label,
+      action:
+        v.verdict === 'unknown'
+          ? `Make robots.txt reachable so ${v.bot.label} access can be verified`
+          : `Allow ${v.bot.label} in robots.txt`,
+      priority: priorityFor(v.bot.engine),
     }))
 }
 
-function getPriority(bot: BotName): 'high' | 'medium' | 'low' {
-  const highPriority = ['GPTBot', 'ClaudeBot', 'PerplexityBot', 'Google-Extended']
-  const mediumPriority = ['Bingbot', 'Yandex', 'DuckBot']
-
-  if (highPriority.includes(bot)) return 'high'
-  if (mediumPriority.includes(bot)) return 'medium'
-  return 'low'
+/** Every tracked bot with the same verdict — used for the whole-file outcomes. */
+function uniformVerdict(verdict: AccessVerdict): BotVerdict[] {
+  return AI_BOTS.map((bot) => ({
+    bot,
+    verdict,
+    disallowPaths: [],
+    allowPaths: [],
+    matchedGroup: 'none' as const,
+  }))
 }
 
 export async function checkCrawlability(url: string): Promise<CrawlabilityResult> {
@@ -240,6 +153,9 @@ export async function checkCrawlability(url: string): Promise<CrawlabilityResult
 
   const robotsUrl = new URL('/robots.txt', parsedUrl.origin)
 
+  let verdicts: BotVerdict[]
+  let robotsStatus: CrawlabilityResult['robotsStatus']
+
   try {
     const response = await safeFetch(robotsUrl.toString(), {
       headers: {
@@ -248,20 +164,45 @@ export async function checkCrawlability(url: string): Promise<CrawlabilityResult
       },
     })
 
-    const content = response.ok ? await response.text() : ''
-    const rules = parseRobotsTxt(content)
-    const results = checkAllBots(rules)
-    const score = calculateCrawlabilityScore(results)
-    const recommendations = getRecommendations(results)
-
-    return {
-      url: parsedUrl.origin,
-      timestamp: new Date().toISOString(),
-      score,
-      results,
-      recommendations,
+    if (response.ok) {
+      robotsStatus = 'found'
+      verdicts = auditRobotsForAiBots(parseRobotsTxt(await response.text()))
+    } else if (response.status >= 500) {
+      // RFC 9309 §2.3.1.4: on an unavailable (5xx) robots.txt a crawler must
+      // assume complete disallow. The previous implementation coerced ANY
+      // non-ok response to an empty file and therefore scored 100 — the exact
+      // inverse of the rule, and optimistic in the direction that costs the
+      // customer visibility without telling them.
+      robotsStatus = 'unreachable'
+      verdicts = uniformVerdict('unknown')
+    } else {
+      // 404/410 and friends: no robots.txt is a valid state and means no
+      // restrictions. This is the one case where scoring 100 is correct.
+      robotsStatus = 'absent'
+      verdicts = uniformVerdict('allowed')
     }
-  } catch (error) {
-    throw new Error(`Failed to fetch robots.txt: ${error}`)
+  } catch {
+    // Network failure, DNS failure, or the SSRF guard refusing the target.
+    // Unknown is not the same as allowed, and must not be reported as such.
+    robotsStatus = 'unreachable'
+    verdicts = uniformVerdict('unknown')
+  }
+
+  const results: BotAccessResult[] = verdicts.map((v) => {
+    const reason = reasonFor(v)
+    return {
+      bot: v.bot.label,
+      allowed: isAllowed(v.verdict),
+      ...(reason ? { reason } : {}),
+    }
+  })
+
+  return {
+    url: parsedUrl.origin,
+    timestamp: new Date().toISOString(),
+    score: calculateCrawlabilityScore(results),
+    results,
+    recommendations: getRecommendations(verdicts),
+    robotsStatus,
   }
 }

@@ -1,6 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import Papa from 'papaparse'
+import {
+  loadBrandLogo,
+  drawBrandedHeader,
+  hexToRgb,
+  type PdfHeaderTarget,
+} from '@/lib/services/report-branding'
 import { jsPDF } from 'jspdf'
 import { verifyBrandAccess } from '@/lib/authorize'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
@@ -12,16 +18,6 @@ interface BrandData {
   report_logo_url?: string | null
   report_brand_name?: string | null
   report_primary_color?: string | null
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const cleanHex = hex?.replace('#', '') || '6366f1'
-  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex)
-  if (!result) return { r: 99, g: 102, b: 241 }
-  const r = parseInt(result[1] || '63', 16)
-  const g = parseInt(result[2] || '66', 16)
-  const b = parseInt(result[3] || 'f1', 16)
-  return { r, g, b }
 }
 
 export async function GET(req: NextRequest) {
@@ -150,21 +146,17 @@ export async function GET(req: NextRequest) {
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.getWidth()
 
-    // Parse brand color (support hex only for now)
-    const headerColor = reportPrimaryColor
-      ? hexToRgb(reportPrimaryColor)
-      : { r: 99, g: 102, b: 241 }
-
-    // Header
-    doc.setFillColor(headerColor.r, headerColor.g, headerColor.b)
-    doc.rect(0, 0, pageWidth, 25, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(18)
-    doc.setFont('helvetica', 'bold')
-    doc.text(reportBrandName, 15, 16)
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`Brand Report: ${brandName}`, pageWidth - 15, 16, { align: 'right' })
+    // `reportLogoUrl` was read into a variable here and never used, so the
+    // colour and the brand name rendered while the logo a customer configured
+    // silently did not. The shared header draws all three, and pre-loads the
+    // logo through the SSRF guard because the URL is user-supplied.
+    drawBrandedHeader(doc as unknown as PdfHeaderTarget, {
+      brandName: reportBrandName,
+      title: `Brand Report: ${brandName}`,
+      color: hexToRgb(reportPrimaryColor),
+      logo: await loadBrandLogo(reportLogoUrl),
+      pageWidth,
+    })
 
     // Date range
     doc.setTextColor(100, 100, 100)

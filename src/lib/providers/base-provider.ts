@@ -6,10 +6,26 @@ import {
   isRetryableError,
   type RetryConfig,
 } from './retry'
+import { recordProviderOutcome } from './credit-state'
 
 export abstract class BaseProvider {
   abstract readonly id: AIProviderId
   abstract readonly name: string
+
+  /**
+   * The model this provider calls when the caller does not name one.
+   *
+   * Surfaced so the UI can state which model produced a measurement instead of
+   * carrying its own copy. The Engine Info page used to hardcode display
+   * strings and three of the four had drifted: it claimed "Gemini 1.5 Pro"
+   * while the code called gemini-2.5-flash, and "Claude 3.5 Sonnet" while the
+   * code called claude-sonnet-4-6. On a product whose job is reporting what AI
+   * engines say about a brand, naming a model you did not query is a false
+   * statement about the measurement itself.
+   *
+   * Empty for providers that are not answer engines (SERP, analytics).
+   */
+  readonly defaultModel: string = ''
   protected retryConfig: RetryConfig = DEFAULT_RETRY_CONFIG
   protected timeoutMs: number = 30000
 
@@ -44,6 +60,9 @@ export abstract class BaseProvider {
         const result = await this.executeWithTimeout(request, startTime)
 
         if (result.success) {
+          // A request that went through is the only reliable proof that the
+          // account can transact, so it clears any recorded billing failure.
+          recordProviderOutcome(this.id, { success: true })
           return result
         }
 
@@ -51,6 +70,10 @@ export abstract class BaseProvider {
         lastStatusCode = result.statusCode
 
         if (result.statusCode && !isRetryableError(result.statusCode, this.retryConfig)) {
+          // Terminal failure. A billing error takes this path — it is not
+          // worth retrying an empty balance — so this is where credit
+          // exhaustion is observed, not the exhausted-retries return below.
+          recordProviderOutcome(this.id, result)
           return result
         }
 
@@ -68,12 +91,19 @@ export abstract class BaseProvider {
       }
     }
 
-    return {
+    // Retries exhausted. `lastStatusCode` used to be collected here and never
+    // read; it now travels with the result so callers can tell a rate limit
+    // from a server error, and so the credit classifier gets a last look at a
+    // failure that only became terminal after retrying.
+    const exhausted: AIProviderResult = {
       success: false,
       provider: this.id,
       error: `Failed after ${this.retryConfig.maxAttempts} attempts. Last error: ${lastError}`,
       latencyMs: Date.now() - startTime,
+      ...(lastStatusCode != null ? { statusCode: lastStatusCode } : {}),
     }
+    recordProviderOutcome(this.id, exhausted)
+    return exhausted
   }
 
   private async executeWithTimeout(

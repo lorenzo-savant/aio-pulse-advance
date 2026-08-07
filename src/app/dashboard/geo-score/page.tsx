@@ -238,6 +238,33 @@ export default function GeoScorePage() {
   return (
     <div className="animate-in space-y-8">
       <SectionHelp section="geo-score" />
+
+      {/*
+        Scores moved on 2026-08-07 for a reason that has nothing to do with
+        brand performance, and a customer comparing this week's report to last
+        week's deserves to know that before they draw a conclusion.
+
+        `mention_position` records which SENTENCE first names the brand, capped
+        at 20. It was being normalised as though it were a 1-5 search rank, so
+        any brand first named from the fifth sentence onward scored zero on
+        Answer Position — 24% of stored rows, on a pillar worth 15%.
+
+        Dated on purpose: this stops being useful once no one is comparing
+        against a pre-correction report, and it should be deleted then rather
+        than left to become furniture.
+      */}
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+        <p className="text-sm font-semibold text-amber-300">
+          Methodology corrected — 7 August 2026
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Answer Position was being scored on the wrong scale: it measures which sentence first
+          names your brand, but was normalised as if it were a 1–5 search ranking, so anything from
+          the fifth sentence on scored zero. Scores have shifted as a result. This is a correction
+          to how the score is calculated, not a change in how visible your brand is.
+        </p>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -279,7 +306,7 @@ export default function GeoScorePage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-900/50 bg-red-900/10 px-4 py-3 text-sm text-red-400">
+        <div className="border-red-900/50 bg-red-900/10 text-red-400 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm">
           <AlertCircle className="h-4 w-4" />
           {error}
         </div>
@@ -466,7 +493,7 @@ export default function GeoScorePage() {
               <span className="ml-1 font-semibold text-emerald-500">Excellent</span> ·
               <span className="ml-1 font-semibold text-amber-500">Good</span> ·
               <span className="ml-1 font-semibold text-orange-500">Fair</span> ·
-              <span className="ml-1 font-semibold text-red-500">Weak</span>.
+              <span className="text-red-500 ml-1 font-semibold">Weak</span>.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
@@ -563,7 +590,7 @@ export default function GeoScorePage() {
               <span className="ml-1 font-semibold text-green-500">B ≥ 70</span> ·
               <span className="ml-1 font-semibold text-amber-500">C ≥ 55</span> ·
               <span className="ml-1 font-semibold text-orange-500">D ≥ 40</span> ·
-              <span className="ml-1 font-semibold text-red-500">F &lt; 40</span>. Each category
+              <span className="text-red-500 ml-1 font-semibold">F &lt; 40</span>. Each category
               score (0–100) is multiplied by its weight; the weighted points sum to your total.
             </p>
           </Card>

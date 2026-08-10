@@ -5,6 +5,7 @@ import { estimateBlendedCost } from '@/lib/cost-monitor/types'
 export class GeminiProvider extends BaseProvider {
   readonly id = 'gemini' as const
   readonly name = 'Google Gemini'
+  override readonly defaultModel = 'gemini-2.5-flash'
 
   isConfigured(): boolean {
     return !!process.env['GEMINI_API_KEY']
@@ -12,7 +13,9 @@ export class GeminiProvider extends BaseProvider {
 
   protected override async healthCheckRequest(): Promise<Response> {
     const apiKey = process.env['GEMINI_API_KEY']
-    return fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
+    return fetch(`https://generativelanguage.googleapis.com/v1beta/models`, {
+      headers: { 'x-goog-api-key': apiKey ?? '' },
+    })
   }
 
   protected override async executeRequest(
@@ -36,10 +39,10 @@ export class GeminiProvider extends BaseProvider {
     }
 
     return fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey ?? '' },
         body: JSON.stringify(body),
         signal,
       },

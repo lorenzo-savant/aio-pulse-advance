@@ -4,11 +4,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
-import {
-  getHistoricalAnalytics,
-  getCompetitorComparison,
-  autoGenerateSnapshots,
-} from '@/lib/services/analytics-service'
+import { getHistoricalAnalytics, getCompetitorComparison } from '@/lib/services/analytics-service'
+import { backfillSnapshotsForRange } from '@/lib/services/citation-snapshots'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { verifyBrandAccess, getWritableBrandIds, requireBrandRole } from '@/lib/authorize'
 import { firstZodMessage } from '@/lib/validations'
@@ -18,6 +15,14 @@ const analyticsHistoricalSchema = z.object({
   brand_id: z.string().max(100).optional(),
   generate_all: z.boolean().optional(),
 })
+
+/**
+ * Date cap for the `generate_all` fan-out. Lower than a single brand's default
+ * because this path multiplies the work by the number of writable brands, and
+ * it runs inside one request. A truncated rebuild is reported per brand in the
+ * response rather than passed off as complete.
+ */
+const GENERATE_ALL_MAX_DATES = 30
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -65,16 +70,16 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Auto-generate snapshots if needed
+    // Rebuild snapshots on demand.
     if (action === 'generate') {
-      // A write hiding behind GET. `autoGenerateSnapshots` inserts into
-      // brand_health_scores, so it takes the same editor gate as the POST
-      // below — tightening only the POST left the identical operation
-      // reachable by a viewer through a query parameter.
+      // A write hiding behind GET. It rebuilds `citation_snapshots`, so it
+      // takes the same editor gate as the POST below — tightening only the
+      // POST left the identical operation reachable by a viewer through a
+      // query parameter.
       const genGate = await requireBrandRole(brandId, userId, 'editor')
       if ('response' in genGate) return genGate.response
 
-      const result = await autoGenerateSnapshots(brandId)
+      const result = await backfillSnapshotsForRange(brandId)
       return NextResponse.json({
         success: true,
         data: result,
@@ -157,9 +162,14 @@ export async function POST(req: NextRequest) {
     // two per brand.
     const writableBrandIds = await getWritableBrandIds(db, userId)
 
+    // Rebuilding is per engine × category × language, so a fan-out across
+    // every writable brand is the heaviest thing this route can do. Each
+    // brand's rebuild is bounded by the backfill's own date cap, and the
+    // per-brand result reports whether that cap bit, so a truncated run is
+    // visible in the response rather than silently partial.
     const results = []
     for (const brandId of writableBrandIds) {
-      const result = await autoGenerateSnapshots(brandId)
+      const result = await backfillSnapshotsForRange(brandId, { maxDates: GENERATE_ALL_MAX_DATES })
       results.push({ brandId, ...result })
     }
 
@@ -178,7 +188,7 @@ export async function POST(req: NextRequest) {
   const gate = await requireBrandRole(brand_id, userId, 'editor')
   if ('response' in gate) return gate.response
 
-  const result = await autoGenerateSnapshots(brand_id)
+  const result = await backfillSnapshotsForRange(brand_id)
 
   return NextResponse.json({
     success: true,

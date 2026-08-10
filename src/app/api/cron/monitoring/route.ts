@@ -281,14 +281,25 @@ export async function POST(req: NextRequest) {
 
       // Change-detection inputs: previous results per engine + active alert
       // rules. Scheduled runs must fire alerts (sentiment_drop, mention_lost,
-      // …) just like manual runs do.
-      const { data: previousResults } = await supabase
-        .from('monitoring_results')
-        .select('*')
-        .eq('prompt_id', prompt.id)
-        .in('engine', engines)
-        .order('created_at', { ascending: false })
-        .limit(engines.length)
+      // …) just like manual runs do. One most-recent row PER engine — a single
+      // `.limit(engines.length)` query lets one engine's history crowd out the
+      // others, so their change-based alerts never fired.
+      const previousResults = (
+        await Promise.all(
+          engines.map((engine) =>
+            supabase
+              .from('monitoring_results')
+              .select('*')
+              .eq('prompt_id', prompt.id)
+              .eq('engine', engine)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+          ),
+        )
+      )
+        .map((r) => r.data)
+        .filter((r) => r != null) as unknown as MonitoringResult[]
 
       const { data: alertRules } = await supabase
         .from('alert_rules')
@@ -385,9 +396,7 @@ export async function POST(req: NextRequest) {
 
           // ── Evaluate alert rules for this result ─────────────────────────
           if (alertRules && alertRules.length > 0) {
-            const previousResult = (previousResults as unknown as MonitoringResult[])?.find(
-              (r) => r.engine === engine,
-            )
+            const previousResult = previousResults.find((r) => r.engine === engine)
             for (const rule of alertRules as AlertRule[]) {
               if (
                 !shouldTriggerAlert(rule, {

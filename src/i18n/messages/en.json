@@ -161,6 +161,7 @@
       "citation_sources": "Citation Sources",
       "aeo_snippets": "AEO Snippets",
       "keywords": "Keywords",
+      "brand_overview": "Brand Overview",
       "geo_score": "GEO Score",
       "snapshots": "Snapshots",
       "reports": "Reports",
@@ -599,11 +600,8 @@
     },
     "notifications": {
       "title": "Notifications",
-      "description": "Configure how you receive alerts.",
-      "alert_email": "Alert Email",
-      "alert_email_placeholder": "alerts@yourdomain.com",
-      "alert_email_helper": "Alerts will be sent via Resend when triggered.",
-      "save_button": "Save Preferences"
+      "description": "Alert delivery is configured per rule.",
+      "manage_in_alerts": "Manage alert rules"
     },
     "interface_language": {
       "title": "Interface Language",

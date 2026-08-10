@@ -5,6 +5,7 @@ import {
   DEFAULT_TIMEOUT_CONFIG,
   type ProviderTimeoutConfig,
 } from './types'
+import { getCreditState } from './credit-state'
 import { GeminiProvider } from './gemini-provider'
 import { ChatGPTProvider } from './chatgpt-provider'
 import { PerplexityProvider } from './perplexity-provider'
@@ -37,6 +38,45 @@ export interface ProviderHealthStatus {
   isAvailable: boolean
   latencyMs?: number
   lastChecked: string
+  /**
+   * Whether the account can still transact, learned from real calls rather
+   * than from a probe.
+   *
+   * `isAvailable` answers "does the key authenticate", which a free /models
+   * endpoint can settle for nothing. It cannot answer this: a key with an
+   * exhausted balance authenticates perfectly and then refuses every billed
+   * request. On 2026-08-07 an Anthropic key returned "credit balance is too
+   * low" on every call while nothing in the product noticed.
+   *
+   * `null` means no real call has reported either way yet — unknown, which is
+   * a more honest answer than "fine".
+   */
+  creditExhausted: boolean | null
+  /** When the billing failure was observed, if there was one. */
+  creditCheckedAt?: string
+  /** The provider's own wording, truncated. For operators. */
+  creditDetail?: string
+  /**
+   * The model this provider actually calls. Reported so the UI states which
+   * model produced a measurement instead of carrying a copy that drifts.
+   */
+  model?: string
+}
+
+/**
+ * Credit fields for one provider, shaped for spreading into a health status.
+ * Absent when no real call has reported either way — unknown, not fine.
+ */
+function creditFields(
+  id: AIProviderId,
+): Pick<ProviderHealthStatus, 'creditExhausted' | 'creditCheckedAt' | 'creditDetail'> {
+  const credit = getCreditState(id)
+  if (!credit) return { creditExhausted: null }
+  return {
+    creditExhausted: credit.exhausted,
+    creditCheckedAt: credit.observedAt,
+    creditDetail: credit.detail,
+  }
 }
 
 export interface ProviderManagerConfig {
@@ -207,7 +247,11 @@ export class ProviderManager {
         const ttl = this.getDynamicTtl(id)
         const cached = this.healthCache.get(id)
         if (cached && now - cached.timestamp < ttl) {
-          results.push(cached.status)
+          // Serve the cached probe result, but read the credit state fresh.
+          // The probe is what is expensive to repeat; the credit observation
+          // is a memory lookup, and it is the half that changes the moment a
+          // real call fails.
+          results.push({ ...cached.status, ...creditFields(id) })
           return
         }
 
@@ -222,6 +266,8 @@ export class ProviderManager {
           isAvailable,
           latencyMs,
           lastChecked: new Date().toISOString(),
+          ...(provider.defaultModel ? { model: provider.defaultModel } : {}),
+          ...creditFields(id),
         }
 
         this.healthCache.set(id, { status, timestamp: now })

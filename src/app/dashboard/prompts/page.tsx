@@ -64,8 +64,201 @@ const CATEGORY_COLORS: Record<string, 'brand' | 'info' | 'warning' | 'success' |
   custom: 'default',
 }
 
+/**
+ * What one engine returned for one prompt, on its most recent run.
+ *
+ * Answers, in order: did the engine name the brand, where in the answer, how
+ * did it talk about it, and did it cite anything. That is the whole point of
+ * running a prompt, and until now none of it was visible here.
+ */
+function RunResultRow({ result }: { result: PromptRunResult }) {
+  const cited = result.cited_urls?.length ?? 0
+  const rivals = result.competitor_mentions ?? []
+
+  return (
+    <div className="space-y-1 py-1.5 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="default">{result.engine}</Badge>
+
+        {result.brand_mentioned ? (
+          <span className="font-semibold text-emerald-400">Mentioned</span>
+        ) : (
+          <span className="text-muted-foreground">Not mentioned</span>
+        )}
+
+        {/* Named outright, or only alluded to. A brand described without being
+            named cannot be clicked, searched for, or remembered. */}
+        {result.brand_mentioned && result.mention_type === 'indirect' && (
+          <span className="text-amber-400">indirect</span>
+        )}
+
+        {/* Sentence index, not a rank — 1 is the opening sentence. */}
+        {result.brand_mentioned && result.mention_position != null && (
+          <span className="text-muted-foreground">sentence {result.mention_position}</span>
+        )}
+
+        {result.brand_mentioned && (result.mention_count ?? 0) > 1 && (
+          <span className="text-muted-foreground">{result.mention_count}×</span>
+        )}
+
+        {result.sentiment && (
+          <span className="text-muted-foreground">
+            {result.sentiment}
+            {result.sentiment_score != null && ` ${result.sentiment_score.toFixed(2)}`}
+          </span>
+        )}
+
+        {result.visibility_score != null && (
+          <span className="text-muted-foreground">vis {Math.round(result.visibility_score)}</span>
+        )}
+
+        {cited > 0 && (
+          <span className="text-muted-foreground">
+            {cited} {cited === 1 ? 'citation' : 'citations'}
+            {/* Grounded after the fact rather than supplied by the engine —
+                weaker evidence, and worth distinguishing. */}
+            {result.citation_source === 'brave_fallback' && ' (grounded)'}
+          </span>
+        )}
+
+        <span className="text-muted-foreground/70 ml-auto">
+          {new Date(result.created_at).toLocaleDateString()}
+          {result.response_provider && ` · ${result.response_provider}`}
+        </span>
+      </div>
+
+      {/* The two answers that change what you do next. Both are rare, so they
+          get their own line and a colour rather than hiding in the row. */}
+      {result.confusion_flag && (
+        <p className="text-amber-400">
+          ⚠ Brand confusion{result.confusion_reason ? ` — ${result.confusion_reason}` : ''}
+        </p>
+      )}
+      {result.has_hallucination && (
+        <p className="text-red-400">⚠ The engine stated something inaccurate</p>
+      )}
+
+      {rivals.length > 0 && (
+        <p className="text-muted-foreground">
+          Also named:{' '}
+          <span className="text-foreground">{rivals.map((c) => c.name).join(', ')}</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Every run of one prompt, oldest at the bottom, grouped by day.
+ *
+ * The summary above shows the most recent run per engine, which answers "where
+ * do I stand". This answers "am I getting better", and it is the reason to keep
+ * running the same prompt for months: a single reading is a number, a series is
+ * a trend. The rows have been in the database all along — up to 31 runs across
+ * 31 days for one prompt+engine — and no surface exposed them.
+ */
+function RunHistory({ promptId }: { promptId: string }) {
+  const [results, setResults] = useState<PromptRunResult[] | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const rows: PromptRunResult[] = []
+        for (let page = 1; page <= 10; page++) {
+          const params = new URLSearchParams({
+            prompt_id: promptId,
+            limit: '100',
+            page: String(page),
+          })
+          const res = await fetch(`/api/monitoring?${params}`)
+          const json = await res.json()
+          if (!json?.success) {
+            if (!cancelled && rows.length === 0) setFailed(true)
+            break
+          }
+          rows.push(...((json.data ?? []) as PromptRunResult[]))
+          if (page >= (json.pagination?.totalPages ?? 1)) break
+        }
+        if (!cancelled) setResults(rows)
+      } catch {
+        if (!cancelled) setFailed(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [promptId])
+
+  if (failed) {
+    return (
+      <p className="mt-2 border-t border-input pt-2 text-xs text-muted-foreground">
+        Could not load history.
+      </p>
+    )
+  }
+
+  if (!results) {
+    return (
+      <p className="mt-2 flex items-center gap-2 border-t border-input pt-2 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading history…
+      </p>
+    )
+  }
+
+  // Newest first.
+  const sorted = [...results].sort((a, b) => b.created_at.localeCompare(a.created_at))
+
+  const byDay = new Map<string, PromptRunResult[]>()
+  for (const r of sorted) {
+    const day = r.created_at.slice(0, 10)
+    const list = byDay.get(day) ?? []
+    list.push(r)
+    byDay.set(day, list)
+  }
+
+  return (
+    <div className="mt-2 space-y-2 border-t border-input pt-2">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {results.length} {results.length === 1 ? 'run' : 'runs'} over {byDay.size}{' '}
+        {byDay.size === 1 ? 'day' : 'days'}
+      </p>
+
+      {[...byDay.entries()].map(([day, runs]) => (
+        <div key={day} className="flex gap-3 text-xs">
+          <span className="w-20 shrink-0 tabular-nums text-muted-foreground">{day}</span>
+          <div className="flex-1 space-y-0.5">
+            {runs.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center gap-2">
+                <span className="w-20 shrink-0 text-muted-foreground">{r.engine}</span>
+                {r.brand_mentioned ? (
+                  <span className="text-emerald-400">
+                    mentioned
+                    {r.mention_position != null && ` · s${r.mention_position}`}
+                    {r.mention_type === 'indirect' && ' · indirect'}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/70">not mentioned</span>
+                )}
+                {r.sentiment && <span className="text-muted-foreground">{r.sentiment}</span>}
+                {r.visibility_score != null && (
+                  <span className="text-muted-foreground">
+                    vis {Math.round(r.visibility_score)}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function PromptCard({
   prompt,
+  results,
   onDelete,
   onRun,
   running,
@@ -73,6 +266,8 @@ function PromptCard({
   t,
 }: {
   prompt: Prompt
+  /** EVERY stored run for this prompt, newest-first from the API but unsorted here. */
+  results: PromptRunResult[]
   onDelete: (id: string) => void
   onRun: (promptId: string) => void
   running: boolean
@@ -80,12 +275,38 @@ function PromptCard({
   t: ReturnType<typeof useTranslations>
 }) {
   const categoryColor = CATEGORY_COLORS[prompt.category ?? 'custom'] ?? 'default'
+  const [showAnswers, setShowAnswers] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+
+  // `results` is already the latest run per engine — the loader keeps only
+  // those, so a page load stays small. History is a separate, on-demand fetch.
+  const latestPerEngine = results
+  // A prompt that has run more than once has history worth showing. Cheapest
+  // available signal without fetching: it has a result AND `last_run_at`
+  // predates today's, or it simply has any result at all — offer it and let
+  // the fetch decide, rather than hiding a real series behind a guess.
+  const hasHistory = results.length > 0
 
   return (
     <Card className="border-input bg-card p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="mb-1.5 flex flex-wrap gap-1.5">
+            {/* Which brand this prompt belongs to. The list mixes every brand
+                the user can reach — 205 prompts across 5 brands here — and
+                without this there was no way to tell them apart. The API has
+                returned `brand` all along; the card ignored it. */}
+            {prompt.brand?.name && (
+              <span
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                style={{
+                  backgroundColor: `${prompt.brand.color || '#6366f1'}22`,
+                  color: prompt.brand.color || '#6366f1',
+                }}
+              >
+                {prompt.brand.name}
+              </span>
+            )}
             <Badge variant={categoryColor}>{prompt.category ?? 'custom'}</Badge>
             <Badge variant="default">{prompt.language}</Badge>
             {prompt.engines.map((e) => (
@@ -114,13 +335,82 @@ function PromptCard({
             onClick={() => onDelete(prompt.id)}
           >
             {deleting ? (
-              <Loader2 className="h-4 w-4 animate-spin text-red-400" />
+              <Loader2 className="text-red-400 h-4 w-4 animate-spin" />
             ) : (
-              <X className="h-4 w-4 text-muted-foreground hover:text-red-400" />
+              <X className="hover:text-red-400 h-4 w-4 text-muted-foreground" />
             )}
           </Button>
         </div>
       </div>
+
+      {/* What the engines actually answered. Previously this page ran a prompt,
+          reported a count in a toast, and showed none of it. */}
+      {latestPerEngine.length > 0 && (
+        <div className="bg-secondary/40 mb-3 rounded-lg border border-input px-3 py-1.5">
+          {latestPerEngine.map((r) => (
+            <RunResultRow key={r.id} result={r} />
+          ))}
+
+          <div className="mt-1 flex flex-wrap gap-3">
+            {latestPerEngine.some((r) => r.response_text) && (
+              <button
+                type="button"
+                onClick={() => setShowAnswers((v) => !v)}
+                className="text-xs font-semibold text-brand hover:underline"
+              >
+                {showAnswers ? 'Hide answers' : 'Show answers'}
+              </button>
+            )}
+
+            {/* Only offered when there is more than the summary already shows.
+                A "history" of one run is a button that wastes a click. */}
+            {hasHistory && (
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                className="text-xs font-semibold text-brand hover:underline"
+              >
+                {showHistory ? 'Hide history' : 'Show history'}
+              </button>
+            )}
+          </div>
+
+          {showHistory && <RunHistory promptId={prompt.id} />}
+
+          {showAnswers && (
+            <div className="mt-2 space-y-2 border-t border-input pt-2">
+              {latestPerEngine
+                .filter((r) => r.response_text)
+                .map((r) => (
+                  <div key={`${r.id}-text`}>
+                    <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      {r.engine}
+                    </p>
+                    <p className="whitespace-pre-wrap text-xs text-muted-foreground">
+                      {r.response_text}
+                    </p>
+                    {(r.cited_urls?.length ?? 0) > 0 && (
+                      <ul className="mt-1 space-y-0.5">
+                        {r.cited_urls!.map((u) => (
+                          <li key={u} className="truncate text-[11px]">
+                            <a
+                              href={u}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brand hover:underline"
+                            >
+                              {u}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
@@ -137,6 +427,80 @@ function PromptCard({
   )
 }
 
+/**
+ * The slice of a monitoring result a prompt card needs to EXPLAIN what came
+ * back, not merely report that something did.
+ *
+ * "Was I mentioned" is the shallow question. The ones that change what you do
+ * next are: who else did the engine name, did it mistake me for someone else,
+ * did it state something false, and did it recommend me or just list me.
+ */
+interface PromptRunResult {
+  id: string
+  prompt_id: string
+  engine: string
+  brand_mentioned: boolean
+  mention_position: number | null
+  mention_count: number | null
+  /** direct | indirect | none — being named outright is not the same as being alluded to. */
+  mention_type: string | null
+  visibility_score: number | null
+  sentiment: string | null
+  sentiment_score: number | null
+  /** Rivals the engine named in the same answer. The competitive picture. */
+  competitor_mentions: Array<{ name: string; position?: number | null }> | null
+  /** The engine confused this brand with a look-alike. */
+  confusion_flag: boolean | null
+  confusion_reason: string | null
+  /** The engine asserted something untrue about the brand. */
+  has_hallucination: boolean | null
+  response_text: string | null
+  cited_urls: string[] | null
+  /** Where the citations came from — `brave_fallback` means the engine did not
+   *  supply them and they were grounded afterwards, which is weaker evidence. */
+  citation_source: string | null
+  /** Which model actually answered, after any provider fallback. */
+  response_provider: string | null
+  created_at: string
+}
+
+/**
+ * Fetch EVERY prompt, not the first page.
+ *
+ * /api/prompts is paginated with `defaultLimit: 20` and `maxLimit: 100`, and
+ * this page used to call it with no parameters at all — so a brand with 76
+ * prompts showed 20 of them, with nothing on screen saying so. The response
+ * carried the real total the whole time and the page discarded it.
+ *
+ * Raising the limit is not enough: unfiltered, the account has more prompts
+ * than `maxLimit` allows in one request, so the pages have to be walked.
+ */
+export async function fetchAllPrompts(
+  brandId?: string,
+): Promise<{ prompts: Prompt[]; total: number; truncated: boolean }> {
+  const PER_PAGE = 100 // maxLimit on the endpoint
+  const HARD_STOP = 50 // 5000 prompts; a runaway loop is worse than a short list
+
+  const all: Prompt[] = []
+  let total = 0
+
+  for (let page = 1; page <= HARD_STOP; page++) {
+    const params = new URLSearchParams({ page: String(page), limit: String(PER_PAGE) })
+    if (brandId) params.set('brand_id', brandId)
+
+    const res = await fetch(`/api/prompts?${params}`)
+    const json = await res.json()
+    if (!json?.success) return { prompts: all, total: total || all.length, truncated: true }
+
+    all.push(...((json.data ?? []) as Prompt[]))
+    total = json.pagination?.total ?? all.length
+    if (!json.pagination?.hasMore) return { prompts: all, total, truncated: false }
+  }
+
+  // Hit the stop with pages still to go. Say so rather than pretend.
+  return { prompts: all, total, truncated: true }
+}
+
 function PromptsPageContent() {
   const t = useTranslations()
   const searchParams = useSearchParams()
@@ -145,9 +509,30 @@ function PromptsPageContent() {
 
   const [brands, setBrands] = useState<Brand[]>([])
   const [prompts, setPrompts] = useState<Prompt[]>([])
+  /** What the server says the total is. Compared against `prompts.length` so a
+   *  short list is visibly short rather than quietly short. */
+  const [promptTotal, setPromptTotal] = useState(0)
+  /** Latest monitoring result per prompt per engine, keyed by prompt id. */
+  const [resultsByPrompt, setResultsByPrompt] = useState<Record<string, PromptRunResult[]>>({})
   const [loading, setLoading] = useState(true)
   const [runningId, setRunningId] = useState<string | null>(null)
+  /**
+   * The brand a NEW prompt will be created for. Form state only.
+   *
+   * This used to double as the list filter, which made the two silently
+   * interfere: pressing "Generate (AI)" with nothing selected set this to the
+   * first brand, and because the list read the same value, the whole prompt
+   * list collapsed to that one brand with no control on screen explaining why
+   * or offering a way back.
+   */
   const [selectedBrandId, setSelectedBrandId] = useState(preselectedBrandId ?? '')
+  /**
+   * Which brand the LIST shows. Empty means every brand the user can reach.
+   *
+   * Seeded from `?brand_id=` so arriving from the Brands page still lands on
+   * that brand, but now it is a visible filter the user can clear.
+   */
+  const [filterBrandId, setFilterBrandId] = useState(preselectedBrandId ?? '')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     text: '',
@@ -222,31 +607,103 @@ function PromptsPageContent() {
     }
   }
 
+  /**
+   * Pull the most recent monitoring results for the prompts on screen.
+   *
+   * Running a prompt used to end at a toast saying how many results came back,
+   * and nothing else — the user paid for engine calls and then had to go to a
+   * different page to find out what the engines actually said.
+   *
+   * One request for the whole page of prompts, not one per card.
+   */
+  const loadResults = useCallback(async (forPrompts: Prompt[]) => {
+    if (forPrompts.length === 0) {
+      setResultsByPrompt({})
+      return
+    }
+    try {
+      const ids = forPrompts.map((p) => p.id)
+      const byPrompt: Record<string, PromptRunResult[]> = {}
+
+      // The endpoint caps at 100 rows a page, and a prompt can have one row per
+      // engine, so ask in id-chunks and page through each.
+      for (let i = 0; i < ids.length; i += 25) {
+        const chunkPrompts = forPrompts.slice(i, i + 25)
+        const chunk = ids.slice(i, i + 25)
+        for (let page = 1; page <= 20; page++) {
+          const params = new URLSearchParams({
+            prompt_id: chunk.join(','),
+            limit: '100',
+            page: String(page),
+          })
+          const res = await fetch(`/api/monitoring?${params}`)
+          const json = await res.json()
+          if (!json?.success) break
+
+          for (const r of (json.data ?? []) as PromptRunResult[]) {
+            const list = byPrompt[r.prompt_id] ?? (byPrompt[r.prompt_id] = [])
+            // Newest first, so the first row seen for an engine is the latest
+            // run. Only that is kept: the summary needs one row per engine, and
+            // holding the whole history here would mean downloading 6.3 MB on
+            // page load — the largest brand alone has 1384 stored results.
+            // History is fetched per prompt, when the user asks for it.
+            if (!list.some((existing) => existing.engine === r.engine)) list.push(r)
+          }
+
+          // Stop as soon as every prompt in this chunk has a row for each
+          // engine it declares. Rows arrive newest first, so that happens in
+          // the first page or two; paging to the end would walk the entire
+          // history for nothing.
+          const covered = chunkPrompts.every((p) => {
+            const seen = byPrompt[p.id] ?? []
+            return p.engines.every((e) => seen.some((r) => r.engine === e))
+          })
+          if (covered) break
+
+          if (page >= (json.pagination?.totalPages ?? 1)) break
+        }
+      }
+
+      setResultsByPrompt(byPrompt)
+    } catch {
+      // A failed results fetch must not blank the prompt list. Cards simply
+      // show no results rather than the page showing an error.
+    }
+  }, [])
+
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [brandsRes, promptsRes] = await Promise.all([
+      const [brandsRes, page] = await Promise.all([
         fetch('/api/brands'),
-        fetch(`/api/prompts${selectedBrandId ? `?brand_id=${selectedBrandId}` : ''}`),
+        fetchAllPrompts(filterBrandId || undefined),
       ])
       const bJson = await brandsRes.json()
-      const pJson = await promptsRes.json()
 
       if (!bJson.success) {
         toast.error(t('prompts.toast.load_failed'))
       }
-      if (!pJson.success) {
+
+      setBrands(bJson.data ?? [])
+      setPrompts(page.prompts)
+      setPromptTotal(page.total)
+
+      // The list is the whole list, or the user is told it is not. Silently
+      // showing a subset is what this page used to do.
+      if (page.truncated) {
         toast.error(t('prompts.toast.load_failed'))
       }
 
-      setBrands(bJson.data ?? [])
-      setPrompts(pJson.data ?? [])
+      void loadResults(page.prompts)
     } catch {
       toast.error(t('prompts.toast.load_failed'))
     } finally {
       setLoading(false)
     }
-  }, [selectedBrandId, t])
+    // `loadResults` is stable (defined below with an empty dep list) and
+    // including it would re-create loadData on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterBrandId, t])
 
   useEffect(() => {
     void loadData()
@@ -824,10 +1281,41 @@ function PromptsPageContent() {
         </div>
       ) : (
         <div className="space-y-3">
+          {/* The count is shown because this list used to be silently short:
+              20 of 76 prompts, with nothing on screen admitting it. If these
+              two numbers ever disagree, something is being hidden. */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {prompts.length === promptTotal
+                ? `${promptTotal} ${promptTotal === 1 ? 'prompt' : 'prompts'}`
+                : `Showing ${prompts.length} of ${promptTotal} prompts`}
+              {filterBrandId && ' · filtered'}
+            </p>
+
+            {/* An explicit, clearable brand filter. Arriving from the Brands
+                page used to set an invisible one with no way back, and the
+                "Generate (AI)" button could set it as a side effect. */}
+            {brands.length > 1 && (
+              <select
+                className="rounded-lg border border-input bg-input px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-brand"
+                value={filterBrandId}
+                onChange={(e) => setFilterBrandId(e.target.value)}
+              >
+                <option value="">All brands</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           {prompts.map((prompt) => (
             <PromptCard
               key={prompt.id}
               prompt={prompt}
+              results={resultsByPrompt[prompt.id] ?? []}
               running={runningId === prompt.id}
               deleting={deletingId === prompt.id}
               onDelete={handleDelete}

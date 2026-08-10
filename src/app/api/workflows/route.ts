@@ -300,24 +300,14 @@ async function cancelWorkflowExecution(
   return NextResponse.json({ success: true, data: { id: row.id, status: 'cancelled' } })
 }
 
-// Rerun: re-dispatch the real job. Only monitoring_run has a concrete
-// executor, so we delegate to the canonical /api/monitoring pipeline (which
+// Dispatch a monitoring_run to the canonical /api/monitoring pipeline (which
 // records its own fresh workflow_executions row). No logic is duplicated and
-// there is no fake "flip the status" rerun.
-async function rerunWorkflowExecution(
+// there is no fake "flip the status" rerun. Shared by rerun AND fresh create
+// so a workflow row is never born "running" and then abandoned forever.
+async function dispatchMonitoringRun(
   request: NextRequest,
-  row: WorkflowRow,
-): Promise<NextResponse> {
-  if (row.type !== 'monitoring_run' || !row.prompt_id) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: `Rerun is only supported for monitoring_run workflows with a prompt (got "${row.type}")`,
-      },
-      { status: 400 },
-    )
-  }
-
+  promptId: string,
+): Promise<{ ok: boolean; status: number; payload: unknown }> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   const cookie = request.headers.get('cookie')
   const authz = request.headers.get('authorization')
@@ -335,24 +325,42 @@ async function rerunWorkflowExecution(
     res = await fetch(new URL('/api/monitoring', trustedOrigin), {
       method: 'POST',
       headers,
-      body: JSON.stringify({ prompt_id: row.prompt_id }),
+      body: JSON.stringify({ prompt_id: promptId }),
     })
   } catch (e) {
-    logger.error('[workflows] rerun dispatch failed', { error: String(e), id: row.id })
-    return NextResponse.json(
-      { success: false, message: 'Failed to dispatch monitoring rerun' },
-      { status: 502 },
-    )
+    logger.error('[workflows] monitoring dispatch failed', { error: String(e) })
+    return { ok: false, status: 502, payload: { message: 'Failed to dispatch monitoring run' } }
   }
 
   const payload = (await res.json().catch(() => ({}))) as { message?: string }
+  return { ok: res.ok, status: res.status, payload }
+}
+
+// Rerun: re-dispatch the real job. Only monitoring_run has a concrete
+// executor, so we delegate to the canonical /api/monitoring pipeline.
+async function rerunWorkflowExecution(
+  request: NextRequest,
+  row: WorkflowRow,
+): Promise<NextResponse> {
+  if (row.type !== 'monitoring_run' || !row.prompt_id) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: `Rerun is only supported for monitoring_run workflows with a prompt (got "${row.type}")`,
+      },
+      { status: 400 },
+    )
+  }
+
+  const { ok, status, payload } = await dispatchMonitoringRun(request, row.prompt_id)
+  const p = payload as { message?: string }
   return NextResponse.json(
     {
-      success: res.ok,
-      message: res.ok ? 'Monitoring rerun dispatched' : (payload.message ?? 'Rerun failed'),
+      success: ok,
+      message: ok ? 'Monitoring rerun dispatched' : (p.message ?? 'Rerun failed'),
       data: { rerunOf: row.id, promptId: row.prompt_id, monitoring: payload },
     },
-    { status: res.ok ? 202 : res.status },
+    { status: ok ? 202 : status },
   )
 }
 
@@ -428,6 +436,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: 'Failed to create workflow' },
         { status: 500 },
+      )
+    }
+
+    // A monitoring_run must actually run — a row born "running" with no
+    // executor behind it stays dead forever. Dispatch it to the canonical
+    // /api/monitoring pipeline immediately and reflect the outcome on the
+    // row. Other workflow types have no concrete executor yet, so they are
+    // returned as created (callers re-check their status later).
+    if (type === 'monitoring_run' && promptId) {
+      const { ok, status, payload } = await dispatchMonitoringRun(request, promptId)
+      if (!ok) {
+        await completeWorkflow(supabase, workflow.id, 'failed', 'Monitoring dispatch failed')
+      } else {
+        await completeWorkflow(supabase, workflow.id, 'completed')
+      }
+      return NextResponse.json(
+        {
+          success: ok,
+          message: ok ? 'Monitoring run dispatched' : 'Failed to dispatch monitoring run',
+          data: { ...workflow, monitoring: payload },
+        },
+        { status: ok ? 202 : status },
       )
     }
 

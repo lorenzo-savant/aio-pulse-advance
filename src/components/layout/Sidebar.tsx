@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard,
   FileSearch,
+  Gauge,
   Globe,
   BarChart3,
   GitCompare,
@@ -24,16 +25,13 @@ import {
   Camera,
   Lightbulb,
   FileText,
-  CreditCard,
   ClipboardCheck,
   Sparkles,
-  Coins,
   Radio,
   GitBranch,
   Sparkle,
   Link2,
   Target,
-  TrendingUp,
   Filter,
   ShieldCheck,
   Wand2,
@@ -139,8 +137,22 @@ export const NAV_SECTIONS: NavSection[] = [
     // AI engines find/cite you, then drilled-down analyses, then archives.
     // Each item generates a measurable signal the next ones build on.
     items: [
-      // GEO Score first — the composite headline now that the overview lives
-      // up top as its own entry.
+      // Brand Overview: the per-brand performance view. It is the only surface
+      // in the product showing Google Search Console data — the
+      // cannibalisation and striking-distance panels exist nowhere else — so
+      // it bridges organic search against AI visibility.
+      //
+      // It shipped complete and working with zero inbound links from anywhere,
+      // reachable only by typing the URL. Not a duplicate of /dashboard (which
+      // aggregates the insight surfaces) nor of /dashboard/brands/[id] (which
+      // is brand configuration and team): the three share no data sources.
+      {
+        href: '/dashboard/overview',
+        icon: Gauge,
+        labelKey: 'sidebar.items.brand_overview',
+        lockedUntil: (s) => s.brands === 0,
+      },
+      // GEO Score — the composite headline.
       {
         href: '/dashboard/geo-score',
         icon: Target,
@@ -247,14 +259,10 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     step: 5,
     labelKey: 'sidebar.sections.account.label',
-    // Account section ordered by frequency of need + operational adjacency:
-    // Billing + Credits are the commercial layer, API Costs is the
-    // operational view of where the credits actually go. Settings and
-    // Documentation are infrequent reference items.
+    // Internal deployment: the commercial layer (Billing, Credits, API Costs)
+    // is intentionally not exposed — the platform runs unmetered. Settings and
+    // Documentation remain.
     items: [
-      { href: '/dashboard/billing', icon: CreditCard, labelKey: 'sidebar.items.billing' },
-      { href: '/dashboard/credits', icon: Coins, labelKey: 'sidebar.items.credits' },
-      { href: '/dashboard/api-costs', icon: TrendingUp, labelKey: 'sidebar.items.api_costs' },
       { href: '/dashboard/settings', icon: Settings, labelKey: 'sidebar.items.settings' },
       { href: '/dashboard/docs', icon: BookOpen, labelKey: 'sidebar.items.documentation' },
     ],

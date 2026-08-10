@@ -123,6 +123,6 @@ export async function POST(req: NextRequest, { params }: Params) {
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
     logger.warn('/api/generate-article failed', { brandId: id, err: message })
-    return err(`Generation failed: ${message}`, 502)
+    return err('Article generation failed', 502)
   }
 }

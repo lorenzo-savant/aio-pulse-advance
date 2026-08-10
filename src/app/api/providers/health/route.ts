@@ -20,7 +20,14 @@ export async function GET(req: NextRequest) {
       stats,
       summary: {
         totalConfigured: health.filter((p) => p.isConfigured).length,
-        totalAvailable: health.filter((p) => p.isAvailable).length,
+        // `isAvailable` only says the key authenticates. A key with an
+        // exhausted balance authenticates fine and then refuses every billed
+        // request, so it must not be counted as usable.
+        totalAvailable: health.filter((p) => p.isAvailable && p.creditExhausted !== true).length,
+        totalOutOfCredit: health.filter((p) => p.creditExhausted === true).length,
+        /** Configured, reachable, but no real call has reported on billing yet. */
+        totalCreditUnknown: health.filter((p) => p.isConfigured && p.creditExhausted === null)
+          .length,
         activeJobs: manager.getActiveJobsCount(),
       },
       timestamp: new Date().toISOString(),

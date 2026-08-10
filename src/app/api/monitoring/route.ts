@@ -172,13 +172,27 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Fetch previous results per change detection ───────────────────────────
-  const { data: previousResults } = await db
-    .from('monitoring_results')
-    .select('*')
-    .eq('prompt_id', prompt.id)
-    .in('engine', engines)
-    .order('created_at', { ascending: false })
-    .limit(engines.length)
+  // One most-recent row PER ENGINE. A single `.limit(engines.length)` query is
+  // wrong: one engine with many historical rows can consume the whole limit,
+  // leaving every other engine without a `previousResult` — so mention_lost /
+  // sentiment_drop / visible_change silently never fired for them. Fetching
+  // per engine guarantees each one gets its own baseline.
+  const previousResults = (
+    await Promise.all(
+      engines.map((engine) =>
+        db
+          .from('monitoring_results')
+          .select('*')
+          .eq('prompt_id', prompt.id)
+          .eq('engine', engine)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ),
+    )
+  )
+    .map((r) => r.data)
+    .filter((r) => r != null) as unknown as MonitoringResult[]
 
   // ── FIX N+1: fetch alert rules ONCE before the loop ─────────────────────
   const { data: rules } = await db
@@ -325,9 +339,7 @@ export async function POST(req: NextRequest) {
 
         // ── Evaluate alert rules (use already-fetched rules) ────────────────
         if (rules && rules.length > 0) {
-          const previousResult = (previousResults as unknown as MonitoringResult[])?.find(
-            (r) => r.engine === engine,
-          )
+          const previousResult = previousResults.find((r) => r.engine === engine)
 
           for (const rule of rules as AlertRule[]) {
             const shouldFire = shouldTriggerAlert(rule, {
@@ -509,6 +521,17 @@ export async function GET(req: NextRequest) {
   const brandId = searchParams.get('brand_id')
   const engine = searchParams.get('engine')
   const language = searchParams.get('language')
+  // Lets the Prompts page show what each prompt actually returned. Without it
+  // that page could report "monitoring complete, 4 results" in a toast and then
+  // show nothing — the user had to leave and go hunting on another surface for
+  // the answer they had just paid an engine call to get.
+  //
+  // Accepts a comma-separated list so one request covers a whole page of
+  // prompts instead of one request per card.
+  const promptIds = (searchParams.get('prompt_id') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '50', 10) || 50))
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const offset = (page - 1) * limit
@@ -542,6 +565,10 @@ export async function GET(req: NextRequest) {
     .range(offset, offset + limit - 1)
   if (engine) query = query.eq('engine', engine)
   if (language) query = query.eq('prompt.language', language)
+  // No ownership check needed on the prompt ids themselves: the query is
+  // already scoped to brands the caller can read, so an id belonging to
+  // someone else's brand simply matches nothing.
+  if (promptIds.length > 0) query = query.in('prompt_id', promptIds)
 
   const { data, error, count } = await query
 

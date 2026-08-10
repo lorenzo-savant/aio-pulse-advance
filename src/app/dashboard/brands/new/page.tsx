@@ -330,14 +330,10 @@ export default function NewBrandWizard() {
 
       const brandId = brandJson.data.id
 
-      console.log('[handleSubmit] Creating brand:', brandId, 'with', prompts.length, 'prompts')
-
       // Create prompts
       const promptErrors: string[] = []
-      const validEngines = ['chatgpt', 'gemini', 'perplexity']
+      const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude']
       for (const prompt of prompts) {
-        console.log('[handleSubmit] Creating prompt:', prompt.text)
-
         const promptRes = await fetch('/api/prompts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -353,7 +349,6 @@ export default function NewBrandWizard() {
         })
 
         const promptJson = await promptRes.json()
-        console.log('[handleSubmit] Prompt result:', promptRes.status, promptJson)
 
         if (!promptJson.success) {
           promptErrors.push(`Prompt "${prompt.text.slice(0, 30)}...": ${promptJson.message}`)
@@ -361,7 +356,6 @@ export default function NewBrandWizard() {
       }
 
       if (promptErrors.length > 0) {
-        console.error('[handleSubmit] Prompt creation errors:', promptErrors)
         toast.error(`Created brand but ${promptErrors.length} prompts failed to create`)
       } else if (prompts.length > 0) {
         toast.success(`Created brand with ${prompts.length} prompts!`)

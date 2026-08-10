@@ -39,8 +39,11 @@ export async function getSessionAnalytics(
       .eq('brand_id', brandId)
       .eq('user_id', userId)
 
+    // monitoring_results has no `session_id` column (it never did — the old
+    // filter made every session query error out and return null). A session is
+    // a single prompt execution, so filter on the real `prompt_id` instead.
     if (sessionId) {
-      query = query.eq('session_id', sessionId)
+      query = query.eq('prompt_id', sessionId)
     }
 
     const { data, error } = await query.order('created_at', { ascending: false })
@@ -56,6 +59,8 @@ export async function getSessionAnalytics(
     let totalCitations = 0
     const uniqueProviders = new Set<string>()
     let lastQueryAt: string | null = null
+    let latencySumMs = 0
+    let latencyCount = 0
 
     for (const row of data) {
       const provider = row.engine || 'unknown'
@@ -71,6 +76,11 @@ export async function getSessionAnalytics(
       totalCitations += row.cited_urls?.length || 0
       uniqueProviders.add(provider)
 
+      if (row.execution_time_ms != null && row.execution_time_ms > 0) {
+        latencySumMs += row.execution_time_ms
+        latencyCount += 1
+      }
+
       if (row.created_at && (!lastQueryAt || row.created_at > lastQueryAt)) {
         lastQueryAt = row.created_at
       }
@@ -84,7 +94,7 @@ export async function getSessionAnalytics(
       totalCitations,
       totalQueries: data.length,
       lastQueryAt,
-      averageLatencyMs: 0,
+      averageLatencyMs: latencyCount > 0 ? Math.round(latencySumMs / latencyCount) : 0,
       providersUsed: Array.from(uniqueProviders),
     }
   } catch (err) {

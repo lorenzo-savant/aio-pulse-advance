@@ -11,6 +11,7 @@ import { logger } from '@/lib/logger'
 import { logAudit } from '@/lib/services/audit-log'
 import { getAccessibleBrandIds } from '@/lib/authorize'
 import { getCurrentOrganization } from '@/lib/services/organization-auth'
+import { getUserRole } from '@/lib/services/workspace-auth'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -180,6 +181,51 @@ export async function POST(req: NextRequest) {
 
   let workspaceId: string | undefined = parsed.data.workspaceId ?? undefined
   let organizationId: string | undefined = parsed.data.organizationId ?? undefined
+
+  if (workspaceId) {
+    // Never trust a caller-supplied workspaceId: the brand must be scoped to a
+    // workspace the user is actually a member of, and its org must agree.
+    if (!(await getUserRole(userId, workspaceId))) {
+      return NextResponse.json(
+        { success: false, message: 'You are not a member of this workspace' },
+        { status: 403 },
+      )
+    }
+
+    const { data: ws } = await db
+      .from('workspaces')
+      .select('organization_id')
+      .eq('id', workspaceId)
+      .single()
+
+    if (!ws) {
+      return NextResponse.json({ success: false, message: 'Workspace not found' }, { status: 404 })
+    }
+
+    // If the caller also supplied an org id it must match the workspace's org.
+    if (organizationId && organizationId !== ws.organization_id) {
+      return NextResponse.json(
+        { success: false, message: 'organizationId does not match the workspace' },
+        { status: 403 },
+      )
+    }
+    organizationId = ws.organization_id
+  } else if (organizationId) {
+    // Workspace-less: still verify org membership before scoping the brand to it.
+    const { data: membership } = await db
+      .from('organization_members')
+      .select('user_id')
+      .eq('organization_id', organizationId)
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (!membership) {
+      return NextResponse.json(
+        { success: false, message: 'You are not a member of this organization' },
+        { status: 403 },
+      )
+    }
+  }
 
   if (!workspaceId || !organizationId) {
     const org = await getCurrentOrganization(userId)

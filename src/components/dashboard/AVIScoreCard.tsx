@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { normalizePositionScore, hasMeasuredPosition } from '@/lib/metrics/position'
 import { Card } from '@/components/ui/Card'
 
 interface AVIData {
@@ -32,7 +33,17 @@ const COMPONENT_CONFIG = [
     key: 'positionAvg' as const,
     label: 'Position',
     weight: '15%',
-    normalize: (v: number) => (v <= 0 ? 50 : Math.max(0, ((5 - v) / 4) * 100)),
+    // This bar carried BOTH defects that commit 1a1e10d removed from the AVI
+    // it is drawn underneath: the 1-5 rank divisor, and a fabricated 50 for
+    // the never-positioned sentinel. The score above was computed server-side
+    // on the corrected scale with the component dropped entirely when absent,
+    // so the card contradicted itself on screen — a 0% Position bar sitting
+    // below a score that had credited that component 15%, or a 50% bar for a
+    // brand no engine had ever positioned.
+    //
+    // `null` means "not measured", and the bar renders as absent rather than
+    // as a number. Absence is not a midpoint.
+    normalize: (v: number) => (hasMeasuredPosition(v) ? normalizePositionScore(v) : null),
   },
   {
     key: 'hallucinationRate' as const,
@@ -109,7 +120,11 @@ export function AVIScoreCard({ brandId }: { brandId?: string }) {
         {COMPONENT_CONFIG.map((comp) => {
           const rawValue = data.components[comp.key]
           const normalized = comp.normalize ? comp.normalize(rawValue) : rawValue
-          const percentage = Math.max(0, Math.min(100, normalized))
+          // `null` from a normalizer means the component was never measured.
+          // The score above it drops such a component and re-weights the rest,
+          // so drawing a bar here — at any width — would show a measurement
+          // the score deliberately refused to make.
+          const percentage = normalized == null ? null : Math.max(0, Math.min(100, normalized))
 
           return (
             <div key={comp.key}>
@@ -117,13 +132,17 @@ export function AVIScoreCard({ brandId }: { brandId?: string }) {
                 <span className="text-foreground/60">
                   {comp.label} <span className="opacity-50">({comp.weight})</span>
                 </span>
-                <span className="font-medium">{percentage.toFixed(0)}%</span>
+                <span className="font-medium">
+                  {percentage == null ? 'Not measured' : `${percentage.toFixed(0)}%`}
+                </span>
               </div>
               <div className="bg-foreground/10 h-2 overflow-hidden rounded-full">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${getBarColor(percentage)}`}
-                  style={{ width: `${percentage}%` }}
-                />
+                {percentage != null && (
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${getBarColor(percentage)}`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                )}
               </div>
             </div>
           )

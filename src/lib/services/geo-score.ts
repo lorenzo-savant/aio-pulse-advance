@@ -24,6 +24,8 @@
 // EXCLUDED and the remaining pillar weights re-normalized to sum to 1, so a
 // missing signal never fabricates a phantom-0 that drags the score down
 // (idea from aeo-platform's sparse-data re-normalization). A real 0 is kept.
+import { normalizePositionScore } from '@/lib/metrics/position'
+
 export interface GeoScoreInput {
   citationRate: number | null // 0–100
   mentionRate: number | null // 0–100
@@ -101,12 +103,25 @@ const round1 = (v: number): number => Math.round(v * 10) / 10
 
 /**
  * Normalize average mention position to 0–100 (higher = better).
- * Mirrors the position normalization in calculateAVI: positions 1→100,
- * 5+→0, and "never positioned" (0) maps to a neutral 50.
+ *
+ * The comment here used to claim this "mirrors the position normalization in
+ * calculateAVI", with `((5 - positionAvg) / 4) * 100` underneath. That was
+ * true until commit 1a1e10d established that `mention_position` is a SENTENCE
+ * INDEX running to 20 rather than a 1-5 rank, moved the AVI to
+ * POSITION_SCALE_MAX and backfilled the stored rows — and false from that
+ * commit onward. The comment is why the divergence survived: it documented an
+ * agreement that had stopped existing.
+ *
+ * Measured against the 203 stored brand rows, the 1-5 divisor sent 24% of them
+ * to exactly 0 on a pillar worth 15% of the composite. Both scorers now import
+ * one definition, so they cannot drift apart again.
+ *
+ * Callers must not pass the "never positioned" sentinel (0): the pillar is
+ * excluded upstream, exactly as calculateAVI drops the component for
+ * `positionAvg <= 0` — absence is never a fabricated midpoint.
  */
 function normalizePosition(positionAvg: number): number {
-  if (positionAvg <= 0) return 50
-  return clamp(((5 - positionAvg) / 4) * 100, 0, 100)
+  return normalizePositionScore(positionAvg)
 }
 
 /** Normalize −1..1 sentiment to 0–100. */
@@ -191,7 +206,12 @@ export function calculateGeoScore(input: GeoScoreInput): GeoScoreResult {
       score: clamp(input.recommendationRate ?? 0, 0, 100),
     },
     position: {
-      present: input.positionAvg != null,
+      // `position_avg` is NOT NULL DEFAULT 0 in brand_health_scores, so the
+      // "never positioned" sentinel arrives as a real 0, never null. Both must
+      // exclude the pillar — the same rule calculateAVI applies at
+      // monitoring.ts `positionAvg > 0`. Scoring 0 as a neutral 50 fabricated
+      // a mid-position for a brand no engine had ever ranked.
+      present: input.positionAvg != null && input.positionAvg > 0,
       score: normalizePosition(input.positionAvg ?? 0),
     },
     trust: {

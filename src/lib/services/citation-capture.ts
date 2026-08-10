@@ -97,7 +97,7 @@ export function buildOwnedDomainSet(
   return out
 }
 
-function isOwnedHost(host: string, owned: Set<string>): boolean {
+export function isOwnedHost(host: string, owned: Set<string>): boolean {
   if (owned.has(host)) return true
   for (const o of owned) {
     if (host === o || host.endsWith(`.${o}`)) return true

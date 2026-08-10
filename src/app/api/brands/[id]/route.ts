@@ -89,9 +89,8 @@ export async function GET(req: NextRequest, { params }: Params) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  // Opening a brand takes any role on it. PUT and DELETE below stay
-  // owner-only: a collaborator works inside a brand, they do not rename or
-  // delete it.
+  // Opening a brand takes any role on it. PUT/PATCH take editor, DELETE stays
+  // owner-only: a collaborator works inside a brand, they do not dissolve it.
   const gate = await requireBrandRole(id, userId, 'viewer')
   if ('response' in gate) return gate.response
 
@@ -147,17 +146,39 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
+  // PUT is a full update: an editor collaborator (team_members role) must be
+  // able to update brand content. The previous `.eq('user_id', userId)`
+  // silently allowed only the owner, so an invited editor's save either 404'd
+  // or silently updated nothing. Deleting stays owner-only, see DELETE.
+  const gate = await requireBrandRole(id, userId, 'editor')
+  if ('response' in gate) return gate.response
+
+  // Filter out undefined values + map camelCase LLMO fields to their snake_case
+  // DB columns — same mapping PATCH already applied, so PUT can't 500 on
+  // sameAs / citationFormat / legalId / legalIdType (Zod gives camelCase keys,
+  // Supabase expects same_as, citation_format, legal_id, legal_id_type).
+  const { sameAs, citationFormat, legalId, legalIdType, ...rest } = parsed.data
+  const updateData: Record<string, unknown> = Object.fromEntries(
+    Object.entries(rest).filter(([_, v]) => v !== undefined),
+  )
+  if (sameAs !== undefined) updateData.same_as = sameAs
+  if (citationFormat !== undefined) updateData.citation_format = citationFormat
+  if (legalId !== undefined) updateData.legal_id = legalId
+  if (legalIdType !== undefined) updateData.legal_id_type = legalIdType
+
   // Keep the legal-suffix-stripped alias in sync when name + aliases are sent
   // together (the edit form sends both), so exact-match detection keeps working.
-  if (typeof parsed.data.name === 'string' && Array.isArray(parsed.data.aliases)) {
-    parsed.data.aliases = withDerivedAliases(parsed.data.name, parsed.data.aliases)
+  if (typeof updateData.name === 'string' && Array.isArray(updateData.aliases)) {
+    updateData.aliases = withDerivedAliases(
+      updateData.name as string,
+      updateData.aliases as string[],
+    )
   }
 
   const { data, error } = await db
     .from('brands')
-    .update(parsed.data)
+    .update(updateData)
     .eq('id', id)
-    .eq('user_id', userId)
     .select(BRAND_ALL_COLS)
     .single()
 
@@ -231,6 +252,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (legalId !== undefined) updateData.legal_id = legalId
   if (legalIdType !== undefined) updateData.legal_id_type = legalIdType
 
+  // Same editor-gate as PUT: a collaborator must be able to save brand edits.
+  const gate = await requireBrandRole(id, userId, 'editor')
+  if ('response' in gate) return gate.response
+
   // Keep the legal-suffix-stripped alias in sync when name + aliases change.
   if (typeof updateData.name === 'string' && Array.isArray(updateData.aliases)) {
     updateData.aliases = withDerivedAliases(
@@ -243,7 +268,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .from('brands')
     .update(updateData)
     .eq('id', id)
-    .eq('user_id', userId)
     .select(BRAND_ALL_COLS)
     .single()
 
@@ -279,7 +303,16 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
-  const { error } = await db.from('brands').delete().eq('id', id).eq('user_id', userId)
+
+  // Deleting a brand is owner-only (an editor collaborator may update content,
+  // they do not dissolve the brand). The previous `.eq('user_id', userId)`
+  // also failed for the true owner whenever their id lived in team_members
+  // instead of the brands.user_id column, reporting success while removing
+  // nothing.
+  const gate = await requireBrandRole(id, userId, 'owner')
+  if ('response' in gate) return gate.response
+
+  const { error } = await db.from('brands').delete().eq('id', id)
 
   if (error) return err(error.message)
   return NextResponse.json({ success: true, data: null, timestamp: Date.now() })

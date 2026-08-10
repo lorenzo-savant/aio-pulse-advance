@@ -161,6 +161,7 @@
       "citation_sources": "Citatkällor",
       "aeo_snippets": "AEO-utdrag",
       "keywords": "Nyckelord",
+      "brand_overview": "Varumärkesöversikt",
       "geo_score": "GEO-poäng",
       "snapshots": "Ögonblicksbilder",
       "reports": "Rapporter",
@@ -599,11 +600,8 @@
     },
     "notifications": {
       "title": "Aviseringar",
-      "description": "Konfigurera hur du får aviseringar.",
-      "alert_email": "Aviserings-e-post",
-      "alert_email_placeholder": "aviseringar@domän.se",
-      "alert_email_helper": "Aviseringar skickas via Resend när de utlöses.",
-      "save_button": "Spara Preferenser"
+      "description": "Aviseringar konfigureras per regel.",
+      "manage_in_alerts": "Hantera aviseringsregler"
     },
     "interface_language": {
       "title": "Gränssnittsspråk",

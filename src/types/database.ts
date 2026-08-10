@@ -1181,6 +1181,65 @@ export type Database = {
         }
         Relationships: []
       }
+      geo_score_snapshots: {
+        Row: {
+          brand_id: string
+          confidence: string | null
+          created_at: string
+          delta: number | null
+          engine_breakdown: Json | null
+          grade: string
+          id: string
+          pillars: Json
+          previous_score: number | null
+          recommendations: Json
+          sample_size: number
+          score: number
+          snapshot_date: string
+          triggered_alerts: string[]
+        }
+        Insert: {
+          brand_id: string
+          confidence?: string | null
+          created_at?: string
+          delta?: number | null
+          engine_breakdown?: Json | null
+          grade: string
+          id?: string
+          pillars?: Json
+          previous_score?: number | null
+          recommendations?: Json
+          sample_size?: number
+          score: number
+          snapshot_date: string
+          triggered_alerts?: string[]
+        }
+        Update: {
+          brand_id?: string
+          confidence?: string | null
+          created_at?: string
+          delta?: number | null
+          engine_breakdown?: Json | null
+          grade?: string
+          id?: string
+          pillars?: Json
+          previous_score?: number | null
+          recommendations?: Json
+          sample_size?: number
+          score?: number
+          snapshot_date?: string
+          triggered_alerts?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'geo_score_snapshots_brand_id_fkey'
+            columns: ['brand_id']
+            isOneToOne: false
+            referencedRelation: 'brands'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       gsc_performance: {
         Row: {
           brand_id: string
@@ -1451,6 +1510,7 @@ export type Database = {
           all_providers: string[] | null
           brand_id: string
           brand_mentioned: boolean | null
+          citation_source: string | null
           cited_urls: string[] | null
           competitor_mentions: Json | null
           confusion_audited_at: string | null
@@ -1472,6 +1532,7 @@ export type Database = {
           prompt_text: string
           raw_response: Json | null
           response_comparison: Json | null
+          response_provider: string | null
           response_text: string
           sentiment: string | null
           sentiment_aspects: Json
@@ -1483,6 +1544,7 @@ export type Database = {
           all_providers?: string[] | null
           brand_id: string
           brand_mentioned?: boolean | null
+          citation_source?: string | null
           cited_urls?: string[] | null
           competitor_mentions?: Json | null
           confusion_audited_at?: string | null
@@ -1504,6 +1566,7 @@ export type Database = {
           prompt_text: string
           raw_response?: Json | null
           response_comparison?: Json | null
+          response_provider?: string | null
           response_text: string
           sentiment?: string | null
           sentiment_aspects?: Json
@@ -1515,6 +1578,7 @@ export type Database = {
           all_providers?: string[] | null
           brand_id?: string
           brand_mentioned?: boolean | null
+          citation_source?: string | null
           cited_urls?: string[] | null
           competitor_mentions?: Json | null
           confusion_audited_at?: string | null
@@ -1536,6 +1600,7 @@ export type Database = {
           prompt_text?: string
           raw_response?: Json | null
           response_comparison?: Json | null
+          response_provider?: string | null
           response_text?: string
           sentiment?: string | null
           sentiment_aspects?: Json
@@ -2811,6 +2876,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accepted_member_brand_ids: { Args: never; Returns: string[] }
       cleanup_expired_serp_cache: { Args: never; Returns: number }
       consume_free_query: {
         Args: { p_limit: number; p_user_id: string }

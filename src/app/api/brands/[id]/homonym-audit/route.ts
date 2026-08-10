@@ -89,7 +89,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       )
     }
     logger.error('homonym-audit GET failed', { brandId: id, error: msg })
-    return err(msg)
+    return err('Failed to load homonym audit')
   }
 }
 
@@ -150,6 +150,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       )
     }
     logger.error('homonym-audit POST failed', { brandId: id, error: msg })
-    return err(msg)
+    return err('Homonym audit failed')
   }
 }

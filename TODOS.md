@@ -340,11 +340,23 @@ what the metric should mean.
 
 ## 12. The test suite fails intermittently, and nobody knows why
 
-**What:** On 2026-08-07, across roughly six full runs of an unchanged tree, the
-suite produced: one run with 4 failed tests across 3 files, one run reporting
-"6 errors" (unhandled, not assertion failures), and four runs completely clean
-at 1895 passed. The failures were not captured — the very next run went green
-before the names could be read.
+**What:** Across roughly ten full runs of unchanged trees on 2026-08-07 and
+2026-08-10, the suite produced: one run with 4 failed tests across 3 files, one
+reporting "6 errors" (unhandled, not assertion failures), one with 2 failures,
+and the rest completely clean.
+
+**NAMES CAPTURED 2026-08-10** — the first time a failing run was read before the
+next one went green:
+
+```
+cron-credit-metering.test.ts
+  ✗ credit metering charges the prompt owner and runs no engine when credits are refused
+  ✗ credit metering a refused tenant does not stop the next tenant from running
+```
+
+Both pass in isolation, repeatedly. They failed in a run that shared the machine
+with `npm run build` in the same shell command — which is the strongest evidence
+yet for the contention theory below.
 
 **Why:** A suite that fails at random makes a green run weak evidence. Every
 "tests pass" claim in the 2026-08-07 work rests on runs that could have gone the

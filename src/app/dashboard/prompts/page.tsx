@@ -148,6 +148,114 @@ function RunResultRow({ result }: { result: PromptRunResult }) {
   )
 }
 
+/**
+ * Every run of one prompt, oldest at the bottom, grouped by day.
+ *
+ * The summary above shows the most recent run per engine, which answers "where
+ * do I stand". This answers "am I getting better", and it is the reason to keep
+ * running the same prompt for months: a single reading is a number, a series is
+ * a trend. The rows have been in the database all along — up to 31 runs across
+ * 31 days for one prompt+engine — and no surface exposed them.
+ */
+function RunHistory({ promptId }: { promptId: string }) {
+  const [results, setResults] = useState<PromptRunResult[] | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const rows: PromptRunResult[] = []
+        for (let page = 1; page <= 10; page++) {
+          const params = new URLSearchParams({
+            prompt_id: promptId,
+            limit: '100',
+            page: String(page),
+          })
+          const res = await fetch(`/api/monitoring?${params}`)
+          const json = await res.json()
+          if (!json?.success) {
+            if (!cancelled && rows.length === 0) setFailed(true)
+            break
+          }
+          rows.push(...((json.data ?? []) as PromptRunResult[]))
+          if (page >= (json.pagination?.totalPages ?? 1)) break
+        }
+        if (!cancelled) setResults(rows)
+      } catch {
+        if (!cancelled) setFailed(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [promptId])
+
+  if (failed) {
+    return (
+      <p className="mt-2 border-t border-input pt-2 text-xs text-muted-foreground">
+        Could not load history.
+      </p>
+    )
+  }
+
+  if (!results) {
+    return (
+      <p className="mt-2 flex items-center gap-2 border-t border-input pt-2 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading history…
+      </p>
+    )
+  }
+
+  // Newest first.
+  const sorted = [...results].sort((a, b) => b.created_at.localeCompare(a.created_at))
+
+  const byDay = new Map<string, PromptRunResult[]>()
+  for (const r of sorted) {
+    const day = r.created_at.slice(0, 10)
+    const list = byDay.get(day) ?? []
+    list.push(r)
+    byDay.set(day, list)
+  }
+
+  return (
+    <div className="mt-2 space-y-2 border-t border-input pt-2">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {results.length} {results.length === 1 ? 'run' : 'runs'} over {byDay.size}{' '}
+        {byDay.size === 1 ? 'day' : 'days'}
+      </p>
+
+      {[...byDay.entries()].map(([day, runs]) => (
+        <div key={day} className="flex gap-3 text-xs">
+          <span className="w-20 shrink-0 tabular-nums text-muted-foreground">{day}</span>
+          <div className="flex-1 space-y-0.5">
+            {runs.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center gap-2">
+                <span className="w-20 shrink-0 text-muted-foreground">{r.engine}</span>
+                {r.brand_mentioned ? (
+                  <span className="text-emerald-400">
+                    mentioned
+                    {r.mention_position != null && ` · s${r.mention_position}`}
+                    {r.mention_type === 'indirect' && ' · indirect'}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/70">not mentioned</span>
+                )}
+                {r.sentiment && <span className="text-muted-foreground">{r.sentiment}</span>}
+                {r.visibility_score != null && (
+                  <span className="text-muted-foreground">
+                    vis {Math.round(r.visibility_score)}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function PromptCard({
   prompt,
   results,
@@ -158,6 +266,7 @@ function PromptCard({
   t,
 }: {
   prompt: Prompt
+  /** EVERY stored run for this prompt, newest-first from the API but unsorted here. */
   results: PromptRunResult[]
   onDelete: (id: string) => void
   onRun: (promptId: string) => void
@@ -167,6 +276,16 @@ function PromptCard({
 }) {
   const categoryColor = CATEGORY_COLORS[prompt.category ?? 'custom'] ?? 'default'
   const [showAnswers, setShowAnswers] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+
+  // `results` is already the latest run per engine — the loader keeps only
+  // those, so a page load stays small. History is a separate, on-demand fetch.
+  const latestPerEngine = results
+  // A prompt that has run more than once has history worth showing. Cheapest
+  // available signal without fetching: it has a result AND `last_run_at`
+  // predates today's, or it simply has any result at all — offer it and let
+  // the fetch decide, rather than hiding a real series behind a guess.
+  const hasHistory = results.length > 0
 
   return (
     <Card className="border-input bg-card p-5">
@@ -226,25 +345,41 @@ function PromptCard({
 
       {/* What the engines actually answered. Previously this page ran a prompt,
           reported a count in a toast, and showed none of it. */}
-      {results.length > 0 && (
+      {latestPerEngine.length > 0 && (
         <div className="bg-secondary/40 mb-3 rounded-lg border border-input px-3 py-1.5">
-          {results.map((r) => (
+          {latestPerEngine.map((r) => (
             <RunResultRow key={r.id} result={r} />
           ))}
 
-          {results.some((r) => r.response_text) && (
-            <button
-              type="button"
-              onClick={() => setShowAnswers((v) => !v)}
-              className="mt-1 text-xs font-semibold text-brand hover:underline"
-            >
-              {showAnswers ? 'Hide answers' : 'Show answers'}
-            </button>
-          )}
+          <div className="mt-1 flex flex-wrap gap-3">
+            {latestPerEngine.some((r) => r.response_text) && (
+              <button
+                type="button"
+                onClick={() => setShowAnswers((v) => !v)}
+                className="text-xs font-semibold text-brand hover:underline"
+              >
+                {showAnswers ? 'Hide answers' : 'Show answers'}
+              </button>
+            )}
+
+            {/* Only offered when there is more than the summary already shows.
+                A "history" of one run is a button that wastes a click. */}
+            {hasHistory && (
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                className="text-xs font-semibold text-brand hover:underline"
+              >
+                {showHistory ? 'Hide history' : 'Show history'}
+              </button>
+            )}
+          </div>
+
+          {showHistory && <RunHistory promptId={prompt.id} />}
 
           {showAnswers && (
             <div className="mt-2 space-y-2 border-t border-input pt-2">
-              {results
+              {latestPerEngine
                 .filter((r) => r.response_text)
                 .map((r) => (
                   <div key={`${r.id}-text`}>
@@ -493,6 +628,7 @@ function PromptsPageContent() {
       // The endpoint caps at 100 rows a page, and a prompt can have one row per
       // engine, so ask in id-chunks and page through each.
       for (let i = 0; i < ids.length; i += 25) {
+        const chunkPrompts = forPrompts.slice(i, i + 25)
         const chunk = ids.slice(i, i + 25)
         for (let page = 1; page <= 20; page++) {
           const params = new URLSearchParams({
@@ -506,10 +642,23 @@ function PromptsPageContent() {
 
           for (const r of (json.data ?? []) as PromptRunResult[]) {
             const list = byPrompt[r.prompt_id] ?? (byPrompt[r.prompt_id] = [])
-            // Rows arrive newest first, so the first one seen for an engine is
-            // the latest run. Keep that and drop the history.
+            // Newest first, so the first row seen for an engine is the latest
+            // run. Only that is kept: the summary needs one row per engine, and
+            // holding the whole history here would mean downloading 6.3 MB on
+            // page load — the largest brand alone has 1384 stored results.
+            // History is fetched per prompt, when the user asks for it.
             if (!list.some((existing) => existing.engine === r.engine)) list.push(r)
           }
+
+          // Stop as soon as every prompt in this chunk has a row for each
+          // engine it declares. Rows arrive newest first, so that happens in
+          // the first page or two; paging to the end would walk the entire
+          // history for nothing.
+          const covered = chunkPrompts.every((p) => {
+            const seen = byPrompt[p.id] ?? []
+            return p.engines.every((e) => seen.some((r) => r.engine === e))
+          })
+          if (covered) break
 
           if (page >= (json.pagination?.totalPages ?? 1)) break
         }

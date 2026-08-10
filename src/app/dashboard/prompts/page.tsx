@@ -64,8 +64,54 @@ const CATEGORY_COLORS: Record<string, 'brand' | 'info' | 'warning' | 'success' |
   custom: 'default',
 }
 
+/**
+ * What one engine returned for one prompt, on its most recent run.
+ *
+ * Answers, in order: did the engine name the brand, where in the answer, how
+ * did it talk about it, and did it cite anything. That is the whole point of
+ * running a prompt, and until now none of it was visible here.
+ */
+function RunResultRow({ result }: { result: PromptRunResult }) {
+  const cited = result.cited_urls?.length ?? 0
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 py-1.5 text-xs">
+      <Badge variant="default">{result.engine}</Badge>
+
+      {result.brand_mentioned ? (
+        <span className="font-semibold text-emerald-400">Mentioned</span>
+      ) : (
+        <span className="text-muted-foreground">Not mentioned</span>
+      )}
+
+      {/* Sentence index, not a rank — 1 is the opening sentence. Only shown
+          when the brand was actually positioned. */}
+      {result.brand_mentioned && result.mention_position != null && (
+        <span className="text-muted-foreground">sentence {result.mention_position}</span>
+      )}
+
+      {result.sentiment && <span className="text-muted-foreground">{result.sentiment}</span>}
+
+      {result.visibility_score != null && (
+        <span className="text-muted-foreground">vis {Math.round(result.visibility_score)}</span>
+      )}
+
+      {cited > 0 && (
+        <span className="text-muted-foreground">
+          {cited} {cited === 1 ? 'citation' : 'citations'}
+        </span>
+      )}
+
+      <span className="text-muted-foreground/70 ml-auto">
+        {new Date(result.created_at).toLocaleDateString()}
+      </span>
+    </div>
+  )
+}
+
 function PromptCard({
   prompt,
+  results,
   onDelete,
   onRun,
   running,
@@ -73,6 +119,7 @@ function PromptCard({
   t,
 }: {
   prompt: Prompt
+  results: PromptRunResult[]
   onDelete: (id: string) => void
   onRun: (promptId: string) => void
   running: boolean
@@ -80,6 +127,7 @@ function PromptCard({
   t: ReturnType<typeof useTranslations>
 }) {
   const categoryColor = CATEGORY_COLORS[prompt.category ?? 'custom'] ?? 'default'
+  const [showAnswers, setShowAnswers] = useState(false)
 
   return (
     <Card className="border-input bg-card p-5">
@@ -114,13 +162,66 @@ function PromptCard({
             onClick={() => onDelete(prompt.id)}
           >
             {deleting ? (
-              <Loader2 className="h-4 w-4 animate-spin text-red-400" />
+              <Loader2 className="text-red-400 h-4 w-4 animate-spin" />
             ) : (
-              <X className="h-4 w-4 text-muted-foreground hover:text-red-400" />
+              <X className="hover:text-red-400 h-4 w-4 text-muted-foreground" />
             )}
           </Button>
         </div>
       </div>
+
+      {/* What the engines actually answered. Previously this page ran a prompt,
+          reported a count in a toast, and showed none of it. */}
+      {results.length > 0 && (
+        <div className="bg-secondary/40 mb-3 rounded-lg border border-input px-3 py-1.5">
+          {results.map((r) => (
+            <RunResultRow key={r.id} result={r} />
+          ))}
+
+          {results.some((r) => r.response_text) && (
+            <button
+              type="button"
+              onClick={() => setShowAnswers((v) => !v)}
+              className="mt-1 text-xs font-semibold text-brand hover:underline"
+            >
+              {showAnswers ? 'Hide answers' : 'Show answers'}
+            </button>
+          )}
+
+          {showAnswers && (
+            <div className="mt-2 space-y-2 border-t border-input pt-2">
+              {results
+                .filter((r) => r.response_text)
+                .map((r) => (
+                  <div key={`${r.id}-text`}>
+                    <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      {r.engine}
+                    </p>
+                    <p className="whitespace-pre-wrap text-xs text-muted-foreground">
+                      {r.response_text}
+                    </p>
+                    {(r.cited_urls?.length ?? 0) > 0 && (
+                      <ul className="mt-1 space-y-0.5">
+                        {r.cited_urls!.map((u) => (
+                          <li key={u} className="truncate text-[11px]">
+                            <a
+                              href={u}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brand hover:underline"
+                            >
+                              {u}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
@@ -137,6 +238,57 @@ function PromptCard({
   )
 }
 
+/** The slice of a monitoring result a prompt card needs to show what came back. */
+interface PromptRunResult {
+  id: string
+  prompt_id: string
+  engine: string
+  brand_mentioned: boolean
+  mention_position: number | null
+  visibility_score: number | null
+  sentiment: string | null
+  response_text: string | null
+  cited_urls: string[] | null
+  created_at: string
+}
+
+/**
+ * Fetch EVERY prompt, not the first page.
+ *
+ * /api/prompts is paginated with `defaultLimit: 20` and `maxLimit: 100`, and
+ * this page used to call it with no parameters at all — so a brand with 76
+ * prompts showed 20 of them, with nothing on screen saying so. The response
+ * carried the real total the whole time and the page discarded it.
+ *
+ * Raising the limit is not enough: unfiltered, the account has more prompts
+ * than `maxLimit` allows in one request, so the pages have to be walked.
+ */
+export async function fetchAllPrompts(
+  brandId?: string,
+): Promise<{ prompts: Prompt[]; total: number; truncated: boolean }> {
+  const PER_PAGE = 100 // maxLimit on the endpoint
+  const HARD_STOP = 50 // 5000 prompts; a runaway loop is worse than a short list
+
+  const all: Prompt[] = []
+  let total = 0
+
+  for (let page = 1; page <= HARD_STOP; page++) {
+    const params = new URLSearchParams({ page: String(page), limit: String(PER_PAGE) })
+    if (brandId) params.set('brand_id', brandId)
+
+    const res = await fetch(`/api/prompts?${params}`)
+    const json = await res.json()
+    if (!json?.success) return { prompts: all, total: total || all.length, truncated: true }
+
+    all.push(...((json.data ?? []) as Prompt[]))
+    total = json.pagination?.total ?? all.length
+    if (!json.pagination?.hasMore) return { prompts: all, total, truncated: false }
+  }
+
+  // Hit the stop with pages still to go. Say so rather than pretend.
+  return { prompts: all, total, truncated: true }
+}
+
 function PromptsPageContent() {
   const t = useTranslations()
   const searchParams = useSearchParams()
@@ -145,6 +297,11 @@ function PromptsPageContent() {
 
   const [brands, setBrands] = useState<Brand[]>([])
   const [prompts, setPrompts] = useState<Prompt[]>([])
+  /** What the server says the total is. Compared against `prompts.length` so a
+   *  short list is visibly short rather than quietly short. */
+  const [promptTotal, setPromptTotal] = useState(0)
+  /** Latest monitoring result per prompt per engine, keyed by prompt id. */
+  const [resultsByPrompt, setResultsByPrompt] = useState<Record<string, PromptRunResult[]>>({})
   const [loading, setLoading] = useState(true)
   const [runningId, setRunningId] = useState<string | null>(null)
   const [selectedBrandId, setSelectedBrandId] = useState(preselectedBrandId ?? '')
@@ -222,30 +379,88 @@ function PromptsPageContent() {
     }
   }
 
+  /**
+   * Pull the most recent monitoring results for the prompts on screen.
+   *
+   * Running a prompt used to end at a toast saying how many results came back,
+   * and nothing else — the user paid for engine calls and then had to go to a
+   * different page to find out what the engines actually said.
+   *
+   * One request for the whole page of prompts, not one per card.
+   */
+  const loadResults = useCallback(async (forPrompts: Prompt[]) => {
+    if (forPrompts.length === 0) {
+      setResultsByPrompt({})
+      return
+    }
+    try {
+      const ids = forPrompts.map((p) => p.id)
+      const byPrompt: Record<string, PromptRunResult[]> = {}
+
+      // The endpoint caps at 100 rows a page, and a prompt can have one row per
+      // engine, so ask in id-chunks and page through each.
+      for (let i = 0; i < ids.length; i += 25) {
+        const chunk = ids.slice(i, i + 25)
+        for (let page = 1; page <= 20; page++) {
+          const params = new URLSearchParams({
+            prompt_id: chunk.join(','),
+            limit: '100',
+            page: String(page),
+          })
+          const res = await fetch(`/api/monitoring?${params}`)
+          const json = await res.json()
+          if (!json?.success) break
+
+          for (const r of (json.data ?? []) as PromptRunResult[]) {
+            const list = byPrompt[r.prompt_id] ?? (byPrompt[r.prompt_id] = [])
+            // Rows arrive newest first, so the first one seen for an engine is
+            // the latest run. Keep that and drop the history.
+            if (!list.some((existing) => existing.engine === r.engine)) list.push(r)
+          }
+
+          if (page >= (json.pagination?.totalPages ?? 1)) break
+        }
+      }
+
+      setResultsByPrompt(byPrompt)
+    } catch {
+      // A failed results fetch must not blank the prompt list. Cards simply
+      // show no results rather than the page showing an error.
+    }
+  }, [])
+
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [brandsRes, promptsRes] = await Promise.all([
+      const [brandsRes, page] = await Promise.all([
         fetch('/api/brands'),
-        fetch(`/api/prompts${selectedBrandId ? `?brand_id=${selectedBrandId}` : ''}`),
+        fetchAllPrompts(selectedBrandId || undefined),
       ])
       const bJson = await brandsRes.json()
-      const pJson = await promptsRes.json()
 
       if (!bJson.success) {
         toast.error(t('prompts.toast.load_failed'))
       }
-      if (!pJson.success) {
+
+      setBrands(bJson.data ?? [])
+      setPrompts(page.prompts)
+      setPromptTotal(page.total)
+
+      // The list is the whole list, or the user is told it is not. Silently
+      // showing a subset is what this page used to do.
+      if (page.truncated) {
         toast.error(t('prompts.toast.load_failed'))
       }
 
-      setBrands(bJson.data ?? [])
-      setPrompts(pJson.data ?? [])
+      void loadResults(page.prompts)
     } catch {
       toast.error(t('prompts.toast.load_failed'))
     } finally {
       setLoading(false)
     }
+    // `loadResults` is stable (defined below with an empty dep list) and
+    // including it would re-create loadData on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBrandId, t])
 
   useEffect(() => {
@@ -824,10 +1039,20 @@ function PromptsPageContent() {
         </div>
       ) : (
         <div className="space-y-3">
+          {/* The count is shown because this list used to be silently short:
+              20 of 76 prompts, with nothing on screen admitting it. If these
+              two numbers ever disagree, something is being hidden. */}
+          <p className="text-xs text-muted-foreground">
+            {prompts.length === promptTotal
+              ? `${promptTotal} ${promptTotal === 1 ? 'prompt' : 'prompts'}`
+              : `Showing ${prompts.length} of ${promptTotal} prompts`}
+          </p>
+
           {prompts.map((prompt) => (
             <PromptCard
               key={prompt.id}
               prompt={prompt}
+              results={resultsByPrompt[prompt.id] ?? []}
               running={runningId === prompt.id}
               deleting={deletingId === prompt.id}
               onDelete={handleDelete}

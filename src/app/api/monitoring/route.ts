@@ -574,14 +574,63 @@ export async function GET(req: NextRequest) {
 
   if (error) return err(error.message)
 
+  // ── Aggregates over the WHOLE filtered set, not the page ──────────────────
+  //
+  // The Live Monitoring page derived its headline numbers from whatever rows
+  // the current page happened to contain. A rate survives that treatment by
+  // luck; a COUNT cannot. Measured against production: the page reported 0
+  // hallucinations from its 30-row window while the table held 62, because
+  // hallucinations run at roughly 3% and a 30-row sample usually contains
+  // none.
+  //
+  // These are `head: true` count queries — Postgres counts, no rows crossing
+  // the wire — so answering honestly costs a few milliseconds rather than the
+  // 6 MB that fetching everything would.
+  /** Same filters as the list, counted rather than fetched. */
+  const countWhere = async (column: 'brand_mentioned' | 'has_hallucination') => {
+    let q = db
+      .from('monitoring_results')
+      .select('*', { count: 'exact', head: true })
+      .in('brand_id', filterIds)
+      .eq(column, true)
+    if (engine) q = q.eq('engine', engine)
+    if (promptIds.length > 0) q = q.in('prompt_id', promptIds)
+    const { count: c } = await q
+    return c ?? null
+  }
+
+  // `language` filters through the joined prompts row, which a head-count
+  // cannot express. When it is set the aggregates would silently describe a
+  // wider set than the list, so they are omitted rather than reported wrong.
+  const languageFiltered = !!language
+
+  const [mentioned, hallucinated] = languageFiltered
+    ? [null, null]
+    : await Promise.all([countWhere('brand_mentioned'), countWhere('has_hallucination')])
+
+  const total = count ?? 0
+
   return NextResponse.json({
     success: true,
     data,
     pagination: {
       page,
       perPage: limit,
-      total: count ?? 0,
-      totalPages: Math.ceil((count ?? 0) / limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    /**
+     * Describes every row matching the filters, not the returned page.
+     * `null` where a filter makes an honest aggregate impossible — a missing
+     * number is recoverable, a confidently wrong one is not.
+     */
+    stats: {
+      total,
+      mentioned,
+      hallucinated,
+      mentionRate: mentioned != null && total > 0 ? Math.round((mentioned / total) * 100) : null,
+      /** True when the aggregates cover fewer dimensions than the list. */
+      partial: languageFiltered,
     },
     timestamp: Date.now(),
   })

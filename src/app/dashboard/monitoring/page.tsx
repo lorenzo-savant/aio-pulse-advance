@@ -214,6 +214,24 @@ export default function MonitoringPage() {
   const [selectedEngine, setSelectedEngine] = useState('')
   const [selectedLanguage, setSelectedLanguage] = useState('')
   const [pagination, setPagination] = useState({ total: 0, page: 1, totalPages: 1 })
+  /**
+   * Headline figures computed by the server over the WHOLE filtered set.
+   *
+   * They used to be derived from `results`, which holds one page. A rate can
+   * survive that by luck; a count cannot. Against production the page reported
+   * 0 hallucinations from a 30-row window while the table held 62 — they run at
+   * roughly 3%, so a short window almost never contains one.
+   */
+  const [stats, setStats] = useState<{
+    total: number
+    mentioned: number | null
+    hallucinated: number | null
+    mentionRate: number | null
+    partial: boolean
+  } | null>(null)
+  /** How many pages of results are currently on screen. */
+  const [pagesLoaded, setPagesLoaded] = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   const handleNewResult = useCallback(
     (newResult: Record<string, unknown>) => {
@@ -226,24 +244,39 @@ export default function MonitoringPage() {
 
   const { isConnected } = useRealtimeResults(selectedBrand || '', handleNewResult)
 
+  /** Rows per request. The endpoint caps at 100. */
+  const PER_PAGE = 50
+
+  const resultsUrl = useCallback(
+    (page: number) => {
+      const p = new URLSearchParams({ limit: String(PER_PAGE), page: String(page) })
+      if (selectedBrand) p.set('brand_id', selectedBrand)
+      if (selectedEngine) p.set('engine', selectedEngine)
+      if (selectedLanguage) p.set('language', selectedLanguage)
+      return `/api/monitoring?${p}`
+    },
+    [selectedBrand, selectedEngine, selectedLanguage],
+  )
+
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const [brandsRes, resultsRes] = await Promise.all([
         fetch('/api/brands'),
-        fetch(
-          `/api/monitoring?${selectedBrand ? `brand_id=${selectedBrand}&` : ''}${selectedEngine ? `engine=${selectedEngine}&` : ''}${selectedLanguage ? `language=${selectedLanguage}&` : ''}limit=30`,
-        ),
+        fetch(resultsUrl(1)),
       ])
       const bJson = (await brandsRes.json()) as { success: boolean; data?: Brand[] }
       const rJson = (await resultsRes.json()) as {
         success: boolean
         data?: MonitoringResult[]
         pagination?: typeof pagination
+        stats?: NonNullable<typeof stats>
       }
       setBrands(bJson.data ?? [])
       setResults(rJson.data ?? [])
+      setPagesLoaded(1)
       if (rJson.pagination) setPagination(rJson.pagination)
+      setStats(rJson.stats ?? null)
     } catch {
       toast.error(t('failed_to_load_data'))
     } finally {
@@ -251,18 +284,55 @@ export default function MonitoringPage() {
     }
     // `t` from next-intl is stable across renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBrand, selectedEngine, selectedLanguage])
+  }, [resultsUrl])
+
+  /**
+   * Append the next page. The list used to stop at a hardcoded 30 rows with no
+   * control to see past them, while the stat card above it announced the real
+   * total — so the page told you 2130 results existed and showed you 30.
+   */
+  const loadMore = useCallback(async () => {
+    if (loadingMore) return
+    setLoadingMore(true)
+    try {
+      const next = pagesLoaded + 1
+      const res = await fetch(resultsUrl(next))
+      const json = (await res.json()) as {
+        success: boolean
+        data?: MonitoringResult[]
+        pagination?: typeof pagination
+      }
+      if (!json.success) throw new Error('load failed')
+      setResults((prev) => [...prev, ...(json.data ?? [])])
+      setPagesLoaded(next)
+      if (json.pagination) setPagination(json.pagination)
+    } catch {
+      toast.error(t('failed_to_load_data'))
+    } finally {
+      setLoadingMore(false)
+    }
+    // `t` from next-intl is stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingMore, pagesLoaded, resultsUrl])
 
   useEffect(() => {
     void loadData()
   }, [loadData])
 
+  // Prefer the server's aggregate over the whole filtered set. Falling back to
+  // the loaded page is only for the moment before stats arrive, and it is
+  // labelled as such below rather than passed off as the real figure.
   const mentionRate =
-    results.length > 0
+    stats?.mentionRate ??
+    (results.length > 0
       ? Math.round((results.filter((r) => r.brand_mentioned).length / results.length) * 100)
-      : 0
+      : 0)
 
-  const hallucinationCount = results.filter((r) => r.has_hallucination).length
+  const hallucinationCount =
+    stats?.hallucinated ?? results.filter((r) => r.has_hallucination).length
+
+  /** True while the cards describe the loaded page rather than everything. */
+  const statsArePartial = stats == null || stats.partial
 
   return (
     <div className="animate-in space-y-8">
@@ -327,7 +397,15 @@ export default function MonitoringPage() {
         </div>
       </div>
 
-      {/* Quick stats */}
+      {/* Quick stats. These describe every row matching the current filters,
+          counted by the server — not the rows that happen to be on screen. */}
+      {statsArePartial && results.length > 0 && (
+        <p className="text-xs text-amber-400">
+          {stats?.partial
+            ? 'Figures below cover the brand and engine filters, but not the language filter.'
+            : 'Figures below describe the results loaded so far.'}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           {
@@ -452,9 +530,30 @@ export default function MonitoringPage() {
         </div>
       ) : (
         <div className="space-y-3">
+          {/* The list is as long as it says it is. It used to stop at a
+              hardcoded 30 rows with no control to go further, directly beneath
+              a card announcing the real total. */}
+          <p className="text-xs text-muted-foreground">
+            {results.length >= pagination.total
+              ? `${pagination.total} ${pagination.total === 1 ? 'result' : 'results'}`
+              : `Showing ${results.length} of ${pagination.total} results`}
+          </p>
+
           {results.map((result) => (
             <ResultCard key={result.id} result={result} />
           ))}
+
+          {results.length < pagination.total && (
+            <div className="flex justify-center pt-2">
+              <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  `Load ${Math.min(PER_PAGE, pagination.total - results.length)} more`
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

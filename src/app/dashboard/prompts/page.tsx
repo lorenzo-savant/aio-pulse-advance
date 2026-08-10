@@ -73,38 +73,77 @@ const CATEGORY_COLORS: Record<string, 'brand' | 'info' | 'warning' | 'success' |
  */
 function RunResultRow({ result }: { result: PromptRunResult }) {
   const cited = result.cited_urls?.length ?? 0
+  const rivals = result.competitor_mentions ?? []
 
   return (
-    <div className="flex flex-wrap items-center gap-2 py-1.5 text-xs">
-      <Badge variant="default">{result.engine}</Badge>
+    <div className="space-y-1 py-1.5 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="default">{result.engine}</Badge>
 
-      {result.brand_mentioned ? (
-        <span className="font-semibold text-emerald-400">Mentioned</span>
-      ) : (
-        <span className="text-muted-foreground">Not mentioned</span>
-      )}
+        {result.brand_mentioned ? (
+          <span className="font-semibold text-emerald-400">Mentioned</span>
+        ) : (
+          <span className="text-muted-foreground">Not mentioned</span>
+        )}
 
-      {/* Sentence index, not a rank — 1 is the opening sentence. Only shown
-          when the brand was actually positioned. */}
-      {result.brand_mentioned && result.mention_position != null && (
-        <span className="text-muted-foreground">sentence {result.mention_position}</span>
-      )}
+        {/* Named outright, or only alluded to. A brand described without being
+            named cannot be clicked, searched for, or remembered. */}
+        {result.brand_mentioned && result.mention_type === 'indirect' && (
+          <span className="text-amber-400">indirect</span>
+        )}
 
-      {result.sentiment && <span className="text-muted-foreground">{result.sentiment}</span>}
+        {/* Sentence index, not a rank — 1 is the opening sentence. */}
+        {result.brand_mentioned && result.mention_position != null && (
+          <span className="text-muted-foreground">sentence {result.mention_position}</span>
+        )}
 
-      {result.visibility_score != null && (
-        <span className="text-muted-foreground">vis {Math.round(result.visibility_score)}</span>
-      )}
+        {result.brand_mentioned && (result.mention_count ?? 0) > 1 && (
+          <span className="text-muted-foreground">{result.mention_count}×</span>
+        )}
 
-      {cited > 0 && (
-        <span className="text-muted-foreground">
-          {cited} {cited === 1 ? 'citation' : 'citations'}
+        {result.sentiment && (
+          <span className="text-muted-foreground">
+            {result.sentiment}
+            {result.sentiment_score != null && ` ${result.sentiment_score.toFixed(2)}`}
+          </span>
+        )}
+
+        {result.visibility_score != null && (
+          <span className="text-muted-foreground">vis {Math.round(result.visibility_score)}</span>
+        )}
+
+        {cited > 0 && (
+          <span className="text-muted-foreground">
+            {cited} {cited === 1 ? 'citation' : 'citations'}
+            {/* Grounded after the fact rather than supplied by the engine —
+                weaker evidence, and worth distinguishing. */}
+            {result.citation_source === 'brave_fallback' && ' (grounded)'}
+          </span>
+        )}
+
+        <span className="text-muted-foreground/70 ml-auto">
+          {new Date(result.created_at).toLocaleDateString()}
+          {result.response_provider && ` · ${result.response_provider}`}
         </span>
+      </div>
+
+      {/* The two answers that change what you do next. Both are rare, so they
+          get their own line and a colour rather than hiding in the row. */}
+      {result.confusion_flag && (
+        <p className="text-amber-400">
+          ⚠ Brand confusion{result.confusion_reason ? ` — ${result.confusion_reason}` : ''}
+        </p>
+      )}
+      {result.has_hallucination && (
+        <p className="text-red-400">⚠ The engine stated something inaccurate</p>
       )}
 
-      <span className="text-muted-foreground/70 ml-auto">
-        {new Date(result.created_at).toLocaleDateString()}
-      </span>
+      {rivals.length > 0 && (
+        <p className="text-muted-foreground">
+          Also named:{' '}
+          <span className="text-foreground">{rivals.map((c) => c.name).join(', ')}</span>
+        </p>
+      )}
     </div>
   )
 }
@@ -134,6 +173,21 @@ function PromptCard({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="mb-1.5 flex flex-wrap gap-1.5">
+            {/* Which brand this prompt belongs to. The list mixes every brand
+                the user can reach — 205 prompts across 5 brands here — and
+                without this there was no way to tell them apart. The API has
+                returned `brand` all along; the card ignored it. */}
+            {prompt.brand?.name && (
+              <span
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                style={{
+                  backgroundColor: `${prompt.brand.color || '#6366f1'}22`,
+                  color: prompt.brand.color || '#6366f1',
+                }}
+              >
+                {prompt.brand.name}
+              </span>
+            )}
             <Badge variant={categoryColor}>{prompt.category ?? 'custom'}</Badge>
             <Badge variant="default">{prompt.language}</Badge>
             {prompt.engines.map((e) => (
@@ -238,17 +292,40 @@ function PromptCard({
   )
 }
 
-/** The slice of a monitoring result a prompt card needs to show what came back. */
+/**
+ * The slice of a monitoring result a prompt card needs to EXPLAIN what came
+ * back, not merely report that something did.
+ *
+ * "Was I mentioned" is the shallow question. The ones that change what you do
+ * next are: who else did the engine name, did it mistake me for someone else,
+ * did it state something false, and did it recommend me or just list me.
+ */
 interface PromptRunResult {
   id: string
   prompt_id: string
   engine: string
   brand_mentioned: boolean
   mention_position: number | null
+  mention_count: number | null
+  /** direct | indirect | none — being named outright is not the same as being alluded to. */
+  mention_type: string | null
   visibility_score: number | null
   sentiment: string | null
+  sentiment_score: number | null
+  /** Rivals the engine named in the same answer. The competitive picture. */
+  competitor_mentions: Array<{ name: string; position?: number | null }> | null
+  /** The engine confused this brand with a look-alike. */
+  confusion_flag: boolean | null
+  confusion_reason: string | null
+  /** The engine asserted something untrue about the brand. */
+  has_hallucination: boolean | null
   response_text: string | null
   cited_urls: string[] | null
+  /** Where the citations came from — `brave_fallback` means the engine did not
+   *  supply them and they were grounded afterwards, which is weaker evidence. */
+  citation_source: string | null
+  /** Which model actually answered, after any provider fallback. */
+  response_provider: string | null
   created_at: string
 }
 
@@ -304,7 +381,23 @@ function PromptsPageContent() {
   const [resultsByPrompt, setResultsByPrompt] = useState<Record<string, PromptRunResult[]>>({})
   const [loading, setLoading] = useState(true)
   const [runningId, setRunningId] = useState<string | null>(null)
+  /**
+   * The brand a NEW prompt will be created for. Form state only.
+   *
+   * This used to double as the list filter, which made the two silently
+   * interfere: pressing "Generate (AI)" with nothing selected set this to the
+   * first brand, and because the list read the same value, the whole prompt
+   * list collapsed to that one brand with no control on screen explaining why
+   * or offering a way back.
+   */
   const [selectedBrandId, setSelectedBrandId] = useState(preselectedBrandId ?? '')
+  /**
+   * Which brand the LIST shows. Empty means every brand the user can reach.
+   *
+   * Seeded from `?brand_id=` so arriving from the Brands page still lands on
+   * that brand, but now it is a visible filter the user can clear.
+   */
+  const [filterBrandId, setFilterBrandId] = useState(preselectedBrandId ?? '')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     text: '',
@@ -434,7 +527,7 @@ function PromptsPageContent() {
     try {
       const [brandsRes, page] = await Promise.all([
         fetch('/api/brands'),
-        fetchAllPrompts(selectedBrandId || undefined),
+        fetchAllPrompts(filterBrandId || undefined),
       ])
       const bJson = await brandsRes.json()
 
@@ -461,7 +554,7 @@ function PromptsPageContent() {
     // `loadResults` is stable (defined below with an empty dep list) and
     // including it would re-create loadData on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBrandId, t])
+  }, [filterBrandId, t])
 
   useEffect(() => {
     void loadData()
@@ -1042,11 +1135,32 @@ function PromptsPageContent() {
           {/* The count is shown because this list used to be silently short:
               20 of 76 prompts, with nothing on screen admitting it. If these
               two numbers ever disagree, something is being hidden. */}
-          <p className="text-xs text-muted-foreground">
-            {prompts.length === promptTotal
-              ? `${promptTotal} ${promptTotal === 1 ? 'prompt' : 'prompts'}`
-              : `Showing ${prompts.length} of ${promptTotal} prompts`}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {prompts.length === promptTotal
+                ? `${promptTotal} ${promptTotal === 1 ? 'prompt' : 'prompts'}`
+                : `Showing ${prompts.length} of ${promptTotal} prompts`}
+              {filterBrandId && ' · filtered'}
+            </p>
+
+            {/* An explicit, clearable brand filter. Arriving from the Brands
+                page used to set an invisible one with no way back, and the
+                "Generate (AI)" button could set it as a side effect. */}
+            {brands.length > 1 && (
+              <select
+                className="rounded-lg border border-input bg-input px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-brand"
+                value={filterBrandId}
+                onChange={(e) => setFilterBrandId(e.target.value)}
+              >
+                <option value="">All brands</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
           {prompts.map((prompt) => (
             <PromptCard

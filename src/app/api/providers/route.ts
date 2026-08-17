@@ -2,16 +2,16 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { isOpenAIAvailable, callOpenAI } from '@/lib/services/openai'
 import { isPerplexityAvailable, callPerplexity } from '@/lib/services/perplexity'
-import { isAnthropicAvailable, callAnthropic } from '@/lib/services/anthropic'
 import { callGemini } from '@/lib/services/gemini'
 import { requireUser } from '@/lib/api-auth'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
+import { ACTIVE_ENGINES } from '@/types'
 
 const TEST_PROMPT = 'What is AI? Answer in 2 sentences.'
 
-// ─── POST /api/providers — live connectivity probe against all 4 LLMs ───────
-// Each invocation spends 4 paid provider calls, so on top of auth it carries
+// ─── POST /api/providers — live connectivity probe against the active engines ───────
+// Each invocation spends one paid provider call per active engine, so on top of auth it carries
 // a tight per-user limit. Raw provider error strings can leak account/quota
 // detail — they are logged server-side and replaced with a generic label.
 export async function POST(req: NextRequest) {
@@ -74,7 +74,6 @@ export async function POST(req: NextRequest) {
       () => Boolean(process.env.GEMINI_API_KEY),
     ),
     testProvider('perplexity', async () => callPerplexity(TEST_PROMPT), isPerplexityAvailable),
-    testProvider('claude', async () => callAnthropic(TEST_PROMPT), isAnthropicAvailable),
   ])
 
   return NextResponse.json({
@@ -88,6 +87,6 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     message: 'POST to test AI providers',
-    providers: ['chatgpt', 'gemini', 'perplexity', 'claude'],
+    providers: [...ACTIVE_ENGINES],
   })
 }

@@ -14,6 +14,7 @@
 // assembler.
 
 import { classifyDomainAuthority, type DomainCategory } from '@/lib/utils/ai-trust-score'
+import { isActiveEngine } from '@/types'
 
 /** The slice of a monitoring_results row the report sections consume. */
 export interface ReportResultRow {
@@ -51,14 +52,22 @@ export interface EngineBreakdown {
 /**
  * Per-engine stats over the whole window.
  *
- * Engines below `minRows` are dropped rather than shown: a provider that
- * produced three responses in the period (an exhausted API key, a mid-window
- * enablement) would otherwise print an authoritative-looking 100% built on
- * nothing, and a report cannot footnote its way out of that.
+ * Two independent filters, and both are needed:
+ *
+ * 1. **Retired engines are excluded** (`isActiveEngine`). A retired engine's
+ *    rows stay in the database and stay in the raw export, but they do not get
+ *    a row in a client report. Without this the exclusion would depend on
+ *    volume alone — Claude was invisible here only because it happened to have
+ *    4 rows, and a legacy window with 12 would have printed it.
+ * 2. **Engines below `minRows` are dropped.** A provider that produced three
+ *    responses in the period (an exhausted API key, a mid-window enablement)
+ *    would otherwise print an authoritative-looking 100% built on nothing, and
+ *    a report cannot footnote its way out of that.
  */
 export function buildEngineBreakdown(rows: ReportResultRow[], minRows = 10): EngineBreakdown[] {
   const byEngine = new Map<string, ReportResultRow[]>()
   for (const r of rows) {
+    if (!isActiveEngine(r.engine)) continue
     const list = byEngine.get(r.engine) ?? []
     list.push(r)
     byEngine.set(r.engine, list)

@@ -31,6 +31,7 @@ import { useChartTheme } from '@/hooks/useChartTheme'
 import { ENGINE_COLORS as CHART_ENGINE_COLORS } from '@/lib/chart-tokens'
 import { CitationCapturePanel } from '@/components/CitationCapturePanel'
 import { CrawlerAccessPanel } from '@/components/CrawlerAccessPanel'
+import { ACTIVE_ENGINES } from '@/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -176,7 +177,10 @@ export default function CitationsPage() {
       // are best-effort: if one fails, we skip it instead of nuking the
       // whole panel — the "all engines" aggregate above is the primary
       // signal and is already populated.
-      const engines = ['chatgpt', 'gemini', 'perplexity', 'claude']
+      // ACTIVE_ENGINES, not every engine ever measured: a retired engine would
+      // otherwise draw a series built on a handful of legacy rows next to three
+      // real ones. Its rows are still in the raw export.
+      const engines = [...ACTIVE_ENGINES]
       const engineData: Snapshot[] = []
 
       const settled = await Promise.allSettled(
@@ -327,7 +331,7 @@ export default function CitationsPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-900/50 bg-red-900/10 px-4 py-3 text-sm text-red-400">
+        <div className="border-red-900/50 bg-red-900/10 text-red-400 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm">
           <AlertCircle className="h-4 w-4" />
           {error}
         </div>

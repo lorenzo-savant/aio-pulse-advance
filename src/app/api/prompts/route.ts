@@ -23,10 +23,13 @@ const promptSchema = z.object({
   language: z.string().default('en'),
   market: z.string().default('global'),
   category: z.enum(['awareness', 'comparison', 'alternative', 'features', 'custom']).optional(),
+  // Claude retired on cost — see ACTIVE_ENGINES in src/types. Kept out of both
+  // the enum and the default so a newly created prompt never stores an engine
+  // the runner will silently drop.
   engines: z
-    .array(z.enum(['chatgpt', 'gemini', 'perplexity', 'claude']))
+    .array(z.enum(['chatgpt', 'gemini', 'perplexity']))
     .min(1)
-    .default(['chatgpt', 'gemini', 'perplexity', 'claude']),
+    .default(['chatgpt', 'gemini', 'perplexity']),
   run_frequency: z.enum(['hourly', 'daily', 'weekly']).default('daily'),
 })
 

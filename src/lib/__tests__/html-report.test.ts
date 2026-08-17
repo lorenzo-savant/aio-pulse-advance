@@ -241,3 +241,36 @@ describe('buildCompetitorReport', () => {
     expect(buildCompetitorReport([], [])).toEqual([])
   })
 })
+
+describe('HTML report — ultrareview regressions (2026-08-17)', () => {
+  const rawSrc = readFileSync(join(process.cwd(), 'src/app/api/reports/html/route.ts'), 'utf8')
+  const routeSrc = rawSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+  it('counts sentiment only over mentioned rows', () => {
+    // The analyzer stores every unmentioned response as neutral, so a loop
+    // over all scoped rows drowns real tone in unmentioned neutrals — a
+    // low-visibility brand in crisis charts as "mostly neutral".
+    expect(routeSrc).toMatch(/r\.brand_mentioned && r\.sentiment && r\.sentiment in sent/)
+  })
+
+  it('divides the sentiment chart by mentioned, never by N', () => {
+    const chart = routeSrc.slice(routeSrc.indexOf('const sentimentSection'))
+    const section = chart.slice(0, chart.indexOf(": ''"))
+    expect(section).toContain('pct(sent.positive, mentioned)')
+    expect(section).not.toMatch(/pct\(sent\.\w+, N\)/)
+  })
+
+  it('decides "not configured" with the same normalisation as the SoV matcher', () => {
+    // toLowerCase() disagrees with normalizeEntityName whenever the engine
+    // drops a legal suffix (AB, GmbH, Inc…) and would flag a declared rival.
+    expect(routeSrc).toMatch(/configuredKeys\.has\(normalizeEntityName\(e\.name\)\)/)
+    expect(routeSrc).not.toMatch(/configuredLower/)
+  })
+
+  it('clamps the days parameter instead of trusting parseInt', () => {
+    // parseInt('abc') → NaN → new Date(NaN).toISOString() threw a bare 500;
+    // a negative value rendered a silently empty report.
+    expect(routeSrc).not.toMatch(/parseInt\(searchParams\.get\('days'\)/)
+    expect(routeSrc).toMatch(/Math\.min\(365, Math\.max\(1, Math\.trunc\(daysRaw\)\)\)/)
+  })
+})

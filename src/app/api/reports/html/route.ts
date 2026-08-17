@@ -29,6 +29,7 @@ import {
   buildPromptAnswers,
   type ReportResultRow,
 } from '@/lib/services/report-sections'
+import { normalizeEntityName } from '@/lib/services/competitor-identity'
 
 const VALID_LOCALES = ['en', 'it', 'sv'] as const
 type Locale = (typeof VALID_LOCALES)[number]
@@ -380,7 +381,11 @@ export async function GET(req: NextRequest) {
   const brandId = searchParams.get('brandId')
   const localeParam = searchParams.get('locale') || 'en'
   const download = searchParams.get('download') === '1'
-  const days = parseInt(searchParams.get('days') || '30', 10)
+  // Clamp instead of trusting parseInt: `?days=abc` → NaN → new Date(NaN)
+  // .toISOString() throws a bare 500, and a negative value silently renders an
+  // empty report by putting fromDate in the future.
+  const daysRaw = Number(searchParams.get('days') || 30)
+  const days = Number.isFinite(daysRaw) ? Math.min(365, Math.max(1, Math.trunc(daysRaw))) : 30
   /** The answers appendix doubles the document size; opt-out for embedding. */
   const includeAnswers = searchParams.get('answers') !== '0'
 
@@ -480,15 +485,25 @@ export async function GET(req: NextRequest) {
   const scoped = rows.filter((r) => shownEngines.has(r.engine))
   const N = scoped.length
   const mentioned = scoped.filter((r) => r.brand_mentioned).length
+  // Sentiment counts only rows where the brand was actually mentioned. The
+  // analyzer stores every unmentioned response as neutral ("factual or absent →
+  // neutral", and the zod schema defaults to 'neutral'), so pooling all rows
+  // would drown real signal in unmentioned neutrals: a 5%-mentioned brand whose
+  // every mention is negative would chart as ~95% "neutral" and read as calm.
   const sent = { positive: 0, neutral: 0, negative: 0 }
   for (const r of scoped)
-    if (r.sentiment && r.sentiment in sent) sent[r.sentiment as keyof typeof sent]++
+    if (r.brand_mentioned && r.sentiment && r.sentiment in sent)
+      sent[r.sentiment as keyof typeof sent]++
 
   const sov = computeShareOfVoice(scoped as unknown as SovInputRow[], brandName, {
     declaredCompetitors: brandCompetitors,
     maxSeries: 6,
   })
-  const configuredLower = new Set(brandCompetitors.map((c: string) => c.toLowerCase()))
+  // Same normalisation the SoV matcher uses to decide declared-ness. A naive
+  // toLowerCase() set disagrees with it whenever the engine drops a legal
+  // suffix ("Björn Lundén" vs the configured "Björn Lundén AB") and the report
+  // would flag the client's own declared rival as "not configured".
+  const configuredKeys = new Set(brandCompetitors.map((c: string) => normalizeEntityName(c)))
 
   const latestHealth = (healthRes.data ?? [])[healthRes.data ? healthRes.data.length - 1 : 0]
   const geoInput: GeoScoreInput | null = latestHealth
@@ -602,8 +617,10 @@ export async function GET(req: NextRequest) {
         .join(' · ')}</p>`
     : ''
 
-  const sentimentSection = N
-    ? `<h3>${t.sentiment}</h3><div class="chart"><div class="sent-track"><span class="sent-pos" style="width:${pct(sent.positive, N)}%"></span><span class="sent-neu" style="width:${pct(sent.neutral, N)}%"></span><span class="sent-neg" style="width:${pct(sent.negative, N)}%"></span></div><div class="legend"><span><span class="chip" style="background:#0ca30c"></span>${t.positive} ${sent.positive} (${pct(sent.positive, N)}%)</span><span><span class="chip" style="background:#8c8880"></span>${t.neutral} ${sent.neutral} (${pct(sent.neutral, N)}%)</span><span><span class="chip" style="background:#d03b3b"></span>${t.negative} ${sent.negative}</span></div></div>`
+  // Percentages over `mentioned`, not N — the tile copy and the SoV section
+  // already treat mentions as the honest denominator for tone.
+  const sentimentSection = mentioned
+    ? `<h3>${t.sentiment}</h3><div class="chart"><div class="sent-track"><span class="sent-pos" style="width:${pct(sent.positive, mentioned)}%"></span><span class="sent-neu" style="width:${pct(sent.neutral, mentioned)}%"></span><span class="sent-neg" style="width:${pct(sent.negative, mentioned)}%"></span></div><div class="legend"><span><span class="chip" style="background:#0ca30c"></span>${t.positive} ${sent.positive} (${pct(sent.positive, mentioned)}%)</span><span><span class="chip" style="background:#8c8880"></span>${t.neutral} ${sent.neutral} (${pct(sent.neutral, mentioned)}%)</span><span><span class="chip" style="background:#d03b3b"></span>${t.negative} ${sent.negative}</span></div></div>`
     : ''
 
   const sovMax = sov.entities.length ? Math.max(...sov.entities.map((e) => e.share)) : 0
@@ -615,7 +632,7 @@ export async function GET(req: NextRequest) {
               suffix: '%',
               highlight: e.isBrand,
               note:
-                !e.isBrand && !configuredLower.has(e.name.toLowerCase())
+                !e.isBrand && !configuredKeys.has(normalizeEntityName(e.name))
                   ? ` <span class="flag">${t.notConfigured}</span>`
                   : '',
             }),

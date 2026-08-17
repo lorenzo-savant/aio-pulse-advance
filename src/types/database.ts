@@ -44,6 +44,7 @@ export type Database = {
           keyword: string
           language: string
           model: string | null
+          paa_source: string | null
           questions_count: number
           status: string
           user_id: string
@@ -58,6 +59,7 @@ export type Database = {
           keyword: string
           language?: string
           model?: string | null
+          paa_source?: string | null
           questions_count?: number
           status?: string
           user_id: string
@@ -72,6 +74,7 @@ export type Database = {
           keyword?: string
           language?: string
           model?: string | null
+          paa_source?: string | null
           questions_count?: number
           status?: string
           user_id?: string
@@ -2877,6 +2880,8 @@ export type Database = {
     }
     Functions: {
       accepted_member_brand_ids: { Args: never; Returns: string[] }
+      accepted_organization_ids: { Args: never; Returns: string[] }
+      accepted_workspace_ids: { Args: never; Returns: string[] }
       cleanup_expired_serp_cache: { Args: never; Returns: number }
       consume_free_query: {
         Args: { p_limit: number; p_user_id: string }

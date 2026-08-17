@@ -2,555 +2,20 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import {
-  Search,
-  Rocket,
-  LayoutDashboard,
-  Building2,
-  MessageSquare,
-  Target,
-  Globe,
-  BarChart3,
-  Bell,
-  FileDown,
-  BookOpen,
-  X,
-  ChevronRight,
-  ArrowUp,
-} from 'lucide-react'
+import { Search, X, ChevronRight, ArrowUp } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
-
-// ─── Documentation Data ──────────────────────────────────────────────────────
-
-interface DocSection {
-  id: string
-  title: string
-  content: string
-}
-
-interface DocGroup {
-  group: string
-  icon: React.ElementType
-  sections: DocSection[]
-}
-
-const DOCS: DocGroup[] = [
-  {
-    group: 'Getting Started',
-    icon: Rocket,
-    sections: [
-      {
-        id: 'what-is-aio-pulse',
-        title: 'What is AEO Pulse?',
-        content: `AEO Pulse is an AI Search Visibility Platform. It monitors how your brand appears when people ask AI assistants like ChatGPT, Google Gemini, Perplexity, and Claude about products and services in your industry.
-
-Traditional SEO tracks your position on Google search results. AEO Pulse tracks something different: whether AI assistants recommend your brand when users ask questions like "What's the best accounting firm in Falun?" or "Which software should I use for bookkeeping?"
-
-This matters because a growing number of people use AI assistants instead of Google to find services and products. If the AI doesn't mention your brand, you're invisible to these users.
-
-AEO Pulse gives you three critical insights:
-
-• Are you being mentioned? — Your Citation Rate shows the percentage of AI responses that include your brand name.
-
-• How do you compare to competitors? — Competitor Benchmarking shows whether AI engines prefer your competitors over you.
-
-• Is the information accurate? — Sentiment and Hallucination Detection reveals whether AI engines say positive, negative, or false things about your brand.`,
-      },
-      {
-        id: 'key-concepts',
-        title: 'Key Concepts',
-        content: `Before diving in, here are the core terms you'll see throughout AEO Pulse:
-
-Citation Rate — The percentage of AI responses that mention your brand. If you monitor 50 prompts and your brand appears in 10 responses, your citation rate is 20%. This is the most important metric in AEO Pulse.
-
-Visibility Score — A 0–100 score measuring how prominently your brand appears. A score of 100 means your brand is featured first and prominently. A score of 0 means no mention at all.
-
-Mention Position — Where your brand appears in the AI response. Position #1 means you are the first brand mentioned — this is the best possible position.
-
-Sentiment — Whether the AI speaks positively, negatively, or neutrally about your brand. Ranges from −1.0 (very negative) to +1.0 (very positive).
-
-Hallucination — When an AI makes false claims about your brand as if they were fact. AEO Pulse detects and flags these automatically.
-
-Engine — An AI search platform such as ChatGPT, Gemini, Perplexity, or Claude. Each engine may respond differently about your brand.
-
-Prompt — A question or query sent to AI engines to check if your brand is mentioned. These simulate what real customers would ask.`,
-      },
-      {
-        id: 'quick-start',
-        title: 'Quick Start Guide',
-        content: `Follow these five steps to get up and running:
-
-Step 1 — Add Your Brand
-Go to Dashboard → Brands → Add Brand. Enter your brand name, website domain, and your main competitors.
-
-Step 2 — Create Prompts
-Go to Dashboard → Prompts → Add Prompt. Write questions that potential customers might ask AI assistants. Think about local queries ("Best accountant in Falun"), comparison queries ("Ekonomirådgivarna vs Fortnox"), and industry queries ("How to choose an accounting firm").
-
-Step 3 — Wait for First Scan
-Your first scan runs automatically within 24 hours. Each scan sends your prompts to multiple AI engines and analyzes the responses.
-
-Step 4 — Review Results
-Check the Dashboard for your Citation Rate and the Citations page for detailed trend analysis. Compare your visibility against competitors.
-
-Step 5 — Set Up Alerts
-Go to Alerts to configure email notifications for important changes — new mentions, lost visibility, or competitors gaining ground.`,
-      },
-      {
-        id: 'first-brand-setup',
-        title: 'Your First Brand Setup',
-        content: `When adding a brand, you'll fill in these fields:
-
-Brand Name — Your official brand name as it should appear in AI responses. Example: "Ekonomirådgivarna"
-
-Domain — Your website address. Used to detect when AI engines cite your website. Example: "ekonomiradgivarna.se"
-
-Aliases — Other ways people might spell or refer to your brand, separated by commas. The system checks for all of these when analyzing AI responses. Example: "Ekonomirådgivarna, ekonomiradgivarna, Ekonomi Rådgivarna"
-
-Competitors — Your 3–5 main competitors, separated by commas. AEO Pulse tracks how often they are mentioned compared to you. Example: "Fortnox, Björn Lundén, Wint"
-
-Industry — Your business sector. Used for generating relevant monitoring prompts. Example: "Accounting & Financial Advisory"
-
-Description — A brief description of what your company does. Provides context for AI analysis.
-
-Color — A brand color used in charts and reports. Pick your primary brand color for easy identification.`,
-      },
-    ],
-  },
-  {
-    group: 'Dashboard',
-    icon: LayoutDashboard,
-    sections: [
-      {
-        id: 'overview-page',
-        title: 'Overview Page',
-        content: `The Dashboard Overview is your daily starting point. It shows four key metric cards at the top:
-
-Citation Rate — The most important number. This is the percentage of AI responses that mention your brand.
-• 0% — No AI mentions your brand. Action needed.
-• 1–10% — Early stage. AI is starting to notice you.
-• 10–30% — Growing presence. Your content strategy is working.
-• 30–50% — Strong presence. You're a recognized player.
-• 50%+ — Dominant. You're a top recommendation.
-
-Scans Analyzed — Total number of prompt × engine combinations that have been analyzed. More scans means more reliable data.
-
-Avg Visibility — How prominently you appear when mentioned, scored 0–100. A high citation rate with low visibility means you're mentioned but buried deep in the response.
-
-Avg Position — Your average position when mentioned. #1 means you're typically the first brand named — the best position. #5 or higher means you're mentioned late in the response.
-
-Below the cards you'll find a Citation Rate Trend chart showing changes over time, an Engine Citation Rate breakdown showing per-platform performance, and a Competitor Snapshot for quick comparison.`,
-      },
-      {
-        id: 'reading-kpis',
-        title: 'Reading Your KPIs',
-        content: `Here's how to interpret each key metric:
-
-Citation Rate interpretation:
-• 0% — Not visible. No AI engine mentions your brand. Start AEO work immediately.
-• 1–10% — Early stage. AI engines are beginning to pick up your brand.
-• 10–30% — Growing. Your content and optimization strategy is gaining traction.
-• 30–50% — Strong. You are recognized as a relevant player in your market.
-• 50%+ — Dominant. AI engines regularly recommend you as a top choice.
-
-Visibility Score interpretation:
-• 0–20 — Not visible. Brand not mentioned or buried very deep in responses.
-• 20–50 — Emerging. Mentioned occasionally but not prominently.
-• 50–80 — Visible. Regularly mentioned with reasonable prominence.
-• 80–100 — Highly visible. Featured prominently, often the first brand mentioned.
-
-Sentiment interpretation:
-• −1.0 to −0.3 — Negative. The AI says unfavorable things about your brand.
-• −0.3 to 0.3 — Neutral. The AI mentions you without strong opinion.
-• 0.3 to 1.0 — Positive. The AI recommends or speaks favorably about you.`,
-      },
-      {
-        id: 'trend-chart',
-        title: 'Understanding the Trend Chart',
-        content: `The Citation Rate Trend chart shows how your visibility changes over time.
-
-Upward trend — Your AEO strategy is working. Keep building quality content, improving structured data, and strengthening your online presence.
-
-Flat line — No progress. Consider updating your website content, adding FAQ pages with clear factual information, or creating more authoritative content in your industry.
-
-Downward trend — You're losing visibility. This could mean competitors have improved their content, AI training data has changed, or there's new negative information about your brand online.
-
-The dashed line on the chart shows your Visibility Score for comparison. A rising citation rate with stable visibility means more mentions at the same prominence level. A rising citation rate with rising visibility means both more mentions and better positioning — the ideal scenario.`,
-      },
-    ],
-  },
-  {
-    group: 'Brand Management',
-    icon: Building2,
-    sections: [
-      {
-        id: 'managing-brands',
-        title: 'Managing Your Brands',
-        content: `Go to Dashboard → Brands to see all your monitored brands. Each brand card shows the brand name, domain, and current status.
-
-Click any brand card to see detailed analytics, citation trends, and competitor comparison for that specific brand.
-
-To edit a brand, click on it and then click the "Edit" button. You can update any field at any time — changes take effect on the next monitoring scan.
-
-If you manage multiple brands (for example, if you're an agency managing clients), each brand is tracked independently with its own prompts, metrics, and competitor set.`,
-      },
-      {
-        id: 'competitors',
-        title: 'Understanding Competitors',
-        content: `When you add competitors to your brand, AEO Pulse tracks how often each competitor appears in AI responses to your monitored prompts.
-
-This creates a competitive benchmark. For example:
-• Your brand: 5% citation rate
-• Fortnox: 54% citation rate
-• Björn Lundén: 8% citation rate
-• Wint: 0% citation rate
-
-This tells you that Fortnox is mentioned in 54% of relevant AI queries while your brand appears in only 5%. Fortnox is approximately 10× more visible than you in AI search. This gap is your optimization target.
-
-To improve, study what Fortnox does differently: their website content, structured data, authority signals, and online presence. Then adapt your strategy accordingly.`,
-      },
-    ],
-  },
-  {
-    group: 'Prompt Monitoring',
-    icon: MessageSquare,
-    sections: [
-      {
-        id: 'what-are-prompts',
-        title: 'What Are Prompts?',
-        content: `Prompts are the questions AEO Pulse sends to AI engines on your behalf. They simulate what real customers might ask an AI assistant.
-
-For example, if a potential customer looking for an accountant in Falun asks ChatGPT "What's the best accounting firm in Falun?", AEO Pulse sends this exact question to ChatGPT, Gemini, and Perplexity, then analyzes whether your brand appears in each response.
-
-The quality of your monitoring depends entirely on the prompts you create. Good prompts reflect real customer queries. The more prompts you have, the more comprehensive your coverage — aim for 30–50 prompts per brand.`,
-      },
-      {
-        id: 'creating-prompts',
-        title: 'Creating Effective Prompts',
-        content: `When creating prompts, think about the different ways potential customers search for your type of service.
-
-Local prompts — Target geographic searches:
-• "Best accounting firm in Falun"
-• "Accountant near Dalarna recommendation"
-• "Top rated bookkeeper in Falun"
-• "Affordable accounting services Falun"
-
-National prompts — Target broader searches:
-• "Best accounting firm in Sweden"
-• "How to choose an accounting firm"
-• "Top accounting companies in Sweden"
-• "Accounting firm comparison Sweden"
-
-Industry prompts — Target professional or commercial intent:
-• "Best accounting software for small businesses"
-• "Fortnox vs Björn Lundén"
-• "How much does an accountant cost in Sweden"
-• "Starting a business — financial advisor needed"
-
-Tips for better prompts:
-• Write in the language your customers use — Swedish prompts for Swedish customers, English for international reach.
-• Mix informational intent ("what is", "how to") with commercial intent ("best", "recommend", "top").
-• Include prompts that mention competitors by name — these reveal head-to-head positioning.
-• Update prompts periodically to reflect changing customer language and new trends.`,
-      },
-      {
-        id: 'prompt-categories',
-        title: 'Prompt Categories',
-        content: `Each prompt belongs to a category that helps organize your monitoring:
-
-Local — City or region-specific queries. These are crucial for businesses with a physical location. They reveal how visible you are when someone searches for services in your area.
-
-National — Country-wide queries. Important for brands that serve customers across the entire country. These prompts test your visibility against national competitors.
-
-Industry — Sector-specific professional queries. These test whether AI engines recognize your brand as a player in your industry, regardless of location.
-
-A healthy prompt set includes a mix of all three categories. For a local business like an accounting firm in Falun, a suggested split would be 40% Local, 30% National, and 30% Industry prompts.`,
-      },
-      {
-        id: 'monitoring-frequency',
-        title: 'Monitoring Frequency',
-        content: `AEO Pulse checks your prompts on a regular schedule:
-
-Daily — The default setting. Prompts are checked once every 24 hours. Recommended for active monitoring.
-
-Weekly — Prompts are checked once every 7 days. Suitable for low-priority or very broad queries.
-
-The system runs three monitoring batches per day at 06:00, 12:00, and 18:00 UTC. In each batch, a subset of prompts is processed. All your prompts will be covered within a few days depending on the total count.
-
-You don't need to do anything to trigger scans — they run automatically. After each scan, you can click "Recalculate" on the Citations page to update your aggregated metrics.`,
-      },
-    ],
-  },
-  {
-    group: 'Citation Tracking',
-    icon: Target,
-    sections: [
-      {
-        id: 'citation-rate',
-        title: 'Citation Rate',
-        content: `The Citations page is the core of AEO Pulse. It answers the fundamental question: how often does AI mention your brand?
-
-The Citation Rate formula is simple:
-Citation Rate = (Responses mentioning your brand ÷ Total responses) × 100
-
-For example: You have 50 prompts monitored across 3 engines, giving you 150 total scans. If your brand is mentioned in 30 of those responses, your citation rate is 20%.
-
-The large number at the top of the page shows your current overall citation rate. Below it, you'll see how many responses were analyzed and how many contained mentions of your brand.`,
-      },
-      {
-        id: 'competitor-benchmarking',
-        title: 'Competitor Benchmarking',
-        content: `The horizontal bar chart on the Citations page compares your brand against each competitor.
-
-How to read it:
-• Bars are sorted from highest to lowest citation rate.
-• Your brand appears in your brand color (purple by default).
-• Each competitor has its own color for easy identification.
-• The longer the bar, the more often that brand is mentioned.
-• Your goal is to have the longest bar.
-
-A competitor with a higher rate means AI engines prefer recommending them over you for the queries you're monitoring. This doesn't necessarily mean they're a better company — it means their online content, structured data, and authority signals are stronger in the eyes of AI systems.
-
-To close the gap, focus on creating authoritative, well-structured content that directly addresses the queries in your prompt list.`,
-      },
-      {
-        id: 'engine-comparison',
-        title: 'Engine Comparison',
-        content: `The Engine Breakdown shows your citation rate for each AI platform separately.
-
-Why this matters: You might perform well on Gemini but poorly on ChatGPT, or vice versa. Each engine has different biases:
-
-ChatGPT (OpenAI) — Tends to recommend brands with strong general web presence, frequently cited in articles and reviews.
-
-Gemini (Google) — May reflect Google search rankings and prioritize brands with strong Google Business Profiles.
-
-Perplexity — Focuses on cited, verifiable sources. Brands with strong presence on authoritative websites perform better.
-
-Claude (Anthropic) — Values factual accuracy and recent information. Tends to be more cautious about specific recommendations.
-
-If you're weak on a specific engine, focus your content strategy on the signals that engine values most.`,
-      },
-    ],
-  },
-  {
-    group: 'AI Engines',
-    icon: Globe,
-    sections: [
-      {
-        id: 'how-monitoring-works',
-        title: 'How Engine Monitoring Works',
-        content: `AEO Pulse uses a two-step process for each prompt on each engine:
-
-Step 1 — Query Simulation
-Your prompt is sent to the AI engine (or a simulation of how that engine would respond), and the full text response is captured.
-
-Step 2 — Response Analysis
-An AI analyzer examines each captured response and extracts:
-• Brand mention detection — Is your brand named in the response?
-• Mention position — Where in the response does your brand first appear?
-• Mention count — How many times is your brand mentioned?
-• Visibility scoring — How prominent is the mention?
-• Sentiment analysis — Is the tone positive, negative, or neutral?
-• Competitor detection — Which of your competitors also appear?
-• Hallucination flagging — Are there any false claims about your brand?
-
-All results are stored and aggregated into your Citation Rate and other dashboard metrics.
-
-The monitoring runs automatically three times per day. You never need to trigger it manually — just check your dashboard for updated results.`,
-      },
-    ],
-  },
-  {
-    group: 'Analytics',
-    icon: BarChart3,
-    sections: [
-      {
-        id: 'analytics-dashboard',
-        title: 'Analytics Dashboard',
-        content: `The Analytics page provides deeper insights with multiple chart types:
-
-Citation Rate & Visibility Trend — A dual-line chart showing both your citation rate and visibility score over time. Rising lines mean improving performance.
-
-Engine Performance — A horizontal bar chart comparing your citation rate across all AI engines at a glance.
-
-Sentiment Distribution — A pie chart showing the proportion of positive, neutral, and negative AI responses about your brand.
-
-Citation Rate by Category — A bar chart revealing how different prompt categories (Local, National, Industry) perform. You might discover that local queries produce much higher citation rates than national ones.
-
-Sentiment by Engine — Shows which AI engines speak most positively about your brand, helping you understand where your reputation is strongest.`,
-      },
-      {
-        id: 'sentiment-analysis',
-        title: 'Sentiment Analysis',
-        content: `Sentiment measures the tone of what AI engines say about your brand.
-
-Positive sentiment means the AI recommends your brand, highlights your strengths, or uses favorable language such as "highly recommended," "excellent service," or "industry leader."
-
-Neutral sentiment means the AI mentions your brand factually without strong opinion — listing you alongside competitors without preference.
-
-Negative sentiment means the AI warns against your brand, mentions weaknesses, or uses unfavorable language such as "limited services," "customer complaints," or "better alternatives exist."
-
-What to do:
-• If sentiment is negative — Review your online reputation. Address customer complaints publicly. Update website content to counter negative narratives.
-• If sentiment is neutral — Create more differentiating content. Give AI engines specific reasons to recommend you.
-• If sentiment is positive — Maintain your current approach. Continue monitoring for changes.`,
-      },
-      {
-        id: 'hallucination-detection',
-        title: 'Hallucination Detection',
-        content: `AI hallucination occurs when an AI engine states false information about your brand as if it were fact. This can mislead potential customers.
-
-Examples of hallucinations:
-• Claiming your company was founded in the wrong year
-• Attributing services or products you don't actually offer
-• Stating incorrect pricing or location information
-• Fabricating awards, certifications, or partnerships
-• Mixing up your brand with a competitor
-
-AEO Pulse flags potential hallucinations with three severity levels:
-
-Low — Minor factual discrepancy, possibly outdated information. Monitor and update your website.
-
-Medium — Significant factual error that could mislead customers. Update your structured data urgently.
-
-High — Completely fabricated claim that could damage your reputation. Report to the AI platform and update all online sources immediately.
-
-How to reduce hallucinations: Maintain a comprehensive "About" page with explicit, clear facts. Add FAQ pages. Implement schema.org structured data on your website. Keep your Google Business Profile accurate and up to date.`,
-      },
-      {
-        id: 'health-score',
-        title: 'Health Score',
-        content: `The Health Score is a single 0–100 number that combines your three most important metrics into one easy-to-read indicator.
-
-How it's calculated:
-• Visibility contributes 50% — How often and how prominently you appear
-• Sentiment contributes 30% — How positively AI engines speak about you
-• Accuracy contributes 20% — How free from hallucinations your mentions are
-
-Score interpretation:
-• 80–100 — Excellent. Strong visibility, positive sentiment, accurate information.
-• 60–80 — Good. Decent presence with room for improvement in one or more areas.
-• 40–60 — Fair. Moderate visibility or mixed sentiment. Focus on content improvement.
-• 0–40 — Poor. Low visibility, negative sentiment, or high hallucination rate. Immediate action needed.`,
-      },
-    ],
-  },
-  {
-    group: 'Alerts',
-    icon: Bell,
-    sections: [
-      {
-        id: 'setting-up-alerts',
-        title: 'Setting Up Alerts',
-        content: `Go to Dashboard → Alerts and click "Create Alert Rule" to set up notifications.
-
-You'll configure:
-• Alert Type — What kind of change should trigger the alert (see Alert Types below).
-• Channels — How you want to be notified: Email, Webhook, or both.
-• Email — The email address where alerts should be sent.
-• Threshold — How sensitive the trigger should be (depends on alert type).
-
-Once saved, alerts are evaluated automatically after every monitoring scan. When conditions are met, you receive a notification immediately.
-
-You can toggle alerts on and off using the switch next to each rule without deleting them. This is useful when you want to temporarily silence notifications.`,
-      },
-      {
-        id: 'alert-types',
-        title: 'Alert Types',
-        content: `AEO Pulse offers these alert types:
-
-New Mention — Triggered when your brand is mentioned by an AI engine for the first time on a specific prompt. This is a positive signal — your optimization work is producing results.
-
-Mention Lost — Triggered when your brand was previously mentioned in a response but no longer appears. This needs immediate attention — you're losing visibility.
-
-Sentiment Drop — Triggered when the sentiment score drops significantly. The AI may have encountered negative information about your brand.
-
-Competitor Ahead — Triggered when a specific competitor is cited more prominently than your brand. You're losing competitive positioning.
-
-Visibility Change — Triggered when your visibility score changes dramatically in either direction.
-
-Hallucination Detected — Triggered when an AI makes potentially false claims about your brand. This is urgent — misinformation may be reaching your potential customers.
-
-Citation Rate Change — Triggered when your daily citation rate shifts by more than 10% compared to the previous day.`,
-      },
-    ],
-  },
-  {
-    group: 'Reports',
-    icon: FileDown,
-    sections: [
-      {
-        id: 'csv-export',
-        title: 'CSV Export',
-        content: `Click the "Export CSV" button on the Citations or Brand Detail page to download your monitoring data as a spreadsheet.
-
-The CSV file contains one row per monitoring result with these columns:
-• Date and time of the scan
-• AI engine used (ChatGPT, Gemini, Perplexity)
-• Prompt text that was sent
-• Whether your brand was mentioned (yes/no)
-• Visibility score (0–100)
-• Sentiment (positive, neutral, negative)
-• Competitor mentions detected
-
-Open the CSV file in Excel or Google Sheets for custom analysis, pivot tables, or charts.`,
-      },
-      {
-        id: 'pdf-reports',
-        title: 'PDF Reports',
-        content: `Click "Export PDF" to generate a professionally formatted report suitable for sending to clients, stakeholders, or management.
-
-The PDF report includes:
-• Executive summary with key metrics and trends
-• Citation rate trend chart
-• Engine performance breakdown
-• Competitor comparison with rankings
-• Sentiment overview
-• Recommendations for improvement
-
-PDF reports use your brand color and the AEO Pulse branding for a polished, professional appearance.`,
-      },
-    ],
-  },
-  {
-    group: 'Glossary',
-    icon: BookOpen,
-    sections: [
-      {
-        id: 'glossary',
-        title: 'Terms & Definitions',
-        content: `AEO (Answer Engine Optimization) — The practice of optimizing your brand's content and online presence to be recommended by AI search engines. The AI equivalent of traditional SEO.
-
-GEO (Generative Engine Optimization) — Broader strategies to improve visibility in AI-generated responses, including structured data, authoritative content, and citation building.
-
-Citation Rate — The percentage of monitored AI responses that mention your brand. Formula: (Mentions ÷ Total Responses) × 100. The primary KPI in AEO Pulse.
-
-Visibility Score — A 0–100 metric measuring how prominently your brand appears in AI responses. Considers mention position, frequency, and context.
-
-Mention Position — Where your brand appears in an AI response. #1 means first mentioned (best). Higher numbers mean mentioned later.
-
-Sentiment — The tone of AI responses about your brand: Positive (recommends), Neutral (factual), or Negative (warns or criticizes).
-
-Sentiment Score — A numerical value from −1.0 (extremely negative) through 0.0 (neutral) to +1.0 (extremely positive).
-
-Hallucination — When an AI states false information about your brand as fact. May include wrong dates, fabricated products, incorrect locations, or fake awards.
-
-Engine — An AI search platform: ChatGPT (OpenAI), Gemini (Google), Perplexity, or Claude (Anthropic).
-
-Prompt — A question sent to AI engines to check for brand mentions. Simulates real customer queries.
-
-Monitoring Result — A single data point: one prompt sent to one engine, with full analysis of the response.
-
-Snapshot — A daily aggregation of all monitoring results for a brand, calculating overall citation rate, competitor rates, and other metrics.
-
-Health Score — A composite 0–100 score combining Visibility (50%), Sentiment (30%), and Accuracy (20%).`,
-      },
-    ],
-  },
-]
-
-// ─── Component ───────────────────────────────────────────────────────────────
-
+import { getDocContent } from '@/content/docs'
+import { isStepBlock, matchStepLine } from '@/content/docs/render'
+import { DOC_ICONS } from '@/components/docs/docIcons'
+
+// Same content as the public /docs page, resolved through the shared locale
+// module: this page owns the in-dashboard chrome only. The 850-line copy of
+// the documentation that used to live here is gone — two copies drifted.
 export default function DocsPage() {
+  const locale = useLocale()
+  const DOCS = getDocContent(locale)
+  const t = useTranslations('docs_ui')
   const [activeSection, setActiveSection] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [showBackToTop, setShowBackToTop] = useState(false)
@@ -577,7 +42,7 @@ export default function DocsPage() {
     })
 
     return () => observer.disconnect()
-  }, [searchQuery])
+  }, [searchQuery, locale])
 
   // Show "back to top" after scrolling
   useEffect(() => {
@@ -643,20 +108,22 @@ export default function DocsPage() {
         )
       }
 
-      // Steps (lines starting with "Step")
-      if (paragraph.trim().match(/^Step \d/)) {
+      // Steps — the step word is localised, so match it per locale.
+      if (isStepBlock(paragraph)) {
         const lines = paragraph.split('\n').filter(Boolean)
         return (
           <div key={i} className="mb-4 space-y-3">
             {lines.map((line, j) => {
-              const match = line.match(/^(Step \d+)\s*[—–-]\s*(.+)/)
-              if (match) {
+              const step = matchStepLine(line)
+              if (step) {
                 return (
                   <div key={j} className="flex gap-3">
                     <span className="bg-primary/15 text-brand-400 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold">
-                      {match[1]?.replace('Step ', '')}
+                      {step.number}
                     </span>
-                    <p className="text-[15px] leading-relaxed text-muted-foreground">{match[2]}</p>
+                    <p className="text-[15px] leading-relaxed text-muted-foreground">
+                      {step.title}
+                    </p>
                   </div>
                 )
               }
@@ -724,10 +191,8 @@ export default function DocsPage() {
     <div className="animate-in">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-foreground">Documentation</h1>
-        <p className="mt-1 text-muted-foreground">
-          Everything you need to know about using AEO Pulse.
-        </p>
+        <h1 className="text-3xl font-black tracking-tight text-foreground">{t('title')}</h1>
+        <p className="mt-1 text-muted-foreground">{t('subtitle')}</p>
       </div>
 
       {/* Search */}
@@ -736,7 +201,7 @@ export default function DocsPage() {
         <input
           type="text"
           className="focus:border-primary/50 w-full rounded-xl border border-border bg-secondary py-3 pl-11 pr-10 text-sm text-foreground placeholder-muted-foreground outline-none transition-colors"
-          placeholder="Search documentation..."
+          placeholder={t('search_placeholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -750,7 +215,9 @@ export default function DocsPage() {
         )}
         {searchQuery && (
           <p className="mt-2 text-xs text-muted-foreground">
-            {totalSections} result{totalSections !== 1 ? 's' : ''} found
+            {totalSections === 1
+              ? t('result_singular', { count: totalSections })
+              : t('result_plural', { count: totalSections })}
           </p>
         )}
       </div>
@@ -760,7 +227,7 @@ export default function DocsPage() {
         onClick={() => setMobileNavOpen(!mobileNavOpen)}
         className="mb-4 flex w-full items-center justify-between rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground text-muted-foreground lg:hidden"
       >
-        <span>Jump to section</span>
+        <span>{t('jump_to_section')}</span>
         <ChevronRight
           className={cn('h-4 w-4 transition-transform', mobileNavOpen && 'rotate-90')}
         />
@@ -770,7 +237,7 @@ export default function DocsPage() {
       {mobileNavOpen && (
         <div className="mb-6 rounded-xl border border-border bg-secondary p-4 lg:hidden">
           {filteredDocs.map((group) => (
-            <div key={group.group} className="mb-3">
+            <div key={group.id} className="mb-3">
               <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 {group.group}
               </p>
@@ -794,32 +261,35 @@ export default function DocsPage() {
         <aside className="hidden w-56 shrink-0 lg:block">
           <nav className="sticky top-24">
             <div className="max-h-[calc(100vh-8rem)] space-y-5 overflow-y-auto pb-20 pr-2">
-              {filteredDocs.map((group) => (
-                <div key={group.group}>
-                  <div className="mb-2 flex items-center gap-2">
-                    <group.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      {group.group}
-                    </p>
+              {filteredDocs.map((group) => {
+                const GroupIcon = DOC_ICONS[group.icon]
+                return (
+                  <div key={group.id}>
+                    <div className="mb-2 flex items-center gap-2">
+                      <GroupIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        {group.group}
+                      </p>
+                    </div>
+                    <div className="space-y-0.5">
+                      {group.sections.map((section) => (
+                        <button
+                          key={section.id}
+                          onClick={() => scrollToSection(section.id)}
+                          className={cn(
+                            'block w-full rounded-lg px-3 py-1.5 text-left text-[13px] transition-colors',
+                            activeSection === section.id
+                              ? 'bg-primary/10 text-brand-400 font-semibold'
+                              : 'text-muted-foreground hover:text-muted-foreground',
+                          )}
+                        >
+                          {section.title}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-0.5">
-                    {group.sections.map((section) => (
-                      <button
-                        key={section.id}
-                        onClick={() => scrollToSection(section.id)}
-                        className={cn(
-                          'block w-full rounded-lg px-3 py-1.5 text-left text-[13px] transition-colors',
-                          activeSection === section.id
-                            ? 'bg-primary/10 text-brand-400 font-semibold'
-                            : 'text-muted-foreground hover:text-muted-foreground',
-                        )}
-                      >
-                        {section.title}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </nav>
         </aside>
@@ -859,14 +329,14 @@ export default function DocsPage() {
           {totalSections === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Search className="mb-4 h-10 w-10 text-muted-foreground" />
-              <p className="text-lg font-bold text-foreground">No results found</p>
+              <p className="text-lg font-bold text-foreground">{t('no_results_title')}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Try a different search term or{' '}
+                {t('no_results_hint')}{' '}
                 <button
                   onClick={() => setSearchQuery('')}
                   className="text-brand-400 text-primary hover:underline"
                 >
-                  clear the search
+                  {t('clear_search')}
                 </button>
                 .
               </p>

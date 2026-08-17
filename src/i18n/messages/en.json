@@ -1585,7 +1585,8 @@
     "no_results_title": "No results found",
     "no_results_hint": "Try a different search term or",
     "clear_search": "clear the search",
-    "back_to_top": "Back to top"
+    "back_to_top": "Back to top",
+    "jump_to_section": "Jump to section"
   },
   "home_stats": {
     "engines": "AI Engines Monitored",

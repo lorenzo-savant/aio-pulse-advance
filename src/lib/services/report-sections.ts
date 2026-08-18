@@ -15,10 +15,13 @@
 
 import { classifyDomainAuthority, type DomainCategory } from '@/lib/utils/ai-trust-score'
 import { isActiveEngine } from '@/types'
+import { providerMatchesEngine } from './engine-provenance'
 
 /** The slice of a monitoring_results row the report sections consume. */
 export interface ReportResultRow {
   engine: string
+  /** Who actually answered (ai-router provenance). NULL on legacy rows. */
+  response_provider?: string | null
   brand_mentioned: boolean | null
   mention_position: number | null
   mention_count?: number | null
@@ -68,6 +71,9 @@ export function buildEngineBreakdown(rows: ReportResultRow[], minRows = 10): Eng
   const byEngine = new Map<string, ReportResultRow[]>()
   for (const r of rows) {
     if (!isActiveEngine(r.engine)) continue
+    // A fallback-served row is a real AI answer but not a measurement of the
+    // engine it was requested for — see engine-provenance.ts.
+    if (!providerMatchesEngine(r.engine, r.response_provider)) continue
     const list = byEngine.get(r.engine) ?? []
     list.push(r)
     byEngine.set(r.engine, list)

@@ -1,8 +1,10 @@
 // PATH: src/lib/services/citation-snapshots.ts
 import { createServerClient } from '@/lib/supabase'
+import { providerMatchesEngine } from './engine-provenance'
 import { logger } from '@/lib/logger'
 
 interface MonitoringResultRow {
+  response_provider?: string | null
   id: string
   brand_id: string
   engine: string
@@ -123,7 +125,13 @@ export async function calculateCitationSnapshots(
     for (const category of categories) {
       for (const language of languages) {
         const filtered = rows.filter((r) => {
-          const engineMatch = engine === 'all' || r.engine === engine
+          // Per-engine buckets only accept rows the engine's own provider
+          // answered (engine-provenance.ts). The 'all' bucket keeps every
+          // row: a fallback-served answer is still a real AI answer — it is
+          // just not a measurement of the engine it was requested for.
+          const engineMatch =
+            engine === 'all' ||
+            (r.engine === engine && providerMatchesEngine(r.engine, r.response_provider))
           const catMatch = category === 'all' || r.prompt?.category === category
           const langMatch = language === 'all' || r.prompt?.language === language
           return engineMatch && catMatch && langMatch

@@ -70,6 +70,23 @@ describe('buildEngineBreakdown', () => {
     ]
     expect(buildEngineBreakdown(rows)[0]!.positionAvg).toBe(2)
   })
+
+  it('excludes fallback-served rows from the engine they were requested for', () => {
+    // 12 real gemini rows + 12 gemini rows actually answered by OpenAI: both
+    // sets clear minRows, but only the first is a Gemini measurement.
+    const rows = [
+      ...Array.from({ length: 12 }, () =>
+        row({ engine: 'gemini', response_provider: 'gemini:flash-3.6+search' }),
+      ),
+      ...Array.from({ length: 12 }, () =>
+        row({ engine: 'gemini', response_provider: 'openai:gpt-4o-mini' }),
+      ),
+    ]
+    const out = buildEngineBreakdown(rows)
+    expect(out).toHaveLength(1)
+    expect(out[0]!.engine).toBe('gemini')
+    expect(out[0]!.total).toBe(12)
+  })
 })
 
 describe('buildCitedDomains', () => {

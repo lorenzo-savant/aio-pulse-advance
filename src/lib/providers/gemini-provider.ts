@@ -1,11 +1,12 @@
 import type { AIProviderRequest, AIProviderResult } from './types'
 import { BaseProvider } from './base-provider'
 import { estimateBlendedCost } from '@/lib/cost-monitor/types'
+import { GEMINI_DEFAULT_ENGINE_MODEL } from '@/lib/services/ai-router'
 
 export class GeminiProvider extends BaseProvider {
   readonly id = 'gemini' as const
   readonly name = 'Google Gemini'
-  override readonly defaultModel = 'gemini-2.5-flash'
+  override readonly defaultModel = GEMINI_DEFAULT_ENGINE_MODEL
 
   isConfigured(): boolean {
     return !!process.env['GEMINI_API_KEY']
@@ -39,7 +40,7 @@ export class GeminiProvider extends BaseProvider {
     }
 
     return fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_ENGINE_MODEL}:generateContent`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey ?? '' },
@@ -77,6 +78,6 @@ export class GeminiProvider extends BaseProvider {
     // Only a total token count is available here, so this prices all of it at
     // the higher output rate — an estimate that errs upward is the right way
     // for a number a budget alert reads.
-    return estimateBlendedCost('gemini-2.5-flash', tokens)
+    return estimateBlendedCost(GEMINI_DEFAULT_ENGINE_MODEL, tokens)
   }
 }

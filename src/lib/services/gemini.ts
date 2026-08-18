@@ -3,6 +3,7 @@ import { generateId } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { safeFetch } from '@/lib/utils/safe-fetch'
 import { callLLM } from './prompt-generator-ai'
+import { GEMINI_DEFAULT_ENGINE_MODEL } from './ai-router'
 import { GEO } from '@/lib/geo-config'
 import { buildAnalysisGlossaryContext } from '@/lib/data/glossary'
 import {
@@ -180,7 +181,8 @@ export async function callGemini(prompt: string): Promise<string> {
 
   // Send the key in the x-goog-api-key header, not in the query string.
   // The URL is proxied/logged in places where query params are not.
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
+  // gemini-2.5-flash retired 2026-08-18 (404) — track the shared default.
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_ENGINE_MODEL}:generateContent`
 
   const res = await safeFetch(url, {
     method: 'POST',

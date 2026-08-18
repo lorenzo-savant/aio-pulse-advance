@@ -9,6 +9,7 @@ import { callOpenAI } from './openai'
 import { callPerplexity } from './perplexity'
 import { callAnthropic } from './anthropic'
 import { logger } from '@/lib/logger'
+import { GEMINI_DEFAULT_ENGINE_MODEL } from './ai-router'
 
 // Exported for tests: services.test.ts previously asserted against an inline
 // COPY of this function, which could pass while the real one drifted.
@@ -60,8 +61,8 @@ export const MODEL_PROVIDER_MAP: Record<ModelId, AIProvider> = {
 }
 
 const MODEL_MAP: Record<ModelId, string> = {
-  default: 'gemini-2.5-flash',
-  'gemini-flash': 'gemini-2.5-flash',
+  default: GEMINI_DEFAULT_ENGINE_MODEL,
+  'gemini-flash': GEMINI_DEFAULT_ENGINE_MODEL,
   'gemini-pro': 'gemini-2.5-pro',
   'gpt-4o-mini': 'gpt-4o-mini',
   'gpt-4o': 'gpt-4o',
@@ -75,7 +76,7 @@ async function callAIProvider(
   provider: AIProvider,
   model: ModelId,
 ): Promise<string> {
-  const modelId = MODEL_MAP[model] || 'gemini-2.5-flash'
+  const modelId = MODEL_MAP[model] || GEMINI_DEFAULT_ENGINE_MODEL
 
   switch (provider) {
     case 'gemini':

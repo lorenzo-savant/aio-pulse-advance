@@ -34,6 +34,7 @@ import {
 import { checkBrandPresence, type BrandPresence } from './brand-presence'
 import { formatGeoKnowledgeForPrompt } from '@/lib/geo/geo-knowledge'
 import { logger } from '@/lib/logger'
+import { GEMINI_DEFAULT_ENGINE_MODEL } from './ai-router'
 
 // ─── Public types ────────────────────────────────────────────────────────────
 
@@ -949,7 +950,7 @@ async function callLLM(
   }
   const runners: Record<'gemini' | 'groq' | 'openai', () => Promise<LLMCallResult>> = {
     gemini: () =>
-      callGemini(systemPrompt, userPrompt, options.model ?? 'gemini-2.5-flash', timeoutMs),
+      callGemini(systemPrompt, userPrompt, options.model ?? GEMINI_DEFAULT_ENGINE_MODEL, timeoutMs),
     groq: () =>
       // Advisor reasoning model. Default Llama 3.3 70B; set GROQ_ADVISOR_MODEL to
       // reserve a reasoning model (e.g. deepseek-r1-distill-llama-70b) for the

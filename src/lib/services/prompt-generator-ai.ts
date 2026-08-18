@@ -18,6 +18,7 @@
 
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
+import { GEMINI_DEFAULT_ENGINE_MODEL } from './ai-router'
 import { getIndustryPreset, type Locale } from './prompt-generator'
 
 // ─── Public types ───────────────────────────────────────────────────────────
@@ -107,7 +108,7 @@ async function callGroq(systemPrompt: string, userPrompt: string): Promise<LLMCa
 async function callGemini(systemPrompt: string, userPrompt: string): Promise<LLMCall> {
   const apiKey = process.env['GEMINI_API_KEY']
   if (!apiKey) throw new Error('GEMINI_API_KEY not set')
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DEFAULT_ENGINE_MODEL}:generateContent`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -134,7 +135,7 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<LLM
   }
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text
   if (!text) throw new Error('Empty response from Gemini')
-  return { text, provider: 'gemini', model: 'gemini-2.5-flash' }
+  return { text, provider: 'gemini', model: GEMINI_DEFAULT_ENGINE_MODEL }
 }
 
 async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<LLMCall> {

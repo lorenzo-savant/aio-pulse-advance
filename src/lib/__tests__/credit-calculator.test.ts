@@ -9,9 +9,10 @@ import {
 } from '../services/credit-calculator'
 
 describe('Credit Calculator - MODEL_PRICING', () => {
-  it('should have pricing for all 14 models', () => {
+  it('should have pricing for all 15 models', () => {
+    // 15th entry added 2026-08-18: gemini-3.6-flash (2.5 retired by Google).
     const models = getAllModels()
-    expect(models).toHaveLength(14)
+    expect(models).toHaveLength(15)
   })
 
   it('should have pricing for OpenAI models', () => {

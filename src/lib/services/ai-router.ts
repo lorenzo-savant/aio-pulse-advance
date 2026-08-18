@@ -7,7 +7,6 @@ import { isOpenAIAvailable, callOpenAI, callOpenAIWithWebSearch } from './openai
 import { isPerplexityAvailable, callPerplexityWithCitations } from './perplexity'
 import { isAnthropicAvailable, callAnthropic, callAnthropicWithWebSearch } from './anthropic'
 import { logger } from '@/lib/logger'
-import { enrichPromptWithBrandContext } from '@/lib/brand-enrichment'
 import { safeFetch, SsrfError } from '@/lib/utils/safe-fetch'
 import type { PromptLang } from '@/lib/prompt-library'
 
@@ -365,7 +364,9 @@ export async function simulateEngineResponse(
   promptText: string,
   engine: MonitoringEngine,
   language: PromptLang = 'en',
-  brand?: Brand | null,
+  /** Accepted for call-site compatibility; deliberately NOT injected into the
+   *  outbound prompt — see the unprimed-measurement comment in the body. */
+  _brand?: Brand | null,
 ): Promise<{
   text: string
   provider: string
@@ -381,13 +382,19 @@ export async function simulateEngineResponse(
     claude: `You are Claude. Respond in ${LANGUAGE_LABEL[language]} with nuanced analysis and locally relevant brands.`,
   }
 
-  const basePrompt = `${enginePersona[engine]}\n\nUser question: "${promptText}"\n\nProvide a realistic, helpful response (150-300 words).`
-  const fullPrompt = enrichPromptWithBrandContext(basePrompt, brand ?? null, {
-    includeDomain: true,
-    includeAliases: true,
-    includeCompetitors: true,
-    includeIndustry: true,
-  })
+  // THE MEASUREMENT MUST NOT KNOW ITS SUBJECT. Until 2026-08-18 this prompt
+  // was wrapped in enrichPromptWithBrandContext — name, domain, aliases,
+  // competitors of the measured brand were handed to the model BEFORE the
+  // user question. A real user asking a real engine provides none of that,
+  // so every mention-rate, position and citation figure was measured with
+  // the witness led. A client called the resulting answers "invented" and,
+  // for that mechanism, was right. The persona line above stays because it
+  // is brand-agnostic (it nudges all brands equally); the brand card does
+  // not. Brand context still belongs in the ANALYSIS prompt (detecting a
+  // mention requires knowing the aliases) — reading an answer is not
+  // generating one. Expect measured rates to step DOWN from this date:
+  // that is the instrument getting honest, not the brand getting worse.
+  const fullPrompt = `${enginePersona[engine]}\n\nUser question: "${promptText}"\n\nProvide a realistic, helpful response (150-300 words).`
   const errors: string[] = []
 
   if (engine === 'chatgpt' && isOpenAIAvailable()) {

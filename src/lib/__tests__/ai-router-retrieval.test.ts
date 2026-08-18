@@ -172,6 +172,40 @@ describe('Gemini engine grounding', () => {
     expect(String(calledInit.body)).toContain('googleSearch')
   })
 
+  it('never leaks the measured brand into the outbound engine prompt', async () => {
+    // Client-facing incident, 2026-08-18: the simulation prompt used to carry
+    // the brand card (name, domain, aliases, competitors) before the user
+    // question — every mention-rate was measured with the witness led. This
+    // pins the fix: whatever a caller passes as brand, the request body the
+    // engine sees contains only persona + locale + the user question.
+    const fetchSpy = vi.fn().mockResolvedValue(okJson(interactionsResponse))
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const brand = {
+      name: 'Relovie',
+      domain: 'relovie.com',
+      aliases: ['Re Lovie'],
+      domains: ['relovie.se'],
+      competitors: ['Tradera', 'Sellpy'],
+      industry: 'second-hand marketplace',
+      description: 'category-wide used-goods search engine',
+    }
+
+    const { simulateEngineResponse } = await import('../services/ai-router')
+    await simulateEngineResponse(
+      'var köper jag begagnad elektronik?',
+      'gemini',
+      'sv',
+      brand as never,
+    )
+
+    const body = String((fetchSpy.mock.calls[0] as [string, RequestInit])[1].body)
+    for (const leak of ['Relovie', 'relovie.com', 'Re Lovie', 'Tradera', 'Sellpy']) {
+      expect(body).not.toContain(leak)
+    }
+    expect(body).toContain('var köper jag begagnad elektronik?')
+  })
+
   it('keeps the analysis brain pinned when the engine model is overridden', async () => {
     vi.stubEnv('GEMINI_ENGINE_MODEL', 'gemini-2.5-flash')
     const fetchSpy = vi

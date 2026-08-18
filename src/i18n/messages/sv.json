@@ -1585,7 +1585,8 @@
     "no_results_title": "Inga resultat hittades",
     "no_results_hint": "Prova en annan sökterm eller",
     "clear_search": "rensa sökningen",
-    "back_to_top": "Tillbaka till toppen"
+    "back_to_top": "Tillbaka till toppen",
+    "jump_to_section": "Hoppa till avsnitt"
   },
   "home_stats": {
     "engines": "AI-engines övervakade",

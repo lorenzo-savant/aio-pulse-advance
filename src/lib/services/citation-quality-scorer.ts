@@ -2,15 +2,24 @@
 //
 // Citation Quality Scorer — measures how likely a page is to be cited
 // by AI search engines (ChatGPT, Google AI Mode, Perplexity, etc.).
-// Operationalises the five positive-correlation signals from industry research
-// "What makes content get cited by AI" study (study period Jul–Aug 2025,
-// 304k cited URLs vs 921k Google-ranking-only URLs):
+// Operationalises the five positive-correlation signals from the Semrush
+// content-optimization study (identified 2026-08-18; study window
+// Jul 15 – Aug 6 2025: 11,882 prompts, 304,805 AI-cited URLs vs 921,614
+// Google-ranking-only URLs; visible text only, deliberately excluding
+// metadata/schema/layout):
+//   https://www.semrush.com/blog/content-optimization-ai-search-study/
+// Reference copy + comparison: docs/research/semrush-vs-aeo-pulse.md
 //
-//   • Clarity & summarization (+33% citation lift)
-//   • E-E-A-T signals          (+30%)
-//   • Q&A format               (+25%)
-//   • Section structure        (+23%)
-//   • Structured data          (+22%)
+//   • Clarity & summarization (+33% citation lift — Semrush: +32.83%)
+//   • E-E-A-T signals          (+30% — +30.64%)
+//   • Q&A format               (+25% — +25.45%)
+//   • Section structure        (+23% — +22.91%)
+//   • Structured data          (+22% — +21.60%)
+//
+// The study's sixth finding — non-promotional tone at −26.19% — is
+// deliberately NOT a signal here: Semrush's own read is that professional
+// copy quality confounds it, not that engines prefer promotional tone.
+// These are correlations, not causal guarantees for a single page.
 //
 // Pure, deterministic, dependency-free. Heuristics over HTML + text —
 // no LLM calls. Same scorer feeds the /dashboard/optimizer "Citation

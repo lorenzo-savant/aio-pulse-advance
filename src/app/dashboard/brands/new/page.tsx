@@ -18,6 +18,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
+import { ACTIVE_ENGINES } from '@/types'
 import toast from 'react-hot-toast'
 
 const STEPS = [
@@ -50,11 +51,12 @@ interface IndustryOption {
   name: { en: string; it: string; sv: string }
 }
 
+// Claude retired on cost — see ACTIVE_ENGINES in src/types. Offering it here
+// would let an operator select an engine the runner then drops.
 const ENGINES = [
   { id: 'chatgpt', label: 'ChatGPT', color: '#10b981' },
   { id: 'gemini', label: 'Gemini', color: '#3b82f6' },
   { id: 'perplexity', label: 'Perplexity', color: '#a855f7' },
-  { id: 'claude', label: 'Claude', color: '#f97316' },
 ]
 
 const LANGUAGES = [
@@ -332,7 +334,7 @@ export default function NewBrandWizard() {
 
       // Create prompts
       const promptErrors: string[] = []
-      const validEngines = ['chatgpt', 'gemini', 'perplexity', 'claude']
+      const validEngines = [...ACTIVE_ENGINES] as string[]
       for (const prompt of prompts) {
         const promptRes = await fetch('/api/prompts', {
           method: 'POST',

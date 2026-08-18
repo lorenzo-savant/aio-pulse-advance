@@ -1585,7 +1585,8 @@
     "no_results_title": "Nessun risultato",
     "no_results_hint": "Prova un altro termine di ricerca o",
     "clear_search": "azzera la ricerca",
-    "back_to_top": "Torna su"
+    "back_to_top": "Torna su",
+    "jump_to_section": "Vai alla sezione"
   },
   "home_stats": {
     "engines": "Engine AI monitorati",

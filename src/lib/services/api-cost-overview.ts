@@ -84,6 +84,7 @@ const PROVIDER_ALIASES: Record<string, string> = {
   claude: 'anthropic',
   google: 'gemini',
   'gemini-2.5-flash': 'gemini',
+  'gemini-3.6-flash': 'gemini',
 }
 
 function canonicalProvider(raw: string): string {

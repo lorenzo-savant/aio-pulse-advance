@@ -158,7 +158,11 @@ describe('HTML report — competitor table wiring', () => {
   })
 
   it('builds the competitor table from measured standings, not deprecated AVI', () => {
-    expect(routeSrc).toMatch(/buildCompetitorReport\(/)
+    // The full-report rewrite replaced the dedicated competitor table with the
+    // Share of AI Voice section, fed by the same measured standings through
+    // computeShareOfVoice. The invariant is unchanged: standings, never the
+    // deprecated calculateCompetitorAVI.
+    expect(routeSrc).toMatch(/computeShareOfVoice\(/)
     expect(routeSrc).not.toMatch(/calculateCompetitorAVI\(/)
   })
 
@@ -172,12 +176,18 @@ describe('HTML report — competitor table wiring', () => {
 
   it('every locale carries the same label set', () => {
     // The real invariant: a missing translation silently renders `undefined`
-    // in a client-facing report.
-    const dicts = [...routeSrc.matchAll(/^ {2}(en|it|sv): \{$/gm)].map((m) => m.index!)
+    // in a client-facing report. Scope the scan to the i18n dictionary only —
+    // the rewrite added two more locale-keyed dictionaries (PILLAR_I18N and
+    // SOURCE_CATEGORY_I18N) that carry deliberately different key sets.
+    const i18nStart = routeSrc.indexOf('const i18n = {')
+    const i18nEnd = routeSrc.indexOf('} as const', i18nStart)
+    const i18nBlock = routeSrc.slice(i18nStart, i18nEnd)
+
+    const dicts = [...i18nBlock.matchAll(/^ {2}(en|it|sv): \{$/gm)].map((m) => m.index!)
     expect(dicts).toHaveLength(3)
 
     const keysOf = (from: number) => {
-      const block = routeSrc.slice(from, routeSrc.indexOf('\n  },', from))
+      const block = i18nBlock.slice(from, i18nBlock.indexOf('\n  },', from))
       return [...block.matchAll(/^ {4}(\w+):/gm)].map((m) => m[1]).sort()
     }
     const [en, it, sv] = dicts.map(keysOf)
@@ -229,5 +239,38 @@ describe('buildCompetitorReport', () => {
 
   it('returns [] for an empty declared list', () => {
     expect(buildCompetitorReport([], [])).toEqual([])
+  })
+})
+
+describe('HTML report — ultrareview regressions (2026-08-17)', () => {
+  const rawSrc = readFileSync(join(process.cwd(), 'src/app/api/reports/html/route.ts'), 'utf8')
+  const routeSrc = rawSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+  it('counts sentiment only over mentioned rows', () => {
+    // The analyzer stores every unmentioned response as neutral, so a loop
+    // over all scoped rows drowns real tone in unmentioned neutrals — a
+    // low-visibility brand in crisis charts as "mostly neutral".
+    expect(routeSrc).toMatch(/r\.brand_mentioned && r\.sentiment && r\.sentiment in sent/)
+  })
+
+  it('divides the sentiment chart by mentioned, never by N', () => {
+    const chart = routeSrc.slice(routeSrc.indexOf('const sentimentSection'))
+    const section = chart.slice(0, chart.indexOf(": ''"))
+    expect(section).toContain('pct(sent.positive, mentioned)')
+    expect(section).not.toMatch(/pct\(sent\.\w+, N\)/)
+  })
+
+  it('decides "not configured" with the same normalisation as the SoV matcher', () => {
+    // toLowerCase() disagrees with normalizeEntityName whenever the engine
+    // drops a legal suffix (AB, GmbH, Inc…) and would flag a declared rival.
+    expect(routeSrc).toMatch(/configuredKeys\.has\(normalizeEntityName\(e\.name\)\)/)
+    expect(routeSrc).not.toMatch(/configuredLower/)
+  })
+
+  it('clamps the days parameter instead of trusting parseInt', () => {
+    // parseInt('abc') → NaN → new Date(NaN).toISOString() threw a bare 500;
+    // a negative value rendered a silently empty report.
+    expect(routeSrc).not.toMatch(/parseInt\(searchParams\.get\('days'\)/)
+    expect(routeSrc).toMatch(/Math\.min\(365, Math\.max\(1, Math\.trunc\(daysRaw\)\)\)/)
   })
 })

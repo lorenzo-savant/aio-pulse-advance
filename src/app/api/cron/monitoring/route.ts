@@ -13,6 +13,7 @@ import { estimateBlendedCost, pricingKeyForProviderLabel } from '@/lib/cost-moni
 import { shouldTriggerAlert, buildAlertEvent, dispatchAlert } from '@/lib/services/alerts'
 import type { Brand, Prompt, MonitoringResult, WorkflowStatus, AlertRule } from '@/types'
 import { ACTIVE_ENGINES, isActiveEngine } from '@/types'
+import { providerMatchesEngine } from '@/lib/services/engine-provenance'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
 
 interface WorkflowStep {
@@ -518,7 +519,13 @@ export async function POST(req: NextRequest) {
           position_avg: components.positionAvg,
           health_score: avi,
           engine_breakdown: JSON.stringify(
-            Object.fromEntries(brandResults.map((r) => [r.engine, r.visibility_score])),
+            // Per-engine slots only accept rows the engine's own provider
+            // answered — a fallback-served row is not that engine's number.
+            Object.fromEntries(
+              brandResults
+                .filter((r) => providerMatchesEngine(r.engine, r.response_provider))
+                .map((r) => [r.engine, r.visibility_score]),
+            ),
           ),
         },
         { onConflict: 'brand_id,date' },

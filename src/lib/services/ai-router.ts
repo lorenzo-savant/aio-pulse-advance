@@ -44,6 +44,14 @@ interface CallGeminiOptions {
    * tokens, leaving an unparseable string like `"senti...`).
    */
   jsonMode?: boolean
+  /**
+   * Model id override. Engine-simulation call sites pass
+   * geminiEngineModel() so the GEMINI_ENGINE_MODEL env override reaches
+   * them; the analysis path (analyzeResponseForBrand) deliberately does
+   * NOT — the measurement instrument and the analysis brain are separate
+   * roles, and bumping one must not silently move the other.
+   */
+  model?: string
 }
 
 async function callGeminiFallback(
@@ -60,15 +68,19 @@ async function callGeminiFallback(
     temperature: 0.2,
     maxOutputTokens: 8192,
   }
+  const model = options.model ?? GEMINI_DEFAULT_ENGINE_MODEL
   if (options.jsonMode) {
     generationConfig.responseMimeType = 'application/json'
-    // Per Gemini 2.5 docs: thinkingBudget=0 disables the thinking phase
-    // entirely. Critical for JSON tasks where every token of the budget
-    // must go to the actual output.
-    generationConfig.thinkingConfig = { thinkingBudget: 0 }
+    // thinkingBudget=0 disables the 2.x thinking phase (which silently ate
+    // the output budget and truncated JSON). 3.x models REJECT the knob with
+    // 400 INVALID_ARGUMENT (verified live 2026-08-18), so send it only where
+    // it is understood.
+    if (model.startsWith('gemini-2.')) {
+      generationConfig.thinkingConfig = { thinkingBudget: 0 }
+    }
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -92,6 +104,56 @@ function isGeminiAvailable(): boolean {
   return Boolean(process.env['GEMINI_API_KEY'])
 }
 
+// ─── Gemini engine model selection ──────────────────────────────────────────
+//
+// The model that SIMULATES the Gemini engine is a measurement instrument:
+// changing it shifts every brand's numbers, so the default is pinned and an
+// override is an explicit ops decision (annotate dashboards when you flip it).
+//
+// GEMINI_ENGINE_MODEL accepts any generateContent model id that supports the
+// googleSearch tool (per https://ai.google.dev/gemini-api/docs/google-search:
+// 2.0 Flash, 2.5 Flash/Pro, 3.x Flash — current newest is 3.6 Flash).
+//
+// Model history, verified live on 2026-08-18:
+// - gemini-2.5-flash was RETIRED by Google for this account ("no longer
+//   available to new users", 404 on every call). That 404 is why the previous
+//   week of engine=gemini rows were all served by the cross-provider fallback
+//   (response_provider=openai:gpt-4o-mini) — no real Gemini measurement
+//   existed to preserve, which is what made this bump safe.
+// - On 3.x models the googleSearch tool on generateContent is ACCEPTED BUT
+//   SILENTLY IGNORED (200, no groundingMetadata). Grounding requires the
+//   Interactions API (POST /v1beta/interactions, tools:[{type:'google_search'}]);
+//   citations come back as url_citation annotations wrapped in the same
+//   Vertex redirect URLs resolveVertexRedirects already handles.
+// - Billing on 3.x is per executed search query, 5,000/month free then
+//   ~$14/1k. Our grounded volume (~600–1,800/month at current cron rates)
+//   fits inside the free pool; re-do this arithmetic before raising C2
+//   throughput past ~150 grounded calls/day. See docs/features/api-costs.md.
+// A 2.x override via GEMINI_ENGINE_MODEL still routes through the legacy
+// generateContent grounded path, for accounts where 2.5 remains available.
+
+export const GEMINI_DEFAULT_ENGINE_MODEL = 'gemini-3.6-flash'
+
+export function geminiEngineModel(): string {
+  return process.env['GEMINI_ENGINE_MODEL'] || GEMINI_DEFAULT_ENGINE_MODEL
+}
+
+/** Provider label recorded in monitoring_results.response_provider.
+ *  The default model keeps the exact legacy label ('gemini:flash-2.5') so
+ *  historical rows and new rows aggregate together; an overridden model gets
+ *  an honest label carrying the real model id, so a bump is visible in the
+ *  data instead of hiding behind the old name. */
+export function geminiProviderLabel(mode: 'search' | 'plain'): string {
+  const model = geminiEngineModel()
+  // 'gemini-3.6-flash' → 'gemini:flash-3.6' — same scheme the historical rows
+  // use ('gemini:flash-2.5'), so a 2.x override aggregates with its own past
+  // rows and the 3.6 default is a NEW provider value, as it should be: it is
+  // a different instrument and the data must say so.
+  const m = model.match(/^gemini-(\d+(?:\.\d+)?)-flash$/)
+  const base = m ? `gemini:flash-${m[1]}` : `gemini:${model}`
+  return mode === 'search' ? `${base}+search` : base
+}
+
 // Gemini with Google Search grounding — returns text + real web citations.
 interface GeminiGroundingResponse {
   candidates?: Array<{
@@ -103,23 +165,60 @@ interface GeminiGroundingResponse {
   }>
 }
 
+/** Interactions API response — the only generateContent-independent shape we
+ *  consume. Steps arrive in execution order (search calls first, final answer
+ *  last); the answer step carries content items with `text` and url_citation
+ *  `annotations` whose URLs are Vertex grounding redirects. */
+interface GeminiInteractionsResponse {
+  status?: string
+  steps?: Array<{
+    content?: Array<{
+      text?: string
+      annotations?: Array<{ url?: string; start_index?: number; end_index?: number }>
+    }>
+  }>
+}
+
 async function callGeminiWithSearch(
   prompt: string,
 ): Promise<{ text: string; citations: string[] }> {
   const apiKey = process.env['GEMINI_API_KEY']
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      tools: [{ googleSearch: {} }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
-    }),
-    signal: AbortSignal.timeout(45_000),
-  })
+  const model = geminiEngineModel()
+  // 2.x grounds via generateContent + googleSearch (groundingMetadata).
+  // 3.x ACCEPTS that tool but silently ignores it — grounding only runs
+  // through the Interactions API. Both verified live on 2026-08-18.
+  if (!model.startsWith('gemini-2.')) {
+    return callGeminiInteractionsSearch(prompt, model, apiKey)
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+  const doFetch = () =>
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ googleSearch: {} }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+      }),
+      signal: AbortSignal.timeout(45_000),
+    })
+
+  let res = await doFetch()
+
+  // One bounded retry on 429 only. Production showed grounded-call quota as
+  // THE dominant failure ("Gemini (search) 429" chains in the fallback log):
+  // every 429 that falls through to the plain call produces a Gemini row with
+  // no engine citations, which is exactly the data this function exists to
+  // capture. A single 2s backoff rescues per-minute rate blips; daily-quota
+  // exhaustion still falls back like before. Other statuses fail fast —
+  // retrying a 400/500 spends cron time for nothing.
+  if (res.status === 429) {
+    await new Promise((r) => setTimeout(r, 2_000))
+    res = await doFetch()
+  }
 
   if (!res.ok) {
     const err = await res.text()
@@ -141,6 +240,60 @@ async function callGeminiWithSearch(
   // each one to its final destination so the dashboard sees real sources.
   const citations = await resolveVertexRedirects(rawUris)
   return { text, citations }
+}
+
+// ─── Gemini Interactions grounded call (3.x models) ─────────────────────────
+
+async function callGeminiInteractionsSearch(
+  prompt: string,
+  model: string,
+  apiKey: string,
+): Promise<{ text: string; citations: string[] }> {
+  const doFetch = () =>
+    fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        model,
+        input: prompt,
+        tools: [{ type: 'google_search' }],
+      }),
+      signal: AbortSignal.timeout(60_000),
+    })
+
+  let res = await doFetch()
+  // Same bounded 429 policy as the legacy path: one 2s retry rescues
+  // per-minute blips; anything else falls through to the plain call.
+  if (res.status === 429) {
+    await new Promise((r) => setTimeout(r, 2_000))
+    res = await doFetch()
+  }
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Gemini Interactions API error ${res.status}: ${err.slice(0, 200)}`)
+  }
+
+  const data = (await res.json()) as GeminiInteractionsResponse
+  // The answer is the LAST step carrying text content; earlier steps are the
+  // search executions. Walk backwards so a trailing tool step never wins.
+  const steps = data.steps ?? []
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const items = steps[i]?.content ?? []
+    const text = items
+      .map((c) => c.text ?? '')
+      .join('')
+      .trim()
+    if (!text) continue
+    const rawUris = items
+      .flatMap((c) => c.annotations ?? [])
+      .map((a) => a.url)
+      .filter((u): u is string => typeof u === 'string' && u.length > 0)
+    // De-dup before resolving: 42 annotations routinely collapse to a
+    // handful of sources, and each unresolved redirect costs an HTTP GET.
+    const citations = await resolveVertexRedirects([...new Set(rawUris)])
+    return { text, citations }
+  }
+  throw new Error('Empty response from Gemini Interactions API')
 }
 
 // ─── Vertex Grounding redirect resolver ─────────────────────────────────────
@@ -271,7 +424,7 @@ export async function simulateEngineResponse(
     // Try Google Search grounding first, fall back to plain generate.
     try {
       const { text, citations } = await callGeminiWithSearch(fullPrompt)
-      return { text, provider: 'gemini:flash-2.5+search', citations, retrieval: 'live' }
+      return { text, provider: geminiProviderLabel('search'), citations, retrieval: 'live' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Gemini (search): ${msg}`)
@@ -281,8 +434,8 @@ export async function simulateEngineResponse(
         error: msg,
       })
       try {
-        const text = await callGeminiFallback(fullPrompt)
-        return { text, provider: 'gemini:flash-2.5', retrieval: 'model-memory' }
+        const text = await callGeminiFallback(fullPrompt, { model: geminiEngineModel() })
+        return { text, provider: geminiProviderLabel('plain'), retrieval: 'model-memory' }
       } catch (e2) {
         errors.push(`Gemini: ${e2 instanceof Error ? e2.message : String(e2)}`)
       }
@@ -357,10 +510,10 @@ export async function simulateEngineResponse(
     call: () => Promise<string>
   }> = [
     {
-      id: 'gemini:flash-2.5',
+      id: geminiProviderLabel('plain'),
       engine: 'gemini',
       available: isGeminiAvailable,
-      call: () => callGeminiFallback(fullPrompt),
+      call: () => callGeminiFallback(fullPrompt, { model: geminiEngineModel() }),
     },
     {
       id: 'openai:gpt-4o-mini',
@@ -419,7 +572,7 @@ export async function analyzeResponseForBrand(
       // consumer that was truncating analysis JSON) AND asks for
       // application/json output.
       const text = await callGeminiFallback(analysisPrompt, { jsonMode: true })
-      return { text, provider: 'gemini:flash-2.5' }
+      return { text, provider: geminiProviderLabel('plain') }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Gemini: ${msg}`)

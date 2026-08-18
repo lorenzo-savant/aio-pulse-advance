@@ -62,20 +62,6 @@ const ENGINES = [
     strengths: ['Fact density preference', 'Academic sources', 'Real-time search'],
     docsUrl: 'https://docs.perplexity.ai',
   },
-  {
-    id: 'claude',
-    name: 'Claude AI',
-    company: 'Anthropic',
-    icon: Brain,
-    color: '#f97316',
-    bg: 'bg-orange-500/10',
-    border: 'border-orange-500/20',
-    accent: 'text-orange-400',
-    indexingSpeed: 'Context-based',
-    citationStyle: 'Integrated synthesis',
-    strengths: ['Long-form reasoning', 'Nuanced analysis', 'Safety-first responses'],
-    docsUrl: 'https://docs.anthropic.com',
-  },
 ]
 
 const STATUS_MAP = {
@@ -149,11 +135,11 @@ function relativeTime(iso: string | undefined): string {
 }
 
 const OPTIMIZATION_MATRIX = [
-  { category: 'Structure', chatgpt: 85, gemini: 90, perplexity: 75, claude: 70 },
-  { category: 'Fact Density', chatgpt: 80, gemini: 85, perplexity: 95, claude: 88 },
-  { category: 'Entity Coverage', chatgpt: 75, gemini: 95, perplexity: 80, claude: 72 },
-  { category: 'Readability', chatgpt: 90, gemini: 85, perplexity: 78, claude: 92 },
-  { category: 'Authority Signals', chatgpt: 82, gemini: 88, perplexity: 90, claude: 78 },
+  { category: 'Structure', chatgpt: 85, gemini: 90, perplexity: 75 },
+  { category: 'Fact Density', chatgpt: 80, gemini: 85, perplexity: 95 },
+  { category: 'Entity Coverage', chatgpt: 75, gemini: 95, perplexity: 80 },
+  { category: 'Readability', chatgpt: 90, gemini: 85, perplexity: 78 },
+  { category: 'Authority Signals', chatgpt: 82, gemini: 88, perplexity: 90 },
 ]
 
 function EngineCard({ engine, live }: { engine: (typeof ENGINES)[0]; live: EngineLiveState }) {
@@ -389,7 +375,7 @@ export default function MonitorPage() {
               {OPTIMIZATION_MATRIX.map((row) => (
                 <tr key={row.category} className="border-input/50 border-b">
                   <td className="text-text-secondary-surface py-3 font-semibold">{row.category}</td>
-                  {[row.chatgpt, row.gemini, row.perplexity, row.claude].map((score, i) => (
+                  {[row.chatgpt, row.gemini, row.perplexity].map((score, i) => (
                     <td key={i} className="py-3 text-center">
                       <div className="inline-flex flex-col items-center gap-1">
                         <span

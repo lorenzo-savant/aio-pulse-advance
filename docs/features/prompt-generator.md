@@ -1,11 +1,23 @@
 # Prompt Generator
 
+> ## ℹ️ NO LONGER A STANDALONE NAV ENTRY
+>
+> The generator is now hosted **inline inside [`prompts`](./prompts.md)** — the
+> "Generate (AI)" button (`prompts.generate_ai`) opens it as a panel on that page, so the
+> standalone tool page no longer has its own sidebar entry. See the comment at
+> [`Sidebar.tsx`](../../src/components/layout/Sidebar.tsx) in the step 1 · Setup block.
+>
+> The route `/dashboard/tools/prompt-generator` **still resolves** and still works; it is
+> simply unlinked. Everything documented below describes the generation engine, which is
+> the same code in both places. It is also the engine step 3 of
+> [`onboarding`](./onboarding.md) drives.
+
 | Field | Value |
 |---|---|
-| **Route** | `/dashboard/tools/prompt-generator` |
+| **Route** | `/dashboard/tools/prompt-generator` (unlinked) · inline in `/dashboard/prompts` |
 | **API** | `GET /api/industries`, `POST /api/prompts/generate-from-industry` |
 | **Service** | [`src/lib/services/prompt-generator.ts`](../../src/lib/services/prompt-generator.ts) |
-| **Sidebar step** | Tools |
+| **Sidebar step** | — (reachable from 1 · Setup → Prompts → "Generate (AI)") |
 
 ---
 

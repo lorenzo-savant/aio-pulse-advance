@@ -25,10 +25,24 @@ export type EngineId = 'all' | 'chatgpt' | 'gemini' | 'perplexity' | 'claude'
 export type MonitoringEngine = 'chatgpt' | 'gemini' | 'perplexity' | 'claude'
 
 /**
- * Every engine the product has ever measured. Reading surfaces — history,
- * snapshots, citations, per-engine charts — must keep using this, because the
- * database holds results for all of them and a filter that forgets one hides
- * data that was really collected.
+ * Every engine the product has ever measured.
+ *
+ * Narrowed on 2026-08-17: this used to be what every reading surface iterated,
+ * so a retired engine still appeared in per-engine charts and in client
+ * reports. Claude's 4 usable results on a 427-result brand made that a liability
+ * rather than a courtesy — a 0.9% series next to three real ones reads as a
+ * finding, and a client asks about it.
+ *
+ * The rule now splits by purpose:
+ *
+ * - **Presentation** — per-engine charts, report tables, pickers, KPIs — uses
+ *   `ACTIVE_ENGINES`. A retired engine is not shown.
+ * - **Archive fidelity** — the raw CSV/JSON export, scan history, and label
+ *   lookups like `ENGINE_LABEL` — keeps using this list, so nothing that was
+ *   really collected becomes unreachable or renders as a bare slug.
+ *
+ * Retiring an engine stops it being measured and stops it being shown. It is
+ * still not permission to delete or orphan the rows already in the database.
  */
 export const ALL_ENGINES: readonly MonitoringEngine[] = [
   'chatgpt',

@@ -108,6 +108,10 @@ export const PROVIDER_PRICING: Record<string, { input: number; output: number }>
   // so every one of its calls fell through to `default` (1.0/2.0) — roughly
   // 13× its real input price, on the highest-volume path there is.
   'gemini-2.5-flash': { input: 0.075, output: 0.3 },
+  // 3.6-flash: token prices assumed at the 2.5-flash tier until Google
+  // publishes the official sheet — grounded SEARCH billing (per query,
+  // 5k/month free) is separate and not modelled here.
+  'gemini-3.6-flash': { input: 0.075, output: 0.3 },
   'gemini-2.0-flash': { input: 0.1, output: 0.4 },
   'gemini-2.0-flash-lite': { input: 0.075, output: 0.3 },
   'gemini-2.5-pro': { input: 1.25, output: 10.0 },

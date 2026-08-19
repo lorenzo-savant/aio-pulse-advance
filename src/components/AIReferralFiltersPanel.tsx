@@ -36,6 +36,17 @@ const AI_REFERRER_HOSTS: ReferrerHost[] = [
   { host: 'phind.com', label: 'Phind' },
   { host: 'mistral.ai', label: 'Mistral le Chat' },
   { host: 'kagi.com', label: 'Kagi Assistant' },
+  // Added 2026-08-19 from the GEO field guide's referral regex
+  // (docs/research/guida-operativa-geo-aeo-2026.md, Fase 3) — engines with
+  // real referral volume that the list lacked. Deliberately NOT added:
+  // neeva.com (defunct) and writesonic/jasper/copy.ai (writing tools whose
+  // referrals are authors clicking their own drafts, not answer-engine reads).
+  { host: 'chat.deepseek.com', label: 'DeepSeek' },
+  { host: 'grok.com', label: 'Grok' },
+  { host: 'x.ai', label: 'Grok (x.ai)' },
+  { host: 'meta.ai', label: 'Meta AI' },
+  { host: 'poe.com', label: 'Poe' },
+  { host: 'edgeservices.bing.com', label: 'Bing Chat (legacy edge)' },
 ]
 
 type Tool = 'ga4_regex' | 'plausible' | 'matomo' | 'looker_studio' | 'cf_logs' | 'js'

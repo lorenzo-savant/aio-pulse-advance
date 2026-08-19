@@ -41,6 +41,7 @@
 import { safeFetch } from '@/lib/utils/safe-fetch'
 import {
   AI_BOTS,
+  type AiBot,
   parseRobotsTxt,
   auditRobotsForAiBots,
   type AccessVerdict,
@@ -102,14 +103,16 @@ function reasonFor(v: BotVerdict): string | undefined {
 }
 
 /**
- * Engines the product actually reports on outrank training-only and
- * social crawlers: being blocked to ChatGPT costs a customer visibility in a
- * surface they are paying to be measured in.
+ * Priority follows what blocking the bot COSTS, which is the bot's role — not
+ * which engine's name it carries. A blocked search crawler removes the site
+ * from that engine's index and a blocked fetcher removes it from live answers:
+ * both are visibility the customer is paying to measure. A blocked training
+ * crawler costs none of that, and for plenty of sites it is a deliberate
+ * choice — ranking it alongside a real outage taught operators to ignore the
+ * whole list.
  */
-function priorityFor(engine: string): 'high' | 'medium' | 'low' {
-  if (engine === 'chatgpt' || engine === 'gemini' || engine === 'perplexity' || engine === 'claude')
-    return 'high'
-  if (engine === 'training') return 'medium'
+function priorityFor(bot: AiBot): 'high' | 'medium' | 'low' {
+  if (bot.role === 'search' || bot.role === 'hybrid' || bot.role === 'fetcher') return 'high'
   return 'low'
 }
 
@@ -128,7 +131,7 @@ export function getRecommendations(verdicts: BotVerdict[]): Recommendation[] {
         v.verdict === 'unknown'
           ? `Make robots.txt reachable so ${v.bot.label} access can be verified`
           : `Allow ${v.bot.label} in robots.txt`,
-      priority: priorityFor(v.bot.engine),
+      priority: priorityFor(v.bot),
     }))
 }
 

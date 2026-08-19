@@ -26,6 +26,21 @@ export interface AiBot {
   label: string
   /** Which AI engine the bot serves (or the closest analogue). */
   engine: 'chatgpt' | 'gemini' | 'perplexity' | 'claude' | 'training' | 'meta' | 'apple' | 'unknown'
+  /** What blocking this bot actually costs the site.
+   *  'search'   = AI search crawler: blocking it removes the site from that
+   *               engine's index. The expensive mistake.
+   *  'fetcher'  = on-demand fetcher: blocking it removes the site from live
+   *               conversational answers only.
+   *  'training' = model-training crawler: blocking it has no direct effect on
+   *               search visibility, and for some sites it is deliberate.
+   *  'hybrid'   = serves both classic search and AI search (Googlebot).
+   *  'unknown'  = a token that is not in this catalog — the audit can still
+   *               resolve robots.txt for it, but we do not claim to know what
+   *               blocking it costs.
+   *  This is the distinction operators get wrong most often: a site can be
+   *  wide open to every search crawler and still show a red panel because it
+   *  blocks training bots on purpose. Engine alone could not say that. */
+  role: 'search' | 'fetcher' | 'training' | 'hybrid' | 'unknown'
   /** Source documentation URL — surfaces in the UI when an operator
    *  asks "what is this bot?". */
   docs: string
@@ -33,84 +48,120 @@ export interface AiBot {
 
 /** Curated list of the AI bots that matter for AEO Pulse coverage.
  *  Kept short and high-signal — adding every long-tail crawler floods
- *  the panel and operators stop reading. */
+ *  the panel and operators stop reading.
+ *
+ *  Anthropic documents exactly three live tokens (verified 2026-08-19 on the
+ *  support article linked below): ClaudeBot collects training data,
+ *  Claude-User fetches a page on demand when someone asks Claude about it,
+ *  and Claude-SearchBot indexes the web for Claude's search. Claude-Web and
+ *  anthropic-ai are legacy tokens kept for sites whose robots.txt still names
+ *  them. Claude is retired as a MONITORING engine here for cost reasons — the
+ *  customer's visibility in Claude search is a fact of their market either
+ *  way, so the audit still has to check it. */
 export const AI_BOTS: AiBot[] = [
   {
     id: 'gptbot',
     label: 'GPTBot',
     engine: 'training',
+    role: 'training',
     docs: 'https://platform.openai.com/docs/gptbot',
   },
   {
     id: 'chatgpt-user',
     label: 'ChatGPT-User',
     engine: 'chatgpt',
+    role: 'fetcher',
     docs: 'https://platform.openai.com/docs/plugins/bot',
   },
   {
     id: 'oai-searchbot',
     label: 'OAI-SearchBot',
     engine: 'chatgpt',
+    role: 'search',
     docs: 'https://platform.openai.com/docs/bots',
   },
   {
     id: 'perplexitybot',
     label: 'PerplexityBot',
     engine: 'perplexity',
+    role: 'search',
     docs: 'https://docs.perplexity.ai/guides/bots',
   },
   {
     id: 'perplexity-user',
     label: 'Perplexity-User',
     engine: 'perplexity',
+    role: 'fetcher',
     docs: 'https://docs.perplexity.ai/guides/bots',
   },
   {
     id: 'claudebot',
     label: 'ClaudeBot',
+    engine: 'training',
+    role: 'training',
+    docs: 'https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
+  },
+  {
+    id: 'claude-searchbot',
+    label: 'Claude-SearchBot',
     engine: 'claude',
-    docs: 'https://support.anthropic.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
+    role: 'search',
+    docs: 'https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
+  },
+  {
+    id: 'claude-user',
+    label: 'Claude-User',
+    engine: 'claude',
+    role: 'fetcher',
+    docs: 'https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
   },
   {
     id: 'claude-web',
     label: 'Claude-Web',
     engine: 'claude',
-    docs: 'https://support.anthropic.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
+    role: 'training',
+    docs: 'https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
   },
   {
     id: 'anthropic-ai',
     label: 'anthropic-ai',
     engine: 'claude',
-    docs: 'https://support.anthropic.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
+    role: 'training',
+    docs: 'https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
   },
   {
     id: 'google-extended',
     label: 'Google-Extended',
     engine: 'gemini',
+    role: 'training',
     docs: 'https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers#google-extended',
   },
   {
     id: 'ccbot',
     label: 'CCBot (Common Crawl)',
     engine: 'training',
+    role: 'training',
     docs: 'https://commoncrawl.org/ccbot',
   },
   {
     id: 'applebot-extended',
     label: 'Applebot-Extended',
     engine: 'apple',
+    role: 'training',
     docs: 'https://support.apple.com/en-us/119829',
   },
   {
     id: 'meta-externalagent',
     label: 'Meta-ExternalAgent',
     engine: 'meta',
+    role: 'training',
     docs: 'https://developers.facebook.com/docs/sharing/bot',
   },
   {
     id: 'bytespider',
     label: 'Bytespider (ByteDance)',
     engine: 'training',
+    role: 'training',
     docs: 'https://www.bytedance.com',
   },
 ]
@@ -241,6 +292,7 @@ export function checkBotAccess(parsed: ParsedRobots, botId: string): BotVerdict 
     id: botToken,
     label: botId,
     engine: 'unknown',
+    role: 'unknown',
     docs: '',
   }
 

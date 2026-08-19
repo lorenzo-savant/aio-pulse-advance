@@ -88,10 +88,18 @@ function checkAiCrawlerAccess(robotsTxt: string | null): AuditCategory {
   const weight = 0.25
   const checks: AuditCheck[] = []
 
+  // Kept as an explicit list rather than derived from AI_BOTS: this score is
+  // customer-facing and its denominator should not shift every time the catalog
+  // grows. The two Claude bots are added because theirs is the block that
+  // actually costs visibility — Claude-SearchBot indexes for Claude's search,
+  // Claude-User fetches the page when someone asks Claude about it. ClaudeBot,
+  // already in the list, is a training crawler (see crawler-access-audit.ts).
   const aiBots = [
     'gptbot',
     'google-extended',
     'claudebot',
+    'claude-searchbot',
+    'claude-user',
     'perplexitybot',
     'anthropic-ai',
     'ccbot',

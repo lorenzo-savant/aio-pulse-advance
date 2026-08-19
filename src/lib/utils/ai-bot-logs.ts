@@ -25,6 +25,10 @@ export const AI_BOTS: AIBotMatcher[] = [
   { name: 'OAI-SearchBot', owner: 'OpenAI', needle: 'oai-searchbot', purpose: 'index' },
   { name: 'ChatGPT-User', owner: 'OpenAI', needle: 'chatgpt-user', purpose: 'on_demand' },
   { name: 'ClaudeBot', owner: 'Anthropic', needle: 'claudebot', purpose: 'training' },
+  // Anthropic's search crawler and on-demand fetcher. Missing here meant their
+  // hits landed in the unmatched bucket and read as ordinary traffic.
+  { name: 'Claude-SearchBot', owner: 'Anthropic', needle: 'claude-searchbot', purpose: 'index' },
+  { name: 'Claude-User', owner: 'Anthropic', needle: 'claude-user', purpose: 'on_demand' },
   { name: 'Claude-Web', owner: 'Anthropic', needle: 'claude-web', purpose: 'on_demand' },
   { name: 'anthropic-ai', owner: 'Anthropic', needle: 'anthropic-ai', purpose: 'training' },
   { name: 'PerplexityBot', owner: 'Perplexity', needle: 'perplexitybot', purpose: 'index' },

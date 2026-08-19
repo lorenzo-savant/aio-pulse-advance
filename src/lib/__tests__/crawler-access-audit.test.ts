@@ -192,4 +192,44 @@ describe('AI_BOTS catalog', () => {
       expect(b.id).toBe(b.id.toLowerCase())
     }
   })
+
+  it('carries Anthropic’s search crawler and on-demand fetcher', () => {
+    // Verified against Anthropic's crawler documentation on 2026-08-19: the
+    // three live tokens are ClaudeBot (training), Claude-User (on-demand) and
+    // Claude-SearchBot (search). We only had the training one.
+    const search = AI_BOTS.find((b) => b.id === 'claude-searchbot')
+    const user = AI_BOTS.find((b) => b.id === 'claude-user')
+    expect(search).toMatchObject({ engine: 'claude', role: 'search' })
+    expect(user).toMatchObject({ engine: 'claude', role: 'fetcher' })
+  })
+
+  it('classifies ClaudeBot as a training crawler, not Claude’s search bot', () => {
+    // Regression: it used to carry engine 'claude', which made the panel read
+    // "Claude search is blocked" for a site that had merely opted out of
+    // training. Blocking ClaudeBot costs no search visibility.
+    const claudebot = AI_BOTS.find((b) => b.id === 'claudebot')
+    expect(claudebot).toMatchObject({ engine: 'training', role: 'training' })
+  })
+
+  it('gives every bot a role, and marks the search crawlers as such', () => {
+    const valid = new Set(['search', 'fetcher', 'training', 'hybrid'])
+    for (const b of AI_BOTS) expect(valid.has(b.role)).toBe(true)
+
+    const searchBots = AI_BOTS.filter((b) => b.role === 'search')
+      .map((b) => b.id)
+      .sort()
+    expect(searchBots).toEqual(['claude-searchbot', 'oai-searchbot', 'perplexitybot'])
+  })
+
+  it('resolves a block aimed at Claude-SearchBot', () => {
+    const r = parseRobotsTxt(`User-agent: Claude-SearchBot
+Disallow: /
+
+User-agent: *
+Disallow:
+`)
+    expect(checkBotAccess(r, 'claude-searchbot').verdict).toBe('explicitly_blocked')
+    // The block is bot-specific: the fetcher beside it stays allowed.
+    expect(checkBotAccess(r, 'claude-user').verdict).toBe('allowed')
+  })
 })

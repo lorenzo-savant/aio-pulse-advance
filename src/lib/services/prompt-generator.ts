@@ -311,6 +311,76 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     },
   },
   {
+    // Re-commerce / price meta-search: brands whose product is FINDING the
+    // lowest price across many sellers, not selling stock themselves. Distinct
+    // from `ecommerce` on purpose — its templates ask "buy/shop on {brand}",
+    // which measures the wrong intent for a comparison engine and reinforces
+    // the "it's a shop" category the engines already wrongly assume.
+    id: 'recommerce-comparison',
+    name: {
+      en: 'Re-Commerce & Price Comparison',
+      it: 'Usato e Comparazione Prezzi',
+      sv: 'Begagnat & Prisjämförelse',
+    },
+    description: {
+      en: 'Second-hand marketplaces and price-comparison / meta-search brands that help buyers find the lowest price across sellers. Monitor visibility on "cheapest", "compare prices", and "where to buy used" queries.',
+      it: 'Marketplace dell\'usato e comparatori di prezzo / meta-ricerca che aiutano a trovare il prezzo più basso tra più venditori. Monitora la visibilità su ricerche "più economico", "confronta prezzi" e "dove comprare usato".',
+      sv: 'Begagnatmarknader och prisjämförelse- / meta-söktjänster som hjälper köpare att hitta lägsta pris hos flera säljare. Bevaka synlighet på "billigast", "jämför priser" och "var köper man begagnat".',
+    },
+    competitors: ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'PriceRunner', 'Prisjakt'],
+    localCompetitors: {
+      sv: ['Blocket', 'Tradera', 'Sellpy', 'Prisjakt', 'PriceRunner', 'Plick'],
+      it: ['Subito', 'Vinted', 'Wallapop', 'idealo', 'Trovaprezzi'],
+    },
+    localizedTemplates: {
+      sv: [
+        '{brand} omdöme',
+        'är {brand} pålitligt',
+        'jämför priser på begagnat {location}',
+        'var köper jag {category} billigast {location}',
+        'bästa sajt för att jämföra priser på begagnat',
+        'hitta billigaste {category} {location}',
+        'hur fungerar {brand}',
+      ],
+      it: [
+        '{brand} recensioni',
+        '{brand} è affidabile',
+        'confronta prezzi usato {location}',
+        'dove comprare {category} al prezzo più basso {location}',
+        'miglior sito per confrontare prezzi dell\'usato',
+        'trovare {category} usato più economico {location}',
+      ],
+    },
+    categories: {
+      en: ['price comparison', 'second-hand marketplace', 'meta-search', 'resale platform', 're-commerce'],
+      it: ['comparatore di prezzi', 'marketplace dell\'usato', 'meta-ricerca', 'piattaforma di rivendita'],
+      sv: ['prisjämförelse', 'begagnatmarknad', 'meta-sök', 'återförsäljningsplattform'],
+    },
+    roles: {
+      en: ['bargain hunter', 'second-hand buyer', 'budget shopper', 'reseller'],
+      it: ['cacciatore di offerte', 'acquirente dell\'usato', 'acquirente attento al budget', 'rivenditore'],
+      sv: ['fyndjägare', 'begagnatköpare', 'budgetshoppare', 'återförsäljare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B1', template: 'is {brand} reliable', priority: 'medium' },
+      { bucket: 'B2', template: 'compare prices for {category} {location}', priority: 'high' },
+      { bucket: 'B2', template: 'cheapest {category} {location}', priority: 'high' },
+      { bucket: 'B2', template: 'best site to buy used {category} {location}', priority: 'high' },
+      { bucket: 'B3', template: 'where to find the cheapest {category}', priority: 'medium' },
+      { bucket: 'B3', template: 'how does {brand} work', priority: 'medium' },
+      { bucket: 'B4', template: 'buy second-hand {category} {location}', priority: 'high' },
+      { bucket: 'B5', template: 'is {brand} safe to use', priority: 'medium' },
+      { bucket: 'B5', template: 'is {brand} legit', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['price comparison', 'cheapest', 'second-hand', 'used', 'compare prices'],
+      it: ['comparazione prezzi', 'più economico', 'usato', 'confronta prezzi', 'occasioni'],
+      sv: ['prisjämförelse', 'billigast', 'begagnat', 'jämför priser', 'fynd'],
+    },
+  },
+  {
     id: 'local-business',
     name: { en: 'Local Business', it: 'Attività Locali', sv: 'Lokalt Företag' },
     description: {

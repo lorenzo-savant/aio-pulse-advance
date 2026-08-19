@@ -17,6 +17,7 @@ import {
   computeAiTrustScore,
   type DomainCategory,
 } from '@/lib/utils/ai-trust-score'
+import { classifySources, type SourceTaxonomyRow } from '@/lib/services/source-taxonomy'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -27,6 +28,10 @@ interface ResultRow {
   created_at: string
   brand_mentioned: boolean | null
   sentiment_score: number | null
+  /** Needed by the source taxonomy: which side of the market an answer was
+   *  about. Names are raw as observed — source-taxonomy matches them against
+   *  the declared list rather than trusting them. */
+  competitor_mentions: Array<{ name: string }> | null
 }
 
 function err(message: string, status = 500) {
@@ -86,7 +91,9 @@ export async function GET(req: NextRequest) {
       }
     )
       .from('monitoring_results')
-      .select('cited_urls, engine, created_at, brand_mentioned, sentiment_score')
+      .select(
+        'cited_urls, engine, created_at, brand_mentioned, sentiment_score, competitor_mentions',
+      )
       .eq('brand_id', brandId)
       .gte('created_at', since.toISOString())
       .order('created_at', { ascending: false })
@@ -329,6 +336,17 @@ export async function GET(req: NextRequest) {
             ownedDomain,
           ),
         },
+        /**
+         * Missing / Shared / Strong / Unique — the same cited domains crossed
+         * with who the answer was about. Empty with a flag when the brand has
+         * declared no competitors: every class is defined against competitor
+         * co-occurrence, so without a list the classification would be
+         * confident and meaningless.
+         */
+        taxonomy: classifySources(rows as SourceTaxonomyRow[], {
+          competitors: brand.competitors,
+          ownDomain: ownedDomain,
+        }),
         domains: topDomains,
         /**
          * Top URLs on the brand's own domain that AI engines cited, with the

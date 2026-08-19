@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
+  Download,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -393,6 +394,22 @@ export default function MonitoringPage() {
           <Button variant="outline" onClick={loadData}>
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
             {t('refresh')}
+          </Button>
+          {/* Full evidence export: every prompt with its answer text, the links
+              the engine cited and the searches it ran. Disabled without a brand
+              because /api/export is brand-scoped — exporting "all brands" would
+              cross a tenancy boundary. */}
+          <Button
+            variant="outline"
+            disabled={!selectedBrand}
+            title={selectedBrand ? t('export_hint') : t('export_needs_brand')}
+            onClick={() => {
+              if (!selectedBrand) return
+              window.location.href = `/api/export?brand_id=${selectedBrand}&format=csv`
+            }}
+          >
+            <Download className="h-4 w-4" />
+            {t('export')}
           </Button>
         </div>
       </div>

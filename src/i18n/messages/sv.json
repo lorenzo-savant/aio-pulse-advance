@@ -509,7 +509,10 @@
     "new_result_received": "Nytt overvakningsresultat mottaget!",
     "failed_to_load_data": "Misslyckades ladda overvakningsdata",
     "position": "Position #",
-    "severity": "allvarlighetsgrad"
+    "severity": "allvarlighetsgrad",
+    "export": "Ladda ner CSV",
+    "export_hint": "Varje prompt med svaret, de citerade länkarna och sökningarna motorn körde.",
+    "export_needs_brand": "Välj ett varumärke först — exporten är per varumärke."
   },
   "alerts": {
     "page_title": "Aviseringar",

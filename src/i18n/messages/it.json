@@ -509,7 +509,10 @@
     "new_result_received": "Nuovo risultato di monitoraggio ricevuto!",
     "failed_to_load_data": "Impossibile caricare i dati di monitoraggio",
     "position": "Posizione #",
-    "severity": "gravita"
+    "severity": "gravita",
+    "export": "Scarica CSV",
+    "export_hint": "Ogni prompt con la risposta, i link citati e le ricerche eseguite dal motore.",
+    "export_needs_brand": "Seleziona prima un brand — l'export è per singolo brand."
   },
   "alerts": {
     "page_title": "Avvisi",

@@ -509,7 +509,10 @@
     "new_result_received": "New monitoring result received!",
     "failed_to_load_data": "Failed to load monitoring data",
     "position": "Position #",
-    "severity": "severity"
+    "severity": "severity",
+    "export": "Download CSV",
+    "export_hint": "Every prompt with its answer, cited links and the searches the engine ran.",
+    "export_needs_brand": "Select a brand first — the export is per brand."
   },
   "alerts": {
     "page_title": "Alerts",

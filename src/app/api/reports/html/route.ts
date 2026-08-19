@@ -17,6 +17,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { verifyBrandAccess } from '@/lib/authorize'
+import { isBrandedPrompt } from '@/lib/services/prompt-classification'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { logger } from '@/lib/logger'
 import { geoMethodologyNote } from '@/lib/geo-config'
@@ -90,6 +91,9 @@ const i18n = {
     ownDomain: 'own domain',
     byCategory: 'By source type',
     sentiment: 'Tone',
+    brandedSplit: 'Mention rate by question type',
+    brandedLabel: 'branded questions',
+    discoveryLabel: 'discovery questions',
     positive: 'Positive',
     neutral: 'Neutral',
     negative: 'Negative',
@@ -157,6 +161,9 @@ const i18n = {
     ownDomain: 'dominio proprio',
     byCategory: 'Per tipo di fonte',
     sentiment: 'Tono',
+    brandedSplit: 'Tasso di menzione per tipo di domanda',
+    brandedLabel: 'domande branded',
+    discoveryLabel: 'domande di scoperta',
     positive: 'Positive',
     neutral: 'Neutre',
     negative: 'Negative',
@@ -224,6 +231,9 @@ const i18n = {
     ownDomain: 'egen domän',
     byCategory: 'Per källtyp',
     sentiment: 'Ton',
+    brandedSplit: 'Omnämnandegrad per frågetyp',
+    brandedLabel: 'varumärkta frågor',
+    discoveryLabel: 'upptäcktsfrågor',
     positive: 'Positiva',
     neutral: 'Neutrala',
     negative: 'Negativa',
@@ -495,6 +505,30 @@ export async function GET(req: NextRequest) {
     if (r.brand_mentioned && r.sentiment && r.sentiment in sent)
       sent[r.sentiment as keyof typeof sent]++
 
+  // Branded vs discovery split — informational only. The sentiment bar above is
+  // deliberately left alone (it counts mentioned rows, denominator 'mentioned');
+  // this line sits underneath it because a blended mention rate hides the only
+  // half that moves: a question that already names the brand is answered with a
+  // mention almost every time.
+  let brandedTotal = 0
+  let brandedMentions = 0
+  let discoveryTotal = 0
+  let discoveryMentions = 0
+  for (const r of scoped) {
+    const branded = isBrandedPrompt((r as { prompt_text?: string | null }).prompt_text, {
+      name: brandName,
+      aliases: brand.aliases ?? [],
+      domain: brandDomain,
+    })
+    if (branded) {
+      brandedTotal++
+      if (r.brand_mentioned) brandedMentions++
+    } else {
+      discoveryTotal++
+      if (r.brand_mentioned) discoveryMentions++
+    }
+  }
+
   const sov = computeShareOfVoice(scoped as unknown as SovInputRow[], brandName, {
     declaredCompetitors: brandCompetitors,
     maxSeries: 6,
@@ -620,7 +654,7 @@ export async function GET(req: NextRequest) {
   // Percentages over `mentioned`, not N — the tile copy and the SoV section
   // already treat mentions as the honest denominator for tone.
   const sentimentSection = mentioned
-    ? `<h3>${t.sentiment}</h3><div class="chart"><div class="sent-track"><span class="sent-pos" style="width:${pct(sent.positive, mentioned)}%"></span><span class="sent-neu" style="width:${pct(sent.neutral, mentioned)}%"></span><span class="sent-neg" style="width:${pct(sent.negative, mentioned)}%"></span></div><div class="legend"><span><span class="chip" style="background:#0ca30c"></span>${t.positive} ${sent.positive} (${pct(sent.positive, mentioned)}%)</span><span><span class="chip" style="background:#8c8880"></span>${t.neutral} ${sent.neutral} (${pct(sent.neutral, mentioned)}%)</span><span><span class="chip" style="background:#d03b3b"></span>${t.negative} ${sent.negative}</span></div></div>`
+    ? `<h3>${t.sentiment}</h3><div class="chart"><div class="sent-track"><span class="sent-pos" style="width:${pct(sent.positive, mentioned)}%"></span><span class="sent-neu" style="width:${pct(sent.neutral, mentioned)}%"></span><span class="sent-neg" style="width:${pct(sent.negative, mentioned)}%"></span></div><div class="legend"><span><span class="chip" style="background:#0ca30c"></span>${t.positive} ${sent.positive} (${pct(sent.positive, mentioned)}%)</span><span><span class="chip" style="background:#8c8880"></span>${t.neutral} ${sent.neutral} (${pct(sent.neutral, mentioned)}%)</span><span><span class="chip" style="background:#d03b3b"></span>${t.negative} ${sent.negative}</span></div>${brandedTotal + discoveryTotal > 0 ? `<p class="mut">${t.brandedSplit}: ${t.brandedLabel} ${brandedMentions}/${brandedTotal} (${pct(brandedMentions, brandedTotal)}%) · ${t.discoveryLabel} ${discoveryMentions}/${discoveryTotal} (${pct(discoveryMentions, discoveryTotal)}%)</p>` : ''}</div>`
     : ''
 
   const sovMax = sov.entities.length ? Math.max(...sov.entities.map((e) => e.share)) : 0

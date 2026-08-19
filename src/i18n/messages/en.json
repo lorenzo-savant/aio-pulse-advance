@@ -804,7 +804,12 @@
     "guide_sentiment_value": "Sentiment feeds into your AVI score (15% weight) and GEO Score trust pillar. A positive score improves your overall AI visibility ranking.",
     "guide_hallucination_value": "Hallucination rate affects your AVI score (10% weight — anti-hallucination component). Lower is better. Investigate flagged claims to ensure AI systems represent your brand accurately.",
     "guide_industry_terms": "This analysis uses standard industry terminology: AEO (Answer Engine Optimization), GEO (Generative Engine Optimization), and LLM SEO — based on the Bertram glossary (CC BY 4.0) and Kalyani Khona's LLM behavior research.",
-    "guide_footer_disclaimer": "Recommendations are based on OBSERVED BEHAVIORAL PATTERNS, not guaranteed outcomes. AI model behavior can change without notice."
+    "guide_footer_disclaimer": "Recommendations are based on OBSERVED BEHAVIORAL PATTERNS, not guaranteed outcomes. AI model behavior can change without notice.",
+    "scope_all": "All questions",
+    "scope_discovery": "Discovery only",
+    "scope_branded": "Branded only",
+    "scope_hint": "Questions that already name the brand are answered with a mention almost every time and in a neutral-to-positive tone — the competitive signal lives in the discovery questions.",
+    "scope_counts": "{branded} branded · {discovery} discovery."
   },
   "citations": {
     "page_title": "Citation Trends",

@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { classifyPromptCategory } from '@/lib/services/prompt-classification'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -319,6 +320,13 @@ export default function OnboardingPage() {
             language: p.language,
             engines: p.engines,
             run_frequency: 'daily',
+            // Onboarding generates these from presets, so nobody picks a
+            // category — classify from the text with the shared rule.
+            category: classifyPromptCategory(p.text, {
+              name: brand.name,
+              aliases: [],
+              domain: null,
+            }),
           }),
         })
         const pData = await pRes.json()

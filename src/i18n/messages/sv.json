@@ -804,7 +804,12 @@
     "guide_sentiment_value": "Sentiment påverkar din AVI-poäng (15% vikt) och GEO Säkerhetspelare. En positiv poäng förbättrar din övergripande AI-synlighetsrankning.",
     "guide_hallucination_value": "Hallucinationsfrekvens påverkar din AVI-poäng (10% vikt — anti-hallucinationskomponent). Lägre är bättre. Undersök flaggade påståenden för att säkerställa att AI-system representerar ditt varumärke korrekt.",
     "guide_industry_terms": "Denna analys använder standardbranschterminologi: AEO (Answer Engine Optimization), GEO (Generative Engine Optimization) och LLM SEO — baserat på Bertram-ordlistan (CC BY 4.0) och Kalyani Khonas LLM-beteendeforskning.",
-    "guide_footer_disclaimer": "Rekommendationer baseras på OBSERVERADE BETEENDEMÖNSTER, inte garanterade utfall. AI-modellers beteende kan ändras utan förvarning."
+    "guide_footer_disclaimer": "Rekommendationer baseras på OBSERVERADE BETEENDEMÖNSTER, inte garanterade utfall. AI-modellers beteende kan ändras utan förvarning.",
+    "scope_all": "Alla frågor",
+    "scope_discovery": "Endast upptäckt",
+    "scope_branded": "Endast varumärkta",
+    "scope_hint": "Frågor som redan nämner varumärket besvaras nästan alltid med ett omnämnande och i neutral till positiv ton — den konkurrensmässiga signalen finns i upptäcktsfrågorna.",
+    "scope_counts": "{branded} varumärkta · {discovery} upptäckt."
   },
   "citations": {
     "page_title": "Citattrender",

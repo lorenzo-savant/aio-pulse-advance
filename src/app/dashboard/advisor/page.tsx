@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/index'
 import { cn } from '@/lib/utils'
 import type { WorkOrder, WorkOrderStatus } from '@/types'
+import { classifyPromptCategory } from '@/lib/services/prompt-classification'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -220,6 +221,13 @@ export default function AdvisorPage() {
           brand_id: selectedBrand.id,
           text: p.text,
           language: result?.context?.brand?.language || 'en',
+          // Advisor recommends the prompt; it does not state a category. Read
+          // it off the text rather than letting the column go empty.
+          category: classifyPromptCategory(p.text, {
+            name: selectedBrand.name,
+            aliases: (selectedBrand as { aliases?: string[] }).aliases ?? [],
+            domain: (selectedBrand as { domain?: string | null }).domain ?? null,
+          }),
         }),
       })
       if (res.ok) {
@@ -387,13 +395,13 @@ export default function AdvisorPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-900/50 bg-red-900/10 px-4 py-3 text-sm text-red-400">
+        <div className="border-red-900/50 bg-red-900/10 text-red-400 flex items-start gap-2 rounded-lg border px-4 py-3 text-sm">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <p className="font-medium">{error}</p>
             {error.toLowerCase().includes('no llm provider') && (
-              <p className="mt-1 text-xs text-red-400/80">
-                Set <code className="rounded bg-red-900/20 px-1 py-0.5">GROQ_API_KEY</code> in
+              <p className="text-red-400/80 mt-1 text-xs">
+                Set <code className="bg-red-900/20 rounded px-1 py-0.5">GROQ_API_KEY</code> in
                 .env.local (free at console.groq.com/keys) and restart the dev server.
               </p>
             )}

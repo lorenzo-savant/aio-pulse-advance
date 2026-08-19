@@ -189,14 +189,69 @@ versionamento della §2.
 
 ---
 
-## 7. Cosa non ho verificato
+## 7. Il clustering, eseguito — 2026-08-19
 
-- **Qualità dei cluster sui prompt reali.** Non ho eseguito il clustering: il
-  greedy centroid su 206 prompt svedesi con soglia da tarare potrebbe produrre
-  6 topic sensati o 40 microcluster. È la prima cosa da provare in
-  implementazione, e se produce microcluster il resto del design non serve.
-- **Se 6 topic sia il numero giusto.** L'ho usato come ordine di grandezza in
-  tutti i calcoli. Va tarato sui dati, non deciso qui.
+Non è più un'ipotesi. `scripts/probe-prompt-clustering.ts` ha embeddato tutti i
+206 prompt reali (`text-embedding-3-small`, sola lettura, nessuna scrittura) e
+li ha passati a `clusterResponses` a quattro soglie. Output completo riprodotto
+rieseguendo lo script.
+
+### 7.1 A soglia 0,70 — la sola che funziona
+
+| Brand | Prompt | Cluster | Singleton | Cluster da 3+ | Copertura |
+|---|---|---|---|---|---|
+| Relovie | 62 | 21 | 12 | **8** | 48/62 (77%) |
+| Authentic Beauty Concept | 50 | 13 | 6 | **4** | 38/50 (76%) |
+| Acasting Sweden AB | 76 | 29 | 19 | 3 | 43/76 (57%) |
+| sjostensweden | 11 | 10 | **9** | 0 | 0/11 (0%) |
+| Savant media AB | 7 | 3 | 2 | 1 | 5/7 (71%) |
+
+I topic di Relovie sono difendibili davanti a un cliente: mobili usati (11),
+Samsung Galaxy (10), iPhone (10), il brand stesso (4), divani/cucina (4),
+Relovie vs Sellpy (3), acquisto sicuro dell'usato (3), prezzi Samsung (3).
+Sono le otto conversazioni in cui il brand compete, e si leggono da sole.
+
+### 7.2 Tre risultati che cambiano il design
+
+**1. La soglia di default del prodotto è sbagliata per i prompt.**
+`clusterResponses` usa `threshold: 0.78`
+([`response-clustering.ts:187`](../../src/lib/services/response-clustering.ts)),
+tarato su *risposte* lunghe. Sui prompt — brevi, quindi con coseno medio più
+basso — a 0,78 Relovie produce 41 cluster con 30 singleton e Acasting 50 con 34.
+**È esattamente lo scenario "quaranta microcluster".** A 0,82 si arriva a 60
+cluster su 76 prompt: un cluster per prompt, cioè niente. Il layer topic deve
+dichiarare la propria soglia (0,70) e non ereditare quella delle risposte.
+
+**2. Sotto ~40 prompt un brand non ha topic, e la pagina deve dirlo.**
+sjostensweden: 11 prompt → 9 singleton, zero cluster utili. Savant Media: 7
+prompt → un cluster. Non è un difetto del clustering, è che non c'è massa. La
+feature ha una precondizione di volume: sotto la soglia si mostra "prompt
+insufficienti per costruire topic", non una pagina di singleton spacciati per
+temi.
+
+**3. Il nome del brand domina l'embedding, e su un brand crea un blob.**
+Acasting: a 0,70 un solo cluster inghiotte 35 dei 76 prompt (46%), perché quasi
+ogni prompt contiene "acasting". Il vettore misura soprattutto la presenza del
+nome, non l'intento della domanda. Relovie e Authentic Beauty non hanno il
+problema perché i loro prompt di scoperta non nominano il brand.
+**Da testare in implementazione: rimuovere nome e alias del brand dal testo
+prima di embeddare.** È una riga di codice e riusa `isBrandedPrompt`; se il
+blob si scioglie in topic veri, Acasting passa da 3 a un numero utile.
+
+### 7.3 Un difetto già visibile: le etichette non sono mostrabili
+
+`labelCluster` costruisce l'etichetta con le parole più frequenti meno una
+stoplist **solo inglese** ([`response-clustering.ts:54`](../../src/lib/services/response-clustering.ts)).
+Su prompt svedesi produce "kan · hitta · begagnade", "hur · blir · man",
+"vad · samsung · galaxy": grammatica, non temi. I cluster sono giusti, i nomi no.
+Prima di mostrare un topic a un cliente serve una stoplist svedese e italiana —
+lavoro piccolo e indipendente, ma bloccante per la UI.
+
+### 7.4 Cosa resta non verificato
+
+- **Se 6 sia il numero giusto di topic.** La misura dice 4–8 per i brand con
+  massa sufficiente, il che conferma l'ordine di grandezza usato nei calcoli di
+  §3 e §6. Il numero esatto lo decide la soglia, non un parametro.
 - **L'interazione con la riclassificazione delle categorie** (C4, commit
   `33c30f5`): topic e categoria sono due tassonomie parallele sugli stessi
   prompt. Se i topic funzionano, la categoria diventa ridondante per l'analisi e
@@ -206,10 +261,12 @@ versionamento della §2.
 
 ## Raccomandazione
 
-**Fare — e non aspettare C2.**
+**Fare — e non aspettare C2.** Il clustering eseguito la conferma: sui brand con
+massa (50+ prompt) escono 4–8 topic difendibili che coprono i tre quarti dei
+prompt. Non è la carta che temevo.
 
-Con questi tre vincoli, che non sono negoziabili perché sono ciò che separa la
-feature dal peggioramento:
+Con questi cinque vincoli — i primi tre di design, gli ultimi due imposti dalla
+misura:
 
 1. **Clusterizzare i prompt, non le risposte.** Copertura 100% invece di 10,4%,
    costo nullo, topic stabili per costruzione.
@@ -218,7 +275,11 @@ feature dal peggioramento:
 3. **Bucket settimanale, `n` sempre esposto, sotto 5 non si pubblica un
    numero.** A ~11 risposte al giorno per brand la granularità giornaliera
    sarebbe teatro.
+4. **Soglia 0,70, dichiarata dal layer topic.** Ereditare lo 0,78 delle risposte
+   produce quaranta microcluster — misurato, §7.2.
+5. **Precondizione di volume esplicita.** Sotto ~40 prompt il brand non ha
+   topic: la pagina lo dice, non finge.
 
-Prima riga di codice consigliata: non la tabella, ma **una prova di clustering
-sui 206 prompt reali** per vedere se i topic che escono sono difendibili davanti
-a un cliente. Se non lo sono, tutto il resto di questo documento è carta.
+Prima riga di codice consigliata, ora che il clustering è stato provato: **togliere
+il nome del brand dal testo prima di embeddare** e rieseguire la probe. È
+l'unica cosa che separa Acasting da un risultato utile, e si misura in minuti.

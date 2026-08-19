@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { runTechnicalAudit, __clearPsiCacheForTests } from '../services/technical-seo-audit'
+import {
+  runTechnicalAudit,
+  checkSlugLength,
+  checkServerRendering,
+  __clearPsiCacheForTests,
+} from '../services/technical-seo-audit'
 
 // runTechnicalAudit calls safeFetch, which does DNS resolution + private-IP
 // rejection before any HTTP request. The synthetic URLs in these tests
@@ -582,5 +587,64 @@ describe('runTechnicalAudit', () => {
     expect(byId['content-hreflang']?.status).toBe('pass')
     expect(byId['content-hreflang']?.message).toMatch(/with x-default/)
     expect(byId['content-mixed']?.status).toBe('info') // http:// page -> skipped
+  })
+})
+
+describe('checkSlugLength', () => {
+  it('passes a slug inside the 17–40 band cited pages cluster in', () => {
+    const c = checkSlugLength('https://acme.com/blog/workflow-automation-guide')
+    expect(c.status).toBe('pass')
+    expect(c.details).toBe('workflow-automation-guide')
+  })
+
+  it('warns on both extremes, and never fails — it is a correlation', () => {
+    expect(checkSlugLength('https://acme.com/a').status).toBe('warning')
+    expect(checkSlugLength('https://acme.com/' + 'x'.repeat(60)).status).toBe('warning')
+    expect(checkSlugLength('https://acme.com/' + 'x'.repeat(60)).message).toContain('very long')
+    expect(checkSlugLength('https://acme.com/a').status).not.toBe('fail')
+  })
+
+  it('does not punish the homepage, which has no slug', () => {
+    // 'info' keeps it out of the pass/warn denominator instead of handing the
+    // page a free pass.
+    expect(checkSlugLength('https://acme.com/').status).toBe('info')
+    expect(checkSlugLength('https://acme.com').status).toBe('info')
+  })
+
+  it('ignores a file extension and a trailing slash', () => {
+    expect(checkSlugLength('https://acme.com/guides/workflow-automation.html').details).toBe(
+      'workflow-automation',
+    )
+    expect(checkSlugLength('https://acme.com/guides/workflow-automation-guide/').details).toBe(
+      'workflow-automation-guide',
+    )
+  })
+})
+
+describe('checkServerRendering', () => {
+  it('passes when the raw HTML already carries the content', () => {
+    const html = `<html><body><h1>Guide</h1><p>${'word '.repeat(300)}</p></body></html>`
+    const c = checkServerRendering(html)
+    expect(c.status).toBe('pass')
+    expect(c.message).toContain('server-rendered')
+  })
+
+  it('warns on an empty mount point next to script bundles', () => {
+    const html =
+      '<html><body><div id="root"></div>' +
+      '<script src="/a.js"></script><script src="/b.js"></script><script src="/c.js"></script>' +
+      '</body></html>'
+    const c = checkServerRendering(html)
+    expect(c.status).toBe('warning')
+    expect(c.message).toContain('client-side rendered')
+  })
+
+  it('does not count script or style bodies as visible text', () => {
+    const html = `<html><head><style>${'a{color:red}'.repeat(80)}</style></head><body><script>${'var x = 1;'.repeat(80)}</script><p>short</p></body></html>`
+    expect(checkServerRendering(html).status).toBe('warning')
+  })
+
+  it('never fails — the heuristic can be wrong about a sparse page', () => {
+    expect(checkServerRendering('<html><body><p>hi</p></body></html>').status).not.toBe('fail')
   })
 })

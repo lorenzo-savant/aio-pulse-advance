@@ -103,6 +103,21 @@ const CHECK_META: Record<string, CheckPriorityMeta> = {
     ease: 85,
   },
 
+  // Content shape — both are correlations from the cited-page study, so the
+  // copy says what to weigh, not what to obey.
+  'content-ssr': {
+    title: 'Server-render the page content',
+    why: 'AI crawlers do not run JavaScript. If the content only appears after hydration, they read an empty shell — nothing to cite.',
+    impact: 80,
+    ease: 30,
+  },
+  'content-slug-length': {
+    title: 'Consider a shorter, more descriptive URL slug',
+    why: 'Cited pages cluster at 17–40 characters. Worth applying to new URLs — renaming a live one costs redirects, so it is rarely worth it on its own.',
+    impact: 20,
+    ease: 40,
+  },
+
   // llms.txt
   'llms-txt-exists': {
     title: 'Publish an llms.txt file',

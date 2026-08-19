@@ -179,7 +179,8 @@
       "credits": "Krediter",
       "api_costs": "API-kostnader",
       "settings": "Inställningar",
-      "documentation": "Dokumentation"
+      "documentation": "Dokumentation",
+      "fan_out": "Sökfrågor"
     },
     "badges": {
       "begin": "Starta",
@@ -1638,5 +1639,30 @@
     "update_button": "Uppdatera lösenord",
     "updating": "Uppdaterar…",
     "back_to_sign_in": "Tillbaka till inloggning"
+  },
+  "fan_out": {
+    "page_title": "Sökfrågor motorerna körde",
+    "page_subtitle": "De sökningar motorerna faktiskt gjorde — sällan den prompt ni skickade.",
+    "empty_title": "Inga sökfrågor fångade ännu",
+    "empty_body": "Insamlingen startade 19 augusti 2026. Körningar före det datumet saknar sökfrågor och går inte att återskapa. Nästa övervakningskörning fyller den här sidan.",
+    "coverage": "Täckning",
+    "captured": "Körningar med sökfrågor",
+    "not_captured": "Ej fångat",
+    "not_captured_hint": "Äldre körningar, eller Perplexity — dess API visar aldrig vilka frågor den körde.",
+    "searchless": "Svarade utan att söka",
+    "searchless_hint": "Motorn använde modellens minne istället för webben.",
+    "expansion": "Sökningar per körning",
+    "expansion_hint": "Hur många sökningar en fråga expanderar till.",
+    "table_query": "Sökning motorn körde",
+    "table_runs": "Körningar",
+    "table_engines": "Motorer",
+    "table_mention": "Omnämnandegrad",
+    "table_citation": "Citeringsgrad",
+    "table_drift": "Avvikelse",
+    "drift_hint": "Ordöverlappsavstånd från prompten som utlöste den. Hög avvikelse betyder att sidan ni anpassat efter prompten är anpassad efter en sträng ingen sökte på.",
+    "triggered_by": "Utlöst av",
+    "window": "Senaste {days} dagarna",
+    "why_title": "Varför detta är den primära mätningen",
+    "why_body": "När en fråga beror på vad som är sant just nu svarar motorn inte ur minnet: den gör om frågan till verkliga webbsökningar och sammanfattar det den hittar. Det är de strängarna — inte er prompt — som varumärket konkurrerar om."
   }
 }

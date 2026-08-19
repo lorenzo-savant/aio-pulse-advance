@@ -73,7 +73,12 @@ describe('Gemini engine grounding', () => {
   const interactionsResponse = {
     status: 'completed',
     steps: [
-      { content: [{ text: '' }] }, // search step — must not win the walk-back
+      // Real shape captured live 2026-08-19: `arguments` is a JSON *string*.
+      {
+        type: 'google_search_call',
+        arguments: '{"queries":["basta sajter begagnad elektronik sverige"]}',
+        content: [{ text: '' }], // search step — must not win the walk-back
+      },
       {
         content: [
           {
@@ -170,6 +175,34 @@ describe('Gemini engine grounding', () => {
     const [calledUrl, calledInit] = fetchSpy.mock.calls[0] as [string, RequestInit]
     expect(calledUrl).toContain('gemini-2.5-flash:generateContent')
     expect(String(calledInit.body)).toContain('googleSearch')
+  })
+
+  it('carries the query fan-out out of the Interactions response', async () => {
+    // The fan-out arrives on every grounded call and was discarded until
+    // 2026-08-19. This pins that it now reaches the caller, which is what
+    // monitoring persists into monitoring_results.search_queries.
+    const fetchSpy = vi.fn().mockResolvedValue(okJson(interactionsResponse))
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const { simulateEngineResponse } = await import('../services/ai-router')
+    const result = await simulateEngineResponse('var köper jag begagnat?', 'gemini', 'sv')
+
+    expect(result.searchQueries).toEqual(['basta sajter begagnad elektronik sverige'])
+  })
+
+  it('reports an unsearched answer as [] and never as undefined', async () => {
+    // No google_search_call step: the engine answered from model memory. That
+    // is engine behaviour, distinct from a provider that hides its queries.
+    const noSearch = {
+      status: 'completed',
+      steps: [{ type: 'model_output', content: [{ text: 'answer', annotations: [] }] }],
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(okJson(noSearch)))
+
+    const { simulateEngineResponse } = await import('../services/ai-router')
+    const result = await simulateEngineResponse('test', 'gemini')
+
+    expect(result.searchQueries).toEqual([])
   })
 
   it('never leaks the measured brand into the outbound engine prompt', async () => {

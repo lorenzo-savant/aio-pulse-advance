@@ -179,7 +179,8 @@
       "credits": "Credits",
       "api_costs": "API Costs",
       "settings": "Settings",
-      "documentation": "Documentation"
+      "documentation": "Documentation",
+      "fan_out": "Query Fan-out"
     },
     "badges": {
       "begin": "Begin",
@@ -1638,5 +1639,30 @@
     "update_button": "Update Password",
     "updating": "Updating…",
     "back_to_sign_in": "Back to Sign In"
+  },
+  "fan_out": {
+    "page_title": "Query Fan-out",
+    "page_subtitle": "The searches the engines actually ran — rarely the prompt you sent.",
+    "empty_title": "No fan-out captured yet",
+    "empty_body": "Capture started on 19 August 2026. Runs from before that date carry no fan-out and cannot be recovered. The next monitoring run will populate this page.",
+    "coverage": "Coverage",
+    "captured": "Runs with fan-out",
+    "not_captured": "Not captured",
+    "not_captured_hint": "Legacy runs, or Perplexity — its API never exposes the queries it ran.",
+    "searchless": "Answered without searching",
+    "searchless_hint": "The engine used model memory instead of the live web.",
+    "expansion": "Searches per run",
+    "expansion_hint": "How many searches one question expands into.",
+    "table_query": "Search the engine ran",
+    "table_runs": "Runs",
+    "table_engines": "Engines",
+    "table_mention": "Mention rate",
+    "table_citation": "Citation rate",
+    "table_drift": "Drift",
+    "drift_hint": "Word-overlap distance from the prompt that triggered it. High drift means the page you tuned to the prompt is tuned to a string nobody searched.",
+    "triggered_by": "Triggered by",
+    "window": "Last {days} days",
+    "why_title": "Why this is the primary measurement",
+    "why_body": "When a question depends on what is true right now, an engine does not answer from memory: it turns the question into real web searches and synthesises what it finds. Those strings — not your prompt — are what the brand competes for."
   }
 }

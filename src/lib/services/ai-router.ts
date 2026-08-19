@@ -8,6 +8,11 @@ import { isPerplexityAvailable, callPerplexityWithCitations } from './perplexity
 import { isAnthropicAvailable, callAnthropic, callAnthropicWithWebSearch } from './anthropic'
 import { logger } from '@/lib/logger'
 import { safeFetch, SsrfError } from '@/lib/utils/safe-fetch'
+import {
+  extractGeminiGroundingFanOut,
+  extractGeminiInteractionsFanOut,
+  normalizeFanOutQueries,
+} from './fan-out'
 import type { PromptLang } from '@/lib/prompt-library'
 
 const LANGUAGE_LABEL: Record<PromptLang, string> = {
@@ -171,6 +176,10 @@ interface GeminiGroundingResponse {
 interface GeminiInteractionsResponse {
   status?: string
   steps?: Array<{
+    /** 'google_search_call' steps carry the fan-out in `arguments`, which is a
+     *  JSON string rather than an object. See extractGeminiInteractionsFanOut. */
+    type?: string
+    arguments?: string
     content?: Array<{
       text?: string
       annotations?: Array<{ url?: string; start_index?: number; end_index?: number }>
@@ -180,7 +189,7 @@ interface GeminiInteractionsResponse {
 
 async function callGeminiWithSearch(
   prompt: string,
-): Promise<{ text: string; citations: string[] }> {
+): Promise<{ text: string; citations: string[]; searchQueries: string[] }> {
   const apiKey = process.env['GEMINI_API_KEY']
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
@@ -238,7 +247,11 @@ async function callGeminiWithSearch(
   // citations were this single redirect host). resolveVertexRedirects follows
   // each one to its final destination so the dashboard sees real sources.
   const citations = await resolveVertexRedirects(rawUris)
-  return { text, citations }
+  // webSearchQueries has been declared in this response type since grounding
+  // shipped and was never read — the fan-out was arriving on every grounded
+  // call and being discarded. See fan-out.ts.
+  const searchQueries = extractGeminiGroundingFanOut(candidate?.groundingMetadata)
+  return { text, citations, searchQueries }
 }
 
 // ─── Gemini Interactions grounded call (3.x models) ─────────────────────────
@@ -247,7 +260,7 @@ async function callGeminiInteractionsSearch(
   prompt: string,
   model: string,
   apiKey: string,
-): Promise<{ text: string; citations: string[] }> {
+): Promise<{ text: string; citations: string[]; searchQueries: string[] }> {
   const doFetch = () =>
     fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
       method: 'POST',
@@ -276,6 +289,8 @@ async function callGeminiInteractionsSearch(
   // The answer is the LAST step carrying text content; earlier steps are the
   // search executions. Walk backwards so a trailing tool step never wins.
   const steps = data.steps ?? []
+  // Those earlier search steps are not noise — they hold the fan-out.
+  const searchQueries = extractGeminiInteractionsFanOut(steps)
   for (let i = steps.length - 1; i >= 0; i--) {
     const items = steps[i]?.content ?? []
     const text = items
@@ -290,7 +305,7 @@ async function callGeminiInteractionsSearch(
     // De-dup before resolving: 42 annotations routinely collapse to a
     // handful of sources, and each unresolved redirect costs an HTTP GET.
     const citations = await resolveVertexRedirects([...new Set(rawUris)])
-    return { text, citations }
+    return { text, citations, searchQueries }
   }
   throw new Error('Empty response from Gemini Interactions API')
 }
@@ -371,6 +386,12 @@ export async function simulateEngineResponse(
   text: string
   provider: string
   citations?: string[]
+  /** The searches the engine actually ran — the query fan-out.
+   *  `undefined` means NOT CAPTURED (Perplexity never exposes its queries; a
+   *  model-memory answer never searched at all and reports []). The caller
+   *  must preserve that distinction all the way to the database: NULL is our
+   *  blindness, [] is engine behaviour. */
+  searchQueries?: string[]
   /** Follow-up questions the engine surfaced (currently Perplexity only). */
   relatedQuestions?: string[]
   retrieval: 'live' | 'model-memory'
@@ -401,11 +422,17 @@ export async function simulateEngineResponse(
     // Live web search first (real data + citations); plain chat as fallback.
     if (isEngineWebSearchEnabled()) {
       try {
-        const { text, citations } = await callOpenAIWithWebSearch(fullPrompt, {
+        const { text, citations, searchQueries } = await callOpenAIWithWebSearch(fullPrompt, {
           country: LOCALE_COUNTRY[language],
         })
         if (text) {
-          return { text, provider: 'openai:gpt-4o-mini+web', citations, retrieval: 'live' }
+          return {
+            text,
+            provider: 'openai:gpt-4o-mini+web',
+            citations,
+            searchQueries,
+            retrieval: 'live',
+          }
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
@@ -430,8 +457,14 @@ export async function simulateEngineResponse(
   if (engine === 'gemini' && isGeminiAvailable()) {
     // Try Google Search grounding first, fall back to plain generate.
     try {
-      const { text, citations } = await callGeminiWithSearch(fullPrompt)
-      return { text, provider: geminiProviderLabel('search'), citations, retrieval: 'live' }
+      const { text, citations, searchQueries } = await callGeminiWithSearch(fullPrompt)
+      return {
+        text,
+        provider: geminiProviderLabel('search'),
+        citations,
+        searchQueries,
+        retrieval: 'live',
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       errors.push(`Gemini (search): ${msg}`)
@@ -452,6 +485,9 @@ export async function simulateEngineResponse(
   if (engine === 'perplexity' && isPerplexityAvailable()) {
     try {
       const { text, citations, relatedQuestions } = await callPerplexityWithCitations(fullPrompt)
+      // searchQueries deliberately absent: sonar returns search_results and
+      // related_questions but never the queries it ran (verified 2026-08-19).
+      // Leaving it undefined records "not captured" rather than "no searches".
       return { text, provider: 'perplexity:sonar', citations, relatedQuestions, retrieval: 'live' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)

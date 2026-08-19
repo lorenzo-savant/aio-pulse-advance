@@ -31,6 +31,7 @@ import {
   GitBranch,
   Sparkle,
   Link2,
+  Search,
   Target,
   Filter,
   ShieldCheck,
@@ -163,6 +164,16 @@ export const NAV_SECTIONS: NavSection[] = [
         href: '/dashboard/citation-sources',
         icon: Link2,
         labelKey: 'sidebar.items.citation_sources',
+      },
+      // Query fan-out sits between "which domains get cited" and "how often we
+      // are named", because it answers the question underneath both: which
+      // search strings the engines actually ran. Locked until there is data —
+      // capture began 2026-08-19 and nothing before it is recoverable.
+      {
+        href: '/dashboard/fan-out',
+        icon: Search,
+        labelKey: 'sidebar.items.fan_out',
+        lockedUntil: (s) => !s.hasData,
       },
       {
         href: '/dashboard/citations',

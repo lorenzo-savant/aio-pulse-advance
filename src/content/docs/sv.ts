@@ -270,6 +270,27 @@ Läs betyget som ett utgångsläge, inte som en dom. Ett D intill ett friskt AVI
 Pelarna behöver övervakningsdata. Ett varumärke utan körningar ger ingen poäng och visar ett förklarande tomt läge istället för en nolla.`,
       },
       {
+        id: 'fan-out',
+        title: 'Sökfrågor — vad motorerna faktiskt söker på',
+        content: `När en fråga beror på vad som är sant just nu svarar motorn inte ur minnet. Den gör om er fråga till en till tre verkliga webbsökningar och sammanfattar det den hittar. Det är de strängarna — inte er prompt — ni konkurrerar om.
+
+De är sällan samma sak. En verklig mätning från 19 augusti 2026: prompten "Vilka sajter är bäst för att köpa begagnad elektronik i Sverige 2026?" fick Gemini att söka på "basta sajter begagnad elektronik sverige" och "kop begagnad elektronik garanti sverige". Diakriterna borta, årtalet borta, en fråga blev två sökningar, och ett begrepp prompten aldrig innehöll — garanti — lades till.
+
+Den praktiska följden: en sida anpassad efter promptens formulering är anpassad efter en sträng ingen sökte på. Kolumnen Avvikelse mäter det avståndet, så ett högt tal visar var sidan och sökningen har glidit isär.
+
+Vad sidan visar:
+
+• Täckning — hur många körningar som gav sökfrågor alls. Två tal hålls isär med avsikt: ej fångat betyder att vi inte kunde se sökningarna, svarade utan att söka betyder att motorn använde modellens minne istället för webben. Att behandla det första som noll sökningar vore en lögn om motorn.
+• Sökningar per körning — hur mycket en fråga expanderar. Vanligtvis en till tre.
+• Rangordningen — varje söksträng, hur ofta den kördes, på vilka motorer, hur ofta ni nämndes och citerades när den kördes, och vilka av era prompts som utlöste den.
+
+Rangordningen sätter volym först och sedan lägst omnämnandegrad, så de sökningar motorerna kör hela tiden och där ni saknas hamnar överst. Det är arbetslistan.
+
+En uttalad begränsning: Perplexity visar inte vilka sökningar den kör. Dess svar mäts normalt överallt annars i produkten, men här kan den inte bidra, och dess körningar räknas som ej fångade — inte som noll.
+
+Insamlingen startade 19 augusti 2026. Körningar före det datumet saknar sökfrågor och går inte att återskapa.`,
+      },
+      {
         id: 'citations-rate',
         title: 'Citat — graden över tid',
         content: `Citeringsgraden är andelen svar som nämner er, ritad över tid som en trend för alla motorer plus en uppdelning per motor, med konkurrenternas nivåer på samma axel.

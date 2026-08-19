@@ -179,7 +179,8 @@
       "credits": "Crediti",
       "api_costs": "Costi API",
       "settings": "Impostazioni",
-      "documentation": "Documentazione"
+      "documentation": "Documentazione",
+      "fan_out": "Query fan-out"
     },
     "badges": {
       "begin": "Inizia",
@@ -1638,5 +1639,30 @@
     "update_button": "Aggiorna password",
     "updating": "Aggiornamento…",
     "back_to_sign_in": "Torna al login"
+  },
+  "fan_out": {
+    "page_title": "Query fan-out",
+    "page_subtitle": "Le ricerche che i motori hanno davvero eseguito — raramente il prompt che hai inviato.",
+    "empty_title": "Nessun fan-out ancora catturato",
+    "empty_body": "La cattura è iniziata il 19 agosto 2026. Le esecuzioni precedenti non hanno fan-out e non sono recuperabili. La prossima esecuzione di monitoraggio popolerà questa pagina.",
+    "coverage": "Copertura",
+    "captured": "Esecuzioni con fan-out",
+    "not_captured": "Non catturato",
+    "not_captured_hint": "Esecuzioni storiche, oppure Perplexity: la sua API non espone mai le query eseguite.",
+    "searchless": "Risposte senza ricerca",
+    "searchless_hint": "Il motore ha usato la memoria del modello invece del web.",
+    "expansion": "Ricerche per esecuzione",
+    "expansion_hint": "In quante ricerche si espande una domanda.",
+    "table_query": "Ricerca eseguita dal motore",
+    "table_runs": "Esecuzioni",
+    "table_engines": "Motori",
+    "table_mention": "Tasso menzione",
+    "table_citation": "Tasso citazione",
+    "table_drift": "Scarto",
+    "drift_hint": "Distanza di sovrapposizione lessicale dal prompt che l'ha innescata. Uno scarto alto significa che la pagina ottimizzata sul prompt è ottimizzata per una stringa che nessuno ha cercato.",
+    "triggered_by": "Innescata da",
+    "window": "Ultimi {days} giorni",
+    "why_title": "Perché è la misura primaria",
+    "why_body": "Quando una domanda dipende da cosa è vero adesso, il motore non risponde a memoria: trasforma la domanda in ricerche web reali e sintetizza ciò che trova. Sono quelle stringhe — non il tuo prompt — ciò per cui il brand compete."
   }
 }

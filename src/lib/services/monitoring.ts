@@ -244,6 +244,7 @@ export async function runMonitoringCheck(
     text: responseText,
     provider: simulationProvider,
     citations: engineCitations = [],
+    searchQueries: engineSearchQueries,
   } = await withLlmCache(
     {
       surface: 'monitoring',
@@ -384,6 +385,12 @@ export async function runMonitoringCheck(
     // which is which.
     response_provider: simulationProvider ?? null,
     citation_source: citationSource,
+    // Query fan-out: the searches the engine actually ran. `?? null` is
+    // load-bearing — undefined means the provider does not expose its queries
+    // (Perplexity) and must stay NULL, distinct from an empty array, which
+    // means the engine answered without searching. Collapsing the two would
+    // turn "we cannot see it" into "it did not happen". See fan-out.ts.
+    search_queries: engineSearchQueries ?? null,
   }
 }
 

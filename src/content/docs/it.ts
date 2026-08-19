@@ -270,6 +270,27 @@ Leggi il voto come punto di partenza, non come sentenza. Una D con un AVI sano s
 I pilastri hanno bisogno di dati di monitoraggio. Un brand senza esecuzioni non restituisce punteggio e mostra uno stato vuoto esplicativo invece di uno zero.`,
       },
       {
+        id: 'fan-out',
+        title: 'Query fan-out — cosa cercano davvero i motori',
+        content: `Quando una domanda dipende da cosa è vero adesso, il motore non risponde a memoria. Trasforma la tua domanda in una-tre ricerche web reali e sintetizza ciò che trova. Quelle stringhe — non il tuo prompt — sono ciò per cui competi.
+
+Raramente coincidono. Una misura reale del 19 agosto 2026: il prompt "Vilka sajter är bäst för att köpa begagnad elektronik i Sverige 2026?" ha portato Gemini a cercare "basta sajter begagnad elektronik sverige" e "kop begagnad elektronik garanti sverige". Accenti spariti, anno sparito, una domanda diventata due ricerche, e un concetto che il prompt non conteneva — la garanzia — aggiunto.
+
+Conseguenza pratica: una pagina ottimizzata sul testo del tuo prompt è ottimizzata per una stringa che nessuno ha cercato. La colonna Scarto misura quella distanza: un numero alto ti dice dove la pagina e la ricerca si sono separate.
+
+Cosa mostra la pagina:
+
+• Copertura — quante esecuzioni hanno prodotto un fan-out. Due numeri restano distinti di proposito: non catturato significa che non abbiamo potuto vedere le ricerche, risposte senza ricerca significa che il motore ha usato la memoria del modello invece del web. Trattare il primo come zero ricerche sarebbe una bugia sul motore.
+• Ricerche per esecuzione — quanto si espande una domanda. Di norma da una a tre.
+• La classifica — ogni stringa cercata, quante volte, su quali motori, quanto spesso sei stato nominato e citato quando è stata eseguita, e quali tuoi prompt l'hanno innescata.
+
+La classifica mette prima il volume e poi il tasso di menzione più basso: in cima finiscono le ricerche che i motori eseguono di continuo e dove tu sei assente. Quella è la lista di lavoro.
+
+Un limite dichiarato: Perplexity non espone le ricerche che esegue. Le sue risposte sono misurate normalmente in tutto il resto del prodotto, ma qui non può contribuire, e le sue esecuzioni contano come non catturate, non come zero.
+
+La cattura è iniziata il 19 agosto 2026. Le esecuzioni precedenti non hanno fan-out e non sono recuperabili.`,
+      },
+      {
         id: 'citations-rate',
         title: 'Citazioni — il tasso nel tempo',
         content: `Il citation rate è la quota di risposte che ti nominano, in grafico nel tempo come trend su tutti i motori più la scomposizione per motore, con i tassi dei competitor sullo stesso asse.

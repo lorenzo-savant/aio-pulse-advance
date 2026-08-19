@@ -333,6 +333,18 @@ export interface MonitoringResult {
    * engine cited anything and are excluded from citationRate.
    */
   citation_source?: CitationSource | null
+  /**
+   * Query fan-out: the search strings the engine actually ran for this prompt,
+   * which are rarely the prompt itself (a Swedish prompt with diacritics and a
+   * year came back as two searches with neither).
+   *
+   * NULL and [] mean different things and must never be merged:
+   *   null → not captured. A row written before capture shipped, or a provider
+   *          that does not expose its searches (Perplexity's sonar API).
+   *   []   → the engine answered from model memory without searching.
+   * See src/lib/services/fan-out.ts.
+   */
+  search_queries?: string[] | null
   created_at: string
   prompt?: Prompt
   brand?: Brand

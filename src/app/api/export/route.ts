@@ -118,17 +118,46 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 })
   }
 
-  // Format data for export
+  // Format data for export.
+  //
+  // The export is the artefact a client opens in a spreadsheet to check our
+  // work, so it carries the EVIDENCE, not only the scores: the answer text the
+  // engine produced, the links it cited, and the searches it ran to get there.
+  // Until 2026-08-19 it shipped nine score-ish columns and none of the three,
+  // which meant a client could not verify a single claim from the file.
+  //
+  // `competitors` was also reading r.competitors_mentioned — a column that does
+  // not exist (the real one is competitor_mentions, and it holds objects, not
+  // strings). That column exported empty for every row ever downloaded.
+  const asName = (c: unknown): string =>
+    typeof c === 'string' ? c : ((c as { name?: string } | null)?.name ?? '')
+
   const exportData = (results || []).map((r: any) => ({
     date: new Date(r.created_at).toISOString().split('T')[0],
     engine: r.engine,
+    // What actually answered, after any router fallback. Without it a reader
+    // cannot tell a real Gemini measurement from one Gemini never served.
+    answered_by: r.response_provider || '',
+    prompt_category: r.prompt?.category || '',
     prompt_text: r.prompt?.text || r.prompt_text || '',
     brand_mentioned: r.brand_mentioned ? 'Yes' : 'No',
     visibility_score: r.visibility_score,
     sentiment: r.sentiment || '',
-    sentiment_score: r.sentiment_score || '',
-    mention_position: r.mention_position || '',
-    competitors: r.competitors_mentioned?.join(', ') || '',
+    sentiment_score: r.sentiment_score ?? '',
+    mention_position: r.mention_position ?? '',
+    competitors: Array.isArray(r.competitor_mentions)
+      ? r.competitor_mentions.map(asName).filter(Boolean).join(', ')
+      : '',
+    // The links. One per line inside the cell so a spreadsheet shows them all
+    // without a separator colliding with the URLs themselves.
+    cited_urls: Array.isArray(r.cited_urls) ? r.cited_urls.join('\n') : '',
+    citation_source: r.citation_source || '',
+    // The query fan-out — the strings the engine actually searched. Empty when
+    // the engine did not search; empty ALSO when the provider hides its
+    // queries (Perplexity), which is why the next column exists.
+    search_queries: Array.isArray(r.search_queries) ? r.search_queries.join('\n') : '',
+    search_queries_captured: r.search_queries == null ? 'No' : 'Yes',
+    response_text: r.response_text || '',
   }))
 
   if (format === 'csv') {

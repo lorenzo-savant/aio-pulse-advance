@@ -1,4 +1,5 @@
 import { safeFetch } from '@/lib/utils/safe-fetch'
+import { extractOpenAIFanOut } from './fan-out'
 
 export function isOpenAIAvailable(): boolean {
   return Boolean(process.env.OPENAI_API_KEY)
@@ -10,6 +11,9 @@ export function isOpenAIAvailable(): boolean {
 // (no citations) if the Responses API call fails.
 interface ResponsesApiOutput {
   output?: Array<{
+    /** 'web_search_call' items carry the fan-out; 'message' items carry text. */
+    type?: string
+    action?: { queries?: string[]; query?: string }
     content?: Array<{
       text?: string
       annotations?: Array<{ type?: string; url?: string }>
@@ -21,7 +25,7 @@ interface ResponsesApiOutput {
 export async function callOpenAIWithWebSearch(
   prompt: string,
   options?: { model?: string; country?: string },
-): Promise<{ text: string; citations: string[] }> {
+): Promise<{ text: string; citations: string[]; searchQueries: string[] }> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY not configured')
 
@@ -68,7 +72,11 @@ export async function callOpenAIWithWebSearch(
     }
   }
 
-  return { text, citations: [...citations] }
+  // The fan-out: the strings the model actually searched, which are rarely the
+  // prompt we sent. See fan-out.ts for why this is the measurement that matters.
+  const searchQueries = extractOpenAIFanOut(data.output)
+
+  return { text, citations: [...citations], searchQueries }
 }
 
 export async function callOpenAI(

@@ -270,6 +270,27 @@ Read the grade as a starting point, not a verdict. A D with a healthy AVI means 
 The pillars need monitoring data. A brand with no runs returns no score and an explanatory empty state rather than a zero.`,
       },
       {
+        id: 'fan-out',
+        title: 'Query Fan-out — what the engines actually search',
+        content: `When a question depends on what is true right now, an engine does not answer from memory. It turns your question into one to three real web searches and synthesises what it finds. Those search strings — not your prompt — are what you compete for.
+
+They are rarely the same thing. A real measurement from 19 August 2026: the prompt "Vilka sajter är bäst för att köpa begagnad elektronik i Sverige 2026?" made Gemini search "basta sajter begagnad elektronik sverige" and "kop begagnad elektronik garanti sverige". The accents are gone, the year is gone, one question became two searches, and a concept the prompt never contained — warranty — was added.
+
+The practical consequence: a page tuned to the wording of your prompt is tuned to a string nobody searched. The Drift column measures that distance, so a high number tells you where the page and the search have come apart.
+
+What the page shows:
+
+• Coverage — how many runs carried a fan-out at all. Two numbers are kept apart on purpose: not captured means we could not see the searches, and answered without searching means the engine used model memory instead of the live web. Treating the first as zero searches would be a lie about the engine.
+• Searches per run — how far one question expands. Typically one to three.
+• The ranking — every search string, how often it ran, on which engines, how often you were mentioned and cited when it ran, and which of your prompts triggered it.
+
+The ranking puts volume first and then the weakest mention rate, so the searches the engines run constantly and where you are absent sit at the top. That is the work list.
+
+One honest limit: Perplexity does not expose the searches it runs. Its answers are measured normally everywhere else in the product, but it cannot contribute here, and its runs are counted as not captured rather than as zero.
+
+Capture began on 19 August 2026. Runs from before that date have no fan-out and cannot be recovered.`,
+      },
+      {
         id: 'citations-rate',
         title: 'Citations — the rate over time',
         content: `Citation rate is the share of answers that name you, charted over time as an all-engines trend plus a per-engine breakdown, with your competitors' rates on the same axis.

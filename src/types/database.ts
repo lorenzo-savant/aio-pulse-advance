@@ -1537,6 +1537,7 @@ export type Database = {
           response_comparison: Json | null
           response_provider: string | null
           response_text: string
+          search_queries: string[] | null
           sentiment: string | null
           sentiment_aspects: Json
           sentiment_score: number | null
@@ -1571,6 +1572,7 @@ export type Database = {
           response_comparison?: Json | null
           response_provider?: string | null
           response_text: string
+          search_queries?: string[] | null
           sentiment?: string | null
           sentiment_aspects?: Json
           sentiment_score?: number | null
@@ -1605,6 +1607,7 @@ export type Database = {
           response_comparison?: Json | null
           response_provider?: string | null
           response_text?: string
+          search_queries?: string[] | null
           sentiment?: string | null
           sentiment_aspects?: Json
           sentiment_score?: number | null

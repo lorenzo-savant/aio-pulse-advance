@@ -39,6 +39,7 @@ Per-feature template (each file follows this exact layout):
 - [brand-overview](./brand-overview.md) — per-brand performance; **the only surface with Google Search Console data** (striking distance + cannibalisation)
 - [geo-score](./geo-score.md) — composite 0-100 GEO performance index
 - [citation-sources](./citation-sources.md) — domains AI engines cite when answering brand prompts
+- [fan-out](./fan-out.md) — the searches the engines actually ran; **not** the prompt we sent
 - [citations](./citations.md) — citation *rate* over time, per engine, vs competitors
 - [sentiment](./sentiment.md) — tone, aspects, sentiment-by-source, semantic themes
 - [aeo-snippets](./aeo-snippets.md) — answer-engine-ready Q&A pairs from Google PAA

@@ -43,12 +43,22 @@ async function loadBrandContext(
     // was an ownership check hiding inside a data loader: a collaborator
     // passed the access check at the door and then got null from this,
     // surfacing as "brand not found" for a brand they were looking at.
-    .select('name, domain, industry, description, aliases, disambiguation')
+    // legal_id is the one field a homonym cannot share — see the brand
+    // context in homonym-audit.ts.
+    .select('name, domain, industry, description, aliases, disambiguation, legal_id, legal_id_type')
     .eq('id', brandId)
     .maybeSingle()
   /* eslint-enable @typescript-eslint/no-explicit-any */
   if (error || !data) return null
-  return data as BrandContext
+  // The columns are snake_case; BrandContext is camelCase for the two legal-id
+  // fields, so they are mapped rather than cast — a cast would have compiled
+  // fine and silently dropped the identifier.
+  const row = data as Record<string, unknown>
+  return {
+    ...(data as BrandContext),
+    legalId: (row['legal_id'] as string | null) ?? null,
+    legalIdType: (row['legal_id_type'] as string | null) ?? null,
+  }
 }
 
 export async function GET(req: NextRequest, { params }: Params) {

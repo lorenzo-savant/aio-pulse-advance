@@ -55,13 +55,20 @@ export const GET = withApiHandler('organization-schema', async (req: NextRequest
   const db = createServerClient()
   if (!db) return err('Database not configured', 503)
 
-  // Fetch the LLMO-specific fields (same_as, disambiguation,
-  // citation_format) directly — they're not in the cached BrandAccess.
-  // Use snake_case Supabase column names; map to camelCase for LlmsInput.
+  // Fetch the LLMO-specific fields directly — they're not in the cached
+  // BrandAccess. Use snake_case Supabase column names; map to camelCase for
+  // LlmsInput.
+  //
+  // legal_id is here because it is the strongest disambiguation anchor a
+  // company has. Name, domain and industry are all things a homonym can share;
+  // an organisationsnummer is issued once and belongs to exactly one legal
+  // entity. buildOrganizationJsonLd has mapped it to vatID/taxID since it
+  // shipped — this route simply never asked for the column, so every schema it
+  // emitted described the brand without ever saying which company it is.
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const { data: row, error } = await (db as any)
     .from('brands')
-    .select('same_as, disambiguation, citation_format, domains')
+    .select('same_as, disambiguation, citation_format, domains, legal_id, legal_id_type')
     .eq('id', brandId)
     .single()
   /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -82,6 +89,8 @@ export const GET = withApiHandler('organization-schema', async (req: NextRequest
     sameAs: Array.isArray(row?.same_as) ? row.same_as : [],
     disambiguation: row?.disambiguation ?? undefined,
     citationFormat: row?.citation_format ?? undefined,
+    legalId: row?.legal_id ?? undefined,
+    legalIdType: row?.legal_id_type ?? undefined,
   }
 
   if (!input.domain) {

@@ -300,12 +300,12 @@ function buildSystemPrompt(): string {
     '3. Every prompt must be a real query a human would type — short, conversational, in the requested locale.',
     '4. Distribute across intent buckets: B1 (brand/competitor), B2 (category), B3 (problem/JTBD), B4 (buyer intent), B5 (compliance/risk). At least 3 buckets must be represented.',
     '5. Use the locale natively — do NOT translate English templates. Each language has its own phrasing patterns. For Swedish use natural svenska, for Italian use natural italiano.',
-    '6. `targetEngines` is your judgment of which AI engines are most likely to surface the monitored brand for this query. Prefer Perplexity for question-style queries with citations; ChatGPT for category/listing queries; Gemini for queries that benefit from Google grounding; Claude for nuanced reasoning queries.',
+    '6. `targetEngines` is your judgment of which AI engines are most likely to surface the monitored brand for this query. The only valid engines are "chatgpt", "gemini", "perplexity" — never propose any other. Prefer Perplexity for question-style queries with citations; ChatGPT for category/listing queries; Gemini for queries that benefit from Google grounding.',
     '7. `priority` reflects monitoring value — high = run daily, medium = weekly, low = monthly.',
     "8. `rationale` must explain WHY this prompt is useful in one sentence. Don't restate the prompt.",
     '',
     'Schema:',
-    '{ "prompts": [ { "text": string, "intentBucket": "B1"|"B2"|"B3"|"B4"|"B5", "priority": "high"|"medium"|"low", "rationale": string, "targetEngines": ("chatgpt"|"gemini"|"perplexity"|"claude")[] } ] }',
+    '{ "prompts": [ { "text": string, "intentBucket": "B1"|"B2"|"B3"|"B4"|"B5", "priority": "high"|"medium"|"low", "rationale": string, "targetEngines": ("chatgpt"|"gemini"|"perplexity")[] } ] }',
   ].join('\n')
 }
 

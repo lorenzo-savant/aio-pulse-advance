@@ -88,7 +88,10 @@ function mapFrequency(f: string): 'daily' | 'weekly' {
   return v === 'weekly' || v === 'monthly' ? 'weekly' : 'daily'
 }
 function mapEngines(arr: string[] | undefined): Engine[] {
-  const valid: Engine[] = ['chatgpt', 'gemini', 'perplexity', 'claude']
+  // Claude was retired as an engine (ACTIVE_ENGINES / prompts route schema).
+  // Strip it HERE: /api/prompts rejects it as engines.1, so a suggested prompt's
+  // `claude` badge flowing into the POST fails on "Add". Type stays wide.
+  const valid: Engine[] = ['chatgpt', 'gemini', 'perplexity']
   const out = (arr || []).filter((e): e is Engine => valid.includes(e as Engine))
   return out.length > 0 ? out : ['chatgpt', 'gemini', 'perplexity']
 }

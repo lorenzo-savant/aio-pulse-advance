@@ -7,8 +7,12 @@ import {
   extractOpenAIFanOut,
   fanOutKey,
   normalizeFanOutQueries,
+  rowMatchesFanOut,
+  selectRunsForQuery,
+  MAX_ANSWER_CHARS,
   MAX_FANOUT_QUERIES_PER_RUN,
   type FanOutRow,
+  type FanOutRunRow,
 } from '../services/fan-out'
 
 // The provider payloads below are VERBATIM shapes captured from live API calls
@@ -222,5 +226,98 @@ describe('buildFanOutReport', () => {
   it('handles an all-NULL history without dividing by zero', () => {
     const report = buildFanOutReport([row({ search_queries: null })])
     expect(report).toMatchObject({ captured: 0, notCaptured: 1, expansionRatio: 0, queries: [] })
+  })
+})
+
+// ─── Drill-down ─────────────────────────────────────────────────────────────
+
+describe('rowMatchesFanOut', () => {
+  it('matches through the same folding the ranking groups by', () => {
+    expect(rowMatchesFanOut(['Begagnad  Elektronik'], fanOutKey('begagnad elektronik'))).toBe(true)
+  })
+
+  it('does not match on a substring — a different search is a different search', () => {
+    expect(rowMatchesFanOut(['begagnad elektronik sverige'], fanOutKey('begagnad'))).toBe(false)
+  })
+
+  it('treats a NULL fan-out and an empty key as no match', () => {
+    expect(rowMatchesFanOut(null, fanOutKey('x'))).toBe(false)
+    expect(rowMatchesFanOut(['x'], '')).toBe(false)
+  })
+})
+
+describe('selectRunsForQuery', () => {
+  const run = (over: Partial<FanOutRunRow> = {}): FanOutRunRow => ({
+    id: 'r1',
+    engine: 'chatgpt',
+    created_at: '2026-08-19T10:00:00.000Z',
+    prompt_text: 'Vilka sajter är bäst för begagnad elektronik?',
+    response_text: 'Blocket och Tradera är de största.',
+    search_queries: ['basta sajter begagnad elektronik sverige'],
+    cited_urls: ['https://blocket.se/x'],
+    brand_mentioned: false,
+    ...over,
+  })
+
+  it('returns the runs behind a search, newest first', () => {
+    const runs = selectRunsForQuery(
+      [
+        run({ id: 'old', created_at: '2026-08-01T10:00:00.000Z' }),
+        run({ id: 'new', created_at: '2026-08-19T10:00:00.000Z' }),
+        run({ id: 'other', search_queries: ['nagot helt annat'] }),
+      ],
+      'Basta Sajter Begagnad Elektronik Sverige',
+    )
+    expect(runs.map((r) => r.id)).toEqual(['new', 'old'])
+  })
+
+  it('carries the sibling searches of the run, not just the matched one', () => {
+    const [only] = selectRunsForQuery(
+      [run({ search_queries: ['a search', 'a sibling search'] })],
+      'a search',
+    )
+    expect(only!.searchQueries).toEqual(['a search', 'a sibling search'])
+  })
+
+  it('keeps rows with no timestamp instead of dropping the evidence', () => {
+    const runs = selectRunsForQuery(
+      [run({ id: 'dated' }), run({ id: 'undated', created_at: null })],
+      'basta sajter begagnad elektronik sverige',
+    )
+    expect(runs.map((r) => r.id)).toEqual(['dated', 'undated'])
+    expect(runs[1]!.createdAt).toBeNull()
+  })
+
+  it('flags a truncated answer rather than passing it off as the whole one', () => {
+    const long = 'x'.repeat(MAX_ANSWER_CHARS + 500)
+    const [only] = selectRunsForQuery(
+      [run({ response_text: long })],
+      'basta sajter begagnad elektronik sverige',
+    )
+    expect(only!.answer).toHaveLength(MAX_ANSWER_CHARS)
+    expect(only!.truncated).toBe(true)
+
+    const [short] = selectRunsForQuery([run()], 'basta sajter begagnad elektronik sverige')
+    expect(short!.truncated).toBe(false)
+  })
+
+  it('resolves the own-domain citation the same way the ranking does', () => {
+    const [only] = selectRunsForQuery(
+      [run({ cited_urls: ['https://blog.relovie.com/guide'] })],
+      'basta sajter begagnad elektronik sverige',
+      { ownDomain: 'relovie.com' },
+    )
+    expect(only!.ownDomainCited).toBe(true)
+  })
+
+  it('caps the returned runs', () => {
+    const rows = Array.from({ length: 30 }, (_, i) => run({ id: 'r' + i }))
+    expect(
+      selectRunsForQuery(rows, 'basta sajter begagnad elektronik sverige', { limit: 5 }),
+    ).toHaveLength(5)
+  })
+
+  it('returns nothing for an empty query instead of matching everything', () => {
+    expect(selectRunsForQuery([run()], '   ')).toEqual([])
   })
 })

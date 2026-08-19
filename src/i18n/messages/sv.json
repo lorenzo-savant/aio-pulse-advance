@@ -1666,6 +1666,19 @@
     "triggered_by": "Utlöst av",
     "window": "Senaste {days} dagarna",
     "why_title": "Varför detta är den primära mätningen",
-    "why_body": "När en fråga beror på vad som är sant just nu svarar motorn inte ur minnet: den gör om frågan till verkliga webbsökningar och sammanfattar det den hittar. Det är de strängarna — inte er prompt — som varumärket konkurrerar om."
+    "why_body": "När en fråga beror på vad som är sant just nu svarar motorn inte ur minnet: den gör om frågan till verkliga webbsökningar och sammanfattar det den hittar. Det är de strängarna — inte er prompt — som varumärket konkurrerar om.",
+    "expand_hint": "Klicka på en sökning för att läsa motorernas svar och källorna de citerade.",
+    "runs_loading": "Hämtar körningarna bakom den här sökningen…",
+    "runs_empty": "Ingen körning i den här perioden innehåller sökningen.",
+    "runs_shown": "Visar {shown} av {total} körningar",
+    "run_prompt": "Skickad prompt",
+    "run_answer": "Vad motorn svarade",
+    "run_citations": "Citerade källor",
+    "run_no_citations": "Motorn citerade ingen källa i den här körningen.",
+    "run_mentioned": "Varumärket nämnt",
+    "run_not_mentioned": "Varumärket saknas",
+    "run_own_cited": "Egen domän citerad",
+    "run_sibling_searches": "Alla sökningar i den här körningen",
+    "run_truncated": "Svaret visas avkortat — hela texten finns i CSV-exporten."
   }
 }

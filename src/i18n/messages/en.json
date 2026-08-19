@@ -1666,6 +1666,19 @@
     "triggered_by": "Triggered by",
     "window": "Last {days} days",
     "why_title": "Why this is the primary measurement",
-    "why_body": "When a question depends on what is true right now, an engine does not answer from memory: it turns the question into real web searches and synthesises what it finds. Those strings — not your prompt — are what the brand competes for."
+    "why_body": "When a question depends on what is true right now, an engine does not answer from memory: it turns the question into real web searches and synthesises what it finds. Those strings — not your prompt — are what the brand competes for.",
+    "expand_hint": "Click a search to read the answers the engines gave and the sources they cited.",
+    "runs_loading": "Loading the runs behind this search…",
+    "runs_empty": "No run in this window carries this search.",
+    "runs_shown": "Showing {shown} of {total} runs",
+    "run_prompt": "Prompt sent",
+    "run_answer": "What the engine answered",
+    "run_citations": "Sources cited",
+    "run_no_citations": "The engine cited no source on this run.",
+    "run_mentioned": "Brand mentioned",
+    "run_not_mentioned": "Brand absent",
+    "run_own_cited": "Own domain cited",
+    "run_sibling_searches": "Every search this run ran",
+    "run_truncated": "Answer shown truncated — the full text is in the CSV export."
   }
 }

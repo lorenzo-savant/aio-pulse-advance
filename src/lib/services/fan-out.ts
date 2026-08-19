@@ -320,3 +320,103 @@ export function buildFanOutReport(
     queries: queries.slice(0, limit),
   }
 }
+
+// ─── Drill-down: the runs behind one search ─────────────────────────────────
+//
+// The report above answers "which searches run, and how often does the brand
+// appear in them". It cannot answer "why" — for that an operator has to read
+// what the engine actually wrote and which sources it leaned on. That evidence
+// exists on every row and was only reachable through the CSV export. The
+// selector below opens it: given one search, return the individual runs that
+// contained it, each with its answer, its citations, and the sibling searches
+// the same run fired. The sibling searches matter as much as the match: they
+// show how the engine split the question, which a per-query ranking flattens.
+
+/** Longest answer we hand to the UI. Engine answers run long; the panel is for
+ *  reading, not archival, and the full text stays in the CSV export. Truncation
+ *  is always reported (`truncated`) rather than passed off as the whole answer. */
+export const MAX_ANSWER_CHARS = 6000
+
+/** A monitoring row with the evidence columns the ranking does not need. */
+export interface FanOutRunRow extends FanOutRow {
+  id: string
+  created_at?: string | null
+  response_text?: string | null
+}
+
+export interface FanOutRun {
+  id: string
+  engine: string
+  createdAt: string | null
+  prompt: string
+  /** Every search this run ran, in provider order — the matched one included. */
+  searchQueries: string[]
+  answer: string
+  /** True when `answer` was cut at MAX_ANSWER_CHARS. */
+  truncated: boolean
+  citedUrls: string[]
+  brandMentioned: boolean
+  ownDomainCited: boolean
+}
+
+/** Does this run's fan-out contain the search identified by `key`? Comparison
+ *  goes through fanOutKey on both sides so the drill-down groups runs exactly
+ *  the way the ranking counted them — a row that fed a query's `runs` total is
+ *  a row this returns, with no second, looser notion of "same search". */
+export function rowMatchesFanOut(searchQueries: string[] | null, key: string): boolean {
+  if (!searchQueries?.length || !key) return false
+  for (const q of searchQueries) if (fanOutKey(q) === key) return true
+  return false
+}
+
+export interface FanOutRunsOptions {
+  ownDomain?: string | null
+  /** Cap on returned runs. */
+  limit?: number
+}
+
+/**
+ * The runs behind one search, newest first.
+ *
+ * Newest first because the operator's question is almost always "what is the
+ * engine saying now" — an answer from three weeks ago is context, not the
+ * headline. Rows without a timestamp sort last rather than being dropped: a
+ * missing created_at is a defect in the row, not a reason to hide evidence.
+ */
+export function selectRunsForQuery(
+  rows: readonly FanOutRunRow[],
+  query: string,
+  options: FanOutRunsOptions = {},
+): FanOutRun[] {
+  const { ownDomain = null, limit = 25 } = options
+  const key = fanOutKey(query)
+  if (!key) return []
+
+  const matched = rows.filter((r) => rowMatchesFanOut(r.search_queries, key))
+
+  matched.sort((a, b) => {
+    const ta = a.created_at ? Date.parse(a.created_at) : NaN
+    const tb = b.created_at ? Date.parse(b.created_at) : NaN
+    if (Number.isNaN(ta) && Number.isNaN(tb)) return 0
+    if (Number.isNaN(ta)) return 1
+    if (Number.isNaN(tb)) return -1
+    return tb - ta
+  })
+
+  return matched.slice(0, limit).map((r) => {
+    const full = (r.response_text ?? '').trim()
+    const truncated = full.length > MAX_ANSWER_CHARS
+    return {
+      id: r.id,
+      engine: r.engine,
+      createdAt: r.created_at ?? null,
+      prompt: r.prompt_text?.trim() || '',
+      searchQueries: r.search_queries ?? [],
+      answer: truncated ? full.slice(0, MAX_ANSWER_CHARS) : full,
+      truncated,
+      citedUrls: r.cited_urls ?? [],
+      brandMentioned: r.brand_mentioned === true,
+      ownDomainCited: ownDomainCited(r.cited_urls ?? null, ownDomain),
+    }
+  })
+}

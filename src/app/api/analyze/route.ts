@@ -134,6 +134,28 @@ export async function POST(req: NextRequest) {
   }
 
   const { input, mode, engine, provider, model } = parsed.data
+  const isAnonymous = userId.startsWith('anonymous:')
+
+  // ── Anonymous request hardening (pentest 2026-08-19) ──────────────────────
+  // The anonymous fallback is a deliberate lead magnet, but it spends the
+  // org's own LLM budget on the org's own keys, and mode:'url' turns it into
+  // an SSRF vector (the fetched page is reflected back to the caller). Two
+  // gates keep the lead magnet without the two exploits:
+  //   1. URL fetching requires auth. Anonymous callers may analyse pasted
+  //      TEXT only — no outbound fetch, so no unauthenticated SSRF, and the
+  //      DNS-rebinding residual in safeFetch is reachable only by an
+  //      authenticated editor from here on.
+  //   2. Anonymous callers cannot pick the model. Left free, an attacker
+  //      steered every free call to the priciest model (gpt-4o / claude).
+  //      Anonymous text analysis is pinned to the default (cheapest) tier.
+  if (isAnonymous && mode === 'url') {
+    return NextResponse.json(
+      { success: false, message: 'Sign in to analyse a URL' },
+      { status: 401 },
+    )
+  }
+  const effectiveModel = isAnonymous ? 'default' : model
+  const effectiveProvider = isAnonymous ? 'gemini' : provider
 
   // ── Gate on the brand if brand_id provided ────────────────────────────────
   // This runs a paid LLM analysis and inserts a row, so it takes editor rights.
@@ -178,8 +200,8 @@ export async function POST(req: NextRequest) {
       mode,
       engine,
       input,
-      provider,
-      model,
+      effectiveProvider,
+      effectiveModel,
       brandContext,
     )
 

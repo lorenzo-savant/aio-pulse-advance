@@ -117,6 +117,21 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Rank + self-target guard (pentest 2026-08-19). canManageMembers is true
+    // for both owner and admin, and nothing stopped an admin from targeting
+    // THEMSELVES or granting a rank ABOVE their own. An admin could PATCH
+    // {userId: self, role: 'owner'} — the last-owner guard only fires on
+    // demotions — then delete the original owner, taking over the workspace.
+    const actorRole = await getUserRole(actorId, workspaceId)
+    const rank: Record<string, number> = { viewer: 0, editor: 1, admin: 2, owner: 3 }
+    const actorRank = rank[actorRole ?? 'viewer'] ?? 0
+    if (targetUserId === actorId) {
+      return NextResponse.json({ error: 'You cannot change your own role' }, { status: 403 })
+    }
+    if ((rank[role] ?? 99) > actorRank) {
+      return NextResponse.json({ error: 'You cannot grant a role above your own' }, { status: 403 })
+    }
+
     // Last-owner protection: don't allow demoting the only owner.
     if (role !== 'owner') {
       const currentRole = await getUserRole(targetUserId, workspaceId)

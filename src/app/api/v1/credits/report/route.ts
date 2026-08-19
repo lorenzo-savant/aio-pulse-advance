@@ -5,6 +5,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { getCurrentUserId, AuthError } from '@/lib/supabase'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { getCostByBrand, getCostReport } from '@/lib/services/cost-aggregator'
+import { requireBrandRole } from '@/lib/authorize'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ success: false, message }, { status })
@@ -43,6 +44,12 @@ export async function GET(req: NextRequest) {
 
   try {
     if (brandId) {
+      // Gate the brand before the lookup (pentest 2026-08-19). getCostByBrand
+      // scopes spend to the caller's user_id, but then reads brands.name by id
+      // with no access check, leaking the name of any brand to any
+      // authenticated user. Require at least viewer on it first.
+      const gate = await requireBrandRole(brandId, userId, 'viewer')
+      if ('response' in gate) return gate.response
       const brandCosts = await getCostByBrand(userId, brandId, from, to)
       return NextResponse.json({
         success: true,

@@ -183,6 +183,15 @@ async function validateUrlHop(parsedUrl: URL): Promise<void> {
     throw new SsrfError('BLOCKED_PROTOCOL', 'Only HTTP/HTTPS protocols are allowed')
   }
 
+  // Port allowlist (pentest 2026-08-19). Restricting protocol without
+  // restricting port let /api/analyze (reachable anonymously) be driven at any
+  // public host:port — an open port-prober and fetch proxy. Mirror the
+  // allowlist the gemini.ts guard already used (80/443 + common alt-HTTP).
+  const port = parsedUrl.port
+  if (port && !['80', '443', '8080', '8443'].includes(port)) {
+    throw new SsrfError('BLOCKED_PORT', `Port ${port} is not allowed`)
+  }
+
   const hostname = parsedUrl.hostname
   assertHostnameAllowed(hostname)
 

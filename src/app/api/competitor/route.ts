@@ -7,6 +7,7 @@ import { logger } from '@/lib/logger'
 import { analyzeCompetitor } from '@/lib/services/gemini'
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
+import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess, getAccessibleBrandIds, requireBrandRole } from '@/lib/authorize'
 
 // ─── Validation ─────────────────────────────────────────────────────────────
@@ -136,13 +137,15 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  let userId: string
+  // Auth required (pentest 2026-08-19). This POST fetches attacker-supplied
+  // URLs (SSRF vector) and makes ~4 Gemini calls per request on the org's own
+  // keys (denial-of-wallet). Both were reachable anonymously via the
+  // anonymous:${ip} fallback with only a per-IP rate limit. The GET on this
+  // route stays public — it only reads stored analyses.
+  const auth = await requireUser(req)
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
   let brandId: string | null = null
-  try {
-    userId = await getCurrentUserId(req.headers.get('authorization'), req.headers.get('cookie'))
-  } catch (e) {
-    userId = `anonymous:${ip}`
-  }
 
   let body: unknown
   try {

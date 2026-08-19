@@ -301,4 +301,36 @@ describe('safeFetch', () => {
       expect(response.status).toBe(200)
     })
   })
+  describe('port allowlist (pentest 2026-08-19)', () => {
+    it('blocks a non-standard port even on a public host', async () => {
+      mockResolve4.mockResolvedValue(['93.184.216.34'])
+      mockResolve6.mockResolvedValue([])
+      await expect(safeFetch('http://example.com:22/')).rejects.toMatchObject({
+        code: 'BLOCKED_PORT',
+      })
+      await expect(safeFetch('http://example.com:6379/')).rejects.toMatchObject({
+        code: 'BLOCKED_PORT',
+      })
+    })
+
+    it('allows the standard web ports', async () => {
+      mockResolve4.mockResolvedValue(['93.184.216.34'])
+      mockResolve6.mockResolvedValue([])
+      const g = globalThis as { fetch?: unknown }
+      const prev = g.fetch
+      g.fetch = vi.fn().mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        ok: true,
+      })
+      try {
+        for (const port of ['80', '443', '8080', '8443']) {
+          const r = await safeFetch(`https://example.com:${port}/`)
+          expect(r.status).toBe(200)
+        }
+      } finally {
+        g.fetch = prev
+      }
+    })
+  })
 })

@@ -1633,6 +1633,65 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
       sv: ['elektronik', 'IoT', 'hårdvara', 'prylar'],
     },
   },
+  {
+    // Generic fallback so no brand is ever blocked from generating a starter set
+    // when none of the specific presets fit. Templates are brand-agnostic; the
+    // {competitor} slots are filled from the brand's own competitors (always
+    // present — the new-brand form requires at least one), not from this preset.
+    id: 'other',
+    name: { en: 'Other / General', it: 'Altro / Generico', sv: 'Övrigt / Allmänt' },
+    description: {
+      en: 'No specific industry — generic starter prompts built from the brand name and its competitors. Refine them after creation.',
+      it: 'Nessun settore specifico — prompt iniziali generici costruiti dal nome del brand e dai suoi competitor. Affinali dopo la creazione.',
+      sv: 'Ingen specifik bransch — generiska startprompter byggda på varumärkesnamnet och dess konkurrenter. Finjustera dem efter skapandet.',
+    },
+    competitors: [],
+    localizedTemplates: {
+      sv: [
+        '{brand} omdöme',
+        'är {brand} pålitligt',
+        '{brand} vs {competitor}',
+        'bästa {category} {location}',
+        'vad är {brand}',
+        '{brand} alternativ',
+      ],
+      it: [
+        '{brand} recensioni',
+        '{brand} è affidabile',
+        '{brand} vs {competitor}',
+        'migliore {category} {location}',
+        'cos\'è {brand}',
+        'alternative a {brand}',
+      ],
+    },
+    categories: {
+      en: ['service', 'platform', 'product', 'solution', 'provider'],
+      it: ['servizio', 'piattaforma', 'prodotto', 'soluzione', 'fornitore'],
+      sv: ['tjänst', 'plattform', 'produkt', 'lösning', 'leverantör'],
+    },
+    roles: {
+      en: ['customer', 'buyer', 'user', 'decision maker'],
+      it: ['cliente', 'acquirente', 'utente', 'decisore'],
+      sv: ['kund', 'köpare', 'användare', 'beslutsfattare'],
+    },
+    intentPatterns: [
+      { bucket: 'B1', template: '{brand} review', priority: 'high' },
+      { bucket: 'B1', template: '{brand} vs {competitor}', priority: 'high' },
+      { bucket: 'B1', template: 'is {brand} reliable', priority: 'medium' },
+      { bucket: 'B2', template: 'best {category} {location}', priority: 'high' },
+      { bucket: 'B2', template: 'what is {brand}', priority: 'medium' },
+      { bucket: 'B3', template: '{brand} alternatives', priority: 'medium' },
+      { bucket: 'B3', template: 'how does {brand} work', priority: 'medium' },
+      { bucket: 'B4', template: '{brand} price {location}', priority: 'medium' },
+      { bucket: 'B5', template: 'is {brand} legit', priority: 'medium' },
+      { bucket: 'B5', template: 'is {brand} trustworthy', priority: 'medium' },
+    ],
+    seedKeywords: {
+      en: ['review', 'best', 'alternatives', 'compare', 'trusted'],
+      it: ['recensioni', 'migliore', 'alternative', 'confronto', 'affidabile'],
+      sv: ['omdöme', 'bäst', 'alternativ', 'jämför', 'pålitlig'],
+    },
+  },
 ]
 
 export interface ExpandedQuery {

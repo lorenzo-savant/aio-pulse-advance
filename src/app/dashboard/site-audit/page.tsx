@@ -8,6 +8,7 @@
 // pages to answer "is my brand AI-pronto?".
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { Loader2, ShieldCheck } from 'lucide-react'
 import { CrawlerAccessPanel } from '@/components/CrawlerAccessPanel'
@@ -23,6 +24,7 @@ interface BrandLite {
 }
 
 export default function SiteAuditPage() {
+  const t = useTranslations('site_audit')
   const [brands, setBrands] = useState<BrandLite[]>([])
   const [selectedBrand, setSelectedBrand] = useState<BrandLite | null>(null)
   const [loading, setLoading] = useState(true)
@@ -60,8 +62,7 @@ export default function SiteAuditPage() {
   if (brands.length === 0) {
     return (
       <Card className="p-6 text-sm text-muted-foreground">
-        No brands configured yet. Set one up under <b>Brands</b> first — site audit needs a brand
-        domain to probe.
+        {t.rich('no_brands', { b: (chunks) => <b>{chunks}</b> })}
       </Card>
     )
   }
@@ -78,12 +79,11 @@ export default function SiteAuditPage() {
         <div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-brand" />
-            <h1 className="text-3xl font-black tracking-tight text-foreground">Site Audit</h1>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">
+              {t('page_title')}
+            </h1>
           </div>
-          <p className="mt-1 text-muted-foreground">
-            One-page AI-readiness check: foundations, crawler access, citation capture, and content
-            quality. Fix the red items at the top before optimising the rest.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         {brands.length > 1 && (
           <select

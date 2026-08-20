@@ -26,6 +26,7 @@ import {
   Activity,
   BarChart3,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -71,6 +72,7 @@ interface CompetitorData {
 }
 
 export default function EnhancedAnalyticsPage() {
+  const t = useTranslations('analytics')
   const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([])
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d')
@@ -215,8 +217,8 @@ export default function EnhancedAnalyticsPage() {
       return (
         <Card className="p-6">
           <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="mt-2 text-2xl font-bold text-foreground">No data</p>
-          <p className="mt-1 text-xs text-muted-foreground">Run scans to generate data</p>
+          <p className="mt-2 text-2xl font-bold text-foreground">{t('no_data')}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('run_scans')}</p>
         </Card>
       )
     }
@@ -241,21 +243,21 @@ export default function EnhancedAnalyticsPage() {
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
           <div>
-            <p>Previous</p>
+            <p>{t('previous')}</p>
             <p className="font-medium">
               {data.comparison.previous.toFixed(1)}
               {unit}
             </p>
           </div>
           <div>
-            <p>Change</p>
+            <p>{t('change')}</p>
             <p className={getTrendColor(data.comparison.trend)}>
               {data.comparison.change > 0 ? '+' : ''}
               {data.comparison.change.toFixed(1)}
             </p>
           </div>
           <div>
-            <p>Trend</p>
+            <p>{t('trend')}</p>
             <p className={`capitalize ${getTrendColor(data.summary.trend)}`}>
               {data.summary.trend}
             </p>
@@ -279,13 +281,13 @@ export default function EnhancedAnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-          <p className="text-muted-foreground">Historical trends and comparisons</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('page_title')}</h1>
+          <p className="text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={generateSnapshots} disabled={generating}>
             <RefreshCw className={`mr-2 h-4 w-4 ${generating ? 'animate-spin' : ''}`} />
-            Generate Data
+            {t('generate_data')}
           </Button>
         </div>
       </div>
@@ -315,7 +317,7 @@ export default function EnhancedAnalyticsPage() {
                   : 'text-foreground hover:bg-muted'
               }`}
             >
-              {p === '7d' ? '7 Days' : p === '30d' ? '30 Days' : '90 Days'}
+              {p === '7d' ? t('days_7') : p === '30d' ? t('days_30') : t('days_90')}
             </button>
           ))}
         </div>
@@ -324,7 +326,7 @@ export default function EnhancedAnalyticsPage() {
           <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
             <p className="text-yellow-800 dark:text-yellow-400">{error}</p>
             <Button size="sm" className="mt-2" onClick={generateSnapshots}>
-              Generate Historical Data
+              {t('generate_historical')}
             </Button>
           </div>
         )}
@@ -332,16 +334,16 @@ export default function EnhancedAnalyticsPage() {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <MetricCard title="Citation Rate" data={citations} unit="%" />
-        <MetricCard title="Visibility Score" data={visibility} unit="" />
-        <MetricCard title="Sentiment Score" data={sentiment} unit="" />
+        <MetricCard title={t('citation_rate')} data={citations} unit="%" />
+        <MetricCard title={t('visibility_score')} data={visibility} unit="" />
+        <MetricCard title={t('sentiment_score')} data={sentiment} unit="" />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Citation Trend */}
         <Card className="p-6">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">Citation Trend</h3>
+          <h3 className="mb-4 text-lg font-semibold text-foreground">{t('citation_trend')}</h3>
           <div className="h-64">
             {citations?.snapshots.length ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -367,13 +369,13 @@ export default function EnhancedAnalyticsPage() {
                     stroke="#10b981"
                     strokeWidth={2}
                     dot={{ fill: '#10b981', r: 3 }}
-                    name="Citation Rate"
+                    name={t('citation_rate')}
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex h-full items-center justify-center text-muted-foreground">
-                No data available
+                {t('no_data_available')}
               </div>
             )}
           </div>
@@ -381,7 +383,7 @@ export default function EnhancedAnalyticsPage() {
 
         {/* Visibility Trend */}
         <Card className="p-6">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">Visibility Trend</h3>
+          <h3 className="mb-4 text-lg font-semibold text-foreground">{t('visibility_trend')}</h3>
           <div className="h-64">
             {visibility?.snapshots.length ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -407,13 +409,13 @@ export default function EnhancedAnalyticsPage() {
                     stroke="#3b82f6"
                     strokeWidth={2}
                     dot={{ fill: '#3b82f6', r: 3 }}
-                    name="Visibility"
+                    name={t('visibility')}
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex h-full items-center justify-center text-muted-foreground">
-                No data available
+                {t('no_data_available')}
               </div>
             )}
           </div>
@@ -422,7 +424,7 @@ export default function EnhancedAnalyticsPage() {
 
       {/* Competitor Comparison */}
       <Card className="p-6">
-        <h3 className="mb-4 text-lg font-semibold text-foreground">Competitor Comparison</h3>
+        <h3 className="mb-4 text-lg font-semibold text-foreground">{t('competitor_comparison')}</h3>
         {competitors && competitors.competitors.length > 0 ? (
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -454,49 +456,54 @@ export default function EnhancedAnalyticsPage() {
                 <Bar
                   dataKey="citations"
                   fill="#10b981"
-                  name="Citation Rate"
+                  name={t('citation_rate')}
                   radius={[4, 4, 0, 0]}
                 />
-                <Bar dataKey="visibility" fill="#3b82f6" name="Visibility" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="visibility"
+                  fill="#3b82f6"
+                  name={t('visibility')}
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
         ) : (
           <div className="flex h-40 items-center justify-center text-muted-foreground">
-            No competitor data. Add competitors to your brand settings.
+            {t('competitor_data')}
           </div>
         )}
       </Card>
 
       {/* Data Summary */}
       <Card className="p-6">
-        <h3 className="mb-4 text-lg font-semibold text-foreground">Data Summary</h3>
+        <h3 className="mb-4 text-lg font-semibold text-foreground">{t('data_summary')}</h3>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="rounded-lg border border-input bg-muted p-4 text-center">
             <Target className="mx-auto mb-2 h-6 w-6 text-primary" />
             <p className="text-2xl font-bold text-foreground">
               {citations?.summary.totalSnapshots || 0}
             </p>
-            <p className="text-sm text-muted-foreground">Total Snapshots</p>
+            <p className="text-sm text-muted-foreground">{t('total_snapshots')}</p>
           </div>
           <div className="rounded-lg border border-input bg-muted p-4 text-center">
             <Activity className="mx-auto mb-2 h-6 w-6 text-success" />
             <p className="text-2xl font-bold text-foreground">
               {citations?.summary.avgValue.toFixed(1) || 0}%
             </p>
-            <p className="text-sm text-muted-foreground">Avg Citation</p>
+            <p className="text-sm text-muted-foreground">{t('avg_citation')}</p>
           </div>
           <div className="rounded-lg border border-input bg-muted p-4 text-center">
             <BarChart3 className="mx-auto mb-2 h-6 w-6 text-info" />
             <p className="text-2xl font-bold text-foreground">
               {visibility?.summary.avgValue.toFixed(1) || 0}
             </p>
-            <p className="text-sm text-muted-foreground">Avg Visibility</p>
+            <p className="text-sm text-muted-foreground">{t('avg_visibility')}</p>
           </div>
           <div className="rounded-lg border border-input bg-muted p-4 text-center">
             <Calendar className="mx-auto mb-2 h-6 w-6 text-primary" />
             <p className="text-2xl font-bold text-foreground">{period}</p>
-            <p className="text-sm text-muted-foreground">Time Period</p>
+            <p className="text-sm text-muted-foreground">{t('time_period')}</p>
           </div>
         </div>
       </Card>

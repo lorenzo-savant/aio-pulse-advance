@@ -16,6 +16,7 @@ import {
   Cell,
 } from 'recharts'
 import { Camera, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -50,12 +51,7 @@ interface Brand {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const DATE_RANGES = [
-  { label: '7 days', days: 7 },
-  { label: '15 days', days: 15 },
-  { label: '30 days', days: 30 },
-  { label: '90 days', days: 90 },
-]
+const DATE_RANGES = [{ days: 7 }, { days: 15 }, { days: 30 }, { days: 90 }]
 
 const ENGINES = ['all', 'chatgpt', 'gemini', 'perplexity', 'claude']
 
@@ -73,6 +69,8 @@ const ENGINE_COLORS: Record<string, string> = {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function SnapshotsPage() {
+  const t = useTranslations('snapshots')
+  const tc = useTranslations('common')
   const { tooltipStyle, gridColor, axisColor } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
@@ -93,11 +91,11 @@ export default function SnapshotsPage() {
         setBrands(list)
         if (list.length > 0) setSelectedBrand(list[0])
       } catch {
-        setError('Failed to load brands')
+        setError(t('failed_load_brands'))
       }
     }
     loadBrands()
-  }, [])
+  }, [t])
 
   // Fetch snapshots
   const fetchSnapshots = useCallback(async () => {
@@ -119,11 +117,11 @@ export default function SnapshotsPage() {
         setSnapshots(data.data?.snapshots || [])
       }
     } catch {
-      setError('Failed to load snapshots')
+      setError(t('failed_load_snapshots'))
     } finally {
       setLoading(false)
     }
-  }, [selectedBrand, days, engine])
+  }, [selectedBrand, days, engine, t])
 
   useEffect(() => {
     fetchSnapshots()
@@ -142,12 +140,12 @@ export default function SnapshotsPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        setError(data.message || 'Recalculation failed')
+        setError(data.message || t('recalculation_failed'))
       } else {
         await fetchSnapshots()
       }
     } catch {
-      setError('Recalculation failed')
+      setError(t('recalculation_failed'))
     } finally {
       setRecalculating(false)
     }
@@ -211,11 +209,11 @@ export default function SnapshotsPage() {
         <div>
           <div className="flex items-center gap-3">
             <Camera className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-black tracking-tight text-foreground">Snapshots</h1>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">
+              {t('page_title')}
+            </h1>
           </div>
-          <p className="mt-1 text-muted-foreground">
-            Citation rate snapshots and trend analysis from monitoring data.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -226,7 +224,7 @@ export default function SnapshotsPage() {
             disabled={!selectedBrand}
           >
             <RefreshCw className="h-4 w-4" />
-            {recalculating ? 'Recalculating...' : 'Recalculate'}
+            {recalculating ? t('recalculating') : t('recalculate')}
           </Button>
         </div>
       </div>
@@ -260,7 +258,7 @@ export default function SnapshotsPage() {
           {/* Engine filter */}
           <div className="flex items-center gap-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Engine
+              {t('engine')}
             </label>
             <div className="flex gap-1">
               {ENGINES.map((e) => (
@@ -274,7 +272,7 @@ export default function SnapshotsPage() {
                   )}
                   onClick={() => setEngine(e)}
                 >
-                  {e === 'all' ? 'All' : e.charAt(0).toUpperCase() + e.slice(1)}
+                  {e === 'all' ? tc('all') : e.charAt(0).toUpperCase() + e.slice(1)}
                 </button>
               ))}
             </div>
@@ -283,7 +281,7 @@ export default function SnapshotsPage() {
           {/* Date range */}
           <div className="flex items-center gap-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Period
+              {t('period')}
             </label>
             <div className="flex gap-1">
               {DATE_RANGES.map((r) => (
@@ -297,7 +295,7 @@ export default function SnapshotsPage() {
                   )}
                   onClick={() => setDays(r.days)}
                 >
-                  {r.label}
+                  {t('days_range', { count: r.days })}
                 </button>
               ))}
             </div>
@@ -307,9 +305,9 @@ export default function SnapshotsPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <p className="text-sm text-red-300">{error}</p>
+        <div className="border-red-500/20 bg-red-500/10 flex items-start gap-3 rounded-xl border px-4 py-3">
+          <AlertCircle className="text-red-400 mt-0.5 h-4 w-4 shrink-0" />
+          <p className="text-red-300 text-sm">{error}</p>
         </div>
       )}
 
@@ -366,21 +364,17 @@ export default function SnapshotsPage() {
 
       {/* Citation Rate Trend Chart */}
       <Card className="p-6">
-        <h2 className="mb-1 text-lg font-bold text-foreground">Citation Rate Trend</h2>
-        <p className="mb-6 text-xs text-muted-foreground">
-          How often your brand is cited across AI engines over time
-        </p>
+        <h2 className="mb-1 text-lg font-bold text-foreground">{t('citation_trend')}</h2>
+        <p className="mb-6 text-xs text-muted-foreground">{t('citation_trend_hint')}</p>
         {loading ? (
           <div className="flex h-64 items-center justify-center text-muted-foreground">
-            <RefreshCw className="mr-2 h-5 w-5 animate-spin" /> Loading snapshots...
+            <RefreshCw className="mr-2 h-5 w-5 animate-spin" /> {t('loading_snapshots')}
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
             <Camera className="mb-3 h-10 w-10 text-foreground" />
-            <p className="text-sm">No snapshots available for this period.</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Run monitoring and recalculate snapshots to start tracking.
-            </p>
+            <p className="text-sm">{t('no_snapshots')}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('run_monitoring')}</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
@@ -396,7 +390,7 @@ export default function SnapshotsPage() {
                 stroke="#6366f1"
                 strokeWidth={2}
                 dot={{ r: 3 }}
-                name="Citation Rate %"
+                name={t('citation_rate_percent')}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -406,10 +400,8 @@ export default function SnapshotsPage() {
       {/* Visibility Trend Chart */}
       {chartData.length > 0 && (
         <Card className="p-6">
-          <h2 className="mb-1 text-lg font-bold text-foreground">Visibility & Sentiment</h2>
-          <p className="mb-6 text-xs text-muted-foreground">
-            Average visibility score and normalized sentiment over time
-          </p>
+          <h2 className="mb-1 text-lg font-bold text-foreground">{t('visibility_sentiment')}</h2>
+          <p className="mb-6 text-xs text-muted-foreground">{t('visibility_sentiment_hint')}</p>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
@@ -423,7 +415,7 @@ export default function SnapshotsPage() {
                 stroke="#10b981"
                 strokeWidth={2}
                 dot={{ r: 3 }}
-                name="Visibility"
+                name={t('visibility_label')}
               />
               <Line
                 type="monotone"
@@ -431,7 +423,7 @@ export default function SnapshotsPage() {
                 stroke="#f97316"
                 strokeWidth={2}
                 dot={{ r: 3 }}
-                name="Sentiment (normalized)"
+                name={t('sentiment_normalized')}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -441,10 +433,8 @@ export default function SnapshotsPage() {
       {/* Competitor Rates (from latest snapshot) */}
       {competitorData.length > 0 && (
         <Card className="p-6">
-          <h2 className="mb-1 text-lg font-bold text-foreground">Competitor Citation Rates</h2>
-          <p className="mb-6 text-xs text-muted-foreground">
-            Latest snapshot: how often competitors are cited vs your brand
-          </p>
+          <h2 className="mb-1 text-lg font-bold text-foreground">{t('competitor_rates')}</h2>
+          <p className="mb-6 text-xs text-muted-foreground">{t('competitor_rates_hint')}</p>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
               data={[
@@ -475,28 +465,28 @@ export default function SnapshotsPage() {
       {/* Raw Snapshots Table */}
       {snapshots.length > 0 && (
         <Card className="p-6">
-          <h2 className="mb-4 text-lg font-bold text-foreground">Snapshot History</h2>
+          <h2 className="mb-4 text-lg font-bold text-foreground">{t('snapshot_history')}</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
                   <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Date
+                    {t('date')}
                   </th>
                   <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Prompts
+                    {t('prompts')}
                   </th>
                   <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Citations
+                    {t('citations_label')}
                   </th>
                   <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Rate
+                    {t('rate')}
                   </th>
                   <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Visibility
+                    {t('visibility_label')}
                   </th>
                   <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Sentiment
+                    {t('sentiment')}
                   </th>
                 </tr>
               </thead>
@@ -574,7 +564,7 @@ function TrendIcon({
   }
   if (direction === 'down') {
     return (
-      <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+      <span className="text-red-400 flex items-center gap-1 text-xs font-bold">
         <TrendingDown className="h-3.5 w-3.5" />-{percent.toFixed(1)}%
       </span>
     )

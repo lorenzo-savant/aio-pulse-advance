@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Key, Plus, Trash2, Copy, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -17,19 +18,23 @@ interface ApiKey {
   createdAt: string
 }
 
+// Scope labels and descriptions live in the message catalog under
+// api_keys.scope_<slug> / api_keys.scope_<slug>_desc.
 const ALL_SCOPES = [
-  { value: 'read:brands', label: 'Read Brands', description: 'View brand data' },
-  { value: 'write:brands', label: 'Write Brands', description: 'Create/edit/delete brands' },
-  { value: 'read:prompts', label: 'Read Prompts', description: 'View prompts' },
-  { value: 'write:prompts', label: 'Write Prompts', description: 'Create/edit/delete prompts' },
-  { value: 'read:analytics', label: 'Read Analytics', description: 'View analytics data' },
-  { value: 'read:audit', label: 'Read Audit Logs', description: 'View audit logs' },
-  { value: 'manage:api_keys', label: 'Manage API Keys', description: 'Create/revoke API keys' },
-  { value: 'manage:billing', label: 'Manage Billing', description: 'View/update billing' },
-  { value: 'manage:members', label: 'Manage Members', description: 'Invite/remove members' },
-]
+  { value: 'read:brands', slug: 'read_brands' },
+  { value: 'write:brands', slug: 'write_brands' },
+  { value: 'read:prompts', slug: 'read_prompts' },
+  { value: 'write:prompts', slug: 'write_prompts' },
+  { value: 'read:analytics', slug: 'read_analytics' },
+  { value: 'read:audit', slug: 'read_audit' },
+  { value: 'manage:api_keys', slug: 'manage_api_keys' },
+  { value: 'manage:billing', slug: 'manage_billing' },
+  { value: 'manage:members', slug: 'manage_members' },
+] as const
 
 export default function ApiKeysPage() {
+  const t = useTranslations('api_keys')
+  const tc = useTranslations('common')
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
@@ -47,7 +52,7 @@ export default function ApiKeysPage() {
   const fetchKeys = async () => {
     try {
       const res = await fetch('/api/keys')
-      if (!res.ok) throw new Error('Failed to fetch keys')
+      if (!res.ok) throw new Error(t('fetch_failed'))
       const data = await res.json()
       setKeys(data.data ?? [])
     } catch (err) {
@@ -60,11 +65,11 @@ export default function ApiKeysPage() {
   const handleGenerate = async () => {
     setError(null)
     if (!newKeyName.trim()) {
-      setError('Key name is required')
+      setError(t('name_required'))
       return
     }
     if (selectedScopes.length === 0) {
-      setError('Select at least one scope')
+      setError(t('scope_required'))
       return
     }
 
@@ -95,11 +100,11 @@ export default function ApiKeysPage() {
   }
 
   const handleRevoke = async (keyId: string) => {
-    if (!confirm('Are you sure you want to revoke this key? This cannot be undone.')) return
+    if (!confirm(t('revoke_confirm'))) return
 
     try {
       const res = await fetch(`/api/keys?id=${keyId}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed to revoke key')
+      if (!res.ok) throw new Error(t('revoke_failed'))
       await fetchKeys()
     } catch (err) {
       console.error('Error revoking key:', err)
@@ -121,7 +126,7 @@ export default function ApiKeysPage() {
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-muted-foreground">Loading API keys...</div>
+        <div className="text-muted-foreground">{t('loading')}</div>
       </div>
     )
   }
@@ -130,14 +135,12 @@ export default function ApiKeysPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">API Keys</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage scoped API keys for programmatic access
-          </p>
+          <h1 className="text-2xl font-bold">{t('page_title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <Button onClick={() => setShowGenerateModal(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Generate Key
+          {t('generate_key')}
         </Button>
       </div>
 
@@ -162,7 +165,7 @@ export default function ApiKeysPage() {
                     ))}
                     {key.scopes.length > 3 && (
                       <Badge variant="outline" className="text-xs">
-                        +{key.scopes.length - 3} more
+                        {t('more_scopes', { count: key.scopes.length - 3 })}
                       </Badge>
                     )}
                   </div>
@@ -171,22 +174,22 @@ export default function ApiKeysPage() {
 
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="text-right">
-                  <div>Last used</div>
+                  <div>{t('last_used')}</div>
                   <div className="font-medium text-foreground">
-                    {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
+                    {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : t('never')}
                   </div>
                 </div>
                 {key.revokedAt ? (
                   <Badge variant="outline" className="text-destructive">
-                    Revoked
+                    {t('revoked')}
                   </Badge>
                 ) : key.expiresAt && new Date(key.expiresAt) < new Date() ? (
                   <Badge variant="outline" className="text-destructive">
-                    Expired
+                    {t('expired')}
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="text-green-600">
-                    Active
+                    {t('active')}
                   </Badge>
                 )}
                 {!key.revokedAt && (
@@ -202,8 +205,8 @@ export default function ApiKeysPage() {
         {keys.length === 0 && (
           <div className="py-12 text-center text-muted-foreground">
             <Key className="mx-auto mb-3 h-12 w-12 opacity-50" />
-            <p className="text-sm">No API keys yet</p>
-            <p className="mt-1 text-xs">Generate your first API key to get started</p>
+            <p className="text-sm">{t('no_keys')}</p>
+            <p className="mt-1 text-xs">{t('no_keys_hint')}</p>
           </div>
         )}
       </div>
@@ -216,7 +219,7 @@ export default function ApiKeysPage() {
           />
           <div className="relative mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-lg font-semibold">Generate API Key</h2>
+              <h2 className="text-lg font-semibold">{t('generate_title')}</h2>
               <Button variant="ghost" size="sm" onClick={() => setShowGenerateModal(false)}>
                 ✕
               </Button>
@@ -224,18 +227,18 @@ export default function ApiKeysPage() {
 
             <div className="space-y-4 p-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">Key Name</label>
+                <label className="mb-1 block text-sm font-medium">{t('key_name')}</label>
                 <input
                   type="text"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
                   className="w-full rounded-lg border border-input bg-input px-3 py-2 text-sm"
-                  placeholder="e.g., Production Integration"
+                  placeholder={t('key_name_placeholder')}
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium">Scopes</label>
+                <label className="mb-2 block text-sm font-medium">{t('scopes')}</label>
                 <div className="space-y-2">
                   {ALL_SCOPES.map((scope) => (
                     <label
@@ -249,8 +252,10 @@ export default function ApiKeysPage() {
                         className="mt-1"
                       />
                       <div>
-                        <div className="text-sm font-medium">{scope.label}</div>
-                        <div className="text-xs text-muted-foreground">{scope.description}</div>
+                        <div className="text-sm font-medium">{t(`scope_${scope.slug}`)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {t(`scope_${scope.slug}_desc`)}
+                        </div>
                       </div>
                     </label>
                   ))}
@@ -270,10 +275,10 @@ export default function ApiKeysPage() {
                   onClick={() => setShowGenerateModal(false)}
                   className="flex-1"
                 >
-                  Cancel
+                  {tc('cancel')}
                 </Button>
                 <Button onClick={handleGenerate} className="flex-1">
-                  Generate
+                  {tc('create')}
                 </Button>
               </div>
             </div>
@@ -288,7 +293,7 @@ export default function ApiKeysPage() {
             <div className="border-b border-border p-4">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <CheckCircle className="h-5 w-5 text-green-500" />
-                API Key Generated
+                {t('generated_title')}
               </h2>
             </div>
 
@@ -296,7 +301,7 @@ export default function ApiKeysPage() {
               <div className="bg-destructive/10 border-destructive/20 flex items-start gap-2 rounded-lg border p-3">
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" />
                 <p className="text-sm text-destructive">
-                  Copy this key now. It will <strong>never be shown again</strong>.
+                  {t.rich('copy_warning', { b: (chunks) => <strong>{chunks}</strong> })}
                 </p>
               </div>
 
@@ -325,7 +330,7 @@ export default function ApiKeysPage() {
                 }}
                 className="w-full"
               >
-                Done
+                {tc('done')}
               </Button>
             </div>
           </div>

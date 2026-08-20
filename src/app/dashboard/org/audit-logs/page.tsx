@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Search, Filter, Download, Activity } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -41,6 +42,7 @@ const ACTION_ICONS: Record<string, string> = {
 }
 
 export default function AuditLogsPage() {
+  const t = useTranslations('audit_logs')
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -71,7 +73,7 @@ export default function AuditLogsPage() {
       if (dateTo) params.set('to', dateTo)
 
       const res = await fetch(`/api/audit-logs?${params}`)
-      if (!res.ok) throw new Error('Failed to fetch audit logs')
+      if (!res.ok) throw new Error(t('fetch_failed'))
       const data = await res.json()
       setLogs(data)
       setHasMore(data.length === 50)
@@ -89,7 +91,7 @@ export default function AuditLogsPage() {
       if (dateTo) params.set('to', dateTo)
 
       const res = await fetch(`/api/audit-logs/export?${params}`)
-      if (!res.ok) throw new Error('Failed to export')
+      if (!res.ok) throw new Error(t('export_failed'))
 
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
@@ -121,14 +123,12 @@ export default function AuditLogsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Audit Logs</h1>
-          <p className="text-sm text-muted-foreground">
-            Immutable record of all organization actions
-          </p>
+          <h1 className="text-2xl font-bold">{t('page_title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <Button variant="outline" onClick={handleExport}>
           <Download className="mr-2 h-4 w-4" />
-          Export CSV
+          {t('export_csv')}
         </Button>
       </div>
 
@@ -136,7 +136,7 @@ export default function AuditLogsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4" />
-            <h2 className="text-lg font-semibold">Filters</h2>
+            <h2 className="text-lg font-semibold">{t('filters')}</h2>
           </div>
         </CardHeader>
         <CardBody>
@@ -148,7 +148,7 @@ export default function AuditLogsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full rounded-lg border border-input bg-input py-2 pl-10 pr-3 text-sm"
-                placeholder="Search actions, actors..."
+                placeholder={t('search_placeholder')}
               />
             </div>
 
@@ -160,7 +160,7 @@ export default function AuditLogsPage() {
               }}
               className="rounded-lg border border-input bg-input px-3 py-2 text-sm"
             >
-              <option value="">All Actions</option>
+              <option value="">{t('all_actions')}</option>
               {uniqueActions.map((action) => (
                 <option key={action} value={action}>
                   {action}
@@ -176,7 +176,7 @@ export default function AuditLogsPage() {
               }}
               className="rounded-lg border border-input bg-input px-3 py-2 text-sm"
             >
-              <option value="">All Resources</option>
+              <option value="">{t('all_resources')}</option>
               {uniqueResourceTypes.map((type) => (
                 <option key={type} value={type}>
                   {type}
@@ -190,14 +190,14 @@ export default function AuditLogsPage() {
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 className="flex-1 rounded-lg border border-input bg-input px-3 py-2 text-sm"
-                placeholder="From"
+                placeholder={t('date_from')}
               />
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 className="flex-1 rounded-lg border border-input bg-input px-3 py-2 text-sm"
-                placeholder="To"
+                placeholder={t('date_to')}
               />
             </div>
           </div>
@@ -206,12 +206,12 @@ export default function AuditLogsPage() {
 
       <div className="space-y-2">
         {loading ? (
-          <div className="py-12 text-center text-muted-foreground">Loading audit logs...</div>
+          <div className="py-12 text-center text-muted-foreground">{t('loading')}</div>
         ) : filteredLogs.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             <Activity className="mx-auto mb-3 h-12 w-12 opacity-50" />
-            <p className="text-sm">No audit logs found</p>
-            <p className="mt-1 text-xs">Actions will appear here as they occur</p>
+            <p className="text-sm">{t('no_logs')}</p>
+            <p className="mt-1 text-xs">{t('no_logs_hint')}</p>
           </div>
         ) : (
           filteredLogs.map((log) => (
@@ -226,15 +226,15 @@ export default function AuditLogsPage() {
                     </Badge>
                     <span className="text-sm text-muted-foreground">
                       {log.actorType === 'api_key'
-                        ? '🔑 API Key'
+                        ? `🔑 ${t('actor_api_key')}`
                         : log.actorType === 'system'
-                          ? '⚙️ System'
-                          : '👤 User'}
+                          ? `⚙️ ${t('actor_system')}`
+                          : `👤 ${t('actor_user')}`}
                     </span>
                   </div>
 
                   <div className="mt-1 text-sm">
-                    <span className="text-muted-foreground">Resource:</span>{' '}
+                    <span className="text-muted-foreground">{t('resource')}</span>{' '}
                     <span className="font-medium">
                       {log.resourceType}
                       {log.resourceId && ` (${log.resourceId.slice(0, 8)}...)`}
@@ -248,7 +248,7 @@ export default function AuditLogsPage() {
                   {log.metadata && Object.keys(log.metadata).length > 0 && (
                     <details className="mt-2">
                       <summary className="cursor-pointer text-xs text-muted-foreground">
-                        View metadata
+                        {t('view_metadata')}
                       </summary>
                       <pre className="mt-1 overflow-x-auto rounded-lg bg-muted p-2 text-xs">
                         {JSON.stringify(log.metadata, null, 2)}
@@ -274,7 +274,7 @@ export default function AuditLogsPage() {
       {hasMore && !loading && (
         <div className="flex justify-center">
           <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
-            Load More
+            {t('load_more')}
           </Button>
         </div>
       )}

@@ -29,6 +29,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -45,6 +46,7 @@ import type { AnalysisResult, AIOScore, EngineId, ModelId, AIProvider } from '@/
 // ─── Score Ring ───────────────────────────────────────────────────────────────
 
 function ScoreRing({ score, size = 120 }: { score: number; size?: number }) {
+  const t = useTranslations('optimizer')
   const r = (size - 16) / 2
   const circ = 2 * Math.PI * r
   const offset = circ - (score / 100) * circ
@@ -80,7 +82,7 @@ function ScoreRing({ score, size = 120 }: { score: number; size?: number }) {
       <div className="absolute text-center">
         <span className="text-2xl font-black text-foreground">{score}</span>
         <span className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-          Score
+          {t('score_label')}
         </span>
       </div>
     </div>
@@ -185,6 +187,8 @@ function IntentMapping({
   confidence: number
   signals: string[]
 }) {
+  const t = useTranslations('optimizer')
+  const tc = useTranslations('common')
   const intentTypes = [
     'Informational',
     'Navigational',
@@ -198,7 +202,7 @@ function IntentMapping({
     <Card className="p-6">
       <div className="mb-4 flex items-center gap-2">
         <SearchCheck className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-bold text-foreground">Intent Mapping</h2>
+        <h2 className="text-lg font-bold text-foreground">{t('intent_mapping')}</h2>
       </div>
 
       <div className="mb-5 space-y-2">
@@ -229,7 +233,7 @@ function IntentMapping({
               </span>
               {isActive && (
                 <span className="bg-primary/20 ml-auto rounded-lg px-2 py-0.5 text-xs font-semibold text-primary">
-                  Active
+                  {tc('active')}
                 </span>
               )}
             </div>
@@ -240,7 +244,7 @@ function IntentMapping({
       {signals.length > 0 && (
         <div className="border-t pt-4">
           <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-            Detected Intent Signals
+            {t('detected_signals')}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {signals.map((s) => (
@@ -267,6 +271,7 @@ function KeywordDensityAnalysis({
   keywords: { word: string; impact: number; difficulty: number }[]
   analyzedText?: string
 }) {
+  const t = useTranslations('optimizer')
   const densityData = (() => {
     if (!analyzedText || keywords.length === 0) return []
     const text = analyzedText.toLowerCase()
@@ -303,9 +308,9 @@ function KeywordDensityAnalysis({
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-bold text-foreground">Keyword Density Analysis</h2>
+          <h2 className="text-lg font-bold text-foreground">{t('keyword_density')}</h2>
         </div>
-        <Badge variant="brand">{stats.total} keywords</Badge>
+        <Badge variant="brand">{t('keywords_count', { count: stats.total })}</Badge>
       </div>
 
       <div className="mb-4 grid grid-cols-4 gap-3">
@@ -377,8 +382,8 @@ function KeywordDensityAnalysis({
 
       <div className="mt-4 rounded-lg border border-input bg-secondary px-3 py-2">
         <p className="text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">Target density:</span> 0.5% - 4.0% per
-          keyword
+          <span className="font-semibold text-foreground">{t('target_density')}</span>{' '}
+          {t('target_density_range')}
         </p>
       </div>
     </Card>
@@ -448,6 +453,7 @@ function EngineRecommendations({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function OptimizerPage() {
+  const t = useTranslations('optimizer')
   const [input, setInput] = useState('')
   const [mode, setMode] = useState<'text' | 'url'>('text')
   const [engine, setEngine] = useState<EngineId>('all')
@@ -539,10 +545,8 @@ export default function OptimizerPage() {
       <SectionHelp section="optimizer" />
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black tracking-tight text-foreground">Content Optimizer</h1>
-        <p className="mt-1 text-muted-foreground">
-          Analyze content for AI search visibility & citation readiness.
-        </p>
+        <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+        <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
       </div>
 
       {/* Previous Analyses */}
@@ -630,7 +634,7 @@ export default function OptimizerPage() {
             <textarea
               className="w-full resize-none rounded-xl border border-input bg-input px-4 py-3 font-mono text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
               maxLength={charLimit}
-              placeholder="Paste your content here — article, landing page copy, blog post, product description..."
+              placeholder={t('textarea_placeholder')}
               rows={10}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -649,7 +653,7 @@ export default function OptimizerPage() {
         ) : (
           <input
             className="w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground placeholder-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-            placeholder="https://example.com/your-page"
+            placeholder={t('url_placeholder')}
             type="url"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -661,7 +665,7 @@ export default function OptimizerPage() {
           {/* Provider */}
           <div className="space-y-1">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              AI Provider
+              {t('ai_provider')}
             </label>
             <div className="flex flex-wrap gap-2">
               {AI_PROVIDERS.map((p) => (
@@ -688,7 +692,7 @@ export default function OptimizerPage() {
           {/* Model */}
           <div className="space-y-1">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Model
+              {t('model')}
             </label>
             <select
               className="rounded-xl border border-input bg-input px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
@@ -706,7 +710,7 @@ export default function OptimizerPage() {
           {/* Engine */}
           <div className="flex-1 space-y-1">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Target Engine
+              {t('target_engine')}
             </label>
             <div className="flex flex-wrap gap-2">
               {ENGINES.map((e) => (
@@ -740,9 +744,9 @@ export default function OptimizerPage() {
 
         {/* Error */}
         {error && (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="border-red-500/20 bg-red-500/10 mt-4 flex items-start gap-3 rounded-xl border px-4 py-3">
+            <AlertCircle className="text-red-500 mt-0.5 h-4 w-4 shrink-0" />
+            <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
       </Card>
@@ -762,7 +766,7 @@ export default function OptimizerPage() {
             <Card className="flex flex-col items-center justify-center p-8">
               <ScoreRing score={result.visibilityScore} size={140} />
               <p className="mt-4 text-center text-sm font-semibold text-foreground">
-                Overall Visibility Score
+                {t('overall_score')}
               </p>
               <div className="mt-4 flex gap-2">
                 <Button
@@ -783,7 +787,7 @@ export default function OptimizerPage() {
             {/* Summary */}
             <Card className="p-6 lg:col-span-2">
               <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                AI Summary
+                {t('ai_summary')}
               </p>
               <p className="text-text-secondary-ui leading-relaxed">{result.summary}</p>
 
@@ -821,7 +825,7 @@ export default function OptimizerPage() {
               <div className="mt-4 flex items-center gap-2 rounded-lg border border-input bg-secondary px-3 py-2">
                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
                 <p className="text-text-secondary-ui text-xs">
-                  <span className="font-semibold text-foreground">Audience: </span>
+                  <span className="font-semibold text-foreground">{t('audience')} </span>
                   {result.audience}
                 </p>
               </div>
@@ -836,7 +840,7 @@ export default function OptimizerPage() {
               signals={result.intentSignals}
             />
             <div>
-              <h2 className="mb-4 text-lg font-bold text-foreground">Engine-by-Engine Breakdown</h2>
+              <h2 className="mb-4 text-lg font-bold text-foreground">{t('engine_breakdown')}</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {result.engineBreakdown.map((b) => (
                   <EngineCard key={b.engine} breakdown={b} />
@@ -850,8 +854,10 @@ export default function OptimizerPage() {
             {/* Keywords */}
             <Card className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-foreground">Keywords</h2>
-                <Badge variant="brand">{result.keywords.length} found</Badge>
+                <h2 className="text-lg font-bold text-foreground">{t('keywords')}</h2>
+                <Badge variant="brand">
+                  {t('keywords_found', { count: result.keywords.length })}
+                </Badge>
               </div>
               <div className="space-y-2">
                 {(() => {
@@ -873,7 +879,7 @@ export default function OptimizerPage() {
 
             {/* Radar Chart */}
             <Card className="p-6">
-              <h2 className="mb-4 text-lg font-bold text-foreground">SEO Radar</h2>
+              <h2 className="mb-4 text-lg font-bold text-foreground">{t('seo_radar')}</h2>
               <ResponsiveContainer height={260} width="100%">
                 <RadarChart data={radarData}>
                   <PolarGrid />
@@ -882,7 +888,7 @@ export default function OptimizerPage() {
                     dataKey="A"
                     fill="#6366f1"
                     fillOpacity={0.25}
-                    name="Score"
+                    name={t('score_label')}
                     stroke="#6366f1"
                     strokeWidth={2}
                   />
@@ -907,7 +913,7 @@ export default function OptimizerPage() {
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">
                 <TrendingUp className="mr-2 inline h-5 w-5 text-primary" />
-                Improvement Suggestions
+                {t('improvement_suggestions')}
               </h2>
               <button
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"

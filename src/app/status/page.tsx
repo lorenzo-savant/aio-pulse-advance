@@ -19,6 +19,7 @@
 
 import { useEffect, useState } from 'react'
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { SiteHeader } from '@/components/SiteHeader'
 import { cn } from '@/lib/utils'
 
@@ -50,28 +51,27 @@ interface HealthPayload {
 const POLL_INTERVAL_MS = 30_000
 const HISTORY_LENGTH = 20
 
-const SERVICE_LABELS: Record<keyof HealthPayload['services'], string> = {
-  database: 'Database',
-  rate_limit: 'Rate Limit (Redis)',
-  billing: 'Billing (Stripe)',
-  email: 'Email (Resend)',
-  ai_providers: 'AI Providers',
-}
+// Names live in the message catalog under status_page.service_*.
+const SERVICE_KEYS = [
+  'database',
+  'rate_limit',
+  'billing',
+  'email',
+  'ai_providers',
+] as const satisfies readonly (keyof HealthPayload['services'])[]
 
 function StatusBadge({ status }: { status: OverallStatus }) {
+  const t = useTranslations('status_page')
   const config = {
     healthy: {
-      label: 'All systems operational',
       Icon: CheckCircle2,
       className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
     },
     degraded: {
-      label: 'Partially degraded',
       Icon: AlertTriangle,
       className: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
     },
     unhealthy: {
-      label: 'Major outage',
       Icon: XCircle,
       className: 'bg-red-500/10 text-red-500 border-red-500/30',
     },
@@ -85,7 +85,7 @@ function StatusBadge({ status }: { status: OverallStatus }) {
       )}
     >
       <config.Icon className="h-5 w-5" />
-      {config.label}
+      {t(`badge_${status}`)}
     </div>
   )
 }
@@ -118,8 +118,9 @@ function ServiceRow({ name, probe }: { name: string; probe: ServiceProbe }) {
 }
 
 function HistorySparkline({ history }: { history: OverallStatus[] }) {
+  const t = useTranslations('status_page')
   if (history.length === 0) {
-    return <p className="text-sm text-muted-foreground">Collecting data…</p>
+    return <p className="text-sm text-muted-foreground">{t('collecting')}</p>
   }
   return (
     <div className="flex items-center gap-1">
@@ -143,6 +144,7 @@ function HistorySparkline({ history }: { history: OverallStatus[] }) {
 }
 
 export default function StatusPage() {
+  const t = useTranslations('status_page')
   const [health, setHealth] = useState<HealthPayload | null>(null)
   const [history, setHistory] = useState<OverallStatus[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -183,12 +185,9 @@ export default function StatusPage() {
       <main className="mx-auto max-w-4xl px-6 pb-24 pt-20">
         <header className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-black tracking-tight text-foreground md:text-5xl">
-            AEO Pulse Status
+            {t('page_title')}
           </h1>
-          <p className="mx-auto max-w-2xl text-base text-muted-foreground">
-            Real-time service health. Polls our /api/health endpoint every 30 seconds. For incident
-            history and subscription to status updates, see our hosted status page (link in footer).
-          </p>
+          <p className="mx-auto max-w-2xl text-base text-muted-foreground">{t('page_subtitle')}</p>
         </header>
 
         <section className="mb-10 flex flex-col items-center gap-6">
@@ -199,46 +198,50 @@ export default function StatusPage() {
           ) : (
             <div className="flex items-center gap-3 text-muted-foreground">
               <RefreshCw className="h-5 w-5 animate-spin" />
-              Checking…
+              {t('checking')}
             </div>
           )}
           <HistorySparkline history={history} />
         </section>
 
         <section className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <h2 className="mb-1 text-xl font-bold text-foreground">Service health</h2>
-          <p className="mb-6 text-sm text-muted-foreground">
-            Per-component status from the most recent probe.
-          </p>
+          <h2 className="mb-1 text-xl font-bold text-foreground">{t('service_health')}</h2>
+          <p className="mb-6 text-sm text-muted-foreground">{t('service_health_hint')}</p>
 
           {health ? (
             <div>
-              {(Object.keys(SERVICE_LABELS) as (keyof HealthPayload['services'])[]).map((key) => (
+              {SERVICE_KEYS.map((key) => (
                 <ServiceRow
                   key={key}
                   name={
                     key === 'ai_providers'
-                      ? `${SERVICE_LABELS[key]} (${health.services.ai_providers.configured}/${health.services.ai_providers.total})`
-                      : SERVICE_LABELS[key]
+                      ? `${t(`service_${key}`)} (${health.services.ai_providers.configured}/${health.services.ai_providers.total})`
+                      : t(`service_${key}`)
                   }
                   probe={health.services[key]}
                 />
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Waiting for first reading…</p>
+            <p className="text-sm text-muted-foreground">{t('waiting_first')}</p>
           )}
 
           <div className="mt-6 flex flex-wrap justify-between gap-2 border-t border-border pt-4 text-xs text-muted-foreground">
-            <span>Region: {health?.region ?? '—'}</span>
-            <span>Version: {health?.version ?? '—'}</span>
-            <span>Last update: {lastFetch ? lastFetch.toLocaleTimeString() : '—'}</span>
+            <span>
+              {t('region')} {health?.region ?? '—'}
+            </span>
+            <span>
+              {t('version')} {health?.version ?? '—'}
+            </span>
+            <span>
+              {t('last_update')} {lastFetch ? lastFetch.toLocaleTimeString() : '—'}
+            </span>
           </div>
         </section>
 
         {error && (
           <p className="text-red-500 mt-6 text-center text-sm">
-            Error reaching /api/health: {error}
+            {t('health_error')} {error}
           </p>
         )}
       </main>

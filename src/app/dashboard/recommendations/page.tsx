@@ -13,6 +13,7 @@ import {
   Calendar,
   FileText,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -94,6 +95,9 @@ const ENGINE_COLORS: Record<string, string> = {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function RecommendationsPage() {
+  const t = useTranslations('recommendations')
+  const tc = useTranslations('common')
+  const tb = useTranslations('breadcrumb')
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [data, setData] = useState<RecommendationsData | null>(null)
@@ -114,11 +118,11 @@ export default function RecommendationsPage() {
         setBrands(list)
         if (list.length > 0) setSelectedBrand(list[0])
       } catch {
-        setError('Failed to load brands')
+        setError(t('failed_load_brands'))
       }
     }
     loadBrands()
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (!selectedBrand) return
@@ -188,13 +192,13 @@ export default function RecommendationsPage() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Pages / Recommendations</p>
-            <h1 className="mt-1 text-[34px] font-bold tracking-tight text-foreground">
-              Recommendations
-            </h1>
-            <p className="mt-1 text-muted-foreground">
-              AI-powered insights and weekly review digests.
+            <p className="text-sm font-medium text-muted-foreground">
+              {tb('pages')} / {t('page_title')}
             </p>
+            <h1 className="mt-1 text-[34px] font-bold tracking-tight text-foreground">
+              {t('page_title')}
+            </h1>
+            <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             {brands.length > 1 && (
@@ -239,7 +243,7 @@ export default function RecommendationsPage() {
             onClick={() => setActiveTab('recommendations')}
           >
             <Lightbulb className="h-4 w-4" />
-            Recommendations
+            {t('recommendations_tab')}
           </button>
           <button
             className={cn(
@@ -295,7 +299,7 @@ export default function RecommendationsPage() {
                     )}
                     onClick={() => setFilterPriority('all')}
                   >
-                    All
+                    {tc('all')}
                   </button>
                   {['high', 'medium', 'low'].map((p) => (
                     <button
@@ -323,7 +327,7 @@ export default function RecommendationsPage() {
                     )}
                     onClick={() => setFilterCategory('all')}
                   >
-                    All Categories
+                    {t('all_categories')}
                   </button>
                   {categories.map((c) => (
                     <button
@@ -414,10 +418,10 @@ export default function RecommendationsPage() {
             {!data && !loading && (
               <Card className="flex flex-col items-center justify-center p-12 text-center">
                 <Lightbulb className="mb-4 h-12 w-12 text-muted-foreground" />
-                <h3 className="text-lg font-bold text-muted-foreground">No recommendations yet</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Select a brand and click Generate to get AI-powered content recommendations.
-                </p>
+                <h3 className="text-lg font-bold text-muted-foreground">
+                  {t('no_recommendations')}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">{t('generate_click')}</p>
               </Card>
             )}
           </>
@@ -429,10 +433,8 @@ export default function RecommendationsPage() {
             {weeklyReviews.length === 0 ? (
               <Card className="flex flex-col items-center justify-center p-12 text-center">
                 <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
-                <h3 className="text-lg font-bold text-muted-foreground">No weekly reviews yet</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Weekly reviews are generated automatically every Monday. Check back soon.
-                </p>
+                <h3 className="text-lg font-bold text-muted-foreground">{t('no_weekly')}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{t('weekly_description')}</p>
               </Card>
             ) : (
               <div className="space-y-4">
@@ -461,7 +463,7 @@ export default function RecommendationsPage() {
                           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                AVI Score
+                                {t('avi_score')}
                               </p>
                               <p className="text-lg font-bold text-foreground">
                                 {(m.aviScoreCurrent ?? 0).toFixed(1)}
@@ -469,7 +471,7 @@ export default function RecommendationsPage() {
                             </div>
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                AVI Delta
+                                {t('avi_delta')}
                               </p>
                               <p
                                 className={cn(
@@ -487,7 +489,7 @@ export default function RecommendationsPage() {
                             </div>
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                Scans
+                                {t('scans')}
                               </p>
                               <p className="text-lg font-bold text-foreground">
                                 {m.totalMonitoringRuns ?? 0}
@@ -495,7 +497,7 @@ export default function RecommendationsPage() {
                             </div>
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                Hallucinations
+                                {t('hallucinations')}
                               </p>
                               <p
                                 className={cn(

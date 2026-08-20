@@ -11,6 +11,7 @@ import {
   Filter,
   AlertCircle,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -62,6 +63,7 @@ function MiniRing({ score }: { score: number }) {
 // ─── History Entry Card ───────────────────────────────────────────────────────
 
 function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: () => void }) {
+  const t = useTranslations('history')
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -94,7 +96,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
+            className="hover:bg-red-500/10 hover:text-red-500 rounded-lg p-1.5 text-muted-foreground transition-colors"
             onClick={onDelete}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -137,7 +139,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
           {entry.engineBreakdown.length > 0 && (
             <div className="mb-4">
               <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Engine Scores
+                {t('engine_scores')}
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {entry.engineBreakdown.map((e) => (
@@ -165,7 +167,7 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
           {entry.keywords.length > 0 && (
             <div className="mb-4">
               <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Keywords
+                {t('keywords')}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {entry.keywords.map((k) => (
@@ -195,8 +197,10 @@ function HistoryCard({ entry, onDelete }: { entry: ScanHistoryEntry; onDelete: (
 
 // ─── Filters ──────────────────────────────────────────────────────────────────
 
-const ENGINE_OPTIONS: Array<{ label: string; value: 'all' | EngineId }> = [
-  { label: 'All engines', value: 'all' },
+// Engine names are product names and stay untranslated; only the catch-all
+// option is localised (history.all_engines).
+const ENGINE_OPTIONS: Array<{ label: string | null; value: 'all' | EngineId }> = [
+  { label: null, value: 'all' },
   { label: 'ChatGPT', value: 'chatgpt' },
   { label: 'Gemini', value: 'gemini' },
   { label: 'Perplexity', value: 'perplexity' },
@@ -206,6 +210,8 @@ const ENGINE_OPTIONS: Array<{ label: string; value: 'all' | EngineId }> = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HistoryPage() {
+  const t = useTranslations('history')
+  const tc = useTranslations('common')
   const { scanHistory, removeScan, clearHistory } = useAppStore()
   const [search, setSearch] = useState('')
   const [engineFilter, setEngineFilter] = useState<'all' | EngineId>('all')
@@ -235,10 +241,8 @@ export default function HistoryPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Scan History</h1>
-          <p className="mt-1 text-muted-foreground">
-            All your previous content analyses — searchable and filterable.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         {scanHistory.length > 0 && (
           <div className="flex items-center gap-2">
@@ -264,16 +268,16 @@ export default function HistoryPage() {
                     setConfirmClear(false)
                   }}
                 >
-                  Confirm clear
+                  {t('confirm_clear')}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setConfirmClear(false)}>
-                  Cancel
+                  {tc('cancel')}
                 </Button>
               </>
             ) : (
               <Button size="sm" variant="ghost" onClick={() => setConfirmClear(true)}>
                 <Trash2 className="h-4 w-4" />
-                Clear all
+                {t('clear_all')}
               </Button>
             )}
           </div>
@@ -304,7 +308,7 @@ export default function HistoryPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 className="placeholder-text-muted-surface w-full rounded-xl border border-input bg-input py-2 pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary"
-                placeholder="Search by source URL or text..."
+                placeholder={t('search_source')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -322,7 +326,7 @@ export default function HistoryPage() {
                   )}
                   onClick={() => setEngineFilter(opt.value)}
                 >
-                  {opt.label}
+                  {opt.label ?? t('all_engines')}
                 </button>
               ))}
               <select
@@ -330,8 +334,8 @@ export default function HistoryPage() {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'date' | 'score')}
               >
-                <option value="date">Sort: Date</option>
-                <option value="score">Sort: Score</option>
+                <option value="date">{t('sort_date')}</option>
+                <option value="score">{t('sort_score')}</option>
               </select>
             </div>
           </div>
@@ -344,11 +348,8 @@ export default function HistoryPage() {
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-input bg-secondary">
             <Clock className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h2 className="mb-2 text-xl font-bold text-foreground">No scans yet</h2>
-          <p className="max-w-sm text-muted-foreground">
-            Run your first analysis in the Content Optimizer and your results will appear here
-            automatically.
-          </p>
+          <h2 className="mb-2 text-xl font-bold text-foreground">{t('no_scans')}</h2>
+          <p className="max-w-sm text-muted-foreground">{t('run_first')}</p>
         </div>
       )}
 
@@ -362,9 +363,7 @@ export default function HistoryPage() {
       )}
 
       {filtered.length === 0 && scanHistory.length > 0 && (
-        <div className="py-12 text-center text-muted-foreground">
-          No results match your filters.
-        </div>
+        <div className="py-12 text-center text-muted-foreground">{t('no_filters')}</div>
       )}
     </div>
   )

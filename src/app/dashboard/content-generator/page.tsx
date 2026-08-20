@@ -8,6 +8,7 @@
 // or regenerate.
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Wand2, Loader2, AlertTriangle, Copy, Check, Download, RefreshCw } from 'lucide-react'
@@ -43,22 +44,11 @@ interface GenerateOutput {
   systemPromptDigest: string
 }
 
-const INTENT_OPTIONS: Array<{ value: ArticleIntent; label: string }> = [
-  { value: 'B1', label: 'B1 — Brand & Competitor' },
-  { value: 'B2', label: 'B2 — Category Creation' },
-  { value: 'B3', label: 'B3 — Problem / JTBD' },
-  { value: 'B4', label: 'B4 — Buyer Intent' },
-  { value: 'B5', label: 'B5 — Compliance & Risk' },
-]
+// Labels live in the message catalog: content_generator.intent_<value lowercased>
+// and content_generator.format_<value>.
+const INTENT_OPTIONS: ArticleIntent[] = ['B1', 'B2', 'B3', 'B4', 'B5']
 
-const FORMAT_OPTIONS: Array<{ value: FormatHint; label: string }> = [
-  { value: 'paragraph', label: 'Paragraph snippet' },
-  { value: 'faq', label: 'FAQ block' },
-  { value: 'comparison', label: 'Comparison table' },
-  { value: 'how-to', label: 'How-to guide' },
-  { value: 'table', label: 'Data table' },
-  { value: 'list', label: 'Ranked list' },
-]
+const FORMAT_OPTIONS: FormatHint[] = ['paragraph', 'faq', 'comparison', 'how-to', 'table', 'list']
 
 function bandColor(band: QualityScore['band']): string {
   if (band === 'strong') return 'text-emerald-400'
@@ -67,6 +57,7 @@ function bandColor(band: QualityScore['band']): string {
 }
 
 export default function ContentGeneratorPage() {
+  const t = useTranslations('content_generator')
   const [brands, setBrands] = useState<BrandLite[]>([])
   const [brandId, setBrandId] = useState<string>('')
   const [topic, setTopic] = useState<string>('')
@@ -153,13 +144,9 @@ export default function ContentGeneratorPage() {
       <div>
         <div className="flex items-center gap-2">
           <Wand2 className="h-6 w-6 text-brand" />
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Content Generator</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
         </div>
-        <p className="mt-1 text-muted-foreground">
-          Generate Markdown articles optimised against the 5 AI-citation signals (clarity, EEAT,
-          Q&A, structure, structured-data). The output is auto-scored — iterate until it lands
-          strong.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
       </div>
 
       {/* Input form */}
@@ -167,7 +154,7 @@ export default function ContentGeneratorPage() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Brand *
+              {t('brand_required')}
             </label>
             <select
               className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
@@ -183,11 +170,11 @@ export default function ContentGeneratorPage() {
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Topic *
+              {t('topic_required')}
             </label>
             <input
               className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
-              placeholder='e.g. "best castingplattform for productions in Stockholm"'
+              placeholder={t('topic_placeholder')}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               maxLength={300}
@@ -195,7 +182,7 @@ export default function ContentGeneratorPage() {
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Intent
+              {t('intent')}
             </label>
             <select
               className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
@@ -203,15 +190,15 @@ export default function ContentGeneratorPage() {
               onChange={(e) => setIntent(e.target.value as ArticleIntent)}
             >
               {INTENT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
+                <option key={o} value={o}>
+                  {t(`intent_${o.toLowerCase()}`)}
                 </option>
               ))}
             </select>
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Length
+              {t('length')}
             </label>
             <div className="flex gap-2">
               {(['short', 'medium', 'long'] as ArticleLength[]).map((l) => (
@@ -225,28 +212,24 @@ export default function ContentGeneratorPage() {
                       : 'bg-secondary/50 border-border text-muted-foreground hover:border-border',
                   )}
                 >
-                  {l === 'short'
-                    ? 'Short (~400w)'
-                    : l === 'medium'
-                      ? 'Medium (~800w)'
-                      : 'Long (~1500w)'}
+                  {t(`length_${l}`)}
                 </button>
               ))}
             </div>
           </div>
           <div className="md:col-span-2">
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Format hint (optional — from Topic Finder)
+              {t('format_hint')}
             </label>
             <select
               className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
               value={formatHint}
               onChange={(e) => setFormatHint(e.target.value as FormatHint | '')}
             >
-              <option value="">No hint — let the LLM choose</option>
+              <option value="">{t('no_hint')}</option>
               {FORMAT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
+                <option key={o} value={o}>
+                  {t(`format_${o}`)}
                 </option>
               ))}
             </select>
@@ -255,13 +238,13 @@ export default function ContentGeneratorPage() {
         <div className="mt-4 flex items-center justify-end gap-2">
           {selectedBrand && (
             <span className="text-xs text-muted-foreground">
-              Generating for <b>{selectedBrand.name}</b>
+              {t('generating_for')} <b>{selectedBrand.name}</b>
               {selectedBrand.domain ? ` (${selectedBrand.domain})` : ''}
             </span>
           )}
           <Button onClick={generate} disabled={loading || !brandId || !topic.trim()} size="lg">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            {loading ? 'Generating…' : output ? 'Regenerate' : 'Generate article'}
+            {loading ? t('generating') : output ? t('regenerate') : t('generate_article')}
           </Button>
         </div>
       </Card>
@@ -276,7 +259,7 @@ export default function ContentGeneratorPage() {
       {loading && !output && (
         <Card className="p-6 text-sm text-muted-foreground">
           <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-          The LLM chain is drafting your article. This may take 10-30 seconds for longer formats.
+          {t('drafting')}
         </Card>
       )}
 
@@ -290,9 +273,9 @@ export default function ContentGeneratorPage() {
                   {output.qualityScore.overall}
                 </span>
                 <div>
-                  <p className="text-sm font-bold text-foreground">Citation Quality Score</p>
+                  <p className="text-sm font-bold text-foreground">{t('quality_score')}</p>
                   <p className="text-xs text-muted-foreground">
-                    Auto-graded against the 5 AI-citation signals. Band:{' '}
+                    {t('quality_score_hint')}{' '}
                     <b className={bandColor(output.qualityScore.band)}>
                       {output.qualityScore.band.toUpperCase()}
                     </b>
@@ -328,7 +311,7 @@ export default function ContentGeneratorPage() {
             {output.qualityScore.topRecommendations.length > 0 && (
               <div className="mt-3 space-y-1">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Top recommendations
+                  {t('top_recommendations')}
                 </p>
                 {output.qualityScore.topRecommendations.map((r, i) => (
                   <p
@@ -345,19 +328,19 @@ export default function ContentGeneratorPage() {
           {/* Markdown output */}
           <Card className="p-6">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-bold text-foreground">Generated article (Markdown)</p>
+              <p className="text-sm font-bold text-foreground">{t('generated_article')}</p>
               <div className="flex items-center gap-2">
                 <Button onClick={copyMarkdown} size="sm" variant="outline">
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? 'Copied' : 'Copy'}
+                  {copied ? t('copied') : t('copy')}
                 </Button>
                 <Button onClick={downloadMarkdown} size="sm" variant="outline">
                   <Download className="h-3.5 w-3.5" />
-                  Download .md
+                  {t('download_md')}
                 </Button>
                 <Button onClick={generate} size="sm" disabled={loading}>
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Regenerate
+                  {t('regenerate')}
                 </Button>
               </div>
             </div>

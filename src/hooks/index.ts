@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import type { Keyword, KeywordWithDensity } from '@/types'
 
 // ─── useToggle ────────────────────────────────────────────────────────────────
@@ -90,6 +91,7 @@ export function useKeywordAnalysis(
   analyzedText: string | undefined,
   visibilityScore: number,
 ): UseKeywordAnalysisReturn {
+  const t = useTranslations('optimizer')
   const keywordDensity = useMemo<KeywordWithDensity[]>(() => {
     if (!analyzedText || keywords.length === 0) return []
     const text = analyzedText.toLowerCase()
@@ -137,13 +139,13 @@ export function useKeywordAnalysis(
 
   const radarData = useMemo<RadarPoint[]>(
     () => [
-      { subject: 'Density', A: seoScore.density, fullMark: 100 },
-      { subject: 'Impact', A: seoScore.strategy, fullMark: 100 },
-      { subject: 'Market Ease', A: seoScore.difficulty, fullMark: 100 },
-      { subject: 'Visibility', A: seoScore.visibility, fullMark: 100 },
-      { subject: 'Semantic', A: 85, fullMark: 100 },
+      { subject: t('radar_density'), A: seoScore.density, fullMark: 100 },
+      { subject: t('radar_impact'), A: seoScore.strategy, fullMark: 100 },
+      { subject: t('radar_market_ease'), A: seoScore.difficulty, fullMark: 100 },
+      { subject: t('radar_visibility'), A: seoScore.visibility, fullMark: 100 },
+      { subject: t('radar_semantic'), A: 85, fullMark: 100 },
     ],
-    [seoScore],
+    [seoScore, t],
   )
 
   const avgDifficulty = useMemo<number>(() => {

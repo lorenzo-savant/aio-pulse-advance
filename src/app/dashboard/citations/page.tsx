@@ -24,6 +24,7 @@ import {
   RefreshCw,
   AlertCircle,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
@@ -121,6 +122,8 @@ function StatCard({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function CitationsPage() {
+  const t = useTranslations('citations')
+  const tl = useTranslations('languages')
   const { tooltipStyle, gridColor, axisColor } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
@@ -143,11 +146,11 @@ export default function CitationsPage() {
         setBrands(list)
         if (list.length > 0) setSelectedBrand(list[0])
       } catch {
-        setError('Failed to load brands')
+        setError(t('failed_load_brands'))
       }
     }
     load()
-  }, [])
+  }, [t])
 
   // ── Fetch snapshots when brand changes ────────────────────────────────────
   // The user-visible "Failed to load citation data" used to be a catch-all;
@@ -205,7 +208,7 @@ export default function CitationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [selectedBrand, selectedLanguage])
+  }, [selectedBrand, selectedLanguage, t])
 
   useEffect(() => {
     fetchSnapshots()
@@ -223,7 +226,7 @@ export default function CitationsPage() {
       })
       await fetchSnapshots()
     } catch {
-      setError('Failed to calculate snapshots')
+      setError(t('failed_calculate'))
     } finally {
       setCalculating(false)
     }
@@ -271,10 +274,8 @@ export default function CitationsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Citation Trends</h1>
-          <p className="mt-1 text-muted-foreground">
-            Track brand visibility across AI search engines over time.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
@@ -298,14 +299,14 @@ export default function CitationsPage() {
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value)}
           >
-            <option value="all">All Languages</option>
-            <option value="en">English</option>
-            <option value="sv">Swedish</option>
-            <option value="de">German</option>
-            <option value="fr">French</option>
-            <option value="es">Spanish</option>
-            <option value="no">Norwegian</option>
-            <option value="da">Danish</option>
+            <option value="all">{tl('all')}</option>
+            <option value="en">{tl('en')}</option>
+            <option value="sv">{tl('sv')}</option>
+            <option value="de">{tl('de')}</option>
+            <option value="fr">{tl('fr')}</option>
+            <option value="es">{tl('es')}</option>
+            <option value="no">{tl('no')}</option>
+            <option value="da">{tl('da')}</option>
           </select>
           <Button
             size="sm"
@@ -348,11 +349,8 @@ export default function CitationsPage() {
       {!loading && snapshots.length === 0 && (
         <Card className="flex flex-col items-center justify-center p-12 text-center">
           <BarChart3 className="mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="text-lg font-bold text-foreground">No citation data yet</h3>
-          <p className="mt-2 max-w-md text-sm text-muted-foreground">
-            Run the monitoring cron first, then click &quot;Recalculate&quot; to generate citation
-            snapshots.
-          </p>
+          <h3 className="text-lg font-bold text-foreground">{t('no_data')}</h3>
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">{t('no_data_hint')}</p>
         </Card>
       )}
 
@@ -362,33 +360,33 @@ export default function CitationsPage() {
           {/* KPI Row */}
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             <StatCard
-              title="Citation Rate"
+              title={t('citation_rate')}
               value={citationRate.toFixed(1)}
               suffix="%"
-              subtitle={`${brandCitations} of ${totalPrompts} responses`}
+              subtitle={t('responses_of', { cited: brandCitations, total: totalPrompts })}
               accent={citationRate > 20 ? 'emerald' : citationRate > 5 ? 'amber' : 'red'}
             />
             <StatCard
-              title="Avg Position"
+              title={t('avg_position')}
               value={avgPosition ? `#${avgPosition.toFixed(1)}` : '—'}
-              subtitle="Position when mentioned"
+              subtitle={t('position_when_mentioned')}
               accent={avgPosition && avgPosition <= 3 ? 'emerald' : 'amber'}
             />
             <StatCard
-              title="Top Competitor"
+              title={t('top_competitor')}
               value={Object.entries(competitorRates).sort(([, a], [, b]) => b - a)[0]?.[0] || '—'}
               suffix={(() => {
                 const sorted = Object.entries(competitorRates).sort(([, a], [, b]) => b - a)
                 const top = sorted[0]
                 return top ? `${top[1]}%` : ''
               })()}
-              subtitle="Highest competitor citation rate"
+              subtitle={t('highest_competitor_rate')}
               accent="red"
             />
             <StatCard
-              title="Prompts Analyzed"
+              title={t('prompts_analyzed')}
               value={totalPrompts}
-              subtitle={`Across ${engineSnapshots.length} engines`}
+              subtitle={t('across_engines', { count: engineSnapshots.length })}
               accent="brand"
             />
           </div>
@@ -397,12 +395,8 @@ export default function CitationsPage() {
           <Card className="p-6">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-foreground">
-                  Citation Rate — Brand vs Competitors
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  How often each brand is mentioned in AI responses
-                </p>
+                <h2 className="text-lg font-bold text-foreground">{t('citation_rate_brand')}</h2>
+                <p className="text-sm text-muted-foreground">{t('competitor_mentions')}</p>
               </div>
               <Target className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -423,9 +417,9 @@ export default function CitationsPage() {
                 />
                 <Tooltip
                   {...tooltipStyle}
-                  formatter={(v: number) => [`${v.toFixed(1)}%`, 'Citation Rate']}
+                  formatter={(v: number) => [`${v.toFixed(1)}%`, t('citation_rate')]}
                 />
-                <Bar dataKey="rate" name="Citation Rate" radius={[0, 6, 6, 0]} barSize={28}>
+                <Bar dataKey="rate" name={t('citation_rate')} radius={[0, 6, 6, 0]} barSize={28}>
                   {competitorChartData.map((entry, idx) => (
                     <Cell key={idx} fill={entry.color} />
                   ))}
@@ -438,7 +432,7 @@ export default function CitationsPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Engine Breakdown */}
             <Card className="p-6">
-              <h2 className="mb-6 text-lg font-bold text-foreground">Citation Rate by Engine</h2>
+              <h2 className="mb-6 text-lg font-bold text-foreground">{t('citation_by_engine')}</h2>
               {engineChartData.length > 0 ? (
                 <div className="space-y-5">
                   {engineChartData.map((engine) => (
@@ -459,19 +453,21 @@ export default function CitationsPage() {
                         />
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Visibility: {engine.avg_visibility.toFixed(0)}%
+                        {t('visibility_label')}: {engine.avg_visibility.toFixed(0)}%
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No per-engine data available yet.</p>
+                <p className="text-sm text-muted-foreground">{t('no_engine_data')}</p>
               )}
             </Card>
 
             {/* Competitor Rates Detail */}
             <Card className="p-6">
-              <h2 className="mb-6 text-lg font-bold text-foreground">Competitor Breakdown</h2>
+              <h2 className="mb-6 text-lg font-bold text-foreground">
+                {t('competitor_breakdown')}
+              </h2>
               <div className="space-y-4">
                 {/* Brand row */}
                 <div className="border-brand-500/20 bg-primary/5 flex items-center justify-between rounded-xl border px-4 py-3">
@@ -519,7 +515,7 @@ export default function CitationsPage() {
                   ))}
 
                 {Object.keys(competitorRates).length === 0 && (
-                  <p className="text-sm text-muted-foreground">No competitor data detected.</p>
+                  <p className="text-sm text-muted-foreground">{t('no_competitor_data')}</p>
                 )}
               </div>
             </Card>
@@ -529,8 +525,10 @@ export default function CitationsPage() {
           {trendData.length > 1 && (
             <Card className="p-6">
               <div className="mb-6">
-                <h2 className="text-lg font-bold text-foreground">Citation Rate Over Time</h2>
-                <p className="text-sm text-muted-foreground">Daily trend — brand vs competitors</p>
+                <h2 className="text-lg font-bold text-foreground">
+                  {t('citation_rate_over_time')}
+                </h2>
+                <p className="text-sm text-muted-foreground">{t('daily_trend')}</p>
               </div>
               <ResponsiveContainer height={300} width="100%">
                 <LineChart data={trendData}>

@@ -22,6 +22,7 @@ import {
   Globe,
   ArrowUpRight,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { cn } from '@/lib/utils'
@@ -106,28 +107,30 @@ const scoreAccent = scoreColor
 // the colour-coded Score-by-Category table so each number reads as a verdict,
 // not just a digit. Thresholds intentionally a bit looser than the strict
 // rubric so most pillar scores get a non-red label.
-function scoreRating(score: number): { label: string; color: string } {
-  if (score >= 70) return { label: 'Excellent', color: SCORE_BAND_COLORS.excellent }
-  if (score >= 55) return { label: 'Good', color: SCORE_BAND_COLORS.moderate }
-  if (score >= 40) return { label: 'Fair', color: SCORE_BAND_COLORS.weak }
-  return { label: 'Weak', color: SCORE_BAND_COLORS.poor }
+// Returns the catalog slug (geo_dashboard.rating_<slug>) plus the band colour,
+// so the caller localises the verdict.
+function scoreRating(score: number): { slug: string; color: string } {
+  if (score >= 70) return { slug: 'excellent', color: SCORE_BAND_COLORS.excellent }
+  if (score >= 55) return { slug: 'good', color: SCORE_BAND_COLORS.moderate }
+  if (score >= 40) return { slug: 'fair', color: SCORE_BAND_COLORS.weak }
+  return { slug: 'weak', color: SCORE_BAND_COLORS.poor }
 }
 
-// What each GEO pillar actually measures (mirrors geo-score.ts inputs), so the
-// table explains the score rather than just displaying it.
-const PILLAR_DESC: Record<string, string> = {
-  citation: 'How often AI engines cite your domain as a source — the strongest GEO signal.',
-  presence: 'How often your brand is mentioned at all in AI answers.',
-  authority: 'How often the brand is actively recommended, not merely named.',
-  position: 'Where your brand appears in the answer (earlier = more visible).',
-  trust: 'Sentiment toward the brand combined with factual accuracy (low hallucination).',
+// Pillar keys the UI knows how to name. Labels, descriptions and
+// recommendation copy all live in the message catalog under geo_dashboard.*,
+// keyed by these slugs — the API still sends its own English strings, which we
+// deliberately ignore so the page follows the user's locale.
+const PILLAR_KEYS = ['citation', 'presence', 'authority', 'position', 'trust'] as const
+
+function isPillarKey(key: string): key is (typeof PILLAR_KEYS)[number] {
+  return (PILLAR_KEYS as readonly string[]).includes(key)
 }
 
-function periodLabel(p: string): string {
-  if (p === '7d') return '7d ago'
-  if (p === '60d') return '60d ago'
-  if (p === '90d') return '90d ago'
-  return '30d ago'
+function periodDays(p: string): number {
+  if (p === '7d') return 7
+  if (p === '60d') return 60
+  if (p === '90d') return 90
+  return 30
 }
 
 // Inline link that connects the live GEO Score to the static site audit at
@@ -141,6 +144,7 @@ function SiteAuditLine({
   audit: GeoData['siteAudit']
   fallbackDomain: string | null
 }) {
+  const t = useTranslations('geo_dashboard')
   if (audit) {
     const href = `/dashboard/audit?url=${encodeURIComponent(audit.url)}`
     return (
@@ -150,7 +154,7 @@ function SiteAuditLine({
       >
         <Globe className="h-3.5 w-3.5" />
         <span>
-          Site readiness{' '}
+          {t('site_readiness')}{' '}
           <span className="font-bold" style={{ color: scoreAccent(audit.score) }}>
             {audit.score}
           </span>{' '}
@@ -168,7 +172,7 @@ function SiteAuditLine({
       className="mt-5 flex items-center gap-2 border-t border-border pt-4 text-xs text-muted-foreground transition-colors hover:text-foreground"
     >
       <Globe className="h-3.5 w-3.5" />
-      <span>Run site audit for {fallbackDomain}</span>
+      <span>{t('run_site_audit', { domain: fallbackDomain })}</span>
       <ArrowUpRight className="ml-auto h-3.5 w-3.5" />
     </a>
   )
@@ -177,6 +181,8 @@ function SiteAuditLine({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function GeoScorePage() {
+  const t = useTranslations('geo_dashboard')
+  const tg = useTranslations('geoScore')
   const { tooltipStyle, gridColor, axisColor } = useChartTheme()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
@@ -195,7 +201,7 @@ export default function GeoScorePage() {
         if (list.length > 0) setSelectedBrand(list[0])
         else setLoading(false)
       } catch {
-        setError('Failed to load brands')
+        setError(t('failed_load_brands'))
         setLoading(false)
       }
     }
@@ -216,7 +222,7 @@ export default function GeoScorePage() {
       }
       setData(json.data)
     } catch {
-      setError('Failed to load GEO score')
+      setError(t('failed_load_score'))
     } finally {
       setLoading(false)
     }
@@ -254,25 +260,15 @@ export default function GeoScorePage() {
         than left to become furniture.
       */}
       <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-        <p className="text-sm font-semibold text-amber-300">
-          Methodology corrected — 7 August 2026
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Answer Position was being scored on the wrong scale: it measures which sentence first
-          names your brand, but was normalised as if it were a 1–5 search ranking, so anything from
-          the fifth sentence on scored zero. Scores have shifted as a result. This is a correction
-          to how the score is calculated, not a change in how visible your brand is.
-        </p>
+        <p className="text-sm font-semibold text-amber-300">{t('methodology_title')}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t('methodology_body')}</p>
       </div>
 
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">GEO Score</h1>
-          <p className="mt-1 text-muted-foreground">
-            Generative Engine Optimization — how well your brand is optimized to be surfaced and
-            cited by AI answer engines.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{tg('page_title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
@@ -296,10 +292,10 @@ export default function GeoScorePage() {
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
           >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="60d">Last 60 days</option>
-            <option value="90d">Last 90 days</option>
+            <option value="7d">{t('last_days', { count: 7 })}</option>
+            <option value="30d">{t('last_days', { count: 30 })}</option>
+            <option value="60d">{t('last_days', { count: 60 })}</option>
+            <option value="90d">{t('last_days', { count: 90 })}</option>
           </select>
         </div>
       </div>
@@ -323,11 +319,8 @@ export default function GeoScorePage() {
       {!loading && (!data || !data.hasData) && !error && (
         <Card className="flex flex-col items-center justify-center p-12 text-center">
           <Gauge className="mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="text-lg font-bold text-foreground">No GEO score yet</h3>
-          <p className="mt-2 max-w-md text-sm text-muted-foreground">
-            Run the monitoring cron to generate brand health scores. The GEO score is derived from
-            your AI visibility metrics over time.
-          </p>
+          <h3 className="text-lg font-bold text-foreground">{t('no_score')}</h3>
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">{t('no_score_hint')}</p>
         </Card>
       )}
 
@@ -338,7 +331,7 @@ export default function GeoScorePage() {
             {/* Score gauge */}
             <Card className="flex flex-col items-center justify-center p-10 text-center">
               <p className="mb-8 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-                GEO Score
+                {tg('page_title')}
               </p>
               {/* Slightly bigger frame so the grade badge sits outside the
                   gauge arc with breathing room (was h-44/w-44). */}
@@ -403,7 +396,7 @@ export default function GeoScorePage() {
                   <TrendIcon className="h-4 w-4" />
                   <span>
                     {data.delta > 0 ? '+' : ''}
-                    {data.delta.toFixed(1)} vs {periodLabel(period)}
+                    {data.delta.toFixed(1)} vs {t('days_ago', { count: periodDays(period) })}
                   </span>
                 </div>
                 {data.previousScore > 0 && Math.abs(data.delta) > 0 && (
@@ -449,24 +442,22 @@ export default function GeoScorePage() {
 
             {/* Pillars */}
             <Card className="p-6 lg:col-span-2">
-              <h2 className="mb-1 text-lg font-bold text-foreground">Score Breakdown</h2>
-              <p className="mb-6 text-sm text-muted-foreground">
-                Each pillar is weighted; its contribution sums to the total score.
-              </p>
+              <h2 className="mb-1 text-lg font-bold text-foreground">{tg('breakdown.title')}</h2>
+              <p className="mb-6 text-sm text-muted-foreground">{t('breakdown_hint')}</p>
               <div className="space-y-5">
                 {data.pillars.map((p) => (
                   <div key={p.key}>
                     <div className="mb-1.5 flex justify-between text-sm font-medium">
                       <span className="text-muted-foreground">
-                        {p.label}{' '}
+                        {isPillarKey(p.key) ? t(`pillar_${p.key}`) : p.label}{' '}
                         <span className="text-xs opacity-60">
-                          ({Math.round(p.weight * 100)}% weight)
+                          {t('weight_suffix', { pct: Math.round(p.weight * 100) })}
                         </span>
                       </span>
                       <span className="font-bold text-foreground">
                         {p.score.toFixed(0)}
                         <span className="ml-2 text-xs font-normal text-muted-foreground">
-                          +{p.contribution.toFixed(1)} pts
+                          {t('pts_suffix', { pts: p.contribution.toFixed(1) })}
                         </span>
                       </span>
                     </div>
@@ -487,35 +478,35 @@ export default function GeoScorePage() {
 
           {/* GEO Score by Category — colour-coded clarity table */}
           <Card className="p-6">
-            <h2 className="mb-1 text-lg font-bold text-foreground">GEO Score by Category</h2>
+            <h2 className="mb-1 text-lg font-bold text-foreground">{t('by_category')}</h2>
             <p className="mb-5 text-sm text-muted-foreground">
-              What each category measures, your score, and what that score means. Colours:
-              <span className="ml-1 font-semibold text-emerald-500">Excellent</span> ·
-              <span className="ml-1 font-semibold text-amber-500">Good</span> ·
-              <span className="ml-1 font-semibold text-orange-500">Fair</span> ·
-              <span className="text-red-500 ml-1 font-semibold">Weak</span>.
+              {t('by_category_hint')}
+              <span className="ml-1 font-semibold text-emerald-500">{t('rating_excellent')}</span> ·
+              <span className="ml-1 font-semibold text-amber-500">{t('rating_good')}</span> ·
+              <span className="ml-1 font-semibold text-orange-500">{t('rating_fair')}</span> ·
+              <span className="text-red-500 ml-1 font-semibold">{t('rating_weak')}</span>.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-border text-left">
                     <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Category
+                      {tg('breakdown.category')}
                     </th>
                     <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      What it measures
+                      {t('col_what')}
                     </th>
                     <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Score
+                      {tg('breakdown.score')}
                     </th>
                     <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Rating
+                      {t('col_rating')}
                     </th>
                     <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Weight
+                      {tg('breakdown.weight')}
                     </th>
                     <th className="px-3 py-2 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Contribution
+                      {t('col_contribution')}
                     </th>
                   </tr>
                 </thead>
@@ -524,9 +515,11 @@ export default function GeoScorePage() {
                     const rating = scoreRating(p.score)
                     return (
                       <tr key={p.key} className="border-border/50 border-b">
-                        <td className="px-3 py-3 font-semibold text-foreground">{p.label}</td>
+                        <td className="px-3 py-3 font-semibold text-foreground">
+                          {isPillarKey(p.key) ? t(`pillar_${p.key}`) : p.label}
+                        </td>
                         <td className="px-3 py-3 text-xs text-muted-foreground">
-                          {PILLAR_DESC[p.key] ?? ''}
+                          {isPillarKey(p.key) ? t(`desc_${p.key}`) : ''}
                         </td>
                         <td className="px-3 py-3 text-center">
                           <span
@@ -541,14 +534,14 @@ export default function GeoScorePage() {
                             className="rounded-full px-2.5 py-0.5 text-xs font-bold"
                             style={{ color: rating.color, backgroundColor: `${rating.color}1a` }}
                           >
-                            {rating.label}
+                            {t(`rating_${rating.slug}`)}
                           </span>
                         </td>
                         <td className="px-3 py-3 text-center text-muted-foreground">
                           {Math.round(p.weight * 100)}%
                         </td>
                         <td className="px-3 py-3 text-right font-semibold text-foreground">
-                          +{p.contribution.toFixed(1)} pts
+                          {t('pts_suffix', { pts: p.contribution.toFixed(1) })}
                         </td>
                       </tr>
                     )
@@ -556,7 +549,7 @@ export default function GeoScorePage() {
                   {/* Total row */}
                   <tr className="border-t-2 border-border">
                     <td className="px-3 py-3 font-black text-foreground" colSpan={2}>
-                      Total GEO Score
+                      {t('total_score')}
                     </td>
                     <td className="px-3 py-3 text-center">
                       <span
@@ -574,24 +567,24 @@ export default function GeoScorePage() {
                         className="rounded-full px-2.5 py-0.5 text-xs font-black text-white"
                         style={{ backgroundColor: GRADE_COLOR[data.grade] }}
                       >
-                        Grade {data.grade}
+                        {t('grade_label', { grade: data.grade })}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-center text-muted-foreground">100%</td>
                     <td className="px-3 py-3 text-right font-black text-foreground">
-                      {data.score.toFixed(1)} pts
+                      {t('pts_suffix', { pts: data.score.toFixed(1) }).replace('+', '')}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Grade scale: <span className="font-semibold text-emerald-500">A ≥ 85</span> ·
+              {t('grade_scale')} <span className="font-semibold text-emerald-500">A ≥ 85</span> ·
               <span className="ml-1 font-semibold text-green-500">B ≥ 70</span> ·
               <span className="ml-1 font-semibold text-amber-500">C ≥ 55</span> ·
               <span className="ml-1 font-semibold text-orange-500">D ≥ 40</span> ·
-              <span className="text-red-500 ml-1 font-semibold">F &lt; 40</span>. Each category
-              score (0–100) is multiplied by its weight; the weighted points sum to your total.
+              <span className="text-red-500 ml-1 font-semibold">F &lt; 40</span>.{' '}
+              {t('grade_scale_tail')}
             </p>
           </Card>
 
@@ -600,12 +593,9 @@ export default function GeoScorePage() {
             <Card className="p-6">
               <div className="mb-1 flex items-center gap-2">
                 <Lightbulb className="h-5 w-5 text-amber-400" />
-                <h2 className="text-lg font-bold text-foreground">How to improve your GEO Score</h2>
+                <h2 className="text-lg font-bold text-foreground">{t('improve_title')}</h2>
               </div>
-              <p className="mb-4 text-sm text-muted-foreground">
-                Ordered by impact — the number on each card is the points you&rsquo;d recover if
-                that pillar reached 100 (its gap × its weight). Start at the top.
-              </p>
+              <p className="mb-4 text-sm text-muted-foreground">{t('improve_hint')}</p>
               <div className="space-y-3">
                 {data.recommendations.map((rec, i) => (
                   <div
@@ -616,17 +606,27 @@ export default function GeoScorePage() {
                       <span className="bg-primary/15 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-primary">
                         {i + 1}
                       </span>
-                      <span className="font-semibold text-foreground">{rec.label}</span>
+                      <span className="font-semibold text-foreground">
+                        {isPillarKey(rec.pillar) ? t(`pillar_${rec.pillar}`) : rec.label}
+                      </span>
                       <span className="text-xs text-muted-foreground">
-                        now {rec.currentScore} · weight {Math.round(rec.weight * 100)}%
+                        {t('rec_now_weight', {
+                          score: rec.currentScore,
+                          pct: Math.round(rec.weight * 100),
+                        })}
                       </span>
                       <span className="ml-auto rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-400">
-                        +{rec.upliftPts} pts potential
+                        {t('rec_uplift', { pts: rec.upliftPts })}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{rec.why}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {isPillarKey(rec.pillar) ? t(`why_${rec.pillar}`) : rec.why}
+                    </p>
                     <ul className="mt-3 space-y-1.5">
-                      {rec.actions.map((a, j) => (
+                      {(isPillarKey(rec.pillar)
+                        ? [1, 2, 3].map((n) => t(`action_${rec.pillar}_${n}`))
+                        : rec.actions
+                      ).map((a, j) => (
                         <li key={j} className="flex gap-2 text-sm leading-relaxed text-foreground">
                           <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                           <span>{a}</span>
@@ -642,7 +642,7 @@ export default function GeoScorePage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Trend */}
             <Card className="p-6">
-              <h2 className="mb-6 text-lg font-bold text-foreground">GEO Score Trend</h2>
+              <h2 className="mb-6 text-lg font-bold text-foreground">{t('trend_title')}</h2>
               {chartData.length > 1 ? (
                 <ResponsiveContainer height={240} width="100%">
                   <LineChart data={chartData}>
@@ -656,20 +656,22 @@ export default function GeoScorePage() {
                       stroke={SCORE_BAND_COLORS.excellent}
                       strokeWidth={2.5}
                       dot={false}
-                      name="GEO Score"
+                      name={tg('page_title')}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
                 <p className="py-12 text-center text-sm text-muted-foreground">
-                  Need at least two snapshots to show a trend.
+                  {t('trend_need_data')}
                 </p>
               )}
             </Card>
 
             {/* Engine breakdown */}
             <Card className="p-6">
-              <h2 className="mb-6 text-lg font-bold text-foreground">Visibility by Engine</h2>
+              <h2 className="mb-6 text-lg font-bold text-foreground">
+                {t('visibility_by_engine')}
+              </h2>
               {data.engineBreakdown.length > 0 ? (
                 <div className="space-y-5">
                   {data.engineBreakdown.map((e) => (
@@ -694,7 +696,7 @@ export default function GeoScorePage() {
                 </div>
               ) : (
                 <p className="py-12 text-center text-sm text-muted-foreground">
-                  No per-engine data for the latest snapshot.
+                  {t('no_engine_data')}
                 </p>
               )}
             </Card>

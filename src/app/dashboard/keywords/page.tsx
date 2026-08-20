@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Search, RefreshCw, TrendingUp, TrendingDown, Minus, Tag, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -38,25 +39,15 @@ const ENGINE_COLORS: Record<string, string> = {
 
 type Cluster = 'identity' | 'product' | 'market'
 
-const CLUSTER_META: Record<Cluster, { label: string; description: string; colorClass: string }> = {
-  identity: {
-    label: 'Brand Identity',
-    description: 'Valori, filosofia, heritage e termini legati al tuo brand',
-    colorClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  },
-  product: {
-    label: 'Prodotto',
-    description: 'Categorie, tipologie e vocabolario del tuo assortimento',
-    colorClass: 'bg-brand-500/15 text-brand-300 border-brand-500/30',
-  },
-  market: {
-    label: 'Market Context',
-    description: 'Competitor, prezzi, mercati e termini di comparazione',
-    colorClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  },
+// Copy lives in the message catalog (keywords.cluster_*); only styling stays here.
+const CLUSTER_META: Record<Cluster, { colorClass: string }> = {
+  identity: { colorClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  product: { colorClass: 'bg-brand-500/15 text-brand-300 border-brand-500/30' },
+  market: { colorClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
 }
 
 export default function KeywordsPage() {
+  const t = useTranslations('keywords')
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [keywords, setKeywords] = useState<KeywordData[]>([])
@@ -97,12 +88,12 @@ export default function KeywordsPage() {
       ])
       const allData = await allRes.json()
       const correlatedData = await correlatedRes.json()
-      if (!allRes.ok) setError(allData.message || 'Failed to load keywords')
+      if (!allRes.ok) setError(allData.message || t('failed_load'))
       setKeywords(allData.data || [])
       setCorrelatedKeywords(correlatedData.data || [])
     } catch (e) {
       console.error('Failed to load keywords', e)
-      setError('Failed to load keywords')
+      setError(t('failed_load'))
     } finally {
       setLoading(false)
     }
@@ -112,7 +103,7 @@ export default function KeywordsPage() {
     fetchKeywords()
     // fetchKeywords redefined per render — intentional, only refetch on brand change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBrand])
+  }, [selectedBrand, t])
 
   // Refresh keywords
   const handleRefresh = async () => {
@@ -151,10 +142,8 @@ export default function KeywordsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Keyword Tracking</h1>
-          <p className="mt-1 text-muted-foreground">
-            Track keywords that correlate with brand mentions in AI responses.
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">{t('page_title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           {brands.length > 1 && (
@@ -185,7 +174,7 @@ export default function KeywordsPage() {
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input py-2.5 pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary"
-          placeholder="Search keywords..."
+          placeholder={t('search_keywords')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -223,10 +212,8 @@ export default function KeywordsPage() {
       {!loading && filteredKeywords.length === 0 && (
         <Card className="flex flex-col items-center justify-center border border-input bg-card p-12 text-center">
           <Tag className="mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="text-text-secondary-ui text-lg font-bold">No keywords tracked yet</h3>
-          <p className="mt-2 max-w-md text-sm text-muted-foreground">
-            Run monitoring and click &quot;Refresh&quot; to extract keywords from AI responses.
-          </p>
+          <h3 className="text-text-secondary-ui text-lg font-bold">{t('no_keywords')}</h3>
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">{t('no_keywords_hint')}</p>
         </Card>
       )}
 
@@ -235,7 +222,7 @@ export default function KeywordsPage() {
         <>
           {/* Keyword Cloud — 3 clusters */}
           <Card className="p-6">
-            <h2 className="mb-5 text-lg font-bold text-foreground">Keyword Cloud</h2>
+            <h2 className="mb-5 text-lg font-bold text-foreground">{t('keyword_cloud')}</h2>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               {(['identity', 'product', 'market'] as const).map((cluster) => {
                 const meta = CLUSTER_META[cluster]
@@ -245,8 +232,10 @@ export default function KeywordsPage() {
                 return (
                   <div key={cluster} className={cn('rounded-2xl border p-4', meta.colorClass)}>
                     <div className="mb-3">
-                      <h3 className="text-sm font-black uppercase tracking-widest">{meta.label}</h3>
-                      <p className="mt-1 text-xs opacity-80">{meta.description}</p>
+                      <h3 className="text-sm font-black uppercase tracking-widest">
+                        {t(`cluster_${cluster}_label`)}
+                      </h3>
+                      <p className="mt-1 text-xs opacity-80">{t(`cluster_${cluster}_desc`)}</p>
                       <p className="mt-1 text-xs opacity-60">
                         {clusterKeywords.length} keyword
                         {clusterKeywords.length !== 1 ? 's' : ''}
@@ -254,9 +243,7 @@ export default function KeywordsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {clusterKeywords.length === 0 ? (
-                        <span className="text-xs italic opacity-60">
-                          Nessuna keyword in questo cluster
-                        </span>
+                        <span className="text-xs italic opacity-60">{t('empty_cluster')}</span>
                       ) : (
                         clusterKeywords.map((kw) => {
                           const count = kw.mention_count ?? 0
@@ -282,25 +269,25 @@ export default function KeywordsPage() {
 
           {/* Keywords Table */}
           <Card className="p-6">
-            <h2 className="mb-5 text-lg font-bold text-foreground">Keyword Details</h2>
+            <h2 className="mb-5 text-lg font-bold text-foreground">{t('keyword_details')}</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="pb-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Keyword
+                      {t('keyword')}
                     </th>
                     <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Frequency
+                      {t('frequency')}
                     </th>
                     <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Correlation
+                      {t('correlation')}
                     </th>
                     <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Engines
+                      {t('engines')}
                     </th>
                     <th className="pb-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Last Seen
+                      {t('last_seen')}
                     </th>
                   </tr>
                 </thead>
@@ -328,7 +315,7 @@ export default function KeywordsPage() {
                         <td className="py-3 text-center">
                           <div className="flex items-center justify-center gap-2">
                             {corr > 0.1 && <TrendingUp className="h-4 w-4 text-emerald-400" />}
-                            {corr < -0.1 && <TrendingDown className="h-4 w-4 text-red-400" />}
+                            {corr < -0.1 && <TrendingDown className="text-red-400 h-4 w-4" />}
                             {corr >= -0.1 && corr <= 0.1 && (
                               <Minus className="h-4 w-4 text-muted-foreground" />
                             )}

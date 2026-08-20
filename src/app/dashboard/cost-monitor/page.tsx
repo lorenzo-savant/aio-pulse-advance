@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -78,6 +79,8 @@ interface Budget {
 }
 
 export default function CostMonitorPage() {
+  const t = useTranslations('cost_monitor')
+  const tc = useTranslations('common')
   const [analytics, setAnalytics] = useState<CostAnalytics | null>(null)
   const [alerts, setAlerts] = useState<BudgetAlert[]>([])
   const [budget, setBudget] = useState<Budget | null>(null)
@@ -167,7 +170,7 @@ export default function CostMonitorPage() {
   if (!analytics) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="text-muted-foreground">Failed to load cost data</p>
+        <p className="text-muted-foreground">{t('load_failed')}</p>
       </div>
     )
   }
@@ -176,8 +179,8 @@ export default function CostMonitorPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">AI Cost Monitor</h1>
-          <p className="text-muted-foreground">Track AI provider costs, usage, and budget</p>
+          <h1 className="text-3xl font-bold">{t('page_title')}</h1>
+          <p className="text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <div className="flex gap-2">
           {[7, 14, 30, 90].map((d) => (
@@ -191,7 +194,7 @@ export default function CostMonitorPage() {
             </Button>
           ))}
           <Button variant="outline" size="sm" onClick={() => setShowBudgetModal(true)}>
-            ⚙️ Budget Settings
+            ⚙️ {t('budget_settings')}
           </Button>
         </div>
       </div>
@@ -201,26 +204,28 @@ export default function CostMonitorPage() {
           <CardBody>
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <p className="text-sm text-muted-foreground">Monthly Budget</p>
+                <p className="text-sm text-muted-foreground">{t('monthly_budget')}</p>
                 <p className="text-lg font-semibold">${budget.monthlyLimitUsd.toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">
-                  ${budget.currentMonthSpend.toFixed(2)} used (
+                  {t('used_amount', { amount: budget.currentMonthSpend.toFixed(2) })} (
                   {((budget.currentMonthSpend / budget.monthlyLimitUsd) * 100).toFixed(0)}%)
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Daily Budget</p>
+                <p className="text-sm text-muted-foreground">{t('daily_budget')}</p>
                 <p className="text-lg font-semibold">
-                  ${budget.dailyLimitUsd?.toFixed(2) ?? 'Not set'}
+                  {budget.dailyLimitUsd != null
+                    ? `$${budget.dailyLimitUsd.toFixed(2)}`
+                    : t('not_set')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  ${budget.currentDaySpend.toFixed(2)} used today
+                  {t('used_today', { amount: budget.currentDaySpend.toFixed(2) })}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Alert Threshold</p>
+                <p className="text-sm text-muted-foreground">{t('alert_threshold')}</p>
                 <p className="text-lg font-semibold">{(budget.alertThreshold * 100).toFixed(0)}%</p>
-                <p className="text-xs text-muted-foreground">Alert when spend exceeds threshold</p>
+                <p className="text-xs text-muted-foreground">{t('alert_threshold_hint')}</p>
               </div>
             </div>
           </CardBody>
@@ -230,9 +235,9 @@ export default function CostMonitorPage() {
       {alerts.length > 0 && (
         <Card className="border-red-200 bg-red-50">
           <CardHeader>
-            <div className="flex items-center gap-2 text-red-700">
+            <div className="text-red-700 flex items-center gap-2">
               <AlertCircle className="h-5 w-5" />
-              <h2 className="text-lg font-semibold">Budget Alerts</h2>
+              <h2 className="text-lg font-semibold">{t('budget_alerts')}</h2>
             </div>
           </CardHeader>
           <CardBody>
@@ -259,14 +264,14 @@ export default function CostMonitorPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Total Cost</span>
+              <span className="text-sm font-medium">{t('total_cost')}</span>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardBody>
             <div className="text-2xl font-bold">${analytics.totalCost.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              ${analytics.avgCostPerRequest.toFixed(4)} per request
+              {t('per_request', { amount: analytics.avgCostPerRequest.toFixed(4) })}
             </p>
           </CardBody>
         </Card>
@@ -274,14 +279,14 @@ export default function CostMonitorPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Total Tokens</span>
+              <span className="text-sm font-medium">{t('total_tokens')}</span>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardBody>
             <div className="text-2xl font-bold">{(analytics.totalTokens / 1000).toFixed(1)}K</div>
             <p className="text-xs text-muted-foreground">
-              {analytics.avgTokensPerRequest.toFixed(0)} avg per request
+              {t('avg_per_request', { count: analytics.avgTokensPerRequest.toFixed(0) })}
             </p>
           </CardBody>
         </Card>
@@ -289,14 +294,14 @@ export default function CostMonitorPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Requests</span>
+              <span className="text-sm font-medium">{t('requests')}</span>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardBody>
             <div className="text-2xl font-bold">{analytics.totalRequests}</div>
             <p className="text-xs text-muted-foreground">
-              {(analytics.successRate * 100).toFixed(1)}% success rate
+              {t('success_rate', { rate: (analytics.successRate * 100).toFixed(1) })}
             </p>
           </CardBody>
         </Card>
@@ -304,14 +309,14 @@ export default function CostMonitorPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Avg Latency</span>
+              <span className="text-sm font-medium">{t('avg_latency')}</span>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardBody>
             <div className="text-2xl font-bold">{analytics.avgLatencyMs.toFixed(0)}ms</div>
             <p className="text-xs text-muted-foreground">
-              {(analytics.cacheHitRate * 100).toFixed(1)}% cache hit rate
+              {t('cache_hit_rate', { rate: (analytics.cacheHitRate * 100).toFixed(1) })}
             </p>
           </CardBody>
         </Card>
@@ -329,7 +334,7 @@ export default function CostMonitorPage() {
             }
             onClick={() => setActiveTab(tab)}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {t(`tab_${tab}`)}
           </button>
         ))}
       </div>
@@ -337,8 +342,8 @@ export default function CostMonitorPage() {
       {activeTab === 'providers' && (
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold">Provider Breakdown</h2>
-            <p className="text-sm text-muted-foreground">Cost and usage by AI provider</p>
+            <h2 className="text-lg font-semibold">{t('provider_breakdown')}</h2>
+            <p className="text-sm text-muted-foreground">{t('provider_breakdown_hint')}</p>
           </CardHeader>
           <CardBody>
             <div className="space-y-4">
@@ -371,8 +376,8 @@ export default function CostMonitorPage() {
       {activeTab === 'agents' && (
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold">Agent Breakdown</h2>
-            <p className="text-sm text-muted-foreground">Cost by AI agent type</p>
+            <h2 className="text-lg font-semibold">{t('agent_breakdown')}</h2>
+            <p className="text-sm text-muted-foreground">{t('agent_breakdown_hint')}</p>
           </CardHeader>
           <CardBody>
             <div className="space-y-4">
@@ -400,8 +405,8 @@ export default function CostMonitorPage() {
       {activeTab === 'trend' && (
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold">Daily Cost Trend</h2>
-            <p className="text-sm text-muted-foreground">AI spending over time</p>
+            <h2 className="text-lg font-semibold">{t('daily_trend')}</h2>
+            <p className="text-sm text-muted-foreground">{t('daily_trend_hint')}</p>
           </CardHeader>
           <CardBody>
             <div className="flex h-64 items-end gap-1">
@@ -438,10 +443,10 @@ export default function CostMonitorPage() {
             className="w-full max-w-md rounded-xl bg-card p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="mb-4 text-xl font-bold">Budget Settings</h2>
+            <h2 className="mb-4 text-xl font-bold">{t('budget_settings')}</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">Monthly Limit ($)</label>
+                <label className="mb-1 block text-sm font-medium">{t('monthly_limit')}</label>
                 <input
                   type="number"
                   value={budgetForm.monthlyLimitUsd}
@@ -457,7 +462,7 @@ export default function CostMonitorPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Daily Limit ($)</label>
+                <label className="mb-1 block text-sm font-medium">{t('daily_limit')}</label>
                 <input
                   type="number"
                   value={budgetForm.dailyLimitUsd ?? ''}
@@ -470,12 +475,12 @@ export default function CostMonitorPage() {
                   className="w-full rounded-lg border border-input bg-input px-3 py-2 text-sm"
                   min={0}
                   step={5}
-                  placeholder="Optional"
+                  placeholder={tc('optional')}
                 />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium">
-                  Alert Threshold ({(budgetForm.alertThreshold * 100).toFixed(0)}%)
+                  {t('alert_threshold_pct', { pct: (budgetForm.alertThreshold * 100).toFixed(0) })}
                 </label>
                 <input
                   type="range"
@@ -489,7 +494,7 @@ export default function CostMonitorPage() {
                   className="w-full"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Alert when spend reaches {(budgetForm.alertThreshold * 100).toFixed(0)}% of limit
+                  {t('alert_reaches', { pct: (budgetForm.alertThreshold * 100).toFixed(0) })}
                 </p>
               </div>
             </div>
@@ -499,10 +504,10 @@ export default function CostMonitorPage() {
                 onClick={() => setShowBudgetModal(false)}
                 className="flex-1"
               >
-                Cancel
+                {tc('cancel')}
               </Button>
               <Button onClick={handleSaveBudget} disabled={savingBudget} className="flex-1">
-                {savingBudget ? 'Saving...' : 'Save Budget'}
+                {savingBudget ? tc('saving') : t('save_budget')}
               </Button>
             </div>
           </div>

@@ -5,10 +5,13 @@
 'use client'
 
 import { Coins } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 
 export default function CreditsPage() {
+  const t = useTranslations('credits')
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <SectionHelp section="credits" />
@@ -18,11 +21,8 @@ export default function CreditsPage() {
             <Coins className="h-7 w-7 text-brand" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-lg font-bold text-foreground">Credits disabled</h2>
-            <p className="mx-auto max-w-md text-sm text-muted-foreground">
-              This deployment runs internally in unlimited mode — every query is allowed at zero
-              cost and no balance is consumed. The credit ledger is not exposed.
-            </p>
+            <h2 className="text-lg font-bold text-foreground">{t('disabled_title')}</h2>
+            <p className="mx-auto max-w-md text-sm text-muted-foreground">{t('disabled_body')}</p>
           </div>
         </div>
       </Card>

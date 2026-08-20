@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Badge } from '@/components/ui/index'
@@ -34,23 +35,20 @@ function getStatusConfig(status: string) {
   return STATUS_CONFIG[status] || STATUS_CONFIG.pending!
 }
 
-const WORKFLOW_TYPE_LABELS: Record<string, string> = {
-  monitoring_run: 'Monitoring Run',
-  brand_setup: 'Brand Setup',
-  alert_evaluation: 'Alert Evaluation',
-  data_export: 'Data Export',
-  health_score_calc: 'Health Score',
-}
+// Job types the UI knows how to name. Labels and one-line explanations live in
+// the message catalog under workflows.type_* / workflows.desc_*.
+const KNOWN_WORKFLOW_TYPES = [
+  'monitoring_run',
+  'brand_setup',
+  'alert_evaluation',
+  'data_export',
+  'health_score_calc',
+] as const
 
-// One-line explanation of what each job type actually does, surfaced in the
-// expanded row so the list isn't just opaque labels.
-const WORKFLOW_TYPE_DESC: Record<string, string> = {
-  monitoring_run:
-    'Queried one of your prompts across the selected AI engines, scored the responses, and updated the brand metrics.',
-  brand_setup: 'Created and initialised a brand and its starter prompts.',
-  alert_evaluation: 'Evaluated alert rules against the latest monitoring data.',
-  data_export: 'Built an export of your monitoring data.',
-  health_score_calc: 'Recomputed the brand health / AVI score from monitoring results.',
+type KnownWorkflowType = (typeof KNOWN_WORKFLOW_TYPES)[number]
+
+function isKnownType(type: string): type is KnownWorkflowType {
+  return (KNOWN_WORKFLOW_TYPES as readonly string[]).includes(type)
 }
 
 // Compact run duration, e.g. "3.2s" or "1m 04s".
@@ -76,6 +74,8 @@ function metaPromptText(meta: Record<string, unknown> | undefined): string | nul
 }
 
 export default function WorkflowsPage() {
+  const t = useTranslations('workflows')
+  const tb = useTranslations('breadcrumb')
   const [workflows, setWorkflows] = useState<WorkflowExecution[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
@@ -172,12 +172,13 @@ export default function WorkflowsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Pages / Workflows</p>
-            <h1 className="mt-1 text-[34px] font-bold tracking-tight text-foreground">Workflows</h1>
-            <p className="mt-1 text-muted-foreground">
-              Every background job the platform runs — what ran, when, whether it succeeded, and the
-              steps it went through.
+            <p className="text-sm font-medium text-muted-foreground">
+              {tb('pages')} / {t('page_title')}
             </p>
+            <h1 className="mt-1 text-[34px] font-bold tracking-tight text-foreground">
+              {t('page_title')}
+            </h1>
+            <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             <select
@@ -185,7 +186,7 @@ export default function WorkflowsPage() {
               value={selectedBrand}
               onChange={(e) => setSelectedBrand(e.target.value)}
             >
-              <option value="">All Brands</option>
+              <option value="">{t('all_brands')}</option>
               {brands.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -207,7 +208,7 @@ export default function WorkflowsPage() {
               onClick={() => setError(null)}
               className="text-error/70 text-xs hover:text-error"
             >
-              Dismiss
+              {t('dismiss')}
             </button>
           </Card>
         )}
@@ -216,16 +217,12 @@ export default function WorkflowsPage() {
         <Card className="bg-secondary/40 flex items-start gap-3 p-4 text-sm text-muted-foreground">
           <Activity className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
           <div className="space-y-1">
-            <p className="font-medium text-foreground">What you get from this page</p>
+            <p className="font-medium text-foreground">{t('what_you_get')}</p>
             <p>
-              A complete audit trail of automated work. The most common job is a{' '}
-              <span className="font-medium text-foreground">Monitoring Run</span>: it sends one of
-              your prompts to the AI engines, scores the responses (citation, presence, sentiment)
-              and updates your metrics. Use it to confirm checks actually ran, see which prompt and
-              engines were used, how long each took, and to{' '}
-              <span className="font-medium">Re-run</span> or{' '}
-              <span className="font-medium">Cancel</span> a job. Expand any row for its steps and
-              details.
+              {t.rich('what_you_get_body', {
+                b: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+                s: (chunks) => <span className="font-medium">{chunks}</span>,
+              })}
             </p>
           </div>
         </Card>
@@ -239,7 +236,7 @@ export default function WorkflowsPage() {
                   className={cn(
                     'stat-icon',
                     color === 'brand' && 'bg-brand-gradient',
-                    color === 'error' && 'bg-gradient-to-br from-error to-red-600',
+                    color === 'error' && 'to-red-600 bg-gradient-to-br from-error',
                     color === 'success' && 'bg-gradient-to-br from-success to-emerald-600',
                   )}
                 >
@@ -291,24 +288,22 @@ export default function WorkflowsPage() {
                   // the user there explicitly rather than leaving them at a
                   // dead end.
                   <>
-                    <p className="font-medium text-foreground">No workflow executions yet</p>
+                    <p className="font-medium text-foreground">{t('no_workflows_yet')}</p>
                     <p className="max-w-sm text-sm text-muted-foreground">
-                      A workflow is created every time a monitoring check runs against a prompt.
-                      Open a prompt and click <span className="font-semibold">Run</span> to create
-                      the first one.
+                      {t.rich('no_workflows_hint', {
+                        s: (chunks) => <span className="font-semibold">{chunks}</span>,
+                      })}
                     </p>
                     <a
                       href="/dashboard/prompts"
                       className="bg-brand-gradient mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
                     >
-                      Go to Prompts
+                      {t('go_to_prompts')}
                     </a>
                   </>
                 ) : (
                   // Rows exist but the active filter / status hides them all.
-                  <p className="text-muted-foreground">
-                    No workflow executions match the current filter.
-                  </p>
+                  <p className="text-muted-foreground">{t('no_match_filter')}</p>
                 )}
               </div>
             ) : (
@@ -337,7 +332,7 @@ export default function WorkflowsPage() {
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium text-foreground">
-                          {WORKFLOW_TYPE_LABELS[workflow.type] || workflow.type}
+                          {isKnownType(workflow.type) ? t(`type_${workflow.type}`) : workflow.type}
                           {brandName && (
                             <span className="text-muted-foreground"> · {brandName}</span>
                           )}
@@ -383,7 +378,7 @@ export default function WorkflowsPage() {
                             className="hover:bg-brand-muted/80 flex items-center gap-1 rounded-lg bg-brand-muted px-3 py-1.5 text-xs font-medium text-brand"
                           >
                             <RotateCcw className="h-3 w-3" />
-                            Re-run
+                            {t('rerun')}
                           </button>
                           {workflow.status === 'running' && (
                             <button
@@ -394,7 +389,7 @@ export default function WorkflowsPage() {
                               className="hover:bg-error-muted/80 flex items-center gap-1 rounded-lg bg-error-muted px-3 py-1.5 text-xs font-medium text-error"
                             >
                               <Pause className="h-3 w-3" />
-                              Cancel
+                              {t('cancel')}
                             </button>
                           )}
                         </div>
@@ -407,20 +402,22 @@ export default function WorkflowsPage() {
 
                         {/* What this job did + its run details */}
                         <p className="text-foreground/80 mb-3 text-sm">
-                          {WORKFLOW_TYPE_DESC[workflow.type] || 'Background job execution.'}
+                          {isKnownType(workflow.type)
+                            ? t(`desc_${workflow.type}`)
+                            : t('desc_fallback')}
                         </p>
                         <div className="mb-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
                           {brandName && (
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                Brand
+                                {t('brand')}
                               </p>
                               <p className="text-foreground">{brandName}</p>
                             </div>
                           )}
                           <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                              Started
+                              {t('started')}
                             </p>
                             <p className="text-foreground">
                               {new Date(workflow.startedAt).toLocaleString()}
@@ -429,7 +426,7 @@ export default function WorkflowsPage() {
                           {duration && (
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                Duration
+                                {t('duration')}
                               </p>
                               <p className="text-foreground">{duration}</p>
                             </div>
@@ -437,7 +434,7 @@ export default function WorkflowsPage() {
                           {promptText && (
                             <div className="col-span-2 sm:col-span-3">
                               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                Prompt
+                                {t('prompt')}
                               </p>
                               <p className="text-foreground">{promptText}</p>
                             </div>
@@ -445,7 +442,7 @@ export default function WorkflowsPage() {
                           {engines.length > 0 && (
                             <div className="col-span-2 sm:col-span-3">
                               <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                Engines
+                                {t('engines')}
                               </p>
                               <div className="flex flex-wrap gap-1">
                                 {engines.map((e) => (
@@ -460,7 +457,7 @@ export default function WorkflowsPage() {
 
                         <div className="space-y-2">
                           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                            Steps
+                            {t('steps')}
                           </p>
                           {workflow.steps.map((step, i) => {
                             const stepStatus = getStatusConfig(step.status)

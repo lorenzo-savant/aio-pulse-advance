@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, Loader2, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import type { BrandLanguage } from '@/types'
@@ -47,6 +48,11 @@ interface BrandEditForm {
 }
 
 export default function BrandEditPage() {
+  const t = useTranslations('brand_edit')
+  const tb = useTranslations('brands')
+  const tc = useTranslations('common')
+  const ton = useTranslations('onboarding')
+  const ts = useTranslations('settings')
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const brandId = params.id
@@ -152,10 +158,10 @@ export default function BrandEditPage() {
       })
       const data = await res.json()
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to save')
+        throw new Error(data.message || t('save_failed'))
       }
 
-      toast.success('Brand updated')
+      toast.success(t('brand_updated'))
 
       if (languageChanged) {
         setReseedOffer(true)
@@ -201,17 +207,17 @@ export default function BrandEditPage() {
       <div className="flex items-center gap-3">
         <Link
           href={`/dashboard/brands/${brandId}`}
-          aria-label="Back"
+          aria-label={tc('back')}
           className="rounded-lg p-2 text-muted-foreground hover:bg-secondary"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-black text-foreground">Edit Brand</h1>
+        <h1 className="text-2xl font-black text-foreground">{tb('edit_brand')}</h1>
       </div>
 
       <Card className="p-8">
         <div className="space-y-5">
-          <Field label="Brand Name" required>
+          <Field label={tb('form.name_label')} required>
             <input
               className="input"
               value={form.name}
@@ -219,22 +225,22 @@ export default function BrandEditPage() {
             />
           </Field>
 
-          <Field label="Website Domain">
+          <Field label={ton('brand_form.domain_label')}>
             <input
               className="input"
               value={form.domain}
               onChange={(e) => setForm({ ...form, domain: e.target.value })}
-              placeholder="example.com"
+              placeholder={tb('form.domain_placeholder')}
             />
           </Field>
 
-          <Field label="Industry">
+          <Field label={tb('form.industry_label')}>
             <select
               className="input"
               value={form.industry}
               onChange={(e) => setForm({ ...form, industry: e.target.value })}
             >
-              <option value="">Select industry...</option>
+              <option value="">{tb('form.industry_placeholder')}</option>
               {industries.map((opt) => {
                 const label = opt.name[form.language] || opt.name.en || opt.id
                 return (
@@ -246,7 +252,7 @@ export default function BrandEditPage() {
             </select>
           </Field>
 
-          <Field label="Primary Market Language" required>
+          <Field label={tb('form.language_label')} required>
             <select
               className="input"
               value={form.language}
@@ -262,15 +268,16 @@ export default function BrandEditPage() {
               <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
-                  Changing language won&apos;t re-translate existing prompts. After saving,
-                  you&apos;ll be offered to re-seed prompts in{' '}
-                  <strong>{form.language.toUpperCase()}</strong>.
+                  {t.rich('language_warning', {
+                    lang: form.language.toUpperCase(),
+                    b: (chunks) => <strong>{chunks}</strong>,
+                  })}
                 </span>
               </div>
             )}
           </Field>
 
-          <Field label="Description">
+          <Field label={tb('form.description_label')}>
             <textarea
               className="input min-h-[80px]"
               value={form.description}
@@ -278,21 +285,21 @@ export default function BrandEditPage() {
             />
           </Field>
 
-          <Field label="Brand Aliases (comma-separated)">
+          <Field label={t('aliases_label')}>
             <input
               className="input"
               value={form.aliases}
               onChange={(e) => setForm({ ...form, aliases: e.target.value })}
-              placeholder="e.g. Acme Corp, ACME"
+              placeholder={t('aliases_placeholder')}
             />
           </Field>
 
-          <Field label="Competitors (comma-separated)">
+          <Field label={t('competitors_label')}>
             <input
               className="input"
               value={form.competitors}
               onChange={(e) => setForm({ ...form, competitors: e.target.value })}
-              placeholder="e.g. Zapier, Make"
+              placeholder={t('competitors_placeholder')}
             />
           </Field>
 
@@ -304,14 +311,15 @@ export default function BrandEditPage() {
               engines credit the brand. */}
           <div className="bg-secondary/30 rounded-2xl border border-dashed border-border p-4">
             <h3 className="mb-1 text-xs font-black uppercase tracking-widest text-muted-foreground">
-              LLM Optimization
+              {t('llmo_title')}
             </h3>
             <p className="mb-4 text-[11px] text-muted-foreground">
-              How AI engines identify and credit this brand. All three are optional but
-              high-leverage — see <code className="text-foreground">docs/DECISIONS.md</code>.
+              {t.rich('llmo_hint', {
+                c: (chunks) => <code className="text-foreground">{chunks}</code>,
+              })}
             </p>
 
-            <Field label="Verified Identities (one URL per line)">
+            <Field label={t('same_as_label')}>
               <textarea
                 className="input font-mono text-xs"
                 rows={4}
@@ -323,23 +331,23 @@ export default function BrandEditPage() {
               />
             </Field>
 
-            <Field label="Disambiguation">
+            <Field label={t('disambiguation_label')}>
               <textarea
                 className="input"
                 rows={3}
                 value={form.disambiguation}
                 onChange={(e) => setForm({ ...form, disambiguation: e.target.value })}
-                placeholder='e.g. "Acasting is a Swedish casting platform — NOT to be confused with Acast, the podcast hosting service."'
+                placeholder={t('disambiguation_placeholder')}
                 maxLength={2000}
               />
             </Field>
 
-            <Field label="Suggested Citation Format">
+            <Field label={t('citation_format_label')}>
               <input
                 className="input"
                 value={form.citationFormat}
                 onChange={(e) => setForm({ ...form, citationFormat: e.target.value })}
-                placeholder="e.g. AcmeCorp [acme.com], 2026"
+                placeholder={t('citation_format_placeholder')}
                 maxLength={200}
               />
             </Field>
@@ -347,25 +355,25 @@ export default function BrandEditPage() {
             {/* Legal identifier — VAT / orgnr / fiscal code / EIN.
                 Maps to Schema.org vatID (vat) or taxID (everything else).
                 Globally unique → strongest LLMO entity-resolution signal. */}
-            <Field label="Legal Identifier (VAT / Org.nr / Codice Fiscale / EIN)">
+            <Field label={t('legal_id_label')}>
               <div className="grid grid-cols-[140px_1fr] gap-2">
                 <select
                   className="input"
                   value={form.legalIdType}
                   onChange={(e) => setForm({ ...form, legalIdType: e.target.value as LegalIdType })}
                 >
-                  <option value="">Type…</option>
-                  <option value="vat">VAT</option>
-                  <option value="orgnr">Org.nr (SE)</option>
-                  <option value="fiscal_code">Codice fiscale (IT)</option>
-                  <option value="ein">EIN (US)</option>
-                  <option value="other">Other</option>
+                  <option value="">{t('legal_id_type')}</option>
+                  <option value="vat">{t('legal_id_vat')}</option>
+                  <option value="orgnr">{t('legal_id_orgnr')}</option>
+                  <option value="fiscal_code">{t('legal_id_fiscal_code')}</option>
+                  <option value="ein">{t('legal_id_ein')}</option>
+                  <option value="other">{t('legal_id_other')}</option>
                 </select>
                 <input
                   className="input"
                   value={form.legalId}
                   onChange={(e) => setForm({ ...form, legalId: e.target.value })}
-                  placeholder="e.g. SE556677889901 / 556677-8899"
+                  placeholder={t('legal_id_placeholder')}
                   maxLength={64}
                 />
               </div>
@@ -375,10 +383,10 @@ export default function BrandEditPage() {
 
         <div className="mt-6 flex items-center justify-end gap-2">
           <Link href={`/dashboard/brands/${brandId}`}>
-            <Button variant="ghost">Cancel</Button>
+            <Button variant="ghost">{tc('cancel')}</Button>
           </Link>
           <Button onClick={handleSave} loading={saving}>
-            <Save className="h-4 w-4" /> Save Changes
+            <Save className="h-4 w-4" /> {ts('profile.save_button')}
           </Button>
         </div>
       </Card>
@@ -389,19 +397,15 @@ export default function BrandEditPage() {
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
             <div className="flex-1">
               <h3 className="font-bold text-foreground">
-                Re-seed prompts in {form.language.toUpperCase()}?
+                {t('reseed_title', { lang: form.language.toUpperCase() })}
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Your existing prompts are still in the old language. Re-seed to generate fresh
-                prompts from the template library in your new market language. Existing unique
-                prompts won&apos;t be duplicated.
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{t('reseed_body')}</p>
               <div className="mt-4 flex gap-2">
                 <Button onClick={handleReseed} loading={saving}>
-                  Re-seed prompts
+                  {t('reseed_confirm')}
                 </Button>
                 <Button variant="ghost" onClick={() => router.push(`/dashboard/brands/${brandId}`)}>
-                  Skip for now
+                  {t('reseed_skip')}
                 </Button>
               </div>
             </div>

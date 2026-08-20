@@ -18,6 +18,7 @@ import {
   type DomainCategory,
 } from '@/lib/utils/ai-trust-score'
 import { classifySources, type SourceTaxonomyRow } from '@/lib/services/source-taxonomy'
+import { classifyCitedUrl, findConfusableCitations } from '@/lib/services/confusable-citations'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -157,10 +158,39 @@ export async function GET(req: NextRequest) {
     const citationTypeBreakdown: TypeBreakdown = emptyBreakdown()
     const citationDepthBreakdown: DepthBreakdown = emptyDepthBreakdown()
 
+    // Look-alike citations. Observed live on 2026-08-20: asked about Relovie
+    // AB, ChatGPT cited relivo.se, reliwe.se, a Trustpilot review of relivo.se
+    // and a registry page for Relevo AB — four real companies, none of them
+    // this one. 19 of that brand's 85 cited URLs, 22%.
+    //
+    // A source that is not exactly this brand is a source about a different
+    // company, so it is NOT counted as coverage: these URLs are held out of the
+    // domain ranking, out of the own-domain share and out of the source
+    // taxonomy. They are not deleted and not hidden — every one is reported
+    // below with its count and sample URLs, and the summary states how many
+    // were set aside, so the number the engines produced stays visible next to
+    // the number that means something.
+    const brandIdentity = {
+      name: brand.name,
+      aliases: brand.aliases ?? [],
+      domain: brand.domain ?? null,
+    }
+    const confusable = findConfusableCitations(
+      rows.map((r) => (Array.isArray(r.cited_urls) ? r.cited_urls : null)),
+      brandIdentity,
+    )
+    const confusableUrls = new Set<string>()
+    for (const row of rows) {
+      for (const rawUrl of Array.isArray(row.cited_urls) ? row.cited_urls : []) {
+        if (classifyCitedUrl(rawUrl, brandIdentity)) confusableUrls.add(rawUrl)
+      }
+    }
+
     let totalResponses = 0
     let responsesWithSources = 0
     let totalCitations = 0
     let ownedCitations = 0
+    let confusableCitations = 0
 
     for (const row of rows) {
       totalResponses++
@@ -173,6 +203,12 @@ export async function GET(req: NextRequest) {
       for (const rawUrl of urls) {
         const host = hostOf(rawUrl)
         if (!host) continue
+
+        // Another company's page. Counted separately, never as our coverage.
+        if (confusableUrls.has(rawUrl)) {
+          confusableCitations++
+          continue
+        }
 
         totalCitations++
         const owned = isOwned(host)
@@ -277,6 +313,9 @@ export async function GET(req: NextRequest) {
           trustReasoning: trust.reasoning,
           avgSentiment: avgSentiment !== null ? Math.round(avgSentiment * 1000) / 1000 : null,
           lastSeen: d.lastSeen,
+          // No 'confusable' flag here on purpose: a look-alike never reaches
+          // this list at all, so a domain that IS in the ranking is one that
+          // passed the identity check.
         }
       })
 
@@ -316,6 +355,11 @@ export async function GET(req: NextRequest) {
           ownedShare:
             totalCitations > 0 ? Math.round((ownedCitations / totalCitations) * 1000) / 10 : 0,
           ownedDomain,
+          // Citations pointing at a company that merely resembles this brand.
+          // Held out of totalCitations above, reported here so the raw number
+          // the engines produced is still recoverable: totalCitations +
+          // confusableCitations is what they actually emitted.
+          confusableCitations,
           // Citation-type mix across all sources for the period.
           citationTypeBreakdown,
           // Citation-depth mix (root / hub / leaf) + deep-page rate %.
@@ -343,10 +387,25 @@ export async function GET(req: NextRequest) {
          * co-occurrence, so without a list the classification would be
          * confident and meaningless.
          */
-        taxonomy: classifySources(rows as SourceTaxonomyRow[], {
-          competitors: brand.competitors,
-          ownDomain: ownedDomain,
-        }),
+        taxonomy: classifySources(
+          rows.map((r) => ({
+            ...r,
+            cited_urls: Array.isArray(r.cited_urls)
+              ? r.cited_urls.filter((u) => !confusableUrls.has(u))
+              : r.cited_urls,
+          })) as SourceTaxonomyRow[],
+          {
+            competitors: brand.competitors,
+            ownDomain: ownedDomain,
+          },
+        ),
+        /**
+         * Cited hosts that resemble the brand without being it — a different
+         * company the engine confused with this one. Ranked by how often the
+         * engines reached for them, because a look-alike cited repeatedly is a
+         * fact about the brand's name, not a one-off slip.
+         */
+        confusable,
         domains: topDomains,
         /**
          * Top URLs on the brand's own domain that AI engines cited, with the

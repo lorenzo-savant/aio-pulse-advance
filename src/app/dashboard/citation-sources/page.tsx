@@ -90,6 +90,10 @@ interface SidebarDominance {
 }
 
 interface Summary {
+  /** Citations pointing at a company that merely resembles the brand.
+   *  Held out of totalCitations; the two added together are what the engines
+   *  emitted. */
+  confusableCitations?: number
   totalResponses: number
   responsesWithSources: number
   sourcedRate: number
@@ -130,8 +134,23 @@ interface SourceTaxonomy {
   belowThreshold: number
 }
 
+interface ConfusableVerdict {
+  similarTo: string
+  distance: number
+  reason: 'typo' | 'reshuffled'
+  where: 'host' | 'path'
+}
+
+interface ConfusableSource {
+  domain: string
+  verdict: ConfusableVerdict
+  citations: number
+  sampleUrls: string[]
+}
+
 interface SourcesData {
   summary: Summary
+  confusable?: ConfusableSource[]
   taxonomy?: SourceTaxonomy
   domains: DomainRow[]
   ownedPages: OwnedPageRow[]
@@ -660,6 +679,69 @@ export default function CitationSourcesPage() {
 
           {/* Cited × Ranking — AI cites this URL, Google ranks it where? */}
           <CitedVsRankingPanel brandId={selectedBrand?.id ?? undefined} />
+
+          {/* Look-alike citations — a different company wearing this name */}
+          {data.confusable && data.confusable.length > 0 && (
+            <Card className="border-l-red-500 border-l-4 p-6">
+              <h2 className="mb-1 text-lg font-bold text-foreground">
+                Citations About Somebody Else
+              </h2>
+              <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+                These cited pages belong to companies whose name resembles yours. They are real
+                pages and the links work — they are simply not about you, so they are held out of
+                the domain ranking, out of your citation share and out of the source taxonomy.
+                Nothing is deleted: every one is listed here.
+              </p>
+              {typeof data.summary.confusableCitations === 'number' &&
+                data.summary.confusableCitations > 0 && (
+                  <p className="text-red-300 mb-4 text-sm font-medium">
+                    {data.summary.confusableCitations} of{' '}
+                    {data.summary.totalCitations + data.summary.confusableCitations} citations set
+                    aside.
+                  </p>
+                )}
+              <div className="space-y-3">
+                {data.confusable.map((c) => (
+                  <div key={c.domain} className="rounded-lg border border-border bg-background p-4">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="text-red-400 font-bold">{c.domain}</span>
+                      <span className="text-muted-foreground">
+                        {c.citations} citation{c.citations === 1 ? '' : 's'}
+                      </span>
+                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {c.verdict.reason === 'typo'
+                          ? 'near-identical spelling'
+                          : 'same letters, reordered'}
+                      </span>
+                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {c.verdict.where === 'host'
+                          ? 'look-alike domain'
+                          : 'page about the look-alike'}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Resembles “{c.verdict.similarTo}” — {c.verdict.distance} character
+                      {c.verdict.distance === 1 ? '' : 's'} apart.
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {c.sampleUrls.map((u) => (
+                        <li key={u}>
+                          <a
+                            href={u}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow"
+                            className="break-all text-xs text-muted-foreground hover:text-brand hover:underline"
+                          >
+                            {u}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {/* Source taxonomy — which side of the market each source serves */}
           {data.taxonomy && (

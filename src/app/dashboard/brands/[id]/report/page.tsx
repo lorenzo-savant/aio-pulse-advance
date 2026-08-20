@@ -5,7 +5,7 @@
 // Brand Report — one auto-generated, top-to-bottom presentation of everything
 // the platform holds on a brand: facts & provenance, visibility, share of
 // voice, citations & their sources, AI-crawler access (bots), sentiment,
-// homonym confusion, and format affinity.
+// homonym confusion, searches, audits, errors and recommendations.
 //
 // It writes nothing by hand: it composes the SAME section panels the dashboard
 // already renders (each self-fetches for this brand via its `brandId` prop), so
@@ -13,6 +13,9 @@
 // new sheet (`break-before-page`), and the floating "Scarica PDF" (dashboard
 // layout) prints the whole thing into one faithful multi-page report — charts,
 // cards and comparisons included.
+//
+// NOTE: strings are intentionally inline (not i18n) so the report is
+// self-contained — it does not depend on translation keys landing elsewhere.
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
@@ -26,6 +29,20 @@ import { FirstPartyCitationsPanel } from '@/components/FirstPartyCitationsPanel'
 import { CitationFreshnessPanel } from '@/components/CitationFreshnessPanel'
 import { CrawlerAccessPanel } from '@/components/CrawlerAccessPanel'
 import { HomonymAuditPanel } from '@/components/HomonymAuditPanel'
+import { PromptPortfolioPanel } from '@/components/PromptPortfolioPanel'
+import { SiteAuditFoundationsCard } from '@/components/SiteAuditFoundationsCard'
+import { AISeoReadinessPanel } from '@/components/AISeoReadinessPanel'
+import { BusinessDriversPanel } from '@/components/BusinessDriversPanel'
+import { AudienceDeclarationPanel } from '@/components/AudienceDeclarationPanel'
+import { BrandedSearchPanel } from '@/components/BrandedSearchPanel'
+import { CitedVsRankingPanel } from '@/components/CitedVsRankingPanel'
+import { ClaimDivergencePanel } from '@/components/ClaimDivergencePanel'
+import { CompetitorSentimentPanel } from '@/components/CompetitorSentimentPanel'
+import { EditorialOutletsPanel } from '@/components/EditorialOutletsPanel'
+import { SourceOpportunitiesPanel } from '@/components/SourceOpportunitiesPanel'
+import { StrikingDistancePanel } from '@/components/StrikingDistancePanel'
+import { CannibalizationPanel } from '@/components/CannibalizationPanel'
+import { VisualProofPanel } from '@/components/VisualProofPanel'
 import type { Brand } from '@/types'
 
 /** A titled report block that always starts on a fresh printed sheet. */
@@ -163,6 +180,114 @@ export default function BrandReportPage() {
         provenance="classificazione LLM delle menzioni per entità"
       >
         <HomonymAuditPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={10}
+        title="Portfolio dei prompt (ricerche)"
+        provenance="prompts monitorati del brand"
+      >
+        <PromptPortfolioPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={11}
+        title="Ricerca brandizzata"
+        provenance="menzioni su query che contengono il nome"
+      >
+        <BrandedSearchPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={12}
+        title="Citato vs ranking"
+        provenance="cited_urls vs posizione nelle risposte"
+      >
+        <CitedVsRankingPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={13}
+        title="Divergenza delle affermazioni (errori)"
+        provenance="claim delle risposte vs fatti noti"
+      >
+        <ClaimDivergencePanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={14}
+        title="Sentiment dei competitor"
+        provenance="sentiment dei competitor nelle risposte"
+      >
+        <CompetitorSentimentPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={15}
+        title="Testate editoriali"
+        provenance="domini editoriali che citano il brand"
+      >
+        <EditorialOutletsPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={16}
+        title="Opportunità di fonti (raccomandazioni)"
+        provenance="gap tra fonti citate e potenziali"
+      >
+        <SourceOpportunitiesPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={17}
+        title="Striking distance (opportunità)"
+        provenance="prompt vicini alla soglia di menzione"
+      >
+        <StrikingDistancePanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={18}
+        title="Prontezza AI-SEO"
+        provenance="audit di prontezza per i motori AI"
+      >
+        <AISeoReadinessPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={19}
+        title="Audit fondamenta del sito"
+        provenance="audit tecnico on-page del dominio"
+      >
+        <SiteAuditFoundationsCard brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={20}
+        title="Cannibalizzazione"
+        provenance="prompt che si sovrappongono tra loro"
+      >
+        <CannibalizationPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={21}
+        title="Driver di business"
+        provenance="driver di business dichiarati del brand"
+      >
+        <BusinessDriversPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection
+        n={22}
+        title="Dichiarazione audience"
+        provenance="audience target dichiarata del brand"
+      >
+        <AudienceDeclarationPanel brandId={brandId} />
+      </ReportSection>
+
+      <ReportSection n={23} title="Prova visiva" provenance="screenshot/evidenze delle citazioni">
+        <VisualProofPanel brandId={brandId} />
       </ReportSection>
     </div>
   )

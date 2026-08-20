@@ -1584,4 +1584,26 @@
   [class*='rounded-xl'] {
     break-inside: avoid;
   }
+
+  /* Assembled Brand Report: strip the interactive chrome that panels carry for
+     on-screen use (action buttons, brand pickers, tab bars, search inputs) so
+     the printout is data and charts only — not half-rendered controls. Section
+     headings and card bodies stay; only operable controls are removed. */
+  #brand-report button,
+  #brand-report select,
+  #brand-report input,
+  #brand-report textarea,
+  #brand-report [role='tablist'] {
+    display: none !important;
+  }
+  /* Let each section's charts take the full print width rather than the
+     narrower on-screen column they were measured at. */
+  #brand-report .recharts-responsive-container {
+    width: 100% !important;
+  }
+
+  /* Comfortable, consistent page margins for the saved PDF. */
+  @page {
+    margin: 12mm;
+  }
 }

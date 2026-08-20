@@ -93,7 +93,7 @@ export default function BrandReportPage() {
   const today = new Intl.DateTimeFormat('it-IT', { dateStyle: 'long' }).format(new Date())
 
   return (
-    <div className="animate-in space-y-6 pb-16">
+    <div id="brand-report" className="animate-in space-y-6 pb-16">
       {/* ── Cover ─────────────────────────────────────────────────────────── */}
       <Card className="border-l-4 border-l-brand p-8">
         <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">

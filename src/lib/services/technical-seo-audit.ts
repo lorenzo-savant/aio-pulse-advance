@@ -1,5 +1,13 @@
 import { safeFetch } from '@/lib/utils/safe-fetch'
 import { cached as cachedResponse } from '@/lib/response-cache'
+// Single robots.txt parser for the whole repo: the correct one, with
+// specific→wildcard precedence and path-awareness (crawler-access-audit.ts).
+// The parser that used to live here ignored `User-agent: *`, so a site that
+// blocked every bot via the wildcard read as "Allowed" in this report.
+import {
+  parseRobotsTxt as parseRobotsForBots,
+  checkBotAccess,
+} from '@/lib/services/crawler-access-audit'
 import { analyseZeroClickVulnerability } from '@/lib/utils/zero-click-vulnerability'
 import { analyseIntentLength } from '@/lib/utils/intent-length'
 import { checkComparisonTable } from '@/lib/utils/comparison-table-check'
@@ -76,29 +84,6 @@ function getBaseUrl(url: string): string {
   }
 }
 
-function parseRobotsTxt(robotsTxt: string): { allowed: Set<string>; disallowed: Set<string> } {
-  const allowed = new Set<string>()
-  const disallowed = new Set<string>()
-  const lines = robotsTxt.split('\n')
-  let currentUserAgent = ''
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed.startsWith('#') || !trimmed) continue
-
-    const lower = trimmed.toLowerCase()
-    if (lower.startsWith('user-agent:')) {
-      currentUserAgent = trimmed.slice(11).trim().toLowerCase()
-    } else if (lower.startsWith('allow:')) {
-      if (currentUserAgent) allowed.add(currentUserAgent)
-    } else if (lower.startsWith('disallow:')) {
-      if (currentUserAgent) disallowed.add(currentUserAgent)
-    }
-  }
-
-  return { allowed, disallowed }
-}
-
 function checkAiCrawlerAccess(robotsTxt: string | null): AuditCategory {
   const weight = 0.25
   const checks: AuditCheck[] = []
@@ -125,17 +110,29 @@ function checkAiCrawlerAccess(robotsTxt: string | null): AuditCategory {
       allowedCount++
     }
   } else {
-    const { allowed, disallowed } = parseRobotsTxt(robotsTxt)
+    const parsed = parseRobotsForBots(robotsTxt)
     for (const bot of aiBots) {
-      const isAllowed = allowed.has(bot) || (!allowed.has(bot) && !disallowed.has(bot))
+      // checkBotAccess resolves specific→wildcard precedence and paths, so a
+      // `User-agent: *` / `Disallow: /` block is finally seen here.
+      const { verdict, disallowPaths } = checkBotAccess(parsed, bot)
+      const blocked = verdict === 'explicitly_blocked' || verdict === 'wildcard_blocked'
+      const restricted = verdict === 'restricted'
+      const status: AuditCheck['status'] = blocked ? 'fail' : restricted ? 'warning' : 'pass'
+      const message = blocked
+        ? 'Disallowed'
+        : restricted
+          ? `Allowed, sub-paths blocked: ${disallowPaths.join(', ')}`
+          : 'Allowed'
       checks.push({
         id: `ai-crawler-${bot}`,
         name: `${bot} access`,
-        status: isAllowed ? 'pass' : 'fail',
-        message: isAllowed ? 'Allowed' : 'Disallowed',
+        status,
+        message,
         details: `User-agent: ${bot}`,
       })
-      if (isAllowed) allowedCount++
+      // A restricted bot can still be fetched for citation, so it counts toward
+      // access; only an outright block does not.
+      if (!blocked) allowedCount++
     }
   }
 

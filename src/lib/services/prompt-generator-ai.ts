@@ -303,8 +303,11 @@ function buildSystemPrompt(): string {
     '6. `targetEngines` is your judgment of which AI engines are most likely to surface the monitored brand for this query. The only valid engines are "chatgpt", "gemini", "perplexity" — never propose any other. Prefer Perplexity for question-style queries with citations; ChatGPT for category/listing queries; Gemini for queries that benefit from Google grounding.',
     '7. `priority` reflects monitoring value — high = run daily, medium = weekly, low = monthly.',
     "8. `rationale` must explain WHY this prompt is useful in one sentence. Don't restate the prompt.",
-    '9. PERSONALIZE to THIS brand — do not stay generic. Ground every prompt in the BRAND REALITY in the user message (the verified description of what the brand is, does, sells, offers, how it works, its markets/coverage, and — where applicable — shipping, returns, warranty, pricing). Spread prompts across the facets that ACTUALLY apply to THIS brand: what it does · what it sells / offers / proposes · how it works · delivery / shipping · returns / warranty · pricing or price-comparison · trust / reviews / reliability · geographic coverage. Use only facets present in, or clearly implied by, the BRAND REALITY.',
-    '10. NEVER presuppose facts absent from the BRAND REALITY. Do not assume the brand sells physical products, runs a store, ships goods, or offers services it does not have. If it is a platform / marketplace / aggregator / meta-search / comparison / directory, frame prompts around finding, comparing, discovering and evaluating — NEVER "what products does X sell". A prompt that contradicts or invents beyond the BRAND REALITY is invalid and must not be produced.',
+    '9. GROUNDING IS A HARD CONSTRAINT, NOT A STYLE. Every prompt MUST be grounded in the BRAND REALITY in the user message (the verified description of what the brand actually is, does, sells and offers). A prompt not supported by the BRAND REALITY is INVALID — do not output it.',
+    '10. PERSONALIZE — never generic. Cover ONLY the facets the BRAND REALITY actually supports, drawn from: what it does · what it sells / offers / proposes · how it works · delivery / shipping · returns / warranty · pricing or price-comparison · trust / reviews · geographic coverage / markets. If a facet is not in the BRAND REALITY, write NO prompt about it. Never fabricate a facet.',
+    '11. FORBIDDEN — presupposition. Do NOT assume the brand sells physical products, runs a store, ships goods, or offers any service the BRAND REALITY does not state. NEVER produce "what products does X sell" / "vad säljer X" / "quali prodotti vende X" (or equivalents) UNLESS the BRAND REALITY explicitly says the brand sells its OWN products. If the brand is a platform / marketplace / aggregator / meta-search / comparison / directory, use ONLY find / compare / discover / evaluate framing — the thing it "offers" is the search/comparison service itself, never a product catalogue.',
+    '12. MANDATORY SELF-CHECK before returning: re-read each prompt against the BRAND REALITY and DELETE any that assumes a product, service, capability, channel or attribute it does not support. When in doubt, omit. Correctness overrides the 5-10 target — returning as few as 3 is correct when the BRAND REALITY is narrow; never pad with presumptuous prompts.',
+    '13. THIN OR MISSING BRAND REALITY: if it is empty or too vague to ground specifics, output ONLY safe brand-agnostic prompts (the brand name, reviews, reliability, "is X legit", alternatives to X). Do NOT invent a business model, product line, services or shipping.',
     '',
     'Schema:',
     '{ "prompts": [ { "text": string, "intentBucket": "B1"|"B2"|"B3"|"B4"|"B5", "priority": "high"|"medium"|"low", "rationale": string, "targetEngines": ("chatgpt"|"gemini"|"perplexity")[] } ] }',
@@ -356,10 +359,49 @@ function buildUserPrompt(input: AugmentInput, presetSummary: string): string {
     'EXISTING PROMPTS (the static template engine already produced these — DO NOT repeat them):',
     ...input.existingPrompts.slice(0, 30).map((p, i) => `  ${i + 1}. ${p}`),
     '',
-    'Return 5-10 NEW prompts (JSON only) that complement these — non-obvious phrasings, long-tail questions, idiomatic local search behavior.',
+    'Return NEW prompts (JSON only, up to 10) that complement these — non-obvious phrasings, long-tail questions, idiomatic local search behavior. Then APPLY THE SELF-CHECK: every prompt must be grounded in the BRAND REALITY above; delete any that presume a product, service, shipping or attribute it does not state. Returning fewer correct prompts is better than more presumptuous ones.',
   ]
     .filter(Boolean)
     .join('\n')
+}
+
+// ─── Deterministic backstop for rule 11 ──────────────────────────────────────
+// Some models still emit "what products does X sell" for a brand that sells
+// nothing of its own. The prompt rule alone is not a guarantee, so when the
+// brand's verified reality / industry marks it a comparison / meta-search /
+// aggregator, we DROP those presupposing prompts in code — the LLM can slip,
+// the filter cannot.
+
+/** Strong signal the brand does not sell its own products (it aggregates,
+ *  compares, or lists other sellers). Checked against description + industry. */
+const NON_SELLER_SIGNAL =
+  /(meta[- ]?s[öo]k|meta[- ]?search|aggregat|j[äa]mf[öo]r|prisj[äa]mf|price[- ]?compar|comparison|comparatore|confront[oa]\s+prezzi|marknadsportal|s[öo]kmotor|search engine|directory|aggregator)/i
+
+/** True when the industry or the verified facts mark the brand a non-seller
+ *  (aggregator / comparison / meta-search). Exported for unit testing. */
+export function isNonSellerBrand(industryId: string, factsText: string): boolean {
+  if (industryId === 'recommerce-comparison') return true
+  return NON_SELLER_SIGNAL.test(factsText)
+}
+
+function sellsNothingOfItsOwn(input: AugmentInput): boolean {
+  return isNonSellerBrand(
+    input.industryId,
+    `${input.brandDescription ?? ''} ${input.disambiguation ?? ''}`,
+  )
+}
+
+// A prompt "presupposes selling" only when it pairs a sell-verb with a
+// product-noun — so "how do I SELL on X" (no product noun) and "where to
+// COMPARE prices on products" (no sell-verb) are NOT caught. Multi-locale.
+const SELL_VERB = /(s[äa]ljer|s[äa]ljs|s[äa]lja|sells?|selling|vende|vendono|vendere)/i
+const PRODUCT_NOUN =
+  /(produkter|produkt|products?|prodotti|prodotto|sortiment|varor|catalogue|catalog|katalog)/i
+
+/** A prompt presupposes the brand sells its own products (a sell-verb paired
+ *  with a product-noun). Exported for unit testing. */
+export function presupposesOwnProducts(text: string): boolean {
+  return SELL_VERB.test(text) && PRODUCT_NOUN.test(text)
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────
@@ -423,5 +465,20 @@ export async function augmentWithAiPrompts(input: AugmentInput): Promise<AiGener
   const existingSet = new Set(input.existingPrompts.map((p) => p.toLowerCase().trim()))
   const unique = parsed.prompts.filter((p) => !existingSet.has(p.text.toLowerCase().trim()))
 
-  return { prompts: unique, provider: llm.provider, model: llm.model }
+  // Deterministic backstop for rule 11: a brand that sells nothing of its own
+  // never gets "what products does X sell" prompts, even if the model slipped.
+  let clean = unique
+  if (sellsNothingOfItsOwn(input)) {
+    const dropped = unique.filter((p) => presupposesOwnProducts(p.text)).map((p) => p.text)
+    if (dropped.length > 0) {
+      clean = unique.filter((p) => !presupposesOwnProducts(p.text))
+      logger.info('prompt-generator-ai: dropped presupposing prompts for a non-seller brand', {
+        brand: input.brand,
+        dropped: dropped.length,
+        examples: dropped.slice(0, 3),
+      })
+    }
+  }
+
+  return { prompts: clean, provider: llm.provider, model: llm.model }
 }

@@ -19,6 +19,7 @@ import {
   simulateEngineResponse as routerSimulate,
   analyzeResponseForBrand as routerAnalyze,
 } from './ai-router'
+import { categoryDrift } from './category-drift'
 import { cleanCitations, groundCitationsViaBrave } from './citation-grounding'
 import { detectBrandMention, extractUrlsFromText } from './brand-mention'
 import { lexicalSentiment, sentimentAgreement } from './sentiment-lexicon'
@@ -97,6 +98,11 @@ export const analysisOutputSchema = z.object({
   // Worth stating plainly: this is the ANALYSIS model grading itself, not the
   // fact-checker. `detectHallucinations` is never called by this pipeline.
   has_hallucination: z.boolean().nullable().optional(),
+  // One short phrase: the category the response places the brand in (see
+  // category-drift.ts). Nullable/optional — the model omits it when the brand
+  // is not mentioned or the answer does not categorize it, and NULL must stay
+  // NULL (not captured), never coerced to a value.
+  described_category: z.string().trim().max(200).nullable().optional(),
   hallucination_flags: z
     .array(
       z.object({
@@ -213,6 +219,7 @@ Respond ONLY with a valid JSON object (no markdown, no extra text):
     {"name": "<n>", "position": <1-based index of the SENTENCE in which this competitor first appears, same scale as mention_position; null if unclear>, "count": <integer>}
   ],
   "has_hallucination": <boolean>,
+  "described_category": "<one short phrase (2-5 words) naming the category this response places ${brand.name} in — e.g. 'second-hand marketplace', 'price-comparison site', 'casting platform'. null if the brand is not mentioned or the answer does not categorize it. Report what the answer SAYS it is, not what you know it to be.>",
   "hallucination_flags": [
     {
       "text": "<the potentially false claim>",
@@ -391,6 +398,12 @@ export async function runMonitoringCheck(
     // means the engine answered without searching. Collapsing the two would
     // turn "we cannot see it" into "it did not happen". See fan-out.ts.
     search_queries: engineSearchQueries ?? null,
+    // Category drift: the phrase the engine framed the brand as, and its lexical
+    // distance from the brand's stated category. Both NULL when the model did
+    // not categorize the brand or the brand has no industry set — "unknown",
+    // never a false zero. See category-drift.ts.
+    described_category: analysis.described_category ?? null,
+    category_drift: categoryDrift(analysis.described_category ?? '', brand.industry ?? ''),
   }
 }
 

@@ -303,6 +303,8 @@ function buildSystemPrompt(): string {
     '6. `targetEngines` is your judgment of which AI engines are most likely to surface the monitored brand for this query. The only valid engines are "chatgpt", "gemini", "perplexity" — never propose any other. Prefer Perplexity for question-style queries with citations; ChatGPT for category/listing queries; Gemini for queries that benefit from Google grounding.',
     '7. `priority` reflects monitoring value — high = run daily, medium = weekly, low = monthly.',
     "8. `rationale` must explain WHY this prompt is useful in one sentence. Don't restate the prompt.",
+    '9. PERSONALIZE to THIS brand — do not stay generic. Ground every prompt in the BRAND REALITY in the user message (the verified description of what the brand is, does, sells, offers, how it works, its markets/coverage, and — where applicable — shipping, returns, warranty, pricing). Spread prompts across the facets that ACTUALLY apply to THIS brand: what it does · what it sells / offers / proposes · how it works · delivery / shipping · returns / warranty · pricing or price-comparison · trust / reviews / reliability · geographic coverage. Use only facets present in, or clearly implied by, the BRAND REALITY.',
+    '10. NEVER presuppose facts absent from the BRAND REALITY. Do not assume the brand sells physical products, runs a store, ships goods, or offers services it does not have. If it is a platform / marketplace / aggregator / meta-search / comparison / directory, frame prompts around finding, comparing, discovering and evaluating — NEVER "what products does X sell". A prompt that contradicts or invents beyond the BRAND REALITY is invalid and must not be produced.',
     '',
     'Schema:',
     '{ "prompts": [ { "text": string, "intentBucket": "B1"|"B2"|"B3"|"B4"|"B5", "priority": "high"|"medium"|"low", "rationale": string, "targetEngines": ("chatgpt"|"gemini"|"perplexity")[] } ] }',
@@ -317,6 +319,13 @@ interface AugmentInput {
   competitors: string[]
   existingPrompts: string[]
   location?: string | null
+  /** Verified, brand-specific facts — what the brand ACTUALLY is, does, sells
+   *  and offers. This is what stops the generator presupposing generic-industry
+   *  attributes (e.g. inventing a product catalogue for a meta-search brand). */
+  brandDescription?: string | null
+  /** "NOT to be confused with <same-named company>" note, when the brand name
+   *  collides with another entity. Keeps prompts anchored to THIS company. */
+  disambiguation?: string | null
 }
 
 function buildUserPrompt(input: AugmentInput, presetSummary: string): string {
@@ -328,7 +337,16 @@ function buildUserPrompt(input: AugmentInput, presetSummary: string): string {
     `LOCALE: ${input.locale} (${localeLabel}) — write prompts natively in this language.`,
     input.location ? `LOCATION: ${input.location} — include geographic intent in 1-2 prompts.` : '',
     '',
-    `INDUSTRY PRESET: ${input.industryId}`,
+    input.brandDescription && input.brandDescription.trim()
+      ? `BRAND REALITY (verified — what this brand ACTUALLY is / does / sells / offers; ground EVERY prompt in this, never contradict or exceed it):\n"""\n${input.brandDescription.trim().slice(0, 1500)}\n"""`
+      : 'BRAND REALITY: not provided — stay generic and do NOT invent specific products, services, shipping, or a business model for this brand.',
+    input.disambiguation && input.disambiguation.trim()
+      ? `DISAMBIGUATION (a different company shares this name — do not confuse them): ${input.disambiguation.trim().slice(0, 500)}`
+      : '',
+    '',
+    'FACETS TO COVER — only those that genuinely apply to THIS brand per the reality above: what it does · what it sells / offers / proposes · how it works · delivery / shipping · returns / warranty · pricing or price-comparison · trust / reviews · geographic coverage. Skip any facet the brand does not have; never fabricate one.',
+    '',
+    `INDUSTRY PRESET: ${input.industryId} (the GENERIC vertical — the BRAND REALITY above OVERRIDES it wherever they differ)`,
     `PRESET CONTEXT: ${presetSummary}`,
     '',
     input.competitors.length > 0

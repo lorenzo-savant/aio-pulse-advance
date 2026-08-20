@@ -963,6 +963,8 @@ function PromptsPageContent() {
                   brandId={selectedBrandId}
                   brandName={b?.name ?? 'Brand'}
                   brandDomain={b?.domain ?? undefined}
+                  brandDescription={b?.description ?? undefined}
+                  disambiguation={b?.disambiguation ?? undefined}
                   industry={b?.industry ?? undefined}
                   competitors={(b?.competitors as string[] | undefined) ?? []}
                   language={(b?.language as 'en' | 'it' | 'sv') ?? 'en'}

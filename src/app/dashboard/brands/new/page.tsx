@@ -222,6 +222,10 @@ export default function NewBrandWizard() {
             locale,
             location: location || undefined,
             competitors: form.competitors,
+            // Verified brand facts so the AI writes prompts about what THIS brand
+            // actually does/sells/offers — not generic-industry guesses.
+            brandDescription: form.description.trim() || undefined,
+            disambiguation: form.disambiguation.trim() || undefined,
             withAi: useAi,
           }),
         })

@@ -21,6 +21,10 @@ interface Props {
   brandId: string
   brandName: string
   brandDomain?: string
+  /** Verified brand facts — what the brand actually does/sells/offers. Passed to
+   *  the generator so AI prompts are personalized, not generic-industry. */
+  brandDescription?: string
+  disambiguation?: string
   industry?: string
   competitors?: string[]
   language?: Lang
@@ -127,6 +131,8 @@ export function PromptGeneratorPanel({
   brandId,
   brandName,
   brandDomain,
+  brandDescription,
+  disambiguation,
   industry,
   competitors = [],
   language = 'en',
@@ -173,6 +179,8 @@ export function PromptGeneratorPanel({
           industryId: presetId,
           locale: language,
           competitors,
+          brandDescription: brandDescription || undefined,
+          disambiguation: disambiguation || undefined,
           withAi: useAi,
         }),
       })
@@ -218,7 +226,16 @@ export function PromptGeneratorPanel({
     } finally {
       setGenerating(false)
     }
-  }, [brandName, brandDomain, presetId, language, competitors, useAi])
+  }, [
+    brandName,
+    brandDomain,
+    brandDescription,
+    disambiguation,
+    presetId,
+    language,
+    competitors,
+    useAi,
+  ])
 
   const createOne = useCallback(
     async (d: Draft) => {

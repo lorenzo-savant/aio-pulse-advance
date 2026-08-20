@@ -15,6 +15,11 @@ const schema = z.object({
   locale: z.enum(['en', 'it', 'sv']),
   location: z.string().max(200).optional(),
   competitors: z.array(z.string().min(1).max(200)).max(20).optional(),
+  /** Verified brand facts — what the brand actually is / does / sells / offers.
+   *  Grounds the AI augmentation so it stops presupposing generic-industry
+   *  attributes (e.g. inventing a product catalogue for a meta-search brand). */
+  brandDescription: z.string().max(4000).optional(),
+  disambiguation: z.string().max(2000).optional(),
   /** When true, augments the static template output with 5-10 AI-generated
    *  prompts via Groq (or fallback Gemini/OpenAI). Default false — keeps
    *  the original deterministic behavior unless explicitly opted in. */
@@ -61,6 +66,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { brand, brandDomain, industryId, locale, location, competitors, withAi } = parsed.data
+  const { brandDescription, disambiguation } = parsed.data
 
   // 1. Static template engine — always runs. Deterministic, free.
   //    Pass the brand's real competitors so "vs <competitor>" prompts use
@@ -110,6 +116,8 @@ export async function POST(req: NextRequest) {
           competitors: competitors ?? [],
           existingPrompts: existingPromptTexts,
           location: location ?? null,
+          brandDescription: brandDescription ?? null,
+          disambiguation: disambiguation ?? null,
         })
         aiPrompts = result.prompts
         aiProvider = result.provider

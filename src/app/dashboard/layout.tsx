@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { PrintButton } from '@/components/layout/PrintButton'
 
 const Sidebar = dynamic(() => import('@/components/layout/Sidebar').then((m) => m.Sidebar), {
   loading: () => <div className="w-[300px] animate-pulse bg-card" />,
@@ -76,21 +77,24 @@ function DashboardInitializer({ children }: DashboardLayoutProps) {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <DashboardInitializer>
-      <div className="flex h-screen overflow-hidden bg-background">
-        <Sidebar />
+      <div className="flex h-screen overflow-hidden bg-background print:h-auto print:overflow-visible">
+        <div className="print:hidden">
+          <Sidebar />
+        </div>
 
-        <div className="flex flex-1 flex-col overflow-hidden lg:pl-[300px]">
-          <div className="px-4 pt-2 md:px-8 xl:px-10">
+        <div className="flex flex-1 flex-col overflow-hidden lg:pl-[300px] print:overflow-visible print:pl-0">
+          <div className="px-4 pt-2 md:px-8 xl:px-10 print:hidden">
             <PlatformModeBanner />
             <TopBar />
           </div>
-          <main className="flex-1 overflow-y-auto px-4 pb-8 pt-1 md:px-8 xl:px-10">
+          <main className="flex-1 overflow-y-auto px-4 pb-8 pt-1 md:px-8 xl:px-10 print:overflow-visible">
             <div className="mx-auto max-w-7xl">
               <Breadcrumb />
               {children}
             </div>
           </main>
         </div>
+        <PrintButton />
       </div>
     </DashboardInitializer>
   )

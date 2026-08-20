@@ -1561,3 +1561,27 @@
     }
   }
 }
+
+/* ─── Print / "Scarica PDF" — faithful capture of a dashboard page ─────────
+   The dashboard layout hides its chrome (sidebar / topbar) via Tailwind's
+   print: variant; this block handles what the variant cannot: keeping chart
+   and card colours in the printout, and never splitting a chart, card or
+   table across a page break. */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .recharts-wrapper,
+  table,
+  [class*='rounded-2xl'],
+  [class*='rounded-xl'] {
+    break-inside: avoid;
+  }
+}

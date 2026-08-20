@@ -15,6 +15,8 @@ import type { Brand, Prompt, MonitoringResult, WorkflowStatus, AlertRule } from 
 import { ACTIVE_ENGINES, isActiveEngine } from '@/types'
 import { providerMatchesEngine } from '@/lib/services/engine-provenance'
 import { calculateCitationSnapshots } from '@/lib/services/citation-snapshots'
+import { auditBrandMentions, type BrandContext } from '@/lib/services/homonym-audit'
+import { shouldAnchorBrandDomain } from '@/lib/services/prompt-generator'
 
 interface WorkflowStep {
   id: string
@@ -541,6 +543,41 @@ export async function POST(req: NextRequest) {
           brandId: String(bId),
           error: String(snapErr),
         })
+      }
+    }
+
+    // ── Automatic homonym guard ──────────────────────────────────────────────
+    // Stop a brand's metrics from silently counting mentions of a same-named
+    // OTHER company (Relovie vs "Relove Nordic" / relove.co.uk). The manual
+    // audit panel already existed; running it here makes the protection
+    // automatic for every cycle, so a client never has to know to click it.
+    // Scoped to homonym-prone brands (short single-word names, or any brand the
+    // operator gave a disambiguation) so distinctive multi-word names don't pay
+    // for a classifier pass they don't need — and bounded, because
+    // auditBrandMentions only classifies the NEW pending mentions this run
+    // produced. Best-effort + env-gated: it must never fail a cycle, and
+    // CRON_HOMONYM_AUDIT=off turns it off for cost.
+    if (process.env['CRON_HOMONYM_AUDIT'] !== 'off') {
+      for (const bId of processedBrands) {
+        try {
+          const { data: b } = await supabase
+            .from('brands')
+            .select('name, domain, industry, description, aliases, disambiguation')
+            .eq('id', bId)
+            .maybeSingle()
+          if (!b) continue
+          const ctx = b as BrandContext
+          if (!shouldAnchorBrandDomain(ctx.name) && !ctx.disambiguation?.trim()) continue
+          await auditBrandMentions(supabase, bId as string, ctx, { limit: 25 })
+        } catch (auditErr) {
+          // A missing confusion column (migration not applied) lands here too and
+          // simply skips — the monitoring cycle must never fail on the guard.
+          logger.warn('cron: homonym auto-audit skipped', {
+            source: 'cron',
+            brandId: String(bId),
+            error: auditErr instanceof Error ? auditErr.message : String(auditErr),
+          })
+        }
       }
     }
 

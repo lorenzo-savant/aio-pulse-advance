@@ -179,10 +179,10 @@ export default function NewBrandWizard() {
   }
 
   const generatePrompts = async () => {
-    if (!form.industry) {
-      toast.error('Pick an industry first — it selects the prompt templates')
-      return
-    }
+    // Industry is no longer a hard gate: when none is picked we fall back to the
+    // generic 'other' preset, so a brand that fits no vertical still gets a
+    // sensible starter set from its name + competitors instead of a dead end.
+    const industryId = form.industry || 'other'
     if (form.languages.length === 0) {
       toast.error('Please select at least one language')
       return
@@ -218,7 +218,7 @@ export default function NewBrandWizard() {
           body: JSON.stringify({
             brand,
             brandDomain: form.domain || undefined,
-            industryId: form.industry,
+            industryId,
             locale,
             location: location || undefined,
             competitors: form.competitors,

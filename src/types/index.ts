@@ -141,6 +141,9 @@ export interface Brand {
   name: string
   slug: string
   description?: string | null
+  /** LLMO disambiguation: "NOT to be confused with <same-named company>". Used
+   *  to keep prompt generation and homonym auditing anchored to THIS entity. */
+  disambiguation?: string | null
   domain?: string | null
   aliases: string[]
   domains: string[]

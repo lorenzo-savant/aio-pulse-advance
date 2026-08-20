@@ -345,6 +345,14 @@ export interface MonitoringResult {
    * See src/lib/services/fan-out.ts.
    */
   search_queries?: string[] | null
+  /**
+   * Category drift. `described_category` is the short phrase the engine's answer
+   * framed the brand as; `category_drift` is the 0-100 lexical distance from the
+   * brand's stated category. Both NULL = not captured / unknown, never read as a
+   * value or a zero. See src/lib/services/category-drift.ts.
+   */
+  described_category?: string | null
+  category_drift?: number | null
   created_at: string
   prompt?: Prompt
   brand?: Brand

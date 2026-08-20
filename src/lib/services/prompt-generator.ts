@@ -336,8 +336,11 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
       sv: [
         '{brand} omdöme',
         'är {brand} pålitligt',
+        'är {brand} säkert att använda',
+        '{brand} vs {competitor}',
         'jämför priser på begagnat {location}',
         'var köper jag {category} billigast {location}',
+        'köpa begagnad {category} {location}',
         'bästa sajt för att jämföra priser på begagnat',
         'hitta billigaste {category} {location}',
         'hur fungerar {brand}',
@@ -345,27 +348,24 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
       it: [
         '{brand} recensioni',
         '{brand} è affidabile',
+        'è sicuro usare {brand}',
+        '{brand} vs {competitor}',
         'confronta prezzi usato {location}',
         'dove comprare {category} al prezzo più basso {location}',
+        'comprare {category} usato {location}',
         "miglior sito per confrontare prezzi dell'usato",
         'trovare {category} usato più economico {location}',
+        'come funziona {brand}',
       ],
     },
+    // PRODUCT categories a user actually searches to buy/compare — {category}
+    // is hydrated from here, so these must be the goods (electronics, furniture,
+    // …), NOT the business model. "var köper jag elektronik billigast", never
+    // "var köper jag prisjämförelse billigast".
     categories: {
-      en: [
-        'price comparison',
-        'second-hand marketplace',
-        'meta-search',
-        'resale platform',
-        're-commerce',
-      ],
-      it: [
-        'comparatore di prezzi',
-        "marketplace dell'usato",
-        'meta-ricerca',
-        'piattaforma di rivendita',
-      ],
-      sv: ['prisjämförelse', 'begagnatmarknad', 'meta-sök', 'återförsäljningsplattform'],
+      en: ['electronics', 'furniture', 'clothing', 'home goods', 'phones'],
+      it: ['elettronica', 'mobili', 'abbigliamento', 'arredamento', 'telefoni'],
+      sv: ['elektronik', 'möbler', 'kläder', 'heminredning', 'telefoner'],
     },
     roles: {
       en: ['bargain hunter', 'second-hand buyer', 'budget shopper', 'reseller'],
@@ -2687,7 +2687,10 @@ function replaceTemplate(template: string, vars: Record<string, string>): string
   for (const [key, value] of Object.entries(vars)) {
     result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value)
   }
-  return result
+  // Collapse the whitespace an empty placeholder leaves behind (e.g. an absent
+  // {location} at the end of a template) so we never emit "hitta billigaste
+  // elektronik  " or double spaces mid-string.
+  return result.replace(/\s+/g, ' ').trim()
 }
 
 function getYear() {
@@ -2810,9 +2813,12 @@ export function expandKeywords(
   const preset = INDUSTRY_PRESETS.find((p) => p.id === industryId)
   if (!preset) return []
 
-  const queries: ExpandedQuery[] = []
   const year = getYear()
-  const loc = location || preset.seedKeywords[locale][0] || ''
+  // No location provided → leave {location} EMPTY. Borrowing seedKeywords[0]
+  // (the old fallback) injected a keyword as if it were a place, producing junk
+  // like "hitta billigaste elektronik prisjämförelse". replaceTemplate trims the
+  // gap the empty placeholder leaves.
+  const loc = location || ''
   // Anchor the brand with its domain when the name is at risk of homonym
   // confusion ("Acasting" → "Acasting (acasting.se)"). Drops in
   // transparently because the {brand} placeholder is hydrated from this
@@ -2852,7 +2858,13 @@ export function expandKeywords(
   // "bästa reklambyrån Stockholm"), while intentPatterns are English scaffolding
   // ("best {category} {location}"). Lead with the native ones so a capped/top
   // slice favors prompts that actually read well in the brand's language.
-  return locale === 'en' ? [...intentQueries, ...localQueries] : [...localQueries, ...intentQueries]
+  // English scaffolding (intentPatterns) reads wrong on a Swedish/Italian brand
+  // ("compare prices for elektronik" tagged as SV). When the preset ships enough
+  // native localized templates, drop the English ones entirely; only fall back
+  // to them when there are too few native prompts to stand alone (so we never
+  // return an empty set for a sparse preset).
+  if (locale === 'en') return [...intentQueries, ...localQueries]
+  return localQueries.length >= 4 ? localQueries : [...localQueries, ...intentQueries]
 }
 
 export function generatePrompts(

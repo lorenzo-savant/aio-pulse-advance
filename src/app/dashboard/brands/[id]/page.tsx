@@ -704,6 +704,12 @@ export default function BrandDetailPage() {
           {brand.industry && <Badge>{brand.industry}</Badge>}
           {/* All export formats (CSV / PDF / ZIP / Markdown / JSON) live in one
               control so the action bar reads as a single coherent group. */}
+          <Link href={`/dashboard/brands/${brand.id}/report`}>
+            <Button size="sm">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Report completo
+            </Button>
+          </Link>
           {brand && <ExportButton brandId={brand.id} brandName={brand.name} />}
           <Button variant="outline" size="sm" onClick={handleGenerateLlms}>
             <FileText className="mr-2 h-4 w-4" />

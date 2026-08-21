@@ -1666,6 +1666,19 @@
     "triggered_by": "Innescata da",
     "window": "Ultimi {days} giorni",
     "why_title": "Perché è la misura primaria",
-    "why_body": "Quando una domanda dipende da cosa è vero adesso, il motore non risponde a memoria: trasforma la domanda in ricerche web reali e sintetizza ciò che trova. Sono quelle stringhe — non il tuo prompt — ciò per cui il brand compete."
+    "why_body": "Quando una domanda dipende da cosa è vero adesso, il motore non risponde a memoria: trasforma la domanda in ricerche web reali e sintetizza ciò che trova. Sono quelle stringhe — non il tuo prompt — ciò per cui il brand compete.",
+    "expand_hint": "Clicca una ricerca per leggere le risposte dei motori e le fonti che hanno citato.",
+    "runs_loading": "Carico le esecuzioni dietro questa ricerca…",
+    "runs_empty": "Nessuna esecuzione in questa finestra contiene questa ricerca.",
+    "runs_shown": "Mostrate {shown} di {total} esecuzioni",
+    "run_prompt": "Prompt inviato",
+    "run_answer": "Cosa ha risposto il motore",
+    "run_citations": "Fonti citate",
+    "run_no_citations": "Il motore non ha citato alcuna fonte in questa esecuzione.",
+    "run_mentioned": "Brand menzionato",
+    "run_not_mentioned": "Brand assente",
+    "run_own_cited": "Dominio proprio citato",
+    "run_sibling_searches": "Tutte le ricerche di questa esecuzione",
+    "run_truncated": "Risposta troncata — il testo completo è nell’export CSV."
   }
 }

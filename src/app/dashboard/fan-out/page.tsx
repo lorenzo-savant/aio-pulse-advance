@@ -10,8 +10,8 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { Loader2, Search, AlertCircle } from 'lucide-react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
+import { Loader2, Search, AlertCircle, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
@@ -29,6 +29,28 @@ interface FanOutQueryStat {
   citationRate: number
   prompts: string[]
   drift: number
+}
+
+interface FanOutRun {
+  id: string
+  engine: string
+  createdAt: string | null
+  prompt: string
+  searchQueries: string[]
+  answer: string
+  truncated: boolean
+  citedUrls: string[]
+  brandMentioned: boolean
+  ownDomainCited: boolean
+}
+
+/** Per-query drill-down state. Kept in a map keyed by the query so reopening a
+ *  row is instant and does not refetch what was already read. */
+interface RunsState {
+  loading: boolean
+  error: string | null
+  runs: FanOutRun[]
+  total: number
 }
 
 interface FanOutData {
@@ -51,6 +73,20 @@ function Stat({ value, label, hint }: { value: string; label: string; hint?: str
   )
 }
 
+/** Same folding the server groups by (fanOutKey), so the row a user clicks
+ *  and the cache entry it fills are keyed identically. */
+function queryKey(q: string): string {
+  return q.trim().toLowerCase().replace(/s+/g, ' ')
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www./i, '')
+  } catch {
+    return url
+  }
+}
+
 export default function FanOutPage() {
   const t = useTranslations('fan_out')
   const [brands, setBrands] = useState<BrandLite[]>([])
@@ -58,6 +94,8 @@ export default function FanOutPage() {
   const [data, setData] = useState<FanOutData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [runs, setRuns] = useState<Record<string, RunsState>>({})
 
   useEffect(() => {
     let cancelled = false
@@ -104,6 +142,60 @@ export default function FanOutPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  // Switching brand invalidates every cached drill-down: the runs belong to
+  // the brand, not to the search string.
+  useEffect(() => {
+    setRuns({})
+    setExpanded(null)
+  }, [selected?.id])
+
+  const toggleQuery = useCallback(
+    async (query: string) => {
+      const key = queryKey(query)
+      if (expanded === key) {
+        setExpanded(null)
+        return
+      }
+      setExpanded(key)
+      // Already read once: reopening a row must not re-hit the API.
+      if (!selected || runs[key]) return
+      setRuns((prev) => ({ ...prev, [key]: { loading: true, error: null, runs: [], total: 0 } }))
+
+      const fail = (message: string) =>
+        setRuns((prev) => ({
+          ...prev,
+          [key]: { loading: false, error: message, runs: [], total: 0 },
+        }))
+
+      try {
+        const res = await fetch(
+          `/api/fan-out/runs?brand_id=${selected.id}&query=${encodeURIComponent(query)}&days=30`,
+        )
+        const json = (await res.json()) as {
+          success?: boolean
+          data?: { runs: FanOutRun[]; total: number }
+          message?: string
+        }
+        if (!res.ok || !json.success) {
+          fail(json.message || `Request failed (${res.status})`)
+          return
+        }
+        setRuns((prev) => ({
+          ...prev,
+          [key]: {
+            loading: false,
+            error: null,
+            runs: json.data?.runs ?? [],
+            total: json.data?.total ?? 0,
+          },
+        }))
+      } catch (e) {
+        fail(e instanceof Error ? e.message : 'Unexpected error')
+      }
+    },
+    [expanded, selected, runs],
+  )
 
   const hasAny = (data?.captured ?? 0) > 0
 
@@ -218,38 +310,207 @@ export default function FanOutPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.queries.map((q) => (
-                      <tr key={q.query} className="border-border/50 border-b align-top">
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-foreground">{q.query}</span>
-                          {q.prompts[0] && (
-                            <span className="mt-1 block text-xs text-muted-foreground">
-                              {t('triggered_by')}: {q.prompts[0]}
-                            </span>
+                    {data.queries.map((q) => {
+                      const key = queryKey(q.query)
+                      const open = expanded === key
+                      const state = runs[key]
+                      return (
+                        <Fragment key={q.query}>
+                          <tr className="border-border/50 border-b align-top">
+                            <td className="px-4 py-3">
+                              <button
+                                type="button"
+                                onClick={() => toggleQuery(q.query)}
+                                aria-expanded={open}
+                                className="flex items-start gap-2 text-left transition-colors hover:text-brand"
+                              >
+                                {open ? (
+                                  <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                                ) : (
+                                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                                )}
+                                <span>
+                                  <span className="font-medium text-foreground">{q.query}</span>
+                                  {q.prompts[0] && (
+                                    <span className="mt-1 block text-xs text-muted-foreground">
+                                      {t('triggered_by')}: {q.prompts[0]}
+                                    </span>
+                                  )}
+                                </span>
+                              </button>
+                            </td>
+                            <td className="px-4 py-3 text-right tabular-nums text-foreground">
+                              {q.runs}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">
+                              {q.engines.join(' · ')}
+                            </td>
+                            <td
+                              className={cn(
+                                'px-4 py-3 text-right tabular-nums',
+                                q.mentionRate === 0 ? 'text-rose-400' : 'text-foreground',
+                              )}
+                            >
+                              {q.mentionRate}%
+                            </td>
+                            <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                              {q.citationRate}%
+                            </td>
+                            <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                              {q.drift}
+                            </td>
+                          </tr>
+
+                          {open && (
+                            <tr className="border-border/50 bg-secondary/40 border-b">
+                              <td colSpan={6} className="px-4 py-4">
+                                {state?.loading && (
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    {t('runs_loading')}
+                                  </div>
+                                )}
+
+                                {state?.error && (
+                                  <div className="flex items-start gap-2 text-sm text-rose-400">
+                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                                    <span>{state.error}</span>
+                                  </div>
+                                )}
+
+                                {state && !state.loading && !state.error && (
+                                  <div className="space-y-4">
+                                    <p className="text-xs text-muted-foreground">
+                                      {t('runs_shown', {
+                                        shown: state.runs.length,
+                                        total: state.total,
+                                      })}
+                                    </p>
+
+                                    {state.runs.length === 0 && (
+                                      <p className="text-sm text-muted-foreground">
+                                        {t('runs_empty')}
+                                      </p>
+                                    )}
+
+                                    {state.runs.map((run) => (
+                                      <div
+                                        key={run.id}
+                                        className="rounded-lg border border-border bg-background p-4"
+                                      >
+                                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                                          <span className="font-semibold text-foreground">
+                                            {run.engine}
+                                          </span>
+                                          {run.createdAt && (
+                                            <span className="text-muted-foreground">
+                                              {new Date(run.createdAt).toLocaleString()}
+                                            </span>
+                                          )}
+                                          <span
+                                            className={cn(
+                                              'rounded-full px-2 py-0.5 font-medium',
+                                              run.brandMentioned
+                                                ? 'bg-emerald-500/15 text-emerald-400'
+                                                : 'bg-rose-500/15 text-rose-400',
+                                            )}
+                                          >
+                                            {run.brandMentioned
+                                              ? t('run_mentioned')
+                                              : t('run_not_mentioned')}
+                                          </span>
+                                          {run.ownDomainCited && (
+                                            <span className="bg-brand/15 rounded-full px-2 py-0.5 font-medium text-brand">
+                                              {t('run_own_cited')}
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {run.searchQueries.length > 0 && (
+                                          <div className="mt-3">
+                                            <p className="text-xs font-medium text-muted-foreground">
+                                              {t('run_sibling_searches')}
+                                            </p>
+                                            <div className="mt-1 flex flex-wrap gap-1.5">
+                                              {run.searchQueries.map((sq, i) => (
+                                                <span
+                                                  key={`${run.id}-sq-${i}`}
+                                                  className={cn(
+                                                    'rounded-md px-2 py-0.5 text-xs',
+                                                    queryKey(sq) === key
+                                                      ? 'bg-brand/15 font-medium text-brand'
+                                                      : 'bg-secondary text-muted-foreground',
+                                                  )}
+                                                >
+                                                  {sq}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {run.prompt && (
+                                          <p className="mt-3 text-xs text-muted-foreground">
+                                            <span className="font-medium">{t('run_prompt')}:</span>{' '}
+                                            {run.prompt}
+                                          </p>
+                                        )}
+
+                                        <div className="mt-3">
+                                          <p className="text-xs font-medium text-muted-foreground">
+                                            {t('run_answer')}
+                                          </p>
+                                          <p className="mt-1 max-h-72 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                                            {run.answer || '—'}
+                                          </p>
+                                          {run.truncated && (
+                                            <p className="mt-1 text-xs italic text-muted-foreground">
+                                              {t('run_truncated')}
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        <div className="mt-3">
+                                          <p className="text-xs font-medium text-muted-foreground">
+                                            {t('run_citations')}
+                                          </p>
+                                          {run.citedUrls.length === 0 ? (
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                              {t('run_no_citations')}
+                                            </p>
+                                          ) : (
+                                            <ul className="mt-1 space-y-1">
+                                              {run.citedUrls.map((url, i) => (
+                                                <li key={`${run.id}-url-${i}`}>
+                                                  <a
+                                                    href={url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer nofollow"
+                                                    className="inline-flex items-center gap-1 text-xs text-brand hover:underline"
+                                                  >
+                                                    <ExternalLink className="h-3 w-3 shrink-0" />
+                                                    <span className="font-medium">
+                                                      {hostOf(url)}
+                                                    </span>
+                                                    <span className="break-all text-muted-foreground">
+                                                      {url}
+                                                    </span>
+                                                  </a>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums text-foreground">
-                          {q.runs}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {q.engines.join(' · ')}
-                        </td>
-                        <td
-                          className={cn(
-                            'px-4 py-3 text-right tabular-nums',
-                            q.mentionRate === 0 ? 'text-rose-400' : 'text-foreground',
-                          )}
-                        >
-                          {q.mentionRate}%
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                          {q.citationRate}%
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                          {q.drift}
-                        </td>
-                      </tr>
-                    ))}
+                        </Fragment>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>

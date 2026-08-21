@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Users } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import MemberList from '@/components/workspace/MemberList'
@@ -18,6 +19,9 @@ interface Member {
 }
 
 export default function WorkspaceDetailPage() {
+  const t = useTranslations('workspace')
+  const tc = useTranslations('common')
+  const to = useTranslations('org')
   const params = useParams()
   const router = useRouter()
   const workspaceId = params.id as string
@@ -42,7 +46,7 @@ export default function WorkspaceDetailPage() {
       ])
 
       if (!workspaceRes.ok || !membersRes.ok) {
-        throw new Error('Failed to fetch workspace data')
+        throw new Error(t('fetch_failed'))
       }
 
       const workspaceData = await workspaceRes.json()
@@ -66,7 +70,7 @@ export default function WorkspaceDetailPage() {
         body: JSON.stringify({ userId, role: newRole }),
       })
 
-      if (!res.ok) throw new Error('Failed to update role')
+      if (!res.ok) throw new Error(t('update_role_failed'))
 
       await fetchWorkspaceData()
     } catch (error) {
@@ -80,7 +84,7 @@ export default function WorkspaceDetailPage() {
         method: 'DELETE',
       })
 
-      if (!res.ok) throw new Error('Failed to remove member')
+      if (!res.ok) throw new Error(t('remove_member_failed'))
 
       await fetchWorkspaceData()
     } catch (error) {
@@ -91,7 +95,7 @@ export default function WorkspaceDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-muted-foreground">Loading workspace...</div>
+        <div className="text-muted-foreground">{t('loading')}</div>
       </div>
     )
   }
@@ -100,8 +104,8 @@ export default function WorkspaceDetailPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <h2 className="mb-2 text-xl font-semibold">Workspace not found</h2>
-          <Button onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
+          <h2 className="mb-2 text-xl font-semibold">{t('not_found')}</h2>
+          <Button onClick={() => router.push('/dashboard')}>{to('back_to_dashboard')}</Button>
         </div>
       </div>
     )
@@ -112,11 +116,11 @@ export default function WorkspaceDetailPage() {
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          {tc('back')}
         </Button>
         <div>
           <h1 className="text-2xl font-bold">{workspace.name}</h1>
-          <p className="text-sm text-muted-foreground">Manage workspace members and settings</p>
+          <p className="text-sm text-muted-foreground">{t('page_subtitle')}</p>
         </div>
       </div>
 
@@ -125,14 +129,14 @@ export default function WorkspaceDetailPage() {
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <Users className="h-5 w-5" />
-              Members ({members.length})
+              {t('members_count', { count: members.length })}
             </h2>
-            <p className="text-sm text-muted-foreground">People with access to this workspace</p>
+            <p className="text-sm text-muted-foreground">{t('members_subtitle')}</p>
           </div>
           {canManageMembers && (
             <Button onClick={() => setShowInviteModal(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Invite Member
+              {t('invite_member')}
             </Button>
           )}
         </CardHeader>

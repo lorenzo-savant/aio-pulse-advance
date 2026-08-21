@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -10,12 +11,13 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { HomeContent } from './HomeContent'
 
 function AcceptContent() {
+  const t = useTranslations('team_accept')
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const [message, setMessage] = useState('Accepting invitation...')
+  const [message, setMessage] = useState(t('accepting_message'))
 
   useEffect(() => {
     if (!token && typeof window !== 'undefined') {
@@ -30,7 +32,7 @@ function AcceptContent() {
   useEffect(() => {
     if (!token) {
       setStatus('error')
-      setMessage('Invalid invitation link. No token provided.')
+      setMessage(t('invalid_token'))
       return
     }
 
@@ -38,7 +40,7 @@ function AcceptContent() {
       const supabase = createSupabaseBrowserClient()
       if (!supabase) {
         setStatus('error')
-        setMessage('Unable to initialize. Please refresh the page.')
+        setMessage(t('init_failed'))
         return
       }
 
@@ -69,11 +71,11 @@ function AcceptContent() {
           setMessage(data.message)
         } else {
           setStatus('error')
-          setMessage(data.message || 'Failed to accept invitation')
+          setMessage(data.message || t('accept_failed'))
         }
       } catch (err) {
         setStatus('error')
-        setMessage('An error occurred while accepting the invitation')
+        setMessage(t('generic_error'))
       }
     }
 
@@ -92,7 +94,7 @@ function AcceptContent() {
           {status === 'loading' && (
             <>
               <Loader2 className="mx-auto h-12 w-12 animate-spin text-accent" />
-              <h2 className="mt-4 text-xl font-bold text-foreground">Accepting Invitation</h2>
+              <h2 className="mt-4 text-xl font-bold text-foreground">{t('accepting_title')}</h2>
               <p className="mt-2 text-muted-foreground">{message}</p>
             </>
           )}
@@ -100,24 +102,24 @@ function AcceptContent() {
           {status === 'success' && (
             <>
               <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
-              <h2 className="mt-4 text-xl font-bold text-foreground">Welcome!</h2>
+              <h2 className="mt-4 text-xl font-bold text-foreground">{t('success_title')}</h2>
               <p className="mt-2 text-muted-foreground">{message}</p>
               <Button onClick={() => router.push('/dashboard')} className="mt-6">
-                Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                {t('go_to_dashboard')} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </>
           )}
 
           {status === 'error' && (
             <>
-              <XCircle className="mx-auto h-12 w-12 text-red-400" />
-              <h2 className="mt-4 text-xl font-bold text-foreground">Unable to Accept</h2>
+              <XCircle className="text-red-400 mx-auto h-12 w-12" />
+              <h2 className="mt-4 text-xl font-bold text-foreground">{t('error_title')}</h2>
               <p className="mt-2 text-muted-foreground">{message}</p>
               <div className="mt-6 flex justify-center gap-3">
                 <Button variant="outline" onClick={() => router.push('/login')}>
-                  Sign In
+                  {t('sign_in')}
                 </Button>
-                <Button onClick={() => router.push('/')}>Go to Homepage</Button>
+                <Button onClick={() => router.push('/')}>{t('go_to_homepage')}</Button>
               </div>
             </>
           )}

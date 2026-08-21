@@ -6,10 +6,13 @@
 'use client'
 
 import { TrendingUp } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 
 export default function ApiCostsPage() {
+  const t = useTranslations('api_costs')
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <SectionHelp section="api-costs" />
@@ -19,11 +22,8 @@ export default function ApiCostsPage() {
             <TrendingUp className="h-7 w-7 text-brand" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-lg font-bold text-foreground">API costs hidden</h2>
-            <p className="mx-auto max-w-md text-sm text-muted-foreground">
-              This deployment runs internally in unlimited mode, so credit-based cost tracking is
-              not exposed here. Live provider spend remains visible in the operational logs.
-            </p>
+            <h2 className="text-lg font-bold text-foreground">{t('hidden_title')}</h2>
+            <p className="mx-auto max-w-md text-sm text-muted-foreground">{t('hidden_body')}</p>
           </div>
         </div>
       </Card>

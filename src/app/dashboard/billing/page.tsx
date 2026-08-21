@@ -7,10 +7,13 @@
 'use client'
 
 import { CreditCard } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 
 export default function BillingPage() {
+  const t = useTranslations('billing')
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <SectionHelp section="billing" />
@@ -20,10 +23,9 @@ export default function BillingPage() {
             <CreditCard className="h-7 w-7 text-brand" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-lg font-bold text-foreground">Billing not exposed</h2>
+            <h2 className="text-lg font-bold text-foreground">{t('not_exposed_title')}</h2>
             <p className="mx-auto max-w-md text-sm text-muted-foreground">
-              This deployment runs internally in unlimited mode — the credit ledger and Stripe
-              checkout are disabled, so there is nothing to manage here.
+              {t('not_exposed_body')}
             </p>
           </div>
         </div>

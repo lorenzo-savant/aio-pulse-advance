@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -42,6 +43,8 @@ function getActionColor(action: string): string {
 }
 
 export default function AuditLogsPage() {
+  const t = useTranslations('audit_logs')
+  const tc = useTranslations('common')
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [organizationId, setOrganizationId] = useState<string | null>(null)
@@ -105,9 +108,7 @@ export default function AuditLogsPage() {
   if (!organizationId) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="text-muted-foreground">
-          No organization selected. Please select an organization first.
-        </p>
+        <p className="text-muted-foreground">{t('no_org')}</p>
       </div>
     )
   }
@@ -116,17 +117,17 @@ export default function AuditLogsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Audit Log</h1>
-          <p className="text-muted-foreground">Compliance trail for all organization actions</p>
+          <h1 className="text-3xl font-bold">{t('trail_title')}</h1>
+          <p className="text-muted-foreground">{t('trail_subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="mr-2 h-4 w-4" />
-            Filters
+            {t('filters')}
           </Button>
           <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {tc('refresh')}
           </Button>
         </div>
       </div>
@@ -136,37 +137,37 @@ export default function AuditLogsPage() {
           <CardBody>
             <div className="grid gap-4 md:grid-cols-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">Action</label>
+                <label className="mb-1 block text-sm font-medium">{t('action')}</label>
                 <input
                   type="text"
                   value={filters.action}
                   onChange={(e) => setFilters({ ...filters, action: e.target.value })}
-                  placeholder="e.g. auth.login"
+                  placeholder={t('action_placeholder')}
                   className="w-full rounded-lg border border-input bg-input px-3 py-2 text-sm"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Resource Type</label>
+                <label className="mb-1 block text-sm font-medium">{t('resource_type')}</label>
                 <input
                   type="text"
                   value={filters.resourceType}
                   onChange={(e) => setFilters({ ...filters, resourceType: e.target.value })}
-                  placeholder="e.g. brand"
+                  placeholder={t('resource_type_placeholder')}
                   className="w-full rounded-lg border border-input bg-input px-3 py-2 text-sm"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Actor ID</label>
+                <label className="mb-1 block text-sm font-medium">{t('actor_id')}</label>
                 <input
                   type="text"
                   value={filters.actorId}
                   onChange={(e) => setFilters({ ...filters, actorId: e.target.value })}
-                  placeholder="User or API key ID"
+                  placeholder={t('actor_id_placeholder')}
                   className="w-full rounded-lg border border-input bg-input px-3 py-2 text-sm"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Date Range</label>
+                <label className="mb-1 block text-sm font-medium">{t('date_range')}</label>
                 <div className="flex gap-2">
                   <input
                     type="date"
@@ -191,8 +192,8 @@ export default function AuditLogsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Audit Trail</h2>
-            <Badge variant="outline">{logs.length} entries</Badge>
+            <h2 className="text-lg font-semibold">{t('audit_trail')}</h2>
+            <Badge variant="outline">{t('entries_count', { count: logs.length })}</Badge>
           </div>
         </CardHeader>
         <CardBody>
@@ -201,7 +202,7 @@ export default function AuditLogsPage() {
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : logs.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">No audit logs found</p>
+            <p className="py-8 text-center text-muted-foreground">{t('no_logs')}</p>
           ) : (
             <div className="space-y-3">
               {logs.map((log) => (
@@ -219,17 +220,17 @@ export default function AuditLogsPage() {
                           {log.actorType === 'api_key' ? (
                             <>
                               <Key className="mr-1 inline h-3 w-3" />
-                              API Key
+                              {t('actor_api_key')}
                             </>
                           ) : log.actorType === 'system' ? (
                             <>
                               <Shield className="mr-1 inline h-3 w-3" />
-                              System
+                              {t('actor_system')}
                             </>
                           ) : (
                             <>
                               <User className="mr-1 inline h-3 w-3" />
-                              User
+                              {t('actor_user')}
                             </>
                           )}
                         </span>

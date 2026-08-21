@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { FileText, Download, Palette, Save, Check, Zap, Clock } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { Button } from '@/components/ui/Button'
@@ -41,6 +42,7 @@ interface ReportSettings {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
+  const t = useTranslations('reports')
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [settings, setSettings] = useState<ReportSettings>({
@@ -105,9 +107,9 @@ export default function ReportsPage() {
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
-      toast.success('Report settings saved')
+      toast.success(t('settings_saved'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save')
+      toast.error(err instanceof Error ? err.message : t('save_failed'))
     } finally {
       setSaving(false)
     }
@@ -146,47 +148,25 @@ export default function ReportsPage() {
       a.click()
       URL.revokeObjectURL(url)
 
-      toast.success('Report downloaded!')
+      toast.success(t('downloaded'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to generate')
+      toast.error(err instanceof Error ? err.message : t('generate_failed'))
     } finally {
       setGenerating(false)
     }
   }
 
-  const HEADER_STYLES = [
-    { id: 'minimal', label: 'Minimal', desc: 'Clean, simple header' },
-    { id: 'banner', label: 'Banner', desc: 'Full-width colored banner' },
-    { id: 'centered', label: 'Centered', desc: 'Centered logo and title' },
-  ] as const
+  // Labels and descriptions live in the catalog under reports.header_*.
+  const HEADER_STYLES = ['minimal', 'banner', 'centered'] as const
 
+  // Labels and descriptions live in the catalog under reports.section_*.
   const REPORT_SECTIONS = [
-    {
-      key: 'includeExecutiveSummary',
-      label: 'Executive Summary',
-      desc: 'AI visibility overview and key metrics',
-    },
-    {
-      key: 'includeEngineBreakdown',
-      label: 'Engine Breakdown',
-      desc: 'Per-engine citation rates and scores',
-    },
-    {
-      key: 'includeCompetitors',
-      label: 'Competitor Analysis',
-      desc: 'Competitor citation comparisons',
-    },
-    {
-      key: 'includeSentiment',
-      label: 'Sentiment Analysis',
-      desc: 'Brand sentiment across AI engines',
-    },
-    { key: 'includeKeywords', label: 'Keywords', desc: 'Top keywords and trends' },
-    {
-      key: 'includeRecommendations',
-      label: 'Recommendations',
-      desc: 'AI-generated improvement suggestions',
-    },
+    { key: 'includeExecutiveSummary', slug: 'executive_summary' },
+    { key: 'includeEngineBreakdown', slug: 'engine_breakdown' },
+    { key: 'includeCompetitors', slug: 'competitors' },
+    { key: 'includeSentiment', slug: 'sentiment' },
+    { key: 'includeKeywords', slug: 'keywords' },
+    { key: 'includeRecommendations', slug: 'recommendations' },
   ] as const
 
   return (
@@ -198,12 +178,10 @@ export default function ReportsPage() {
           <div className="flex items-center gap-3">
             <FileText className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-black tracking-tight text-foreground">
-              White-Label Reports
+              {t('page_title')}
             </h1>
           </div>
-          <p className="mt-1 text-muted-foreground">
-            Customize and generate branded PDF reports for your clients.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {brands.length > 1 && (
@@ -234,23 +212,23 @@ export default function ReportsPage() {
           {/* Branding */}
           <Card className="border border-input bg-card p-6">
             <h2 className="text-text-secondary-ui mb-4 flex items-center gap-2 text-lg font-bold">
-              <Palette className="h-5 w-5 text-muted-foreground" /> Branding
+              <Palette className="h-5 w-5 text-muted-foreground" /> {t('branding')}
             </h2>
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Report Brand Name
+                  {t('brand_name')}
                 </label>
                 <input
                   className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
-                  placeholder="Your Agency Name"
+                  placeholder={t('brand_name_placeholder')}
                   value={settings.brandName}
                   onChange={(e) => setSettings({ ...settings, brandName: e.target.value })}
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Logo URL
+                  {t('logo_url')}
                 </label>
                 <input
                   className="placeholder-text-muted-ui w-full rounded-xl border border-input bg-input px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
@@ -261,7 +239,7 @@ export default function ReportsPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Primary Color
+                  {t('primary_color')}
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -279,12 +257,8 @@ export default function ReportsPage() {
               </div>
               <div className="flex items-center justify-between rounded-xl border border-border bg-card p-3">
                 <div>
-                  <p className="text-text-secondary-ui text-sm font-bold">
-                    Show &quot;Powered by AEO Pulse&quot;
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    Display a small attribution in the report footer
-                  </p>
+                  <p className="text-text-secondary-ui text-sm font-bold">{t('show_powered_by')}</p>
+                  <p className="text-[10px] text-muted-foreground">{t('show_powered_by_hint')}</p>
                 </div>
                 <button
                   className={cn(
@@ -308,22 +282,22 @@ export default function ReportsPage() {
 
           {/* Header Style */}
           <Card className="border border-input bg-card p-6">
-            <h2 className="text-text-secondary-ui mb-4 text-lg font-bold">Header Style</h2>
+            <h2 className="text-text-secondary-ui mb-4 text-lg font-bold">{t('header_style')}</h2>
             <div className="grid grid-cols-3 gap-3">
               {HEADER_STYLES.map((style) => (
                 <button
-                  key={style.id}
+                  key={style}
                   className={cn(
                     'rounded-xl border p-4 text-left transition-all',
-                    settings.headerStyle === style.id
+                    settings.headerStyle === style
                       ? 'border-brand-500 bg-primary/10'
                       : 'border-input hover:border-border',
                   )}
-                  onClick={() => setSettings({ ...settings, headerStyle: style.id })}
+                  onClick={() => setSettings({ ...settings, headerStyle: style })}
                 >
-                  <p className="text-text-secondary-ui text-sm font-bold">{style.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{style.desc}</p>
-                  {settings.headerStyle === style.id && (
+                  <p className="text-text-secondary-ui text-sm font-bold">{t(`header_${style}`)}</p>
+                  <p className="text-[10px] text-muted-foreground">{t(`header_${style}_desc`)}</p>
+                  {settings.headerStyle === style && (
                     <Check className="mt-2 h-4 w-4 text-primary" />
                   )}
                 </button>
@@ -333,7 +307,9 @@ export default function ReportsPage() {
 
           {/* Report Sections */}
           <Card className="border border-input bg-card p-6">
-            <h2 className="text-text-secondary-ui mb-4 text-lg font-bold">Report Sections</h2>
+            <h2 className="text-text-secondary-ui mb-4 text-lg font-bold">
+              {t('report_sections')}
+            </h2>
             <div className="space-y-2">
               {REPORT_SECTIONS.map((section) => (
                 <div
@@ -341,8 +317,12 @@ export default function ReportsPage() {
                   className="flex items-center justify-between rounded-xl border border-border bg-card p-3"
                 >
                   <div>
-                    <p className="text-text-secondary-ui text-sm font-bold">{section.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{section.desc}</p>
+                    <p className="text-text-secondary-ui text-sm font-bold">
+                      {t(`section_${section.slug}`)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {t(`section_${section.slug}_desc`)}
+                    </p>
                   </div>
                   <button
                     className={cn(
@@ -384,7 +364,7 @@ export default function ReportsPage() {
                   {settings.logoUrl && (
                     <img
                       src={settings.logoUrl}
-                      alt="Logo"
+                      alt={t('logo_alt')}
                       className="mx-auto mb-3 h-10"
                       onError={(e) => {
                         ;(e.target as HTMLImageElement).style.display = 'none'
@@ -392,9 +372,9 @@ export default function ReportsPage() {
                     />
                   )}
                   <h3 className="text-lg font-black text-foreground">
-                    {settings.brandName || 'Brand Report'}
+                    {settings.brandName || t('brand_report_fallback')}
                   </h3>
-                  <p className="text-foreground/60 mt-1 text-xs">AI Visibility Report</p>
+                  <p className="text-foreground/60 mt-1 text-xs">{t('ai_visibility_report')}</p>
                 </div>
               )}
               {settings.headerStyle === 'minimal' && (
@@ -402,7 +382,7 @@ export default function ReportsPage() {
                   {settings.logoUrl && (
                     <img
                       src={settings.logoUrl}
-                      alt="Logo"
+                      alt={t('logo_alt')}
                       className="h-8"
                       onError={(e) => {
                         ;(e.target as HTMLImageElement).style.display = 'none'
@@ -411,9 +391,9 @@ export default function ReportsPage() {
                   )}
                   <div>
                     <h3 className="text-sm font-black text-foreground">
-                      {settings.brandName || 'Brand Report'}
+                      {settings.brandName || t('brand_report_fallback')}
                     </h3>
-                    <p className="text-[10px] text-muted-foreground">AI Visibility Report</p>
+                    <p className="text-[10px] text-muted-foreground">{t('ai_visibility_report')}</p>
                   </div>
                 </div>
               )}
@@ -422,7 +402,7 @@ export default function ReportsPage() {
                   {settings.logoUrl && (
                     <img
                       src={settings.logoUrl}
-                      alt="Logo"
+                      alt={t('logo_alt')}
                       className="mx-auto mb-3 h-12"
                       onError={(e) => {
                         ;(e.target as HTMLImageElement).style.display = 'none'
@@ -438,13 +418,15 @@ export default function ReportsPage() {
             <div className="space-y-3 p-4">
               {REPORT_SECTIONS.filter((s) => settings[s.key]).map((section) => (
                 <div key={section.key} className="rounded-lg border border-input bg-card p-3">
-                  <p className="text-text-secondary-ui text-xs font-bold">{section.label}</p>
+                  <p className="text-text-secondary-ui text-xs font-bold">
+                    {t(`section_${section.slug}`)}
+                  </p>
                   <div className="bg-input-border mt-1 h-2 w-3/4 rounded" />
                   <div className="bg-input-border mt-1 h-2 w-1/2 rounded" />
                 </div>
               ))}
               {settings.showPoweredBy && (
-                <p className="text-center text-[9px] text-muted-foreground">Powered by AEO Pulse</p>
+                <p className="text-center text-[9px] text-muted-foreground">{t('powered_by')}</p>
               )}
             </div>
           </Card>
@@ -454,21 +436,21 @@ export default function ReportsPage() {
             <div className="space-y-3">
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Date Range
+                  {t('date_range')}
                 </label>
                 <select
                   className="w-full rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground"
                   value={dateRange}
                   onChange={(e) => setDateRange(Number(e.target.value))}
                 >
-                  <option value={7}>Last 7 days</option>
-                  <option value={14}>Last 14 days</option>
-                  <option value={30}>Last 30 days</option>
-                  <option value={90}>Last 90 days</option>
+                  <option value={7}>{t('last_days', { count: 7 })}</option>
+                  <option value={14}>{t('last_days', { count: 14 })}</option>
+                  <option value={30}>{t('last_days', { count: 30 })}</option>
+                  <option value={90}>{t('last_days', { count: 90 })}</option>
                 </select>
               </div>
               <Button className="w-full" loading={saving} onClick={handleSave}>
-                <Save className="h-4 w-4" /> Save Settings
+                <Save className="h-4 w-4" /> {t('save_settings')}
               </Button>
               <Button
                 className="w-full"
@@ -476,7 +458,7 @@ export default function ReportsPage() {
                 loading={generating}
                 onClick={handleGenerate}
               >
-                <Download className="h-4 w-4" /> Generate PDF Report
+                <Download className="h-4 w-4" /> {t('generate_pdf')}
               </Button>
             </div>
           </Card>
@@ -487,14 +469,12 @@ export default function ReportsPage() {
                 <div className="flex items-center gap-2">
                   <Zap className="h-5 w-5 text-primary" />
                   <div>
-                    <h3 className="text-lg font-bold text-foreground">AEO Agent System</h3>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Automatisk analys körs dagligen 07:00. Kör manuellt vid behov.
-                    </p>
+                    <h3 className="text-lg font-bold text-foreground">{t('agent_system')}</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t('agent_system_hint')}</p>
                   </div>
                 </div>
                 <Badge variant="default" className="text-xs">
-                  Automatisk + Manuell
+                  {t('agent_mode')}
                 </Badge>
               </div>
 
@@ -503,12 +483,9 @@ export default function ReportsPage() {
                   <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Schemalagda körningar
+                      {t('scheduled_runs')}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Varje dag 07:00 — alla aktiva brand skickas automatiskt till AEO-systemet.
-                      Agenter analyserar och returnerar optimeringsförslag inom ~10 minuter.
-                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{t('scheduled_runs_hint')}</p>
                   </div>
                 </div>
               </div>

@@ -21,6 +21,7 @@
 
 import { useEffect, useState } from 'react'
 import { Filter, ChevronDown, Download } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
 import { ShareOfVoiceByEnginePanel } from '@/components/ShareOfVoiceByEnginePanel'
 import { VisualProofPanel } from '@/components/VisualProofPanel'
@@ -64,6 +65,8 @@ function SectionHeading({ step, title, subtitle }: SectionHeadingProps) {
 }
 
 export default function AiFunnelPage() {
+  const t = useTranslations('ai_funnel')
+  const tc = useTranslations('common')
   const [brands, setBrands] = useState<BrandLite[]>([])
   const [activeBrandId, setActiveBrandId] = useState<string>('')
 
@@ -89,14 +92,9 @@ export default function AiFunnelPage() {
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-black tracking-tight text-foreground">
             <Filter className="h-7 w-7 text-brand" />
-            AI Funnel
+            {t('page_title')}
           </h1>
-          <p className="mt-1 max-w-3xl text-muted-foreground">
-            One stacked report for the full AI-visibility journey: high-level visibility at the top,
-            the responses naming your brand in the middle, and the branded-search +
-            citation-freshness signals at the bottom. Built for client reporting — every section is
-            a screenshot away from a deck.
-          </p>
+          <p className="mt-1 max-w-3xl text-muted-foreground">{t('page_subtitle')}</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {brands.length > 1 && (
@@ -105,7 +103,7 @@ export default function AiFunnelPage() {
                 htmlFor="brand-select"
                 className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
               >
-                Brand
+                {tc('brand')}
               </label>
               <div className="relative">
                 <select
@@ -129,26 +127,26 @@ export default function AiFunnelPage() {
               <a
                 href={`/api/reports/exec-summary?brand_id=${activeBrandId}&days=30&format=md`}
                 className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
-                title="Download the executive 4-question summary as Markdown"
+                title={t('exec_summary_title')}
               >
                 <Download className="h-3.5 w-3.5" />
-                Exec summary
+                {t('exec_summary')}
               </a>
               <a
                 href={`/api/reports/exec-summary?brand_id=${activeBrandId}&days=30&format=tiered`}
                 className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
-                title="Tier 1 / Tier 2 / Tier 3 client deck (industry template framing)"
+                title={t('tiered_deck_title')}
               >
                 <Download className="h-3.5 w-3.5" />
-                Tiered KPI deck
+                {t('tiered_deck')}
               </a>
               <a
                 href={`/api/reports/exec-summary?brand_id=${activeBrandId}&format=trend&months=6`}
                 className="hover:bg-secondary/70 inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors"
-                title="6-month trend of mention rate, sentiment, and branded search"
+                title={t('trend_6mo_title')}
               >
                 <Download className="h-3.5 w-3.5" />
-                6-mo trend
+                {t('trend_6mo')}
               </a>
             </>
           )}
@@ -162,11 +160,7 @@ export default function AiFunnelPage() {
 
       {/* ── 1. Top of funnel — visibility ──────────────────────────────── */}
       <section>
-        <SectionHeading
-          step={1}
-          title="Top of funnel — Visibility"
-          subtitle="Where you show up across AI engines and how your share of voice compares to competitors. The headline metric that gets the conversation started."
-        />
+        <SectionHeading step={1} title={t('step1_title')} subtitle={t('step1_subtitle')} />
         <div className="space-y-6">
           <ShareOfVoiceByEnginePanel brandId={activeBrandId || undefined} />
           <SourceOpportunitiesPanel brandId={activeBrandId || undefined} />
@@ -179,11 +173,7 @@ export default function AiFunnelPage() {
 
       {/* ── 2. Visual proof — the actual responses ─────────────────────── */}
       <section>
-        <SectionHeading
-          step={2}
-          title="Visual proof — Real AI responses"
-          subtitle="The latest answers where your brand is named, with the response text highlighted. Drop these into the deck — they make abstract metrics concrete."
-        />
+        <SectionHeading step={2} title={t('step2_title')} subtitle={t('step2_subtitle')} />
         <div className="space-y-6">
           <VisualProofPanel brandId={activeBrandId || undefined} />
           <BrandFactsPanel brandId={activeBrandId || undefined} />
@@ -193,11 +183,7 @@ export default function AiFunnelPage() {
 
       {/* ── 3. Bottom of funnel — downstream behaviour ─────────────────── */}
       <section>
-        <SectionHeading
-          step={3}
-          title="Bottom of funnel — Downstream signal"
-          subtitle="Branded search growth + the AI-assist verdict (is AI exposure driving direct searches for you, or just cannibalising your top-of-funnel?) and citation freshness for the pages AI is actually pulling."
-        />
+        <SectionHeading step={3} title={t('step3_title')} subtitle={t('step3_subtitle')} />
         <div className="space-y-6">
           <BrandedSearchPanel brandId={activeBrandId || undefined} />
           <CitationFreshnessPanel brandId={activeBrandId || undefined} />
@@ -211,11 +197,7 @@ export default function AiFunnelPage() {
           annotations help contextualise. */}
       <BrandAnnotationsPanel brandId={activeBrandId || undefined} />
 
-      <Card className="p-4 text-xs text-muted-foreground">
-        Want a different section order or extra widgets in the report? This page is composed of
-        self-contained panels from the rest of the dashboard — adding or moving a section is just a
-        JSX line change.
-      </Card>
+      <Card className="p-4 text-xs text-muted-foreground">{t('compose_note')}</Card>
     </div>
   )
 }

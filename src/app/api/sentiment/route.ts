@@ -5,6 +5,11 @@ import { z } from 'zod'
 import { createServerClient, getCurrentUserId, AuthError } from '@/lib/supabase'
 import { analyzeSentiment, detectHallucinations } from '@/lib/services/monitoring'
 import { requireBrandRole } from '@/lib/authorize'
+import {
+  isPromptScope,
+  scopeRowsByBrandedness,
+  type PromptScope,
+} from '@/lib/services/prompt-classification'
 import { logger } from '@/lib/logger'
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -114,6 +119,16 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const brandId = searchParams.get('brand_id')
 
+  // Branded questions and discovery questions are two populations, not one
+  // noisy sample of the same thing: a question that already names the brand is
+  // answered with a mention almost every time. Default 'all' — existing callers
+  // and saved dashboards must keep seeing the number they saw yesterday.
+  const scopeParam = searchParams.get('scope') ?? 'all'
+  if (!isPromptScope(scopeParam)) {
+    return err("scope must be one of 'all', 'branded', 'non_branded'", 400)
+  }
+  const scope: PromptScope = scopeParam
+
   if (!brandId) return err('brand_id query parameter is required', 400)
 
   const db = createServerClient()
@@ -128,14 +143,35 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await db
     .from('monitoring_results')
-    .select('sentiment, sentiment_score, engine, has_hallucination, created_at, brand_mentioned')
+    .select(
+      'sentiment, sentiment_score, engine, has_hallucination, created_at, brand_mentioned, prompt_text',
+    )
     .eq('brand_id', brandId)
     .order('created_at', { ascending: false })
     .limit(200)
 
   if (error) return err(error.message)
 
-  const results: any[] = data ?? []
+  // The split is computed from the prompt text, not from the prompt's category:
+  // the category is user-entered and largely unset on real brands, while the
+  // text is on every stored row and makes the filter retroactive.
+  const { data: brandNaming } = await db
+    .from('brands')
+    .select('name, aliases, domain')
+    .eq('id', brandId)
+    .maybeSingle()
+
+  const allRows: any[] = data ?? []
+  const scoped = scopeRowsByBrandedness(
+    allRows,
+    {
+      name: (brandNaming as { name?: string } | null)?.name ?? '',
+      aliases: (brandNaming as { aliases?: string[] | null } | null)?.aliases ?? [],
+      domain: (brandNaming as { domain?: string | null } | null)?.domain ?? null,
+    },
+    scope,
+  )
+  const results: any[] = scoped.rows
   const mentioned = results.filter((r: any) => r.brand_mentioned)
 
   // Aggregate sentiment counts and average score
@@ -247,6 +283,11 @@ export async function GET(req: NextRequest) {
       aspectBreakdown,
       totalResults: results.length,
       mentionedResults: mentioned.length,
+      // Both populations are reported whichever scope was asked for: a filtered
+      // average is only readable next to how much of the data it covers.
+      scope,
+      brandedCount: scoped.brandedCount,
+      nonBrandedCount: scoped.nonBrandedCount,
     },
     timestamp: Date.now(),
   })

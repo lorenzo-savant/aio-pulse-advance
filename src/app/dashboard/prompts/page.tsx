@@ -28,6 +28,7 @@ import { PromptLibrarySelector } from '@/components/PromptLibrarySelector'
 import { PromptGeneratorPanel } from '@/components/PromptGeneratorPanel'
 import { JourneyGuide } from '@/components/JourneyGuide'
 import { findPerformativePatterns } from '@/lib/prompt-quality'
+import { classifyPromptCategory } from '@/lib/services/prompt-classification'
 
 const PROMPT_TEMPLATES = {
   en: [
@@ -593,6 +594,14 @@ function PromptsPageContent() {
           brand_id: selectedBrandId,
           text,
           language: (b?.language as string) ?? 'en',
+          // Accepting a suggestion is one click, with no form to state intent —
+          // so the intent is read off the text with the same rule the backfill
+          // script uses, instead of defaulting everything into 'awareness'.
+          category: classifyPromptCategory(text, {
+            name: b?.name ?? '',
+            aliases: (b as { aliases?: string[] } | undefined)?.aliases ?? [],
+            domain: (b as { domain?: string | null } | undefined)?.domain ?? null,
+          }),
         }),
       })
       const json = await res.json()

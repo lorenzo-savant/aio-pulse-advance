@@ -88,10 +88,18 @@ function checkAiCrawlerAccess(robotsTxt: string | null): AuditCategory {
   const weight = 0.25
   const checks: AuditCheck[] = []
 
+  // Kept as an explicit list rather than derived from AI_BOTS: this score is
+  // customer-facing and its denominator should not shift every time the catalog
+  // grows. The two Claude bots are added because theirs is the block that
+  // actually costs visibility — Claude-SearchBot indexes for Claude's search,
+  // Claude-User fetches the page when someone asks Claude about it. ClaudeBot,
+  // already in the list, is a training crawler (see crawler-access-audit.ts).
   const aiBots = [
     'gptbot',
     'google-extended',
     'claudebot',
+    'claude-searchbot',
+    'claude-user',
     'perplexitybot',
     'anthropic-ai',
     'ccbot',
@@ -628,6 +636,123 @@ function countMatches(html: string, regex: RegExp): number {
   return [...html.matchAll(regex)].length
 }
 
+/**
+ * URL slug length.
+ *
+ * Semrush's study of AI-cited pages found slugs of 17–40 characters
+ * consistently outperform both extremes, peaking at 21–25. That is a
+ * correlation on cited pages, not a defect in the page — so this check never
+ * returns 'fail'. The worst it says is that the URL sits outside the band
+ * cited pages cluster in, which is a nudge, not a bug report.
+ *
+ * The homepage has no slug by definition and returns 'info' rather than a free
+ * 'pass': the file's convention is that a non-applicable check stays out of the
+ * pass/warn denominator instead of inflating the score.
+ */
+export function checkSlugLength(url: string): AuditCheck {
+  const id = 'content-slug-length'
+  const name = 'URL slug length'
+
+  let pathname = ''
+  try {
+    pathname = new URL(url).pathname
+  } catch {
+    return { id, name, status: 'info', message: 'URL could not be parsed — slug check skipped' }
+  }
+
+  const segments = pathname.split('/').filter(Boolean)
+  const lastSegment = segments[segments.length - 1] ?? ''
+  const slug = lastSegment.replace(/\.[a-z0-9]{1,5}$/i, '')
+
+  if (!slug) {
+    return {
+      id,
+      name,
+      status: 'info',
+      message: 'Homepage — a slug check does not apply',
+    }
+  }
+
+  const n = slug.length
+  if (n >= 17 && n <= 40) {
+    return {
+      id,
+      name,
+      status: 'pass',
+      message: `Slug is ${n} characters — inside the 17–40 range AI-cited pages cluster in`,
+      details: slug,
+    }
+  }
+  if (n >= 56) {
+    return {
+      id,
+      name,
+      status: 'warning',
+      message: `Slug is ${n} characters — very long slugs correlate with nested or keyword-stuffed URLs`,
+      details: slug,
+    }
+  }
+  return {
+    id,
+    name,
+    status: 'warning',
+    message: `Slug is ${n} characters — outside the 17–40 range observed on AI-cited pages`,
+    details: slug,
+  }
+}
+
+/**
+ * Server-side rendering — a heuristic, and declared as one.
+ *
+ * The audit has no headless browser: this reads the raw HTML already fetched
+ * and asks whether an AI crawler that does not execute JavaScript would find
+ * anything to read. It cannot prove rendering either way, so it never returns
+ * 'fail' — a legitimately sparse page must not be reported as broken.
+ */
+export function checkServerRendering(html: string): AuditCheck {
+  const id = 'content-ssr'
+  const name = 'Server-side rendering'
+
+  const visibleText = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (visibleText.length >= 500) {
+    return {
+      id,
+      name,
+      status: 'pass',
+      message: `Content is server-rendered — ${visibleText.length} characters of visible text in the raw HTML`,
+    }
+  }
+
+  // The canonical client-side-rendered shell: an empty mount point, or almost
+  // no text next to several script bundles.
+  const emptyMount = /<div[^>]*id=["'](root|app|__next)["'][^>]*>\s*<\/div>/i.test(html)
+  const scriptSrcCount = countMatches(html, /<script[^>]+src=/gi)
+  if (emptyMount || (visibleText.length < 200 && scriptSrcCount >= 3)) {
+    return {
+      id,
+      name,
+      status: 'warning',
+      message:
+        'Page appears client-side rendered — an AI crawler that does not run JavaScript may see an empty shell. Consider SSR or prerendering.',
+      details: `${visibleText.length} chars of visible text, ${scriptSrcCount} external scripts`,
+    }
+  }
+
+  return {
+    id,
+    name,
+    status: 'warning',
+    message: `Only ${visibleText.length} characters of visible text in the raw HTML — thin for a crawler that does not run JavaScript`,
+  }
+}
+
 function checkContentStructure(html: string, url: string): AuditCategory {
   const weight = 0.05
   const checks: AuditCheck[] = []
@@ -1162,6 +1287,13 @@ function checkContentStructure(html: string, url: string): AuditCategory {
       })
     }
   }
+
+  // 15) URL slug length and 16) server-side rendering. Both are pure and
+  //     exported, so they are unit-tested without the fetch harness. The
+  //     category score is tallied from the checks below rather than a fixed
+  //     denominator, so adding them needs no counter update.
+  checks.push(checkSlugLength(url))
+  checks.push(checkServerRendering(html))
 
   let pass = 0
   let warn = 0

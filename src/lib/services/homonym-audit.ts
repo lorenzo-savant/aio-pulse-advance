@@ -28,6 +28,10 @@ export interface BrandContext {
   description?: string | null
   aliases?: string[] | null
   disambiguation?: string | null
+  /** Registered identifier of the legal entity — orgnr, VAT, fiscal code.
+   *  Name, domain and industry can all be shared with a homonym; this cannot. */
+  legalId?: string | null
+  legalIdType?: string | null
 }
 
 /** One row to audit. Trimmed to what the classifier actually uses. */
@@ -70,7 +74,9 @@ Rules:
 - "confidence": "high" when industry/domain match is unambiguous; "medium" when context is generic but plausible; "low" when the response is too short or generic to tell.
 - "reason": one sentence. Cite the disambiguating signal ("mentions podcast hosting, not casting" / "matches the Swedish marketing agency context" / "too generic to tell").`
 
-function buildClassifierUserPrompt(brand: BrandContext, excerpt: string): string {
+/** Exported for tests: the brand profile handed to the classifier is what
+ *  decides whether a mention is judged to be about this company at all. */
+export function buildClassifierUserPrompt(brand: BrandContext, excerpt: string): string {
   const lines: string[] = []
   lines.push('Brand profile:')
   lines.push(`- Name: ${brand.name}`)
@@ -79,6 +85,12 @@ function buildClassifierUserPrompt(brand: BrandContext, excerpt: string): string
   if (brand.description) lines.push(`- Description: ${brand.description.slice(0, 400)}`)
   if (brand.aliases && brand.aliases.length > 0) {
     lines.push(`- Aliases: ${brand.aliases.join(', ')}`)
+  }
+  if (brand.legalId) {
+    // Stated before the homonym warning on purpose: an identifier settles the
+    // question that the warning only describes.
+    const label = brand.legalIdType === 'orgnr' ? 'Swedish organisationsnummer' : 'Legal identifier'
+    lines.push(`- ${label} (${brand.legalIdType ?? 'other'}): ${brand.legalId}`)
   }
   if (brand.disambiguation) {
     lines.push(`- Known homonym warning: ${brand.disambiguation.slice(0, 400)}`)

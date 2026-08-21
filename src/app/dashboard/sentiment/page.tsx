@@ -62,7 +62,14 @@ interface SentimentStats {
   aspectBreakdown?: AspectBreakdown[]
   totalResults: number
   mentionedResults: number
+  /** Which population the numbers above describe. */
+  scope?: PromptScope
+  /** Sizes of both populations, whichever scope was requested. */
+  brandedCount?: number
+  nonBrandedCount?: number
 }
+
+type PromptScope = 'all' | 'branded' | 'non_branded'
 
 interface SentimentAnalysis {
   sentiment: 'positive' | 'negative' | 'neutral'
@@ -371,7 +378,7 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
               >
                 <div className="mb-2 flex items-center gap-2">
                   {result.hallucination.has_hallucination ? (
-                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                    <AlertTriangle className="text-red-400 h-4 w-4" />
                   ) : (
                     <span className="text-emerald-500">&#10003;</span>
                   )}
@@ -393,9 +400,9 @@ function ManualAnalyzer({ brands }: { brands: Brand[] }) {
                 {result.hallucination.flags.map((flag, i) => (
                   <div
                     key={i}
-                    className="mt-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs"
+                    className="border-red-500/20 bg-red-500/10 mt-2 rounded-lg border px-3 py-2 text-xs"
                   >
-                    <p className="font-bold text-red-400">&quot;{flag.text}&quot;</p>
+                    <p className="text-red-400 font-bold">&quot;{flag.text}&quot;</p>
                     <p className="mt-0.5 text-muted-foreground">
                       {flag.type} &middot; {flag.severity} {t('severity')}
                     </p>
@@ -463,8 +470,8 @@ function InfoSection() {
                 {t('guide_sentiment_value')}
               </p>
             </div>
-            <div className="rounded-lg border border-red-500/10 bg-red-500/5 p-4">
-              <p className="mb-1 text-xs font-bold text-red-500">
+            <div className="border-red-500/10 bg-red-500/5 rounded-lg border p-4">
+              <p className="text-red-500 mb-1 text-xs font-bold">
                 {t('guide_hallucination_value')?.split('.')[0]}
               </p>
               <p className="text-xs leading-relaxed text-muted-foreground">
@@ -564,6 +571,11 @@ export default function SentimentPage() {
   // WHERE the AI is getting its negative impressions from.
   const [sourcesData, setSourcesData] = useState<SourcesData | null>(null)
   const [loadingSources, setLoadingSources] = useState(false)
+  // Questions that already name the brand are answered with a mention almost
+  // every time; discovery questions are where the competitive signal is. They
+  // are two populations, so they get a switch rather than one blended average.
+  // Default 'all' — nobody's numbers change until they ask.
+  const [scope, setScope] = useState<PromptScope>('all')
 
   useEffect(() => {
     fetch('/api/brands')
@@ -575,11 +587,11 @@ export default function SentimentPage() {
       .catch(() => {})
   }, [])
 
-  const loadStats = useCallback(async (brandId: string) => {
+  const loadStats = useCallback(async (brandId: string, promptScope: PromptScope) => {
     if (!brandId) return
     setLoadingStats(true)
     try {
-      const res = await fetch(`/api/sentiment?brand_id=${brandId}`)
+      const res = await fetch(`/api/sentiment?brand_id=${brandId}&scope=${promptScope}`)
       const json = (await res.json()) as { success: boolean; data?: SentimentStats }
       if (json.success) setStats(json.data ?? null)
     } catch {
@@ -590,8 +602,8 @@ export default function SentimentPage() {
   }, [])
 
   useEffect(() => {
-    if (selectedBrand) void loadStats(selectedBrand)
-  }, [selectedBrand, loadStats])
+    if (selectedBrand) void loadStats(selectedBrand, scope)
+  }, [selectedBrand, scope, loadStats])
 
   // Themes: what the AI engines associate with the brand (semantic clusters of
   // the responses). Best-effort — empty if embeddings/migration unavailable.
@@ -621,7 +633,7 @@ export default function SentimentPage() {
     if (!selectedBrand) return
     let cancelled = false
     setLoadingSources(true)
-    fetch(`/api/sentiment/by-source?brand_id=${selectedBrand}&days=30`)
+    fetch(`/api/sentiment/by-source?brand_id=${selectedBrand}&days=30&scope=${scope}`)
       .then((r) => r.json())
       .then((j) => {
         if (!cancelled) setSourcesData(j.success ? (j.data ?? null) : null)
@@ -635,7 +647,7 @@ export default function SentimentPage() {
     return () => {
       cancelled = true
     }
-  }, [selectedBrand])
+  }, [selectedBrand, scope])
 
   const engineData = stats
     ? Object.entries(stats.byEngine).map(([engine, d]) => ({
@@ -669,6 +681,42 @@ export default function SentimentPage() {
         )}
       </div>
 
+      <div className="bg-card/50 flex flex-col gap-2 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-1">
+          {(['all', 'non_branded', 'branded'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setScope(value)}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                scope === value
+                  ? 'bg-brand text-white'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+              )}
+            >
+              {value === 'all'
+                ? t('scope_all')
+                : value === 'non_branded'
+                  ? t('scope_discovery')
+                  : t('scope_branded')}
+            </button>
+          ))}
+        </div>
+        <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
+          {t('scope_hint')}
+          {stats?.brandedCount !== undefined && stats?.nonBrandedCount !== undefined && (
+            <>
+              {' '}
+              {t('scope_counts', {
+                branded: stats.brandedCount,
+                discovery: stats.nonBrandedCount,
+              })}
+            </>
+          )}
+        </p>
+      </div>
+
       <InfoSection />
 
       {loadingStats ? (
@@ -700,7 +748,7 @@ export default function SentimentPage() {
                   <p className="text-[10px] text-muted-foreground">{t('neutral')}</p>
                 </div>
                 <div>
-                  <p className="text-lg font-black text-red-500">
+                  <p className="text-red-500 text-lg font-black">
                     {stats.sentimentCounts.negative}
                   </p>
                   <p className="text-[10px] text-muted-foreground">{t('negative')}</p>

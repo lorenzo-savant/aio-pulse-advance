@@ -179,15 +179,21 @@ describe('the tracked bot list', () => {
 })
 
 describe('recommendations', () => {
-  it('ranks the four reported engines above training-only crawlers', async () => {
+  it('ranks by what the block costs — search and fetch above training', async () => {
     serve('User-agent: *\nDisallow: /\n')
 
     const result = await checkCrawlability('https://example.com')
     const byBot = new Map(result.recommendations.map((r) => [r.bot, r.priority]))
 
-    expect(byBot.get('ClaudeBot')).toBe('high')
+    // Search crawlers and on-demand fetchers: blocking them removes the site
+    // from an index or from live answers.
     expect(byBot.get('PerplexityBot')).toBe('high')
-    expect(byBot.get('CCBot (Common Crawl)')).toBe('medium')
+    expect(byBot.get('Claude-SearchBot')).toBe('high')
+    expect(byBot.get('Claude-User')).toBe('high')
+    // Training crawlers cost no search visibility, and blocking them is often
+    // deliberate. ClaudeBot was ranked 'high' here until it was reclassified.
+    expect(byBot.get('ClaudeBot')).toBe('low')
+    expect(byBot.get('CCBot (Common Crawl)')).toBe('low')
   })
 
   it('says nothing when every tracked bot can read the site', async () => {

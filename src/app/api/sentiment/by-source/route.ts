@@ -18,6 +18,11 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { requireUser } from '@/lib/api-auth'
 import { verifyBrandAccess } from '@/lib/authorize'
+import {
+  isPromptScope,
+  scopeRowsByBrandedness,
+  type PromptScope,
+} from '@/lib/services/prompt-classification'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -29,6 +34,8 @@ interface ResultRow {
   engine: string | null
   created_at: string
   id: string
+  /** Used only to split branded from discovery questions. */
+  prompt_text: string | null
 }
 
 function err(message: string, status = 500) {
@@ -77,6 +84,12 @@ export async function GET(req: NextRequest) {
   const engine = searchParams.get('engine') || 'all'
   const days = Math.min(365, Math.max(1, Number(searchParams.get('days')) || 30))
   const minMentions = Math.max(1, Number(searchParams.get('min_mentions')) || 2)
+  // Same scope as /api/sentiment, same default, same reason.
+  const scopeParam = searchParams.get('scope') ?? 'all'
+  if (!isPromptScope(scopeParam)) {
+    return err("scope must be one of 'all', 'branded', 'non_branded'", 400)
+  }
+  const scope: PromptScope = scopeParam
 
   if (!brandId) return err('brand_id is required', 400)
 
@@ -95,7 +108,7 @@ export async function GET(req: NextRequest) {
       }
     )
       .from('monitoring_results')
-      .select('id, cited_urls, sentiment_score, sentiment, engine, created_at')
+      .select('id, cited_urls, sentiment_score, sentiment, engine, created_at, prompt_text')
       .eq('brand_id', brandId)
       .gte('created_at', since.toISOString())
       .order('created_at', { ascending: false })
@@ -110,7 +123,16 @@ export async function GET(req: NextRequest) {
       return err('Failed to load sentiment-by-source data')
     }
 
-    const rows = (data || []) as ResultRow[]
+    // Branded and discovery questions are two populations — see
+    // prompt-classification.ts. Default scope 'all' keeps existing callers on
+    // the numbers they had.
+    const allRows = (data || []) as ResultRow[]
+    const scoped = scopeRowsByBrandedness(
+      allRows,
+      { name: brand.name, aliases: brand.aliases ?? [], domain: brand.domain },
+      scope,
+    )
+    const rows = scoped.rows
     const isOwned = (host: string): boolean =>
       !!ownedDomain && (host === ownedDomain || host.endsWith(`.${ownedDomain}`))
 
@@ -215,12 +237,15 @@ export async function GET(req: NextRequest) {
           neutralSources: sources.filter((s) => s.skew === 'neutral').length,
           minMentions,
           ownedDomain,
+          scope,
+          brandedCount: scoped.brandedCount,
+          nonBrandedCount: scoped.nonBrandedCount,
         },
         // Full ranked list (negative first), capped at 50 for payload size.
         sources: sources.slice(0, 50),
         topNegative,
         topPositive,
-        filters: { engine, days, minMentions },
+        filters: { engine, days, minMentions, scope },
       },
       timestamp: Date.now(),
     })

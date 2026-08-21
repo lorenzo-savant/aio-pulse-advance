@@ -62,8 +62,20 @@ const CHECK_META: Record<string, CheckPriorityMeta> = {
   },
   'ai-crawler-claudebot': {
     title: 'Allow ClaudeBot in robots.txt',
-    why: 'ClaudeBot is Anthropic’s crawler — blocking it means Claude can’t cite your pages.',
+    why: 'ClaudeBot collects training data for Anthropic’s models — blocking it does not stop Claude citing you today, and some sites block it on purpose. Claude-SearchBot and Claude-User are the ones that carry visibility.',
+    impact: 35,
+    ease: 85,
+  },
+  'ai-crawler-claude-searchbot': {
+    title: 'Allow Claude-SearchBot in robots.txt',
+    why: 'Claude-SearchBot indexes the web for Claude’s search — blocking it removes you from those answers entirely.',
     impact: 75,
+    ease: 85,
+  },
+  'ai-crawler-claude-user': {
+    title: 'Allow Claude-User in robots.txt',
+    why: 'Claude-User fetches your page live when someone asks Claude about you — blocking it means Claude answers about you without ever reading you.',
+    impact: 70,
     ease: 85,
   },
   'ai-crawler-perplexitybot': {
@@ -89,6 +101,21 @@ const CHECK_META: Record<string, CheckPriorityMeta> = {
     why: 'CCBot feeds Common Crawl — the dataset most LLMs train on.',
     impact: 60,
     ease: 85,
+  },
+
+  // Content shape — both are correlations from the cited-page study, so the
+  // copy says what to weigh, not what to obey.
+  'content-ssr': {
+    title: 'Server-render the page content',
+    why: 'AI crawlers do not run JavaScript. If the content only appears after hydration, they read an empty shell — nothing to cite.',
+    impact: 80,
+    ease: 30,
+  },
+  'content-slug-length': {
+    title: 'Consider a shorter, more descriptive URL slug',
+    why: 'Cited pages cluster at 17–40 characters. Worth applying to new URLs — renaming a live one costs redirects, so it is rarely worth it on its own.',
+    impact: 20,
+    ease: 40,
   },
 
   // llms.txt

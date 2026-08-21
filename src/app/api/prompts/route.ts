@@ -22,7 +22,11 @@ const promptSchema = z.object({
   text: z.string().min(5).max(500),
   language: z.string().default('en'),
   market: z.string().default('global'),
-  category: z.enum(['awareness', 'comparison', 'alternative', 'features', 'custom']).optional(),
+  // Required since C4: a prompt with no category made every per-category
+  // reading noise (51 of 61 Relovie prompts sat in 'awareness', 10 in nothing).
+  // Callers that create a prompt without a form classify it deterministically
+  // via classifyPromptCategory rather than passing a default.
+  category: z.enum(['awareness', 'comparison', 'alternative', 'features', 'custom']),
   // Claude retired on cost — see ACTIVE_ENGINES in src/types. Kept out of both
   // the enum and the default so a newly created prompt never stores an engine
   // the runner will silently drop.

@@ -212,7 +212,13 @@ describe('GET /api/prompts — reads are scoped by brand', () => {
 describe('POST /api/prompts — writes are gated on role', () => {
   const valid = (brandId: string) => ({
     method: 'POST',
-    body: JSON.stringify({ brand_id: brandId, text: 'a new prompt for the brand' }),
+    // 'category' is required since C4 — the body has to be valid for the
+    // request to reach the authorization check these tests are about.
+    body: JSON.stringify({
+      brand_id: brandId,
+      text: 'a new prompt for the brand',
+      category: 'custom',
+    }),
     headers: { 'content-type': 'application/json' },
   })
 

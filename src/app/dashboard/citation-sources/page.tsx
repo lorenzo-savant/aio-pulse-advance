@@ -90,6 +90,10 @@ interface SidebarDominance {
 }
 
 interface Summary {
+  /** Citations pointing at a company that merely resembles the brand.
+   *  Held out of totalCitations; the two added together are what the engines
+   *  emitted. */
+  confusableCitations?: number
   totalResponses: number
   responsesWithSources: number
   sourcedRate: number
@@ -113,13 +117,80 @@ interface OwnedPageRow {
   lastSeen: string
 }
 
+type SourceClass = 'missing' | 'shared' | 'strong' | 'unique'
+
+interface ClassifiedSource {
+  domain: string
+  class: SourceClass
+  citedWithBrand: number
+  citedWithCompetitors: number
+  totalCitations: number
+}
+
+interface SourceTaxonomy {
+  sources: ClassifiedSource[]
+  requiresDeclaredCompetitors: boolean
+  ownDomain: { domain: string; totalCitations: number } | null
+  belowThreshold: number
+}
+
+interface ConfusableVerdict {
+  similarTo: string
+  distance: number
+  reason: 'typo' | 'reshuffled'
+  where: 'host' | 'path'
+}
+
+interface ConfusableSource {
+  domain: string
+  verdict: ConfusableVerdict
+  citations: number
+  sampleUrls: string[]
+}
+
 interface SourcesData {
   summary: Summary
+  confusable?: ConfusableSource[]
+  taxonomy?: SourceTaxonomy
   domains: DomainRow[]
   ownedPages: OwnedPageRow[]
   engineBreakdown: { engine: string; count: number }[]
   timeline: { date: string; count: number }[]
 }
+
+/** Ordered Missing → Strong → Unique → Shared: the first group is the only
+ *  one that names work to do, so it opens the section. */
+const SOURCE_CLASSES: Array<{
+  key: SourceClass
+  label: string
+  hint: string
+  accent: string
+}> = [
+  {
+    key: 'missing',
+    label: 'Missing',
+    hint: 'Cited when engines discuss your competitors, never for you — outreach targets.',
+    accent: 'text-red-400',
+  },
+  {
+    key: 'strong',
+    label: 'Strong',
+    hint: 'Cited for both sides, but more often when the answer is about you — positions to defend.',
+    accent: 'text-emerald-400',
+  },
+  {
+    key: 'unique',
+    label: 'Unique',
+    hint: 'Only ever cited in answers about you — nobody is contesting these yet.',
+    accent: 'text-primary',
+  },
+  {
+    key: 'shared',
+    label: 'Shared',
+    hint: 'Cited for both sides, at least as often for the competitors — contested ground.',
+    accent: 'text-amber-400',
+  },
+]
 
 const ENGINE_COLORS: Record<string, string> = {
   chatgpt: '#10b981',
@@ -280,7 +351,7 @@ export default function CitationSourcesPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-900/50 bg-red-900/10 px-4 py-3 text-sm text-red-400">
+        <div className="border-red-900/50 bg-red-900/10 text-red-400 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm">
           <AlertCircle className="h-4 w-4" />
           {error}
         </div>
@@ -608,6 +679,154 @@ export default function CitationSourcesPage() {
 
           {/* Cited × Ranking — AI cites this URL, Google ranks it where? */}
           <CitedVsRankingPanel brandId={selectedBrand?.id ?? undefined} />
+
+          {/* Look-alike citations — a different company wearing this name */}
+          {data.confusable && data.confusable.length > 0 && (
+            <Card className="border-l-red-500 border-l-4 p-6">
+              <h2 className="mb-1 text-lg font-bold text-foreground">
+                Citations About Somebody Else
+              </h2>
+              <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+                These cited pages belong to companies whose name resembles yours. They are real
+                pages and the links work — they are simply not about you, so they are held out of
+                the domain ranking, out of your citation share and out of the source taxonomy.
+                Nothing is deleted: every one is listed here.
+              </p>
+              {typeof data.summary.confusableCitations === 'number' &&
+                data.summary.confusableCitations > 0 && (
+                  <p className="text-red-300 mb-4 text-sm font-medium">
+                    {data.summary.confusableCitations} of{' '}
+                    {data.summary.totalCitations + data.summary.confusableCitations} citations set
+                    aside.
+                  </p>
+                )}
+              <div className="space-y-3">
+                {data.confusable.map((c) => (
+                  <div key={c.domain} className="rounded-lg border border-border bg-background p-4">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="text-red-400 font-bold">{c.domain}</span>
+                      <span className="text-muted-foreground">
+                        {c.citations} citation{c.citations === 1 ? '' : 's'}
+                      </span>
+                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {c.verdict.reason === 'typo'
+                          ? 'near-identical spelling'
+                          : 'same letters, reordered'}
+                      </span>
+                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {c.verdict.where === 'host'
+                          ? 'look-alike domain'
+                          : 'page about the look-alike'}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Resembles “{c.verdict.similarTo}” — {c.verdict.distance} character
+                      {c.verdict.distance === 1 ? '' : 's'} apart.
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {c.sampleUrls.map((u) => (
+                        <li key={u}>
+                          <a
+                            href={u}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow"
+                            className="break-all text-xs text-muted-foreground hover:text-brand hover:underline"
+                          >
+                            {u}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Source taxonomy — which side of the market each source serves */}
+          {data.taxonomy && (
+            <Card className="p-6">
+              <h2 className="mb-1 text-lg font-bold text-foreground">Sources by Whose Side</h2>
+              <p className="mb-6 text-sm text-muted-foreground">
+                The same cited domains, crossed with whether the answer named you or a declared
+                competitor. Counted once per response.
+              </p>
+
+              {data.taxonomy.requiresDeclaredCompetitors ? (
+                <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                  Declare this brand’s competitors to unlock this view. Every class here is defined
+                  against competitor co-occurrence — with no list, every source would file as
+                  “unique” and none of it would mean anything.
+                </p>
+              ) : data.taxonomy.sources.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No source was cited often enough to classify yet.
+                  {data.taxonomy.belowThreshold > 0 &&
+                    ` ${data.taxonomy.belowThreshold} domain(s) were seen only once.`}
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {SOURCE_CLASSES.map((group) => {
+                    const items = data.taxonomy!.sources.filter((x) => x.class === group.key)
+                    if (items.length === 0) return null
+                    return (
+                      <div key={group.key}>
+                        <div className="mb-2 flex flex-wrap items-baseline gap-2">
+                          <h3
+                            className={cn(
+                              'text-sm font-bold uppercase tracking-wider',
+                              group.accent,
+                            )}
+                          >
+                            {group.label}
+                          </h3>
+                          <span className="text-xs text-muted-foreground">({items.length})</span>
+                          <span className="text-xs text-muted-foreground">{group.hint}</span>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                                <th className="px-3 py-2 font-medium">Domain</th>
+                                <th className="px-3 py-2 text-right font-medium">With you</th>
+                                <th className="px-3 py-2 text-right font-medium">With rivals</th>
+                                <th className="px-3 py-2 text-right font-medium">Responses</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {items.map((src) => (
+                                <tr key={src.domain} className="border-border/50 border-b">
+                                  <td className="px-3 py-2 font-medium text-foreground">
+                                    {src.domain}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                                    {src.citedWithBrand}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                                    {src.citedWithCompetitors}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-foreground">
+                                    {src.totalCitations}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <p className="text-xs text-muted-foreground">
+                    {data.taxonomy.belowThreshold > 0 &&
+                      `${data.taxonomy.belowThreshold} domain(s) seen only once are held back until they repeat. `}
+                    {data.taxonomy.ownDomain &&
+                      `Your own domain (${data.taxonomy.ownDomain.domain}, ${data.taxonomy.ownDomain.totalCitations} responses) is reported separately above, not classified here.`}
+                  </p>
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* Top domains */}
           <Card className="p-6">

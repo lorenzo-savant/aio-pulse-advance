@@ -97,3 +97,15 @@ describe('analyzeLogs', () => {
     expect(a.topPaths).toEqual([])
   })
 })
+
+describe('Anthropic search and fetch bots', () => {
+  it('matches Claude-SearchBot and Claude-User instead of dropping them', () => {
+    // Before they were listed, their hits fell through to null and read as
+    // ordinary traffic in the log report.
+    expect(matchBot('Mozilla/5.0 (compatible; Claude-SearchBot/1.0)')?.name).toBe(
+      'Claude-SearchBot',
+    )
+    expect(matchBot('Mozilla/5.0 (compatible; Claude-User/1.0)')?.name).toBe('Claude-User')
+    expect(matchBot('Mozilla/5.0 (compatible; ClaudeBot/1.0)')?.name).toBe('ClaudeBot')
+  })
+})

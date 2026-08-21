@@ -32,6 +32,8 @@ interface AiBot {
   id: string
   label: string
   engine: string
+  /** See crawler-access-audit.ts: what a block on this bot actually costs. */
+  role: 'search' | 'fetcher' | 'training' | 'hybrid' | 'unknown'
   docs: string
 }
 
@@ -102,6 +104,33 @@ const VERDICT_META: Record<
     color: 'text-muted-foreground',
     bg: 'bg-secondary/40 border-border',
     icon: AlertTriangle,
+  },
+}
+
+/** What a block on this bot actually costs, and how loudly to say it. A blocked
+ *  training crawler is often deliberate; a blocked search crawler is the
+ *  expensive mistake. Colouring them identically is what taught operators to
+ *  skim past the list. */
+const ROLE_META: Record<AiBot['role'], { className: string; hint: string }> = {
+  search: {
+    className: 'bg-rose-500/15 text-rose-300',
+    hint: 'AI search crawler — blocking it removes the site from this engine’s index.',
+  },
+  hybrid: {
+    className: 'bg-rose-500/15 text-rose-300',
+    hint: 'Serves classic search and AI search — blocking it costs both.',
+  },
+  fetcher: {
+    className: 'bg-amber-500/15 text-amber-300',
+    hint: 'On-demand fetcher — blocking it removes the site from live answers.',
+  },
+  unknown: {
+    className: 'bg-secondary text-muted-foreground',
+    hint: 'Not in the tracked catalog — what blocking it costs is not established.',
+  },
+  training: {
+    className: 'bg-secondary text-muted-foreground',
+    hint: 'Model-training crawler — blocking it does not affect search visibility, and for some sites it is deliberate.',
   },
 }
 
@@ -270,6 +299,15 @@ export function CrawlerAccessPanel({ brandId: brandIdProp }: { brandId?: string 
                         <span className="text-sm font-bold text-foreground">{v.bot.label}</span>
                         <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
                           {v.bot.engine}
+                        </span>
+                        <span
+                          className={cn(
+                            'rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wider',
+                            ROLE_META[v.bot.role].className,
+                          )}
+                          title={ROLE_META[v.bot.role].hint}
+                        >
+                          {v.bot.role}
                         </span>
                         {v.bot.docs && (
                           <a

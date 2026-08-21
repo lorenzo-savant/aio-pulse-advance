@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createServerClient, getCurrentUserId } from '@/lib/supabase'
 import { getAccessibleBrandIds } from '@/lib/authorize'
+import { searchInternal } from '@/lib/services/search-index'
 import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
@@ -36,6 +37,15 @@ export async function GET(req: NextRequest) {
 
   // Search across everything the caller can reach, not only what they authored.
   const accessibleBrandIds = await getAccessibleBrandIds(supabase, userId)
+
+  // Meilisearch (opt-in) — typo-tolerant, ranked, multi-tenant. When it is
+  // configured and returns hits, we use them directly. On any miss (unset env,
+  // error, empty index, no match) we fall through to the ILIKE path below, so
+  // the endpoint never returns worse results than before this integration.
+  const indexed = await searchInternal(query, accessibleBrandIds, { limit: 10 })
+  if (indexed && indexed.servedByIndex && indexed.hits.length > 0) {
+    return NextResponse.json({ success: true, data: indexed.hits })
+  }
 
   // The raw query used to be interpolated straight into the `.or()` filter
   // string. The surrounding `.in('id', accessibleBrandIds)` meant it could not

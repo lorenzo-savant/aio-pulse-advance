@@ -18,6 +18,7 @@ import {
   fetchWebResults,
   BraveQuotaExceeded,
 } from './brave-search'
+import { rerankSources, isRerankerAvailable } from './reranker'
 import { isValidUrl } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 
@@ -103,6 +104,13 @@ export function normalizeCitation(rawUrl: string): string | null {
 export interface CleanCitationOptions {
   /** Max citations to keep after dedup (avoids noise). Default 20. */
   max?: number
+  /**
+   * Reorder the fetched sources by relevance to the query before cleaning
+   * (pattern LibreChat: provider → scraper → reranker). Requires a reranker
+   * provider (JINA_API_KEY / COHERE_API_KEY); soft-fails to original order.
+   * Default false — purely additive, the pipeline never depends on it.
+   */
+  rerank?: boolean
 }
 
 /**
@@ -147,8 +155,13 @@ export async function groundCitationsViaBrave(
   try {
     const summary = await summarizeQuery(query, language)
     if (summary && summary.citations.length > 0) {
+      let raw = summary.citations.map((c) => ({ url: c.url, title: c.title }))
+      // Reranker stage — reorder sources by on-page relevance to the query.
+      if (opts.rerank && isRerankerAvailable()) {
+        raw = (await rerankSources(query, raw, { topN: opts.max })).sources
+      }
       const citations = cleanCitations(
-        summary.citations.map((c) => c.url),
+        raw.map((c) => c.url),
         opts,
       )
       if (citations.length > 0) return { citations, provider: 'brave:summarizer' }
@@ -166,8 +179,13 @@ export async function groundCitationsViaBrave(
 
   try {
     const results = await fetchWebResults(query, language, 10)
+    let raw = results.map((r) => ({ url: r.url, title: r.title, snippet: r.description }))
+    // Reranker stage — same pattern as the summarizer path above.
+    if (opts.rerank && isRerankerAvailable()) {
+      raw = (await rerankSources(query, raw, { topN: opts.max })).sources
+    }
     const citations = cleanCitations(
-      results.map((r) => r.url),
+      raw.map((r) => r.url),
       opts,
     )
     if (citations.length > 0) return { citations, provider: 'brave:web' }

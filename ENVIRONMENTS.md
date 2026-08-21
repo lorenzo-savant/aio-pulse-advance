@@ -24,6 +24,23 @@ This project supports multiple environments:
 | `SENTRY_PROJECT`                | ✓              | -           | -                     |
 | `LOG_LEVEL`                     | `info`         | `info`      | `debug` (optional)    |
 
+### Optional Variables
+
+These enable opt-in search enhancements. **None are required**: without them every
+feature degrades gracefully to the previous behavior (no crash, no data loss).
+
+| Variable              | Used by                                        | Purpose                                                        |
+| --------------------- | ---------------------------------------------- | -------------------------------------------------------------- |
+| `JINA_API_KEY`        | `src/lib/services/reranker.ts` (primary)       | Reranking delle citazioni in `citation-grounding.ts` (Jina Reranker v3) |
+| `COHERE_API_KEY`      | `src/lib/services/reranker.ts` (fallback)      | Reranking fallback (Cohere `rerank-multilingual-v3.0`)         |
+| `MEILISEARCH_HOST`    | `src/lib/services/search-index.ts`             | Host del server Meilisearch per la ricerca interna di brand/prompts (serve anche la chiave) |
+| `MEILISEARCH_API_KEY` | `src/lib/services/search-index.ts`             | Chiave API Meilisearch; senza host non ha effetto               |
+
+Note:
+
+- **Reranker**: attivo solo se `JINA_API_KEY` **o** `COHERE_API_KEY` è configurata. Disattivato → le citazioni restano nell'ordine originale.
+- **Meilisearch**: richiede `MEILISEARCH_HOST` **e** `MEILISEARCH_API_KEY`. L'indice (`uid = "search"`) deve essere popolato con documenti `{ id, type: "brand"|"prompt", name, brand_id }` e `filterableAttributes: ["brand_id"]`; finché l'indice è vuoto `/api/search` degrada all'ILIKE attuale.
+
 ### How to Set Environment Variables
 
 1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables

@@ -2256,5 +2256,22 @@
     "action_trust_1": "Correct outdated or wrong facts on your site and in third-party sources.",
     "action_trust_2": "Strengthen structured data (Organization, Product) so models describe you precisely.",
     "action_trust_3": "Publish an authoritative About page with verifiable, dated claims."
+  },
+  "grounded_answers": {
+    "title": "Why is this number what it is?",
+    "subtitle": "Every answer is built from your own rows and says which table it came from. When the data does not show it, it says so.",
+    "ask_delta": "What changed, and what moved it?",
+    "ask_pillar": "Why is {pillar} at {score}?",
+    "thinking": "Reading your data…",
+    "sources": "Sources",
+    "source_rows": "{table} — {detail} ({count} rows)",
+    "show_figures": "Show the figures behind this",
+    "hide_figures": "Hide the figures",
+    "refusal_no_monitoring_data": "There are no monitoring responses in this period, so there is nothing to explain yet. Run a monitoring check first.",
+    "refusal_no_snapshots": "No snapshots have been recorded for this brand yet, so there is no change to describe.",
+    "refusal_not_enough_history": "Only one snapshot exists. One point is not a trend, so there is no change to attribute yet — come back after the next run.",
+    "refusal_no_database": "The data store could not be reached, so no answer can be grounded right now.",
+    "budget_exhausted": "The AI budget for this brand is used up, so no answer was generated.",
+    "failed": "The answer could not be built. Nothing was changed."
   }
 }

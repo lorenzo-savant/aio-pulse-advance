@@ -205,6 +205,27 @@ export const aiAgentMessageSchema = z.object({
 
 export type AiAgentMessageInput = z.infer<typeof aiAgentMessageSchema>
 
+// Grounded answers: unlike the free-form agent chat there is no user-authored
+// text here at all. The caller picks a question the data can actually answer,
+// and every field bounds either a database read or an LLM call — so the shape
+// is closed rather than permissive.
+export const groundedAnswerSchema = z
+  .object({
+    brandId: z.string().uuid(),
+    kind: z.enum(['attribution', 'delta']),
+    // Which GEO pillar to explain. Mirrors PILLARS in agents/grounding.ts.
+    pillar: z.enum(['citation', 'presence', 'authority', 'position', 'trust']).optional(),
+    // Bounded because it sizes the monitoring_results scan.
+    days: z.number().int().min(7).max(90).optional(),
+    locale: z.enum(['en', 'it', 'sv']).optional(),
+  })
+  .refine((value) => value.kind !== 'attribution' || value.pillar !== undefined, {
+    message: 'A pillar is required to explain a score',
+    path: ['pillar'],
+  })
+
+export type GroundedAnswerInput = z.infer<typeof groundedAnswerSchema>
+
 // credits/use: `engines` drives the credit cost calc — bound the array so a
 // malformed body can't balloon the deduction loop.
 export const creditsUseSchema = z.object({

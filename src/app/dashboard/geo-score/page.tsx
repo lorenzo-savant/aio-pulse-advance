@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/Card'
+import { GroundedAnswerPanel } from '@/components/GroundedAnswerPanel'
 import { SectionHelp } from '@/components/help/SectionHelp'
 import { cn } from '@/lib/utils'
 import { useChartTheme } from '@/hooks/useChartTheme'
@@ -587,6 +588,17 @@ export default function GeoScorePage() {
               {t('grade_scale_tail')}
             </p>
           </Card>
+
+          {/* Ask why, before being told what to do: the panel explains the
+              numbers above it, and the recommendations below act on them. */}
+          {selectedBrand && (
+            <GroundedAnswerPanel
+              brandId={selectedBrand.id}
+              pillars={data.pillars.map((p) => ({ key: p.key, score: p.score }))}
+              days={periodDays(period)}
+              hasHistory={(data.history?.length ?? 0) > 1}
+            />
+          )}
 
           {/* Recommendations */}
           {data.recommendations.length > 0 && (

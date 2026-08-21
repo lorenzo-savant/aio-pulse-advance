@@ -1,7 +1,89 @@
 import { createServerClient } from '@/lib/supabase'
 import type { BudgetConfig, BudgetAlert } from './types'
 
+/** Outcome of a pre-flight budget check. */
+export interface BudgetVerdict {
+  allowed: boolean
+  /** Which limit would be crossed. Absent when allowed. */
+  reason?: 'monthly_limit' | 'daily_limit'
+  limitUsd?: number
+  currentSpendUsd?: number
+}
+
 export class BudgetManager {
+  /**
+   * Decides whether a spend of `estimatedCostUsd` may go ahead, *before* it is
+   * incurred. Distinct from `checkBudget`, which records spend that already
+   * happened and raises alerts after the fact — that one cannot stop anything.
+   *
+   * Read-only on purpose: this must never move the ledger, because it runs on
+   * requests that may then fail or be refused for other reasons. It therefore
+   * goes through `readBudget` rather than `getBudget` — the latter creates a
+   * default budget when none exists, which would both write on a read path and
+   * silently impose that default's $100/month, $10/day caps on a deployment
+   * that runs unmetered.
+   *
+   * No budget row means no cap, which is what the unmetered internal
+   * deployment relies on.
+   */
+  async wouldExceedBudget(
+    userId: string,
+    brandId: string | null,
+    estimatedCostUsd: number,
+  ): Promise<BudgetVerdict> {
+    const budget = await this.readBudget(userId, brandId)
+    if (!budget) return { allowed: true }
+
+    if (budget.monthlyLimitUsd > 0) {
+      const projected = budget.currentMonthSpend + estimatedCostUsd
+      if (projected > budget.monthlyLimitUsd) {
+        return {
+          allowed: false,
+          reason: 'monthly_limit',
+          limitUsd: budget.monthlyLimitUsd,
+          currentSpendUsd: budget.currentMonthSpend,
+        }
+      }
+    }
+
+    if (budget.dailyLimitUsd != null && budget.dailyLimitUsd > 0) {
+      const projected = budget.currentDaySpend + estimatedCostUsd
+      if (projected > budget.dailyLimitUsd) {
+        return {
+          allowed: false,
+          reason: 'daily_limit',
+          limitUsd: budget.dailyLimitUsd,
+          currentSpendUsd: budget.currentDaySpend,
+        }
+      }
+    }
+
+    return { allowed: true }
+  }
+
+  /**
+   * Fetch a budget row without creating one. `getBudget` upserts a default when
+   * the row is missing, which is right on a settings screen and wrong on any
+   * read path — so the two are kept apart deliberately.
+   *
+   * Returns null both when no budget is configured and when the read fails: a
+   * caller deciding whether to allow work must not have that decision made for
+   * it by a transient database error.
+   */
+  private async readBudget(userId: string, brandId: string | null): Promise<BudgetConfig | null> {
+    const supabase = createServerClient()
+    if (!supabase) return null
+
+    const sb = supabase as any
+    let query = sb.from('ai_budgets').select('*').eq('user_id', userId)
+    query = brandId ? query.eq('brand_id', brandId) : query.is('brand_id', null)
+
+    const { data, error } = await query.maybeSingle()
+    if (error || !data) return null
+
+    return data as BudgetConfig
+  }
+
   async getBudget(userId: string, brandId: string | null = null): Promise<BudgetConfig | null> {
     const supabase = createServerClient()
     if (!supabase) return null

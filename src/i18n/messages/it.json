@@ -2256,5 +2256,22 @@
     "action_trust_1": "Correggi i fatti obsoleti o errati sul tuo sito e nelle fonti di terzi.",
     "action_trust_2": "Rafforza i dati strutturati (Organization, Product) così i modelli ti descrivono con precisione.",
     "action_trust_3": "Pubblica una pagina Chi siamo autorevole con affermazioni verificabili e datate."
+  },
+  "grounded_answers": {
+    "title": "Perché questo numero è questo?",
+    "subtitle": "Ogni risposta è costruita sulle tue righe e dichiara da quale tabella viene. Se i dati non lo dicono, te lo dice.",
+    "ask_delta": "Cosa è cambiato, e cosa l'ha mosso?",
+    "ask_pillar": "Perché {pillar} è a {score}?",
+    "thinking": "Sto leggendo i tuoi dati…",
+    "sources": "Fonti",
+    "source_rows": "{table} — {detail} ({count} righe)",
+    "show_figures": "Mostra i dati dietro questa risposta",
+    "hide_figures": "Nascondi i dati",
+    "refusal_no_monitoring_data": "Non ci sono risposte di monitoraggio in questo periodo, quindi non c'è ancora nulla da spiegare. Esegui prima un controllo di monitoraggio.",
+    "refusal_no_snapshots": "Non è stato registrato ancora nessuno snapshot per questo brand, quindi non c'è alcun cambiamento da descrivere.",
+    "refusal_not_enough_history": "Esiste un solo snapshot. Un punto non è una tendenza, quindi non c'è ancora alcun cambiamento da attribuire: torna dopo la prossima esecuzione.",
+    "refusal_no_database": "Non è stato possibile raggiungere l'archivio dati, quindi al momento nessuna risposta può essere ancorata.",
+    "budget_exhausted": "Il budget AI per questo brand è esaurito, quindi non è stata generata alcuna risposta.",
+    "failed": "Non è stato possibile costruire la risposta. Non è stato modificato nulla."
   }
 }

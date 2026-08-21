@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase'
+import { verifyBrandAccess } from '@/lib/authorize'
 import type { Json } from '@/types/database'
 
 export interface ConversationMessage {
@@ -123,14 +124,29 @@ export async function getConversation(conversationId: string): Promise<Conversat
 }
 
 /**
- * Load a conversation only if it belongs to the given user (and, when a brand
- * is supplied, to that brand). Returns null when the caller has no claim on it
- * so that ownership failures and missing rows share one refusal path.
+ * Load a conversation only if the caller may see it. Returns null when they may
+ * not, so a refused conversation and a missing one share one path and neither
+ * confirms that the row exists.
  *
- * The client here is the service-role client, which bypasses RLS, so ownership
- * cannot be left to the database — it must be checked in code.
+ * The client here is the service-role client, which bypasses RLS, so access
+ * cannot be left to the database — it must be decided in code (H1, review of
+ * 2026-08-05: an unverified conversation id would otherwise let a caller read
+ * someone else's history into the LLM context and append messages to it).
+ *
+ * Which rule applies depends on whether the conversation is attached to a brand:
+ *
+ *  - **with a brand** — brand data is shared, so access follows the brand
+ *    rather than the author: any member of that brand may read it. Locking it
+ *    to its creator would make it the only part of the product a teammate
+ *    cannot see.
+ *  - **without a brand** — there is no brand to share it inside, so it stays
+ *    with its author. This is the case that keeps H1 intact: relaxing it too
+ *    would leave brand-less conversations with no guard at all.
+ *
+ * When the caller names a brand, a conversation belonging to a different one is
+ * refused outright, so an id can never be used to hop between brands.
  */
-export async function getOwnedConversation(
+export async function getAccessibleConversation(
   conversationId: string,
   userId: string,
   brandId?: string,
@@ -142,11 +158,15 @@ export async function getOwnedConversation(
   // what is actually present (the camelCase fields on Conversation are
   // declared for convenience and not materialised by the storage layer).
   const row = raw as unknown as { user_id?: string; brand_id?: string | null }
+  const ownerId = String(row.user_id)
+  const conversationBrandId = row.brand_id ? String(row.brand_id) : null
 
-  const isOwner = String(row.user_id) === userId
-  const brandMatches = brandId ? String(row.brand_id) === brandId : true
+  if (!conversationBrandId) return ownerId === userId ? raw : null
 
-  return isOwner && brandMatches ? raw : null
+  if (brandId && conversationBrandId !== brandId) return null
+
+  const access = await verifyBrandAccess(conversationBrandId, userId)
+  return access ? raw : null
 }
 
 export async function getRecentConversations(

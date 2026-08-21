@@ -12,4 +12,5 @@ export type {
   BudgetAlert,
   CostEstimate,
 } from './types'
-export { PROVIDER_PRICING, PROVIDER_DEFAULT_MODELS } from './types'
+export { PROVIDER_PRICING, PROVIDER_DEFAULT_MODELS, estimateBlendedCost } from './types'
+export type { BudgetVerdict } from './budget-manager'

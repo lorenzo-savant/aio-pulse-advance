@@ -5,13 +5,13 @@ import {
   createConversation,
   addMessage,
   getConversationHistory,
-  getOwnedConversation,
+  getAccessibleConversation,
 } from '@/lib/agents/agent-memory'
 import type { AgentContext } from '@/lib/agents/base-agent'
 import { auditSite, auditArticle } from '@/lib/audit/site-audit'
 import { generateFixBrief, formatFixBriefAsMarkdown } from '@/lib/audit/fix-brief'
 import { generateLlmstxt, checkFreshness } from '@/lib/audit/generators'
-import { getCostTracker } from '@/lib/cost-monitor'
+import { getCostTracker, BudgetManager, estimateBlendedCost } from '@/lib/cost-monitor'
 import { requireUser, rateLimitGate } from '@/lib/api-auth'
 import { requireBrandRole } from '@/lib/authorize'
 import { SsrfError } from '@/lib/utils/safe-fetch'
@@ -19,6 +19,13 @@ import { logger } from '@/lib/logger'
 import { aiAgentMessageSchema, firstZodMessage } from '@/lib/validations'
 
 export const dynamic = 'force-dynamic'
+
+/**
+ * Output tokens assumed when sizing an answer before it exists, for the
+ * pre-flight budget check only. Errs high: the real figure is logged once the
+ * agent has replied.
+ */
+const ESTIMATED_ANSWER_TOKENS = 1_500
 
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req)
@@ -63,16 +70,40 @@ export async function POST(req: NextRequest) {
       if ('response' in gate) return gate.response
     }
 
-    // A conversationId from the body is a handle to another user's message
+    // A conversationId from the body is a handle to someone else's message
     // history if left unverified. The service-role client bypasses RLS, so
-    // ownership must be proven here: the conversation must belong to this user
-    // and, when a brand is in play, to that same brand. Refuse like a missing
-    // resource rather than leaking that it exists.
+    // access must be proven here: a brand-scoped conversation takes membership
+    // of that brand, one with no brand stays with its author. Refuse like a
+    // missing resource rather than leaking that it exists.
     if (conversationId) {
-      const owned = await getOwnedConversation(conversationId, userId, brandId)
-      if (!owned) {
+      const accessible = await getAccessibleConversation(conversationId, userId, brandId)
+      if (!accessible) {
         return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
       }
+    }
+
+    // Spend was previously only recorded after the fact, so a configured budget
+    // could be passed without anything stopping the call. Price the estimate at
+    // the default rate: the provider is only known once the agent has answered,
+    // and refusing slightly early is recoverable where overshooting a client's
+    // cap is not. No budget row means no cap, so the unmetered internal
+    // deployment is unaffected.
+    const estimatedTokens = Math.ceil(message.length / 4) + ESTIMATED_ANSWER_TOKENS
+    const verdict = await new BudgetManager().wouldExceedBudget(
+      userId,
+      brandId || null,
+      estimateBlendedCost('default', estimatedTokens),
+    )
+    if (!verdict.allowed) {
+      return NextResponse.json(
+        {
+          error: 'AI budget exhausted',
+          reason: verdict.reason,
+          limitUsd: verdict.limitUsd,
+          currentSpendUsd: verdict.currentSpendUsd,
+        },
+        { status: 402 },
+      )
     }
 
     const agent = getAgent(agentId || 'brand_monitor')

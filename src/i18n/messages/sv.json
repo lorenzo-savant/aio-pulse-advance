@@ -2256,5 +2256,22 @@
     "action_trust_1": "Rätta föråldrade eller felaktiga uppgifter på din sajt och i tredjepartskällor.",
     "action_trust_2": "Stärk strukturerad data (Organization, Product) så att modeller beskriver dig exakt.",
     "action_trust_3": "Publicera en auktoritativ Om oss-sida med verifierbara, daterade påståenden."
+  },
+  "grounded_answers": {
+    "title": "Varför är siffran som den är?",
+    "subtitle": "Varje svar byggs av dina egna rader och anger vilken tabell det kommer från. Visar inte datan det, så sägs det rakt ut.",
+    "ask_delta": "Vad har ändrats, och vad orsakade det?",
+    "ask_pillar": "Varför ligger {pillar} på {score}?",
+    "thinking": "Läser dina data…",
+    "sources": "Källor",
+    "source_rows": "{table} — {detail} ({count} rader)",
+    "show_figures": "Visa siffrorna bakom det här",
+    "hide_figures": "Dölj siffrorna",
+    "refusal_no_monitoring_data": "Det finns inga övervakningssvar för perioden, så det finns inget att förklara ännu. Kör en övervakningskontroll först.",
+    "refusal_no_snapshots": "Inga ögonblicksbilder har registrerats för varumärket än, så det finns ingen förändring att beskriva.",
+    "refusal_not_enough_history": "Det finns bara en ögonblicksbild. En punkt är ingen trend, så det finns inget att tillskriva ännu — kom tillbaka efter nästa körning.",
+    "refusal_no_database": "Datalagret kunde inte nås, så inget svar kan förankras just nu.",
+    "budget_exhausted": "AI-budgeten för varumärket är förbrukad, så inget svar genererades.",
+    "failed": "Svaret kunde inte byggas. Ingenting ändrades."
   }
 }
